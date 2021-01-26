@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template
+from flask import Blueprint, request, render_template, redirect, url_for
 from MySQLdb.cursors import DictCursor
 import bcrypt
 
@@ -39,5 +39,5 @@ def guild_login():
     if not match:
         return r('Wrong password.')
 
-    # ????
-    return 'HAX0R'
+    # Login is successful, redirect to guild page
+    return redirect(url_for("guild.guild_config", alias=alias))

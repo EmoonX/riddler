@@ -15,8 +15,9 @@ app = Flask(__name__)
 mysql_init(app)
 
 from login import login
+from guild import guild
 
-for blueprint in (login,):
+for blueprint in (login, guild):
     # Register app blueprint to allow other modules
     app.register_blueprint(blueprint)
 
