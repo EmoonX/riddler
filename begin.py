@@ -40,7 +40,7 @@ async def begin(ctx):
         text += '```\n'
 
         text += 'First of all, you need a guild account to access the ' \
-                'administration web interface, exclusive to you.\n'
+                'administration web interface, exclusive to admins.\n'
         text += 'Send me the following formatted command:\n'
         text += '```!begin guild_index guild_alias password```'
         text += 'Where:\n' \

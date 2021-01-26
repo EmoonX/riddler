@@ -1,29 +1,15 @@
-import os
-
-from flask import Flask, request, render_template
-from flask_mysqldb import MySQL
+from flask import Blueprint, request, render_template
 from MySQLdb.cursors import DictCursor
 import bcrypt
 
-# Flask app object
-app = Flask(__name__)
+from util import mysql
 
-# "Unique" and "secret" secret key
-app.secret_key = 'RASPUTIN'
-
-# Database connection details
-app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST')
-app.config['MYSQL_PORT'] = int(os.getenv('MYSQL_PORT'))
-app.config['MYSQL_USER'] = 'emoon'
-app.config['MYSQL_PASSWORD'] = 'emoon'
-app.config['MYSQL_DB'] = 'guilds'
-
-# MySQL object
-mysql = MySQL(app)
+# Create app blueprint
+login = Blueprint('login', __name__, template_folder='templates')
 
 
-@app.route('/login/', methods=('GET', 'POST'))
-def login():
+@login.route('/login/', methods=('GET', 'POST'))
+def guild_login():
     '''Guild login system.'''
 
     def r(msg):
@@ -55,8 +41,3 @@ def login():
 
     # ????
     return 'HAX0R'
-
-
-# Run Flask application
-if __name__ == '__main__':
-    app.run(host='0.0.0.0')
