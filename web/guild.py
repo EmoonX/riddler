@@ -8,7 +8,7 @@ from util import mysql
 guild = Blueprint('guild', __name__, template_folder='templates')
 
 
-@guild.route('/guild/<alias>', methods=('GET', 'POST'))
+@guild.route('/guild/<alias>/', methods=('GET', 'POST'))
 def config(alias: str):
     '''Guild configuration.'''
 

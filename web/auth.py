@@ -45,3 +45,14 @@ def login():
 
     # Login is successful, redirect to guild page
     return redirect(url_for("guild.config", alias=alias))
+
+
+@auth.route('/logout/', methods=('GET',))
+def logout():
+    '''Logout from session and return to login page.'''
+
+    # Pop alias from session (if still logged)
+    if 'alias' in session:
+        session.pop('alias')
+    
+    return redirect(url_for('auth.login'))
