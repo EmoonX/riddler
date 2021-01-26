@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Riddle bot | Web interface</title>
+  </head>
+  <body>
+    <form method="post">
+      <label>
+        Guild alias
+        <input type="text" name="alias" required>
+      </label>
+      <label>
+        Password
+        <input type="password" name="password" required>
+      </label>
+      <input type="submit" value="Login">
+      <div class="msg">{{ msg }}</div>
+    </form>
+  </body>
+</html>
