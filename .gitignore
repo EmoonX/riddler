@@ -128,5 +128,8 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# VS Code things
+.vscode
+
 # We don't want any answer files on the remote!
 levels.txt

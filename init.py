@@ -11,6 +11,7 @@ from discord.utils import get
 from discord.ext import commands
 
 from bot import bot
+import begin
 import send
 import decipher
 
@@ -37,7 +38,7 @@ secret_answers = {}
 
 @bot.event
 async def on_ready():
-    print('Bot up and running!')
+    print('> Bot up and running!')
 
     # Build dicts of levels and secret levels from attached file
     category = None
@@ -64,14 +65,14 @@ async def on_ready():
                     answer = aux[2]
                     secret_answers[id] = answer
 
-    # Default all those without nicknames to [01]
-    role = get(guild.roles, name='reached-01')
-    for member in guild.members:
-        if member.bot:
-            await member.edit(nick=None)
-        elif not member.nick:
-            await update_nickname(member, '[01]')
-            await member.add_roles(role)
+    # # Default all those without nicknames to [01]
+    # role = get(guild.roles, name='reached-01')
+    # for member in guild.members:
+    #     if member.bot:
+    #         await member.edit(nick=None)
+    #     elif not member.nick:
+    #         await update_nickname(member, '[01]')
+    #         await member.add_roles(role)
 
 
 @bot.event
@@ -384,7 +385,7 @@ async def rename(ctx):
         # Update eligible nicknames
         for member in guild.members:
             if member.nick:
-                aux = re.search('\[.*\]', member.nick)
+                aux = re.search(r'\[.*\]', member.nick)
                 if not aux:
                     continue
                 name = aux[0][1:-1]
@@ -396,7 +397,7 @@ async def rename(ctx):
     elif not yes:
         text = '> Send same !rename command with **yes** for confirming it'
     else:
-        text = '> Channel, roles and nicknames renaming complete :)'
+        text = '> Channel, roles and nicknames renaming completed :)'
     await author.send(text)
 
 
