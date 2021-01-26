@@ -14,10 +14,10 @@ app = Flask(__name__)
 # Create MySQL object
 mysql_init(app)
 
-from login import login
+from auth import auth
 from guild import guild
 
-for blueprint in (login, guild):
+for blueprint in (auth, guild):
     # Register app blueprint to allow other modules
     app.register_blueprint(blueprint)
 

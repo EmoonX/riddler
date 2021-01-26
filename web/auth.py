@@ -1,15 +1,16 @@
-from flask import Blueprint, request, render_template, redirect, url_for
+from flask import Blueprint, request, render_template, \
+        session, redirect, url_for
 from MySQLdb.cursors import DictCursor
 import bcrypt
 
 from util import mysql
 
 # Create app blueprint
-login = Blueprint('login', __name__, template_folder='templates')
+auth = Blueprint('auth', __name__, template_folder='templates')
 
 
-@login.route('/login/', methods=('GET', 'POST'))
-def guild_login():
+@auth.route('/login/', methods=('GET', 'POST'))
+def login():
     '''Guild login system.'''
 
     def r(msg):
@@ -38,6 +39,9 @@ def guild_login():
             password.encode('utf-8'), guild['password_hash'].encode('utf-8'))
     if not match:
         return r('Wrong password.')
+    
+    # Create session data
+    session['alias'] = alias
 
     # Login is successful, redirect to guild page
-    return redirect(url_for("guild.guild_config", alias=alias))
+    return redirect(url_for("guild.config", alias=alias))
