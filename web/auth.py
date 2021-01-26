@@ -41,10 +41,10 @@ def login():
         return r('Wrong password.')
     
     # Create session data
-    session['alias'] = alias
+    session['guild'] = alias
 
     # Login is successful, redirect to guild page
-    return redirect(url_for("guild.config", alias=alias))
+    return redirect(url_for("guild.config", guild=alias))
 
 
 @auth.route('/logout/', methods=('GET',))
@@ -52,7 +52,7 @@ def logout():
     '''Logout from session and return to login page.'''
 
     # Pop alias from session (if still logged)
-    if 'alias' in session:
-        session.pop('alias')
+    if 'guild' in session:
+        session.pop('guild')
     
     return redirect(url_for('auth.login'))
