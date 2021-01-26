@@ -1,5 +1,6 @@
 from discord.utils import get
 import mysql.connector
+import bcrypt
 
 from bot import bot
 
@@ -54,8 +55,12 @@ async def begin(ctx):
         index, alias, password = aux[1:]
         guild = guilds[int(index)]
 
+        # Generate hash (with salt) from plain text password
+        pw_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+
+        # Create guild account and register it on database
         query = 'INSERT INTO guilds VALUES (%s, %s, %s)'
-        values = (guild.id, alias, password)
+        values = (guild.id, alias, pw_hash)
         cursor.execute(query, values)
         connection.commit()
 
