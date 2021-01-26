@@ -4,9 +4,9 @@ import mysql.connector
 from bot import bot
 
 # Connect to MySQL database
-database = mysql.connector.connect(
+connection = mysql.connector.connect(
         host="localhost", user="emoon", password="emoon", database="guilds")
-cursor = database.cursor()
+cursor = connection.cursor()
 
 
 @bot.command()
@@ -24,12 +24,12 @@ async def begin(ctx):
     guilds = []
     for guild in bot.guilds:
         member = get(guild.members, id=user.id)
-        if member.guild_permissions.administrator:
+        if member and member.guild_permissions.administrator:
             guilds.append(guild)
     
     aux = ctx.message.content.split()
     text = ''
-    if aux == 1:
+    if len(aux) == 1:
         text += 'Hello! We\'re going to begin setting up an online riddle guild.\n\n'
 
         text += 'These are the available guilds of which you are the admin ' \
@@ -49,11 +49,17 @@ async def begin(ctx):
         
         text += 'Once you\'re really sure about the info, send me! I\'ll be waiting.'
     
-    elif aux == 4:
-        # Get arguments from command
+    elif len(aux) == 4:
+        # Get arguments from command message
         index, alias, password = aux[1:]
-        guild = guilds[index]
+        guild = guilds[int(index)]
 
-    
+        query = 'INSERT INTO guilds VALUES (%s, %s, %s)'
+        values = (guild.id, alias, password)
+        cursor.execute(query, values)
+        connection.commit()
+
+        text += 'Guild successfully registered!'
+
     await ctx.message.author.send(text)
 
