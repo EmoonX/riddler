@@ -18,7 +18,7 @@ async def config(alias: str):
     '''Guild configuration.'''
 
     def r(msg):
-        return render_template('guild.htm', msg=msg, alias=guild)
+        return render_template('guild.htm', msg=msg, alias=alias)
     
     # Need to be corrrectly logged to access guild config
     if not 'guild' in session or session['guild'] != alias:

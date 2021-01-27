@@ -44,7 +44,7 @@ async def login():
     session['guild'] = alias
 
     # Login is successful, redirect to guild page
-    return redirect(url_for("guild.config", guild=alias))
+    return redirect(url_for("guild.config", alias=alias))
 
 
 @auth.route('/logout/', methods=['GET'])
