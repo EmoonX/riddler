@@ -12,9 +12,9 @@ from util import database
 app = Quart(__name__)
 
 from auth import auth
-#from guild import guild
+from guild import guild
 
-for blueprint in (auth,):
+for blueprint in (auth, guild):
     # Register app blueprint to allow other modules
     app.register_blueprint(blueprint)
 

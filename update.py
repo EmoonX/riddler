@@ -5,11 +5,11 @@ from discord.ext.ipc import Server
 from bot import bot
 
 # Bot server for inter-process communication with Quart
-bot_ipc = Server(bot, 'localhost', 8765, 'RASPUTIN')
+bot_ipc = Server(bot, secret_key='RASPUTIN')
 
 
 @bot_ipc.route()
-async def update(levels: list):
+async def update(data):
     print('IT WORKS!')
     return
 

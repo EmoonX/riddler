@@ -1,9 +1,10 @@
+from databases.core import Database
 from quart import Blueprint, request, render_template, \
         session, redirect, url_for
 from MySQLdb.cursors import DictCursor
 from discord.ext.ipc import Client
 
-from util import mysql
+from util import database
 
 # Create app blueprint
 guild = Blueprint('guild', __name__)
@@ -12,43 +13,33 @@ guild = Blueprint('guild', __name__)
 web_ipc = Client(secret_key='RASPUTIN')
 
 
-@guild.before_app_first_request
-async def discover():
-    '''Discover bot IPC server on network.'''
-    guild.ipc_node = await web_ipc.discover()
-
-
-@guild.route('/guild/<guild>/', methods=('GET', 'POST'))
-async def config(guild: str):
+@guild.route('/guild/<alias>/', methods=['GET', 'POST'])
+async def config(alias: str):
     '''Guild configuration.'''
 
     def r(msg):
         return render_template('guild.htm', msg=msg, alias=guild)
     
     # Need to be corrrectly logged to access guild config
-    if not 'guild' in session or session['guild'] != guild:
+    if not 'guild' in session or session['guild'] != alias:
         return redirect(url_for('auth.login'))
 
     # Just render page normally on GET
     if request.method == 'GET':
-        return r('')
-    
-    category = 'Levels'
-    level_id = '001'
-    filename = 'potato'
+        return await r('')
 
     # Insert level info on database
-    cursor = mysql.connection.cursor(DictCursor)
-    cursor.execute('INSERT INTO levels VALUES (%s, %s, %s, %s)',
-            (session['guild'], category, level_id, filename))
-    mysql.connection.commit()
+    query = 'INSERT INTO levels VALUES ' \
+            '(:guild, :category, :level_id, :filename)'
+    values = {'guild': alias, 'category': 'Levels',
+            'level_id': '001', 'filename': 'potato'}
+    await database.execute(query, values)
 
-    cursor.execute('SELECT * FROM levels WHERE guild = %s',
-            (session['guild'],))
-    levels = cursor.fetchall()
+    query = 'SELECT * FROM levels WHERE guild = :guild'
+    levels = await database.fetch_all(query, {'guild': alias})
 
     # Update Discord guild channels and roles with new levels info.
     # This is done by sending an request to the bot's IPC server
-    await guild.ipc_node.request('update', levels=levels)
+    await web_ipc.request('update', levels=dict(levels[0]))
 
-    return r('Guild info updated successfully!')
+    return await r('Guild info updated successfully!')

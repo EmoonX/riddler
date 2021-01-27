@@ -9,7 +9,7 @@ from util import database
 auth = Blueprint('auth', __name__)
 
 
-@auth.route('/login/', methods=('GET', 'POST'))
+@auth.route('/login/', methods=['GET', 'POST'])
 async def login():
     '''Guild login system.'''
 
@@ -47,7 +47,7 @@ async def login():
     return redirect(url_for("guild.config", guild=alias))
 
 
-@auth.route('/logout/', methods=('GET',))
+@auth.route('/logout/', methods=['GET'])
 async def logout():
     '''Logout from session and return to login page.'''
 
