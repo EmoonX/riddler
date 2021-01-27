@@ -1,11 +1,5 @@
-from flask import Flask
-from flask_mysqldb import MySQL
+from databases import Database
 
-# MySQL object
-mysql: MySQL = None
-
-
-def mysql_init(app: Flask):
-    '''Create an instance of the MySQL class for the app.'''
-    global mysql
-    mysql = MySQL(app)
+# Create asynchronous database object from connection URL
+DB_URL = 'mysql://emoon:emoon@127.0.0.1:3336/guilds'
+database = Database(DB_URL)

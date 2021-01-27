@@ -12,6 +12,7 @@ from discord.ext import commands
 
 from bot import bot
 import begin
+import update
 import send
 import decipher
 

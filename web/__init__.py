@@ -1,36 +1,33 @@
 import os
 import sys
 
-from flask import Flask
+from quart import Quart
 
 # Avoid "no module named" errors because of __init__.py
 sys.path.append('.')
 
-from util import mysql_init
+from util import database
 
-# Flask app object
-app = Flask(__name__)
-
-# Create MySQL object
-mysql_init(app)
+# Quart app object
+app = Quart(__name__)
 
 from auth import auth
-from guild import guild
+#from guild import guild
 
-for blueprint in (auth, guild):
+for blueprint in (auth,):
     # Register app blueprint to allow other modules
     app.register_blueprint(blueprint)
 
 # "Unique" and "secret" secret key
 app.secret_key = 'RASPUTIN'
 
-# Database connection details
-app.config['MYSQL_HOST'] = os.getenv('MYSQL_HOST')
-app.config['MYSQL_PORT'] = int(os.getenv('MYSQL_PORT'))
-app.config['MYSQL_USER'] = 'emoon'
-app.config['MYSQL_PASSWORD'] = 'emoon'
-app.config['MYSQL_DB'] = 'guilds'
 
-# Run Flask application
+@app.before_first_request
+async def connect():
+    '''Connect to MySQL database on app start.'''
+    await database.connect()
+
+
+# Run Quart application
 if __name__ == '__main__':
     app.run(host='0.0.0.0')
