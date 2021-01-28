@@ -42,6 +42,7 @@ async def login():
     
     # Create session data
     session['guild'] = alias
+    session['id'] = guild.id
 
     # Login is successful, redirect to guild page
     return redirect(url_for("guild.config", alias=alias))

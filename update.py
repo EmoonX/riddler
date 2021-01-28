@@ -10,17 +10,14 @@ bot_ipc = Server(bot, secret_key='RASPUTIN')
 
 @bot_ipc.route()
 async def update(data):
-    print('IT WORKS!')
-    return
-
     # Get guild object from guild id
-    guild = get(bot.guilds, id=guild_id)
+    guild = get(bot.guilds, id=data.guild_id)
 
     # Loop between each level
     channels = []
-    for level in levels:
+    for level in (data.levels,):
         id = level['level_id']
-        print('> [%s] Processing ID %d' % (guild.name, id))
+        print('> [%s] Processing level %s...' % (guild.name, id))
 
         # Create channel which defaults to no read permission
         channel = get(guild.channels, name=id)

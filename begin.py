@@ -1,3 +1,5 @@
+import os
+
 from discord.utils import get
 import mysql.connector
 import bcrypt
@@ -6,7 +8,8 @@ from bot import bot
 
 # Connect to MySQL database
 connection = mysql.connector.connect(
-        host="localhost", user="emoon", password="emoon", database="guilds")
+        host=os.getenv('MYSQL_HOST'), port=int(os.getenv('MYSQL_PORT')),
+        user="emoon", password="emoon", database="guilds")
 cursor = connection.cursor()
 
 
@@ -60,7 +63,7 @@ async def begin(ctx):
 
         # Create guild account and register it on database
         query = 'INSERT INTO guilds VALUES (%s, %s, %s)'
-        values = (guild.id, alias, pw_hash)
+        values = (alias, pw_hash, guild.id)
         cursor.execute(query, values)
         connection.commit()
 

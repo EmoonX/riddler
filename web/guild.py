@@ -29,7 +29,7 @@ async def config(alias: str):
         return await r('')
 
     # Insert level info on database
-    query = 'INSERT INTO levels VALUES ' \
+    query = 'INSERT IGNORE INTO levels VALUES ' \
             '(:guild, :category, :level_id, :filename)'
     values = {'guild': alias, 'category': 'Levels',
             'level_id': '001', 'filename': 'potato'}
@@ -40,6 +40,7 @@ async def config(alias: str):
 
     # Update Discord guild channels and roles with new levels info.
     # This is done by sending an request to the bot's IPC server
-    await web_ipc.request('update', levels=dict(levels[0]))
+    await web_ipc.request('update',
+            guild_id=session['id'], levels=dict(levels[0]))
 
     return await r('Guild info updated successfully!')
