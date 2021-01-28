@@ -16,13 +16,18 @@ web_ipc = Client(secret_key='RASPUTIN')
 @guild.route('/guild/<alias>/', methods=['GET', 'POST'])
 async def config(alias: str):
     '''Guild configuration.'''
-
-    def r(msg):
-        return render_template('guild.htm', msg=msg, alias=alias)
     
     # Need to be corrrectly logged to access guild config
     if not 'guild' in session or session['guild'] != alias:
         return redirect(url_for('auth.login'))
+    
+    # Fetch guild levels info from database
+    query = 'SELECT * FROM levels WHERE guild = :guild'
+    levels = await database.fetch_all(query, {'guild': alias})
+    
+    def r(msg):
+        return render_template('guild.htm', 
+                alias=alias, levels=levels, msg=msg)
 
     # Just render page normally on GET
     if request.method == 'GET':
@@ -34,9 +39,6 @@ async def config(alias: str):
     values = {'guild': alias, 'category': 'Levels',
             'level_id': '001', 'filename': 'potato'}
     await database.execute(query, values)
-
-    query = 'SELECT * FROM levels WHERE guild = :guild'
-    levels = await database.fetch_all(query, {'guild': alias})
 
     # Update Discord guild channels and roles with new levels info.
     # This is done by sending an request to the bot's IPC server

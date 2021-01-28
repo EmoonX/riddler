@@ -6,6 +6,18 @@
   </head>
   <body>
     <form method="post">
+      <table>
+        <tr>
+          <th>Level ID</th>
+          <th>Filename</th>
+        </tr>
+      {% for level in levels %}
+        <tr>
+          <td><input type="text" value="{{ level['level_id'] }}"></td>
+          <td><input type="text" value="{{ level['filename'] }}"></td>
+        </tr>
+      {% endfor %}
+      </table>
       <input type="submit" value="Save changes">
       <div class="msg">{{ msg }}</div>
     </form>

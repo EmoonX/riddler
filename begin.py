@@ -9,7 +9,7 @@ from bot import bot
 # Connect to MySQL database
 connection = mysql.connector.connect(
         host=os.getenv('MYSQL_HOST'), port=int(os.getenv('MYSQL_PORT')),
-        user="emoon", password="emoon", database="guilds")
+        user='emoon', password='emoon', database='guilds')
 cursor = connection.cursor()
 
 
