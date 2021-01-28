@@ -17,6 +17,10 @@
           <td><input type="text" value="{{ level['filename'] }}"></td>
         </tr>
       {% endfor %}
+        <tr>
+          <td><input type="text" name="new_id"></td>
+          <td><input type="text" name="new_filename"></td>
+        </tr>
       </table>
       <input type="submit" value="Save changes">
       <div class="msg">{{ msg }}</div>
