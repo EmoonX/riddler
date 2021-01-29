@@ -11,9 +11,9 @@ async def unlock(ctx):
 
     # Only allow unlocking by PM to bot
     message = ctx.message
+    author = message.author
     if message.guild:
         # Purge all traces of wrong message >:)
-        author = message.author
         await message.delete()
         text = '> `!unlock` must be sent by PM to me!'
         await author.send(text)
@@ -26,7 +26,7 @@ async def unlock(ctx):
         text = '> `!unlock`: unlock level channels (PM ONLY!)\n' \
                 '> \n' \
                 '> • Usage: `!unlock guild_alias level_id filename`\n' \
-                '> `guild_alias`: the alias of the riddle\'s guild/server`\n' \
+                '> `guild_alias`: the alias of the riddle\'s guild/server\n' \
                 '> `level_id`: an identifier representing current level\n' \
                 '> `filename`: the last part of the URL of the level' \
                     ' frontpage, minus extensions (like .htm) or slashes' \
@@ -40,12 +40,17 @@ async def unlock(ctx):
                 '> \n'
         
         # Display guild list (aliases and names)
-        text += '> • Certified riddle guild aliases:\n'
+        text += '> • Certified riddle guild aliases ' \
+                '(**bold** indicates guilds you are in):\n'
         for riddle in riddles.values():
             guild = riddle.guild
-            text += '> **%s** (_%s_)\n' % (riddle.guild_alias, guild.name)
+            member = get(guild.members, name=author.name)
+            if member:
+                text += '> **%s** (_%s_)\n' % (riddle.guild_alias, guild.name)
+            else:
+                text += '> ~~%s~~ (_%s_)\n' % (riddle.guild_alias, guild.name)
             
-        await message.author.send(text)
+        await author.send(text)
         return
 
     # Get command arguments
