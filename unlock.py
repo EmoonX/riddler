@@ -61,12 +61,19 @@ async def unlock(ctx):
                 # Wrong alias
                 text = 'Inserted alias doesn\'t match any valid guild!\n'
             else:
-                guild = riddles[alias].guild
+                riddle = riddles[alias]
+                guild = riddle.guild
                 member = get(guild.members, id=author.id)
                 if not member:
                     # Not a member
                     text = 'You aren\'t currently a member ' \
                             'of the _%s_ guild.\n' % guild.name
+                else:
+                    text += '> • Valid level IDs for %s: **' % guild.name \
+                            + ' '.join(level for level in riddle.levels) + '**\n'
+                    # text += '> • Secret level IDs: **' \
+                    #         + ' '.join(id for id in secret_levels.keys())
+                    text += '\n'
 
             
         await author.send(text)
