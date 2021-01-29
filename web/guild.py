@@ -43,6 +43,7 @@ async def config(alias: str):
 
     # Update Discord guild channels and roles with new levels info.
     # This is done by sending an request to the bot's IPC server
+    levels.append(values)
     await web_ipc.request('update',
             guild_id=session['id'], levels=values)
 
