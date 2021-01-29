@@ -211,6 +211,8 @@ async def finish(ctx):
                     if match:
                         # Player completed the game (for now?)
                         text = 'Congrats!'
+                        s = riddle.winner_suffix
+                        await update_nickname(member, s)
                     else:
                         # Player got answer "wrong"
                         text = 'Please, go back and finish the final level...'
