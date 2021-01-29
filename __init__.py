@@ -10,7 +10,9 @@ import discord
 from discord.utils import get
 from discord.ext import commands
 
-from bot import bot, levels, secret_levels, secret_answers
+from bot import bot
+from util.db import database
+from riddle import Riddle, riddles
 import begin
 import update
 import send
@@ -34,31 +36,6 @@ level_order = []
 async def on_ready():
     print('> Bot up and running!')
 
-    # Build dicts of levels and secret levels from attached file
-    category = None
-    secret = False
-    guild = bot.guilds[0]
-    with open('levels.txt', 'r') as file:
-        for line in file:
-            aux = line.split()
-            if not aux:
-                continue
-            if aux[0] in ('C', 'S'):
-                # Get category for the following levels
-                name = ' '.join(aux[1:])
-                category = get(guild.categories, name=name)
-                if aux[0] == 'S':
-                    secret = True
-            else:
-                id, filename = aux[:2]
-                level_order.append(id)
-                if not secret:
-                    levels[id] = filename
-                else:
-                    secret_levels[id] = filename
-                    answer = aux[2]
-                    secret_answers[id] = answer
-
     # # Default all those without nicknames to [01]
     # role = get(guild.roles, name='reached-01')
     # for member in guild.members:
@@ -67,6 +44,17 @@ async def on_ready():
     #     elif not member.nick:
     #         await update_nickname(member, '[01]')
     #         await member.add_roles(role)
+
+    # Build riddles dict from database guild and level data
+    await database.connect()
+    query = 'SELECT * from guilds'
+    guilds = await database.fetch_all(query)
+    for guild in guilds:
+        query = 'SELECT * FROM levels WHERE guild = :guild'
+        values = {'guild': guild['alias']}
+        levels = await database.fetch_all(query, values)
+        riddle = Riddle(guild, levels)
+        riddles[guild['alias']] = riddle
 
 
 @bot.event

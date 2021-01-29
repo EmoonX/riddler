@@ -1,7 +1,5 @@
-from databases.core import Database
 from quart import Blueprint, request, render_template, \
         session, redirect, url_for
-from MySQLdb.cursors import DictCursor
 from discord.ext.ipc import Client
 
 from util import database
