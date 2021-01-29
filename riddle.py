@@ -9,9 +9,6 @@ from util.db import database
 class Riddle:
     '''Container for guild's riddle levels and info.'''
 
-    # Application-exclusive alias for the guild
-    guild_alias: str
-
     # Discord guild object
     guild: Guild
 
@@ -24,9 +21,6 @@ class Riddle:
 
     def __init__(self, guild: dict, levels: dict):
         '''Build riddle object by row extracted from database.'''
-
-        # Record alias
-        self.guild_alias = guild['alias']
 
         # Get riddle's guild
         self.guild = bot.get_guild(guild['id'])

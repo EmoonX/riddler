@@ -21,7 +21,7 @@ async def unlock(ctx):
 
     aux = message.content.split(maxsplit=2)[1:]
     text = ''
-    if len(aux) != 3:
+    if len(aux) in (0, 1):
         # Command usage
         text = '> `!unlock`: unlock level channels (PM ONLY!)\n' \
                 '> \n' \
@@ -39,16 +39,35 @@ async def unlock(ctx):
                     ' form _username [XY]_, where XY is the level ID\n' \
                 '> \n'
         
-        # Display guild list (aliases and names)
-        text += '> • Certified riddle guild aliases ' \
-                '(**bold** indicates guilds you are in):\n'
-        for riddle in riddles.values():
-            guild = riddle.guild
-            member = get(guild.members, name=author.name)
-            if member:
-                text += '> **%s** (_%s_)\n' % (riddle.guild_alias, guild.name)
+        if len(aux) == 0:
+            # Display guild list (aliases and names)
+            text += '> • Certified riddle guild aliases ' \
+                    '(**bold** indicates guilds you are in):\n'
+            for (alias, riddle) in riddles.items():
+                guild = riddle.guild
+                member = get(guild.members, id=author.id)
+                if member:
+                    text += '> **%s** (_%s_)\n' % (alias, guild.name)
+                else:
+                    text += '> ~~%s~~ (_%s_)\n' % (alias, guild.name)
+        
+            text += '> \n'
+            text += '> (to see a specific guild\'s level list, ' \
+                    'try just `!unlock guild_alias`)'
+        
+        elif len(aux) == 1:
+            alias = aux[0]
+            if not alias in riddles:
+                # Wrong alias
+                text = 'Inserted alias doesn\'t match any valid guild!\n'
             else:
-                text += '> ~~%s~~ (_%s_)\n' % (riddle.guild_alias, guild.name)
+                guild = riddles[alias].guild
+                member = get(guild.members, id=author.id)
+                if not member:
+                    # Not a member
+                    text = 'You aren\'t currently a member ' \
+                            'of the _%s_ guild.\n' % guild.name
+
             
         await author.send(text)
         return
