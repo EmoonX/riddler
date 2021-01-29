@@ -1,5 +1,6 @@
 from discord import Member
 from discord.utils import get
+import bcrypt
 
 from bot import bot
 from riddle import riddles
@@ -204,7 +205,10 @@ async def finish(ctx):
                 if not final_role:
                     text = 'You need to `!unlock` the final level first. :)'
                 else:
-                    if answer == 'rasputin':
+                    # Check if inputted answer matches correct one (by hash)
+                    match = bcrypt.checkpw(answer.encode('utf-8'),
+                            riddle.final_answer_hash) 
+                    if match:
                         # Player completed the game (for now?)
                         text = 'Congrats!'
                     else:
@@ -221,6 +225,6 @@ async def update_nickname(member: Member, s: str):
     total = len(name) + 1 + len(s)
     if total > 32:
         excess = total - 32
-        name = name[:-(excess + 5)] + '(...)'
+        name = name[:(-(excess + 5))] + '(...)'
     nick = name + ' ' + s
     await member.edit(nick=nick)
