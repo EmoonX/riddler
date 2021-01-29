@@ -59,7 +59,7 @@ async def unlock(ctx):
     
     alias = aux[0]
     if len(aux) == 1 and not alias in riddles:
-        # Wrong alias
+        # Invalid alias
         text = 'Inserted alias doesn\'t match any valid guild!\n'
         await author.send(text)
         return
@@ -69,7 +69,7 @@ async def unlock(ctx):
     member = get(guild.members, id=author.id)
     if len(aux) == 1:
         if not member:
-            # Not a member
+            # Not currently a member
             text = 'You aren\'t currently a member ' \
                     'of the _%s_ guild.\n' % guild.name
         else:
@@ -87,10 +87,7 @@ async def unlock(ctx):
     # Get guild member object from message author and their current level
     current_level = '01'
     for role in member.roles:
-        if role.name == 'winners':
-            current_level = 'winners'
-            break
-        elif 'reached-' in role.name:
+        if 'reached-' in role.name:
             aux = role.name.strip('reached-')
             if aux not in riddle.secret_levels:
                 current_level = aux
@@ -103,8 +100,7 @@ async def unlock(ctx):
         channel = get(guild.channels, name=id)
         role = None
         if id in riddle.levels:
-            name = ('reached-' + current_level) \
-                    if current_level != 'winners' else 'winners'
+            name = 'reached-' + current_level
             role = get(channel.changed_roles, name=name)
         else:
             name = 'reached-' + id
@@ -139,16 +135,12 @@ async def unlock(ctx):
 
     # Add "reached" role to member
     name = 'reached-' + id
-    if id == 'winners':
-        name = 'winners'
     role = get(guild.roles, name=name)
     await member.add_roles(role)
 
     # Change nickname to current level
     if id in riddle.levels:
         s = '[' + id + ']'
-        if id == 'winners':
-            s = '🏅'
         await update_nickname(member, s)
 
     # Send confirmation message
@@ -170,9 +162,54 @@ async def unlock(ctx):
     #         await channel.send(text)
 
 
+@bot.command()
+async def finish(ctx):
+    # Only allow finishing by PM to bot
+    message = ctx.message
+    author = message.author
+    if message.guild:
+        # Purge all traces of wrong message >:)
+        await message.delete()
+        text = '> `!finish` must be sent by PM to me!'
+        await author.send(text)
+        return
+
+    aux = message.content.split()[1:]
+    text = ''
+    if len(aux) != 2:
+        # Command usage
+        text = '> `!finish`: Finish game ||(for now?)|| (PM ONLY!)\n' \
+                '> \n' \
+                '> • Usage: `!finish guild_alias final_answer`\n' \
+                '> `guild_alias`: the alias of riddle\'s guild/server\n' \
+                '> `final_answer`: the final level\'s answer\n'
+    else:
+        alias, answer = aux
+        if not alias in riddles:
+            # Invalid alias
+            text = 'Inserted alias doesn\'t match any valid guild!\n'
+        else:
+            riddle = riddles[alias]
+            guild = riddle.guild
+            member = get(guild.members, id=author.id)
+            if not member:
+                # Not currently a member
+                text = 'You aren\'t currently a member ' \
+                        'of the _%s_ guild.\n' % guild.name
+            else :
+                if answer == 'rasputin':
+                    # Player completed the game (for now?)
+                    text = 'Congrats!'
+                else:
+                    # Player got answer wrong
+                    text = 'Please, go back and finish the final level...'
+    
+    await author.send(text)
+
+
 async def update_nickname(member: Member, s: str):
     '''Update user's nickname to reflect current level.
-    In case it exceeds 32 characters, shorten the member name to fit.'''
+    In case it exceeds 32 characters, shorten the member's name to fit.'''
     name = member.name
     total = len(name) + 1 + len(s)
     if total > 32:
