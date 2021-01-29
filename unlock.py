@@ -1,7 +1,7 @@
 from discord.utils import get
 
 from bot import bot
-from riddle import levels, secret_levels
+from riddle import riddles
 
 
 @bot.command()
@@ -25,8 +25,8 @@ async def unlock(ctx):
         # Command usage
         text = '> `!unlock`: unlock level channels (PM ONLY!)\n' \
                 '> \n' \
-                '> • Usage: `!unlock guild level_id filename`\n' \
-                '> `guild`: an alias corresponding to the guild/server`\n' \
+                '> • Usage: `!unlock guild_alias level_id filename`\n' \
+                '> `guild_alias`: the alias of the riddle\'s guild/server`\n' \
                 '> `level_id`: an identifier representing current level\n' \
                 '> `filename`: the last part of the URL of the level' \
                     ' frontpage, minus extensions (like .htm) or slashes' \
@@ -37,12 +37,14 @@ async def unlock(ctx):
                     ' will unlock all sequential channels before it.' \
                     ' In addition, your nickname will also be changed to the' \
                     ' form _username [XY]_, where XY is the level ID\n' \
-                '> \n' \
-                '> • Valid level IDs: **' \
-                    + ' '.join(id for id in levels.keys()) + '**\n' \
-                '> • Secret level IDs: **' \
-                    + ' '.join(id for id in secret_levels.keys()) \
-                    + '**\n'
+                '> \n'
+        
+        # Display guild list (aliases and names)
+        text += '> • Certified riddle guild aliases:\n'
+        for riddle in riddles.values():
+            guild = riddle.guild
+            text += '> **%s** (_%s_)\n' % (riddle.guild_alias, guild.name)
+            
         await message.author.send(text)
         return
 

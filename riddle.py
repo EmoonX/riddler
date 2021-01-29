@@ -1,16 +1,19 @@
 from typing import Dict
 
+from discord import Guild
+
+from bot import bot
 from util.db import database
 
 
 class Riddle:
     '''Container for guild's riddle levels and info.'''
 
-    # Application-exclusive guild alias
+    # Application-exclusive alias for the guild
     guild_alias: str
 
-    # ID of riddle's guild (thus bot can find it)
-    guild_id: int
+    # Discord guild object
+    guild: Guild
 
     # Dicts of pairs (level_id -> filename)
     levels = {}
@@ -22,9 +25,11 @@ class Riddle:
     def __init__(self, guild: dict, levels: dict):
         '''Build riddle object by row extracted from database.'''
 
-        # Basic guild info
+        # Record alias
         self.guild_alias = guild['alias']
-        self.guild_id = guild['id']
+
+        # Get riddle's guild
+        self.guild = bot.get_guild(guild['id'])
 
         # Fetch riddle's levels from database
         self.levels = \

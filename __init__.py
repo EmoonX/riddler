@@ -14,6 +14,7 @@ from bot import bot
 from util.db import database
 from riddle import Riddle, riddles
 import begin
+import unlock
 import update
 import send
 import decipher
