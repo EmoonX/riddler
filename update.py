@@ -10,6 +10,8 @@ bot_ipc = Server(bot, secret_key='RASPUTIN')
 
 @bot_ipc.route()
 async def update(data):
+    '''Update guild channels and roles according to database changes.'''
+
     # Get guild object from guild id
     guild = get(bot.guilds, id=data.guild_id)
 
