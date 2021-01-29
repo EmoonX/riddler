@@ -197,12 +197,19 @@ async def finish(ctx):
                 text = 'You aren\'t currently a member ' \
                         'of the _%s_ guild.\n' % guild.name
             else :
-                if answer == 'rasputin':
-                    # Player completed the game (for now?)
-                    text = 'Congrats!'
+                # Check if player unlocked final level before trying to finish
+                final_level = next(reversed(riddle.levels))
+                name = 'reached-%s' % final_level
+                final_role = get(member.roles, name=name)
+                if not final_role:
+                    text = 'You need to `!unlock` the final level first. :)'
                 else:
-                    # Player got answer wrong
-                    text = 'Please, go back and finish the final level...'
+                    if answer == 'rasputin':
+                        # Player completed the game (for now?)
+                        text = 'Congrats!'
+                    else:
+                        # Player got answer "wrong"
+                        text = 'Please, go back and finish the final level...'
     
     await author.send(text)
 
