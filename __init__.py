@@ -14,7 +14,7 @@ from bot import bot
 from util.db import database
 from riddle import Riddle, riddles
 import begin
-import unlock
+from unlock import update_nickname
 import update
 import send
 import decipher
@@ -581,18 +581,6 @@ async def balthify(ctx):
 
 
 # --------------------------------------------------------------------------- #
-
-
-async def update_nickname(member: discord.Member, s: str):
-    # Update user's nickname to reflect current level
-    # In case of it exceding 32 characters, shorten the member name to fit
-    name = member.name
-    total = len(name) + 1 + len(s)
-    if total > 32:
-        excess = total - 32
-        name = name[:-(excess + 5)] + '(...)'
-    nick = name + ' ' + s
-    await member.edit(nick=nick)
 
 
 def rebuild_file():

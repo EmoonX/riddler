@@ -1,3 +1,4 @@
+from discord import Member
 from discord.utils import get
 
 from bot import bot
@@ -19,14 +20,14 @@ async def unlock(ctx):
         await author.send(text)
         return
 
-    aux = message.content.split(maxsplit=2)[1:]
+    aux = message.content.split()[1:]
     text = ''
-    if len(aux) in (0, 1):
+    if len(aux) != 3:
         # Command usage
         text = '> `!unlock`: unlock level channels (PM ONLY!)\n' \
                 '> \n' \
                 '> • Usage: `!unlock guild_alias level_id filename`\n' \
-                '> `guild_alias`: the alias of the riddle\'s guild/server\n' \
+                '> `guild_alias`: the alias of riddle\'s guild/server\n' \
                 '> `level_id`: an identifier representing current level\n' \
                 '> `filename`: the last part of the URL of the level' \
                     ' frontpage, minus extensions (like .htm) or slashes' \
@@ -39,52 +40,51 @@ async def unlock(ctx):
                     ' form _username [XY]_, where XY is the level ID\n' \
                 '> \n'
         
-        if len(aux) == 0:
-            # Display guild list (aliases and names)
-            text += '> • Certified riddle guild aliases ' \
-                    '(**bold** indicates guilds you are in):\n'
-            for (alias, riddle) in riddles.items():
-                guild = riddle.guild
-                member = get(guild.members, id=author.id)
-                if member:
-                    text += '> **%s** (_%s_)\n' % (alias, guild.name)
-                else:
-                    text += '> ~~%s~~ (_%s_)\n' % (alias, guild.name)
-        
-            text += '> \n'
-            text += '> (to see a specific guild\'s level list, ' \
-                    'try just `!unlock guild_alias`)'
-        
-        elif len(aux) == 1:
-            alias = aux[0]
-            if not alias in riddles:
-                # Wrong alias
-                text = 'Inserted alias doesn\'t match any valid guild!\n'
+    if len(aux) not in (1, 3):
+        # Display guild list (aliases and names)
+        text += '> • Certified riddle guild aliases ' \
+                '(**bold** indicates guilds you are in):\n'
+        for (alias, riddle) in riddles.items():
+            guild = riddle.guild
+            member = get(guild.members, id=author.id)
+            if member:
+                text += '> **%s** (_%s_)\n' % (alias, guild.name)
             else:
-                riddle = riddles[alias]
-                guild = riddle.guild
-                member = get(guild.members, id=author.id)
-                if not member:
-                    # Not a member
-                    text = 'You aren\'t currently a member ' \
-                            'of the _%s_ guild.\n' % guild.name
-                else:
-                    text += '> • Valid level IDs for %s: **' % guild.name \
-                            + ' '.join(level for level in riddle.levels) + '**\n'
-                    # text += '> • Secret level IDs: **' \
-                    #         + ' '.join(id for id in secret_levels.keys())
-                    text += '\n'
-
-            
+                text += '> ~~%s~~ (_%s_)\n' % (alias, guild.name)
+        text += '> \n'
+        text += '> (to see a specific guild\'s level list, ' \
+                'try just `!unlock guild_alias`)'
+        await author.send(text)
+        return
+    
+    alias = aux[0]
+    if len(aux) == 1 and not alias in riddles:
+        # Wrong alias
+        text = 'Inserted alias doesn\'t match any valid guild!\n'
         await author.send(text)
         return
 
-    # Get command arguments
-    guild, level_id, filename = aux
+    riddle = riddles[alias]
+    guild = riddle.guild
+    member = get(guild.members, id=author.id)
+    if len(aux) == 1:
+        if not member:
+            # Not a member
+            text = 'You aren\'t currently a member ' \
+                    'of the _%s_ guild.\n' % guild.name
+        else:
+            text += '> • Valid level IDs for %s: **' % guild.name \
+                    + ' '.join(level for level in riddle.levels) + '**\n'
+            # text += '> • Secret level IDs: **' \
+            #         + ' '.join(id for id in secret_levels.keys())
+            text += '\n'
+        await author.send(text)
+        return
+
+    # Get remaining command arguments
+    id, filename = aux[1:]
 
     # Get guild member object from message author and their current level
-    guild = bot.guilds[0]
-    member = get(guild.members, name=message.author.name)
     current_level = '01'
     for role in member.roles:
         if role.name == 'winners':
@@ -92,18 +92,17 @@ async def unlock(ctx):
             break
         elif 'reached-' in role.name:
             aux = role.name.strip('reached-')
-            if aux not in secret_levels:
+            if aux not in riddle.secret_levels:
                 current_level = aux
                 break
 
-    if not id in levels and not id in secret_levels:
+    if not (id in riddle.levels or id in riddle.secret_levels):
         # User entered a wrong level ID
-        text = '> Level ID **' + id + '** not found!\n' \
-                '> Try `!unlock help` for command usage'
+        text = 'Level ID **%s** not found!' % id
     else:
         channel = get(guild.channels, name=id)
         role = None
-        if id in levels:
+        if id in riddle.levels:
             name = ('reached-' + current_level) \
                     if current_level != 'winners' else 'winners'
             role = get(channel.changed_roles, name=name)
@@ -116,26 +115,25 @@ async def unlock(ctx):
                 role = get(member.roles, name=name)
         if role:
             # User already unlocked that channel
-            text = '> Channel #**' + id + '** is already unlocked!\n' \
-            '> Try `!unlock help` for command usage'
-
-        elif (id in levels and levels[id] != filename) \
-                or (id in secret_levels and secret_levels[id] != filename):
+            text = 'Channel #**%s** is already unlocked!' % id
+        elif (id in riddle.levels \
+                    and filename != riddle.levels[id]) \
+                or (id in riddle.secret_levels \
+                    and filename != riddle.secret_levels[id]):
             # User entered a wrong filename
-            text = '> Wrong filename/answer for ID **' + id + '**!\n' \
-            '> Try `!unlock help` for command usage'
+            text = 'Wrong filename/answer for ID **%s**!' % id
 
     if text:
         # In case of anything wrong, just show message and return
-        await message.author.send(text)
+        await author.send(text)
         return
 
     # In case of normal levels, remove old "reached" roles from user
-    if id in levels:
+    if id in riddle.levels:
         for role in member.roles:
             if 'reached-' in role.name:
                 old_level = role.name.strip('reached-')
-                if old_level in levels:
+                if old_level in riddle.levels:
                     await member.remove_roles(role)
                     break
 
@@ -147,25 +145,19 @@ async def unlock(ctx):
     await member.add_roles(role)
 
     # Change nickname to current level
-    if id in levels:
+    if id in riddle.levels:
         s = '[' + id + ']'
         if id == 'winners':
             s = '🏅'
         await update_nickname(member, s)
 
     # Send confirmation message
-    print('Member ' + member.name +  ' unlocked channel #'  + id)
-    text = '> You successfuly unlocked channel #**' + id + '**!'
-    if id in levels:
-        text += '\n> Your nickname is now **' + member.nick + '**'
-    else:
-        text += '\n> Your nickname is unchanged'
+    print('> [%s] Member %s#%s unlocked channel #%s' \
+            % (guild.name, member.name, member.discriminator, id))
+    text = 'You successfuly unlocked channel #**%s**!' % id
+    if id in riddle.levels:
+        text += '\nYour nickname is now **%s**' % member.nick
     await message.author.send(text)
-
-    if id in levels and level_order.index(id) > level_order.index('50'):
-        # [CIPHER ONLY] Unlock free-of-the-labyrinth role (and color)
-        free_role = get(guild.roles, name='free-from-the-labyrinth')
-        await member.add_roles(free_role)
 
     # Achievement text on first to reach
     # if id != 'winners':
@@ -176,3 +168,15 @@ async def unlock(ctx):
     #                 'Congratulations!**' % (member.id, id)
     #         channel = get(guild.channels, name='achievements')
     #         await channel.send(text)
+
+
+async def update_nickname(member: Member, s: str):
+    '''Update user's nickname to reflect current level.
+    In case it exceeds 32 characters, shorten the member name to fit.'''
+    name = member.name
+    total = len(name) + 1 + len(s)
+    if total > 32:
+        excess = total - 32
+        name = name[:-(excess + 5)] + '(...)'
+    nick = name + ' ' + s
+    await member.edit(nick=nick)
