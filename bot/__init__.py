@@ -1,7 +1,11 @@
 import os
 import re
+import sys
 import logging
 from dotenv import load_dotenv
+
+# Allow util folder to be visible
+sys.path.append('..')
 
 import discord
 from discord.utils import get

@@ -1,8 +1,10 @@
+import sys
+
 from quart import Blueprint, request, render_template, \
         session, redirect, url_for
 import bcrypt
 
-from util import database
+from util.db import database
 
 # Create app blueprint
 auth = Blueprint('auth', __name__)

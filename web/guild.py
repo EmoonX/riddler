@@ -3,7 +3,7 @@ from quart import Blueprint, request, render_template, \
 from discord.ext.ipc import Client
 import bcrypt
 
-from util import database
+from util.db import database
 
 # Create app blueprint
 guild = Blueprint('guild', __name__)
