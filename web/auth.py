@@ -1,6 +1,5 @@
 from quart import Blueprint, request, render_template, \
         session, redirect, url_for
-from MySQLdb.cursors import DictCursor
 import bcrypt
 
 from util import database

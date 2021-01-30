@@ -31,14 +31,12 @@ async def update(data):
             channel = await category.create_text_channel(id)
         if channel:
             overwrite = discord.PermissionOverwrite(read_messages=False)
-            overwrites = { guild.default_role: overwrite }
+            overwrites = {guild.default_role: overwrite}
             await channel.edit(overwrites=overwrites)
             channels.append(channel)
 
         # Create level user role
         name = 'reached-' + id
-        if id == 'winners':
-            name = 'winners'
         role = get(guild.roles, name=name)
         if not role:
             color = discord.Color.from_rgb(0xcc, 0xcc, 0xcc)

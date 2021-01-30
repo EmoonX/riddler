@@ -1,12 +1,12 @@
-import os
 import sys
 
 from quart import Quart
 
 # Avoid "no module named" errors because of __init__.py
-sys.path.append('.')
+#sys.path.append('.')
+#sys.path.append('..')
 
-from util import database
+from ..util.db import database
 
 # Quart app object
 app = Quart(__name__)
@@ -25,7 +25,7 @@ app.secret_key = 'RASPUTIN'
 @app.before_first_request
 async def connect():
     '''Connect to MySQL database on app start.'''
-    await database.connect()
+    await db.database.connect()
 
 
 # Run Quart application

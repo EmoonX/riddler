@@ -7,6 +7,7 @@ intents.members = True
 
 
 class Bot(commands.Bot):
+    '''Extended class to report errors on IPC coroutines.'''
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

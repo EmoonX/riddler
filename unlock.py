@@ -107,16 +107,16 @@ async def unlock(ctx):
             name = 'reached-' + id
             role = get(member.roles, name=name)
             if not role:
-                # For secret ones
+                # For secret levels
                 name = 'solved-' + id
                 role = get(member.roles, name=name)
         if role:
             # User already unlocked that channel
             text = 'Channel #**%s** is already unlocked!' % id
         elif (id in riddle.levels \
-                    and filename != riddle.levels[id]) \
+                    and hash_match(filename,riddle.levels[id])) \
                 or (id in riddle.secret_levels \
-                    and filename != riddle.secret_levels[id]):
+                    and hash_match(filename, riddle.secret_levels[id])):
             # User entered a wrong filename
             text = 'Wrong filename/answer for ID **%s**!' % id
 
@@ -218,6 +218,13 @@ async def finish(ctx):
                         text = 'Please, go back and finish the final level...'
     
     await author.send(text)
+
+
+def hash_match(input: str, answer_hash: bytes):
+    '''Return if input's hash matches answer's one.'''
+    match = bcrypt.checkpw(
+            input.encode('utf-8'), answer_hash)
+    return match
 
 
 async def update_nickname(member: Member, s: str):

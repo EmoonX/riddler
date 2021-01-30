@@ -1,14 +1,10 @@
-import io
 import os
 import re
-import math
-import asyncio
 import logging
 from dotenv import load_dotenv
 
 import discord
 from discord.utils import get
-from discord.ext import commands
 
 from bot import bot
 from util.db import database

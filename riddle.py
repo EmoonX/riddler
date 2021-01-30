@@ -1,7 +1,6 @@
-from collections import OrderedDict
-from typing import Dict
+from typing import Dict, OrderedDict
 
-from discord import Guild
+import discord
 
 from bot import bot
 
@@ -10,16 +9,16 @@ class Riddle:
     '''Container for guild's riddle levels and info.'''
 
     # Discord guild object
-    guild: Guild
+    guild: discord.Guild
 
-    # Ordered dicts of pairs (level_id -> filename)
-    levels: OrderedDict
-    secret_levels: OrderedDict
+    # Ordered dicts of pairs (level_id -> filename_hash)
+    levels: OrderedDict[str, bytes] = {}
+    secret_levels: OrderedDict[str, bytes] = {}
 
     # Ordered dict of pairs (secret_level -> answer)
-    secret_answers: OrderedDict
+    secret_answers: OrderedDict[str, bytes] = {}
 
-    # Hash corresponding to final level's answer
+    # Hash of final level's answer
     final_answer_hash: bytes
 
     # Suffix to be appended to winners' nicknames
@@ -32,9 +31,11 @@ class Riddle:
         self.final_answer_hash = guild['final_answer_hash'].encode('utf-8')
         self.winner_suffix = guild['winner_suffix']
 
-        # Get riddle's levels from database query
-        self.levels = \
-                {level['level_id']: level['filename'] for level in levels}
+        # Get riddle's level info from database query
+        for level in levels:
+            id = level['level_id']
+            filename_hash = level['filename_hash'].encode('utf-8')
+            self.levels[id] = filename_hash
 
 
 # Global dict of (guild_alias -> riddle) which bot supervises
