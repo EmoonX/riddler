@@ -2,6 +2,7 @@ import os
 import re
 import sys
 import logging
+from discord.member import Member
 from dotenv import load_dotenv
 
 # Allow util folder to be visible
@@ -35,16 +36,14 @@ level_order = []
 
 @bot.event
 async def on_ready():
+    '''Procedures upon bot initialization.'''
     print('> Bot up and running!')
 
-    # # Default all those without nicknames to [01]
-    # role = get(guild.roles, name='reached-01')
-    # for member in guild.members:
-    #     if member.bot:
-    #         await member.edit(nick=None)
-    #     elif not member.nick:
-    #         await update_nickname(member, '[01]')
-    #         await member.add_roles(role)
+    # Grant initial attributes to those without nicknames
+    for riddle in riddles.values():
+        for member in riddle.guild.members:
+            if not member.nick:
+                init_member(member, riddle)
 
     # Build riddles dict from database guild and level data
     await database.connect()
@@ -59,13 +58,27 @@ async def on_ready():
 
 
 @bot.event
-async def on_member_join(member):
-    # Add "[01]" immediatelly on member join
-    guild = bot.guilds[0]
-    if not member.bot:
-        role = get(guild.roles, name='reached-01')
-        await update_nickname(member, '[01]')
-        await member.add_roles(role)
+async def on_member_join(member: discord.Member):
+    '''Initialize member features upon join.'''
+    guild = member.guild
+    riddle = get(riddles.values(), guild=guild)
+    init_member(member, riddle)
+
+
+async def init_member(member: discord.Member, riddle: Riddle):
+    '''Grant first level role and nickname to member.'''
+    # Ignore bots
+    if member.bot:
+        return
+    
+    # Find first level ID from riddle's level list
+    id = next(riddle.levels)
+    
+    # Process changes to member
+    name = 'reached-%s' % îd
+    role = get(riddle.guild.roles, name=name)
+    await member.add_roles(role)
+    await update_nickname(member, '[%s]' % id)
 
 
 @bot.command()
