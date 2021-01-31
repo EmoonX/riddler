@@ -27,10 +27,11 @@ async def config(alias: str):
     def r(msg, new_id='', new_filename=''):
         '''Render page and get filename cookies locally.'''
         filenames = {}
+        s = 'filename_%s' % alias
         for name, value in request.cookies.items():
             print(name, value)
-            if 'filename_' in name:
-                id = name.strip('filename_')
+            if s in name:
+                id = name.strip(s)
                 filenames[id] = value
         if new_id:
             # Add new inserted level on filenames divt on POST request
@@ -66,6 +67,6 @@ async def config(alias: str):
     resp = await make_response(
             await r('Guild info updated successfully!',
                 values['level_id'], filename))
-    name = 'filename_%s' % values['level_id']
+    name = 'filename_%s_%s' % (alias, values['level_id'])
     resp.set_cookie(name, filename)
     return resp
