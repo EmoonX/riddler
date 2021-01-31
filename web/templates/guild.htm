@@ -14,7 +14,7 @@
       {% for level in levels %}
         <tr>
           <td><input type="text" value="{{ level['level_id'] }}"></td>
-          <td><input type="text" value="{{ level['filename'] }}"></td>
+          <td><input type="text" value="{{ filenames[level['level_id']] }}"></td>
         </tr>
       {% endfor %}
         <tr>

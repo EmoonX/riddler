@@ -1,5 +1,5 @@
 from quart import Blueprint, request, render_template, \
-        session, redirect, url_for
+        session, redirect, url_for, make_response
 from discord.ext.ipc import Client
 import bcrypt
 
@@ -24,18 +24,30 @@ async def config(alias: str):
     query = 'SELECT * FROM levels WHERE guild = :guild'
     levels = await database.fetch_all(query, {'guild': alias})
     
-    def r(msg):
+    def r(msg, new_id='', new_filename=''):
+        '''Render page and get filename cookies locally.'''
+        filenames = {}
+        for name, value in request.cookies.items():
+            print(name, value)
+            if 'filename_' in name:
+                id = name.strip('filename_')
+                filenames[id] = value
+        if new_id:
+            # Add new inserted level on filenames divt on POST request
+            filenames[new_id] = new_filename
+        print(filenames)
         return render_template('guild.htm', 
-                alias=alias, levels=levels, msg=msg)
+                alias=alias, levels=levels, msg=msg, filenames=filenames)
 
-    # Just render page normally on GET
+    # Render page normally on GET
     if request.method == 'GET':
         return await r('')
     
     # Generate hash to safely store filename on database
     form = await request.form
     filename = form['new_filename']
-    filename_hash = bcrypt.hashpw(filename.encode("utf-8"), bcrypt.gensalt())    
+    filename_hash = \
+            str(bcrypt.hashpw(filename.encode("utf-8"), bcrypt.gensalt()))
 
     # Insert new level info on database
     query = 'INSERT IGNORE INTO levels VALUES ' \
@@ -50,4 +62,10 @@ async def config(alias: str):
     await web_ipc.request('update',
             guild_id=session['id'], levels=values)
 
-    return await r('Guild info updated successfully!')
+    # Save cookie for locally setting level filenames and render page
+    resp = await make_response(
+            await r('Guild info updated successfully!',
+                values['level_id'], filename))
+    name = 'filename_%s' % values['level_id']
+    resp.set_cookie(name, filename)
+    return resp
