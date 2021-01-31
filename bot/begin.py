@@ -54,7 +54,7 @@ async def begin(ctx):
         pw_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
 
         # Create guild account and register it on database
-        query = 'INSERT INTO guilds VALUES (:alias, :password_hash, :id)'
+        query = 'INSERT INTO guilds VALUES (:alias, :password_hash, :id, "", "")'
         values = {'alias': alias, 'password_hash': pw_hash, 'id': guild.id}
         await database.execute(query, values)
 

@@ -16,7 +16,6 @@ async def update(data):
     guild = get(bot.guilds, id=data.guild_id)
 
     # Loop between each level
-    channels = []
     for level in (data.levels,):
         id = level['level_id']
         print('> [%s] Processing level %s...' % (guild.name, id))
@@ -33,7 +32,6 @@ async def update(data):
             overwrite = discord.PermissionOverwrite(read_messages=False)
             overwrites = {guild.default_role: overwrite}
             await channel.edit(overwrites=overwrites)
-            channels.append(channel)
 
         # Create level user role
         name = 'reached-' + id
@@ -43,9 +41,12 @@ async def update(data):
             role = await guild.create_role(name=name, color=color)
 
         # Set read permission to current roles for 
-        # this channel and every other before it
-        for channel in channels:
-            await channel.set_permissions(role, read_messages=True)
+        # this channel and every other level channel before it
+        for channel in guild.channels:
+            name = 'reached-%s' % channel.name
+            level_role = get(guild.roles, name=name)
+            if level_role:
+                await channel.set_permissions(role, read_messages=True)
 
     print('> [%s] Channel and roles building complete :)' % guild.name)
 
