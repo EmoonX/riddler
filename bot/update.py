@@ -3,6 +3,7 @@ from discord.utils import get
 from discord.ext.ipc import Server
 
 from bot import bot
+from riddle import riddles
 
 # Bot server for inter-process communication with Quart
 bot_ipc = Server(bot, secret_key='RASPUTIN')
@@ -47,6 +48,10 @@ async def update(data):
             level_role = get(guild.roles, name=name)
             if level_role:
                 await channel.set_permissions(role, read_messages=True)
+        
+        # Add new level imediatelly to riddle's level list
+        riddle = get(riddles.values(), guild=guild)
+        riddle.levels[id] = level['filename_hash']
 
     print('> [%s] Channel and roles building complete :)' % guild.name)
 
