@@ -39,12 +39,6 @@ async def on_ready():
     '''Procedures upon bot initialization.'''
     print('> Bot up and running!')
 
-    # Grant initial attributes to those without nicknames
-    for riddle in riddles.values():
-        for member in riddle.guild.members:
-            if not member.nick:
-                init_member(member, riddle)
-
     # Build riddles dict from database guild and level data
     await database.connect()
     query = 'SELECT * from guilds'
@@ -55,6 +49,12 @@ async def on_ready():
         levels = await database.fetch_all(query, values)
         riddle = Riddle(guild, levels)
         riddles[guild['alias']] = riddle
+    
+    # Grant initial attributes to those without nicknames
+    for riddle in riddles.values():
+        for member in riddle.guild.members:
+            if not member.nick:
+                await init_member(member, riddle)
 
 
 @bot.event
@@ -62,20 +62,20 @@ async def on_member_join(member: discord.Member):
     '''Initialize member features upon join.'''
     guild = member.guild
     riddle = get(riddles.values(), guild=guild)
-    init_member(member, riddle)
+    await init_member(member, riddle)
 
 
 async def init_member(member: discord.Member, riddle: Riddle):
     '''Grant first level role and nickname to member.'''
-    # Ignore bots
-    if member.bot:
+    # Ignore bots and admins
+    if member.bot or member.guild_permissions.administrator:
         return
     
     # Find first level ID from riddle's level list
-    id = next(riddle.levels)
+    id = next(iter(riddle.levels))
     
     # Process changes to member
-    name = 'reached-%s' % îd
+    name = 'reached-%s' % id
     role = get(riddle.guild.roles, name=name)
     await member.add_roles(role)
     await update_nickname(member, '[%s]' % id)

@@ -27,11 +27,11 @@ async def config(alias: str):
     def r(msg, new_id='', new_filename=''):
         '''Render page and get filename cookies locally.'''
         filenames = {}
-        s = 'filename_%s' % alias
+        s = 'filename_%s_' % alias
         for name, value in request.cookies.items():
             print(name, value)
             if s in name:
-                id = name.strip(s)
+                id = name.replace(s, '')
                 filenames[id] = value
         if new_id:
             # Add new inserted level on filenames divt on POST request
@@ -47,8 +47,8 @@ async def config(alias: str):
     # Generate hash to safely store filename on database
     form = await request.form
     filename = form['new_filename']
-    filename_hash = \
-            str(bcrypt.hashpw(filename.encode("utf-8"), bcrypt.gensalt()))
+    filename_hash = bcrypt.hashpw(filename.encode('utf-8'), bcrypt.gensalt())
+    filename_hash = filename_hash.decode('utf-8')
 
     # Insert new level info on database
     query = 'INSERT IGNORE INTO levels VALUES ' \

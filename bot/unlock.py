@@ -14,7 +14,7 @@ async def unlock(ctx):
     # Only allow unlocking by PM to bot
     message = ctx.message
     author = message.author
-    if message.guild:
+    if message.guild and not message.channel.name == 'command-test':
         # Purge all traces of wrong message >:)
         await message.delete()
         text = '> `!unlock` must be sent by PM to me!'
@@ -55,14 +55,14 @@ async def unlock(ctx):
         text += '> \n'
         text += '> (to see a specific guild\'s level list, ' \
                 'try just `!unlock guild_alias`)'
-        await author.send(text)
+        await message.channel.send(text)
         return
     
     alias = aux[0]
     if len(aux) == 1 and not alias in riddles:
         # Invalid alias
         text = 'Inserted alias doesn\'t match any valid guild!\n'
-        await author.send(text)
+        await message.channel.send(text)
         return
 
     riddle = riddles[alias]
@@ -79,7 +79,7 @@ async def unlock(ctx):
             # text += '> • Secret level IDs: **' \
             #         + ' '.join(id for id in secret_levels.keys())
             text += '\n'
-        await author.send(text)
+        await message.channel.send(text)
         return
 
     # Get remaining command arguments
@@ -122,7 +122,7 @@ async def unlock(ctx):
 
     if text:
         # In case of anything wrong, just show message and return
-        await author.send(text)
+        await message.channel.send(text)
         return
 
     # In case of normal levels, remove old "reached" roles from user
@@ -150,7 +150,7 @@ async def unlock(ctx):
     text = 'You successfuly unlocked channel #**%s**!' % id
     if id in riddle.levels:
         text += '\nYour nickname is now **%s**' % member.nick
-    await message.author.send(text)
+    await message.channel.send(text)
 
     # Achievement text on first to reach
     # if id != 'winners':
