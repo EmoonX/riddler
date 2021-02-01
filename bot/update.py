@@ -4,6 +4,7 @@ from discord.ext.ipc import Server
 
 from bot import bot
 from riddle import riddles
+from unlock import update_nickname
 
 # Bot server for inter-process communication with Quart
 bot_ipc = Server(bot, secret_key='RASPUTIN')
@@ -48,10 +49,18 @@ async def update(data):
             level_role = get(guild.roles, name=name)
             if level_role:
                 await channel.set_permissions(role, read_messages=True)
-        
+
         # Add new level imediatelly to riddle's level list
         riddle = get(riddles.values(), guild=guild)
         riddle.levels[id] = level['filename_hash']
+
+        # Swap "winners" role for just created "reached" level role
+        winners = get(guild.roles, name='winners')
+        for member in guild.members:
+            if winners in member.roles:
+                await member.remove_roles(winners)
+                await member.add_roles(role)
+                await update_nickname(member, '[%s]' % id)
 
     print('> [%s] Channel and roles building complete :)' % guild.name)
 
