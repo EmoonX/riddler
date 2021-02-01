@@ -1,1 +1,3 @@
-document.body.style.border = "5px solid red";
+// Get absolute path (without domain) of current page
+var path = window.location.pathname
+window.alert(path)
