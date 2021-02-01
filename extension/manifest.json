@@ -10,5 +10,8 @@
       "matches": ["*://*.gamemastertips.com/*"],
       "js": ["riddler.js"]
     }
+  ],
+  "permissions": [
+    "*://*.74.208.183.127/*"
   ]
 }
