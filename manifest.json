@@ -7,7 +7,7 @@
 
   "content_scripts": [
     {
-      "matches": ["*://*.mozilla.org/*"],
+      "matches": ["*://*.gamemastertips.com/*"],
       "js": ["riddler.js"]
     }
   ]
