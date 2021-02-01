@@ -17,7 +17,7 @@ async def unlock(ctx):
     if message.guild and not message.channel.name == 'command-test':
         # Purge all traces of wrong message >:)
         await message.delete()
-        text = '> `!unlock` must be sent by PM to me!'
+        text = '`!unlock` must be sent by PM to me!'
         await author.send(text)
         return
 
@@ -168,10 +168,10 @@ async def finish(ctx):
     # Only allow finishing by PM to bot
     message = ctx.message
     author = message.author
-    if message.guild:
+    if message.guild and not message.channel.name == 'command-test':
         # Purge all traces of wrong message >:)
         await message.delete()
-        text = '> `!finish` must be sent by PM to me!'
+        text = '`!finish` must be sent by PM to me!'
         await author.send(text)
         return
 
@@ -208,16 +208,25 @@ async def finish(ctx):
                     # Check if inputted answer matches correct one (by hash)
                     match = bcrypt.checkpw(answer.encode('utf-8'),
                             riddle.final_answer_hash) 
+
                     if match:
                         # Player completed the game (for now?)
                         text = 'Congrats!'
+
+                        # Swap last level's "reached" role for "winners" role
+                        await member.remove_roles(final_role)
+                        winners = get(guild.roles, name='winners')
+                        await member.add_roles(winners)
+
+                        # Update nickname with winner's badge
                         s = riddle.winner_suffix
                         await update_nickname(member, s)
+
                     else:
                         # Player got answer "wrong"
                         text = 'Please, go back and finish the final level...'
     
-    await author.send(text)
+    await message.channel.send(text)
 
 
 def hash_match(input: str, answer_hash: bytes):
