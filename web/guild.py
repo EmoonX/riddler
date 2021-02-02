@@ -26,19 +26,19 @@ async def config(alias: str):
     
     def r(msg, new_id='', new_filename=''):
         '''Render page and get filename cookies locally.'''
-        filenames = {}
+        paths = {}
         s = 'path_%s_' % alias
         for name, value in request.cookies.items():
             print(name, value)
             if s in name:
                 id = name.replace(s, '')
-                filenames[id] = value
+                paths[id] = value
         if new_id:
-            # Add new inserted level on filenames divt on POST request
-            filenames[new_id] = new_filename
-        print(filenames)
+            # Add new inserted level on paths dict on POST request
+            paths[new_id] = new_filename
+        print(paths)
         return render_template('guild.htm', 
-                alias=alias, levels=levels, msg=msg, filenames=filenames)
+                alias=alias, levels=levels, msg=msg, paths=paths)
 
     # Render page normally on GET
     if request.method == 'GET':
@@ -55,8 +55,8 @@ async def config(alias: str):
     # Update Discord guild channels and roles with new levels info.
     # This is done by sending an request to the bot's IPC server
     levels.append(values)
-    # await web_ipc.request('update',
-    #         guild_id=session['id'], levels=values)
+    await web_ipc.request('update',
+            guild_id=session['id'], levels=values)
 
     # Save cookie for locally setting level filenames and render page
     resp = await make_response(

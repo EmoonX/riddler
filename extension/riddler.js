@@ -18,7 +18,7 @@ const params = {
 fetch(SERVER_URL, params)
     .then(res => {
       res.json().then(data => {
-        console.log(data.url);
+        console.log(data.path);
       });
     })
     .then(error => {console.log(error)});

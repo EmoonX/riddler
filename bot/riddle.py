@@ -11,15 +11,9 @@ class Riddle:
     # Discord guild object
     guild: discord.Guild
 
-    # Ordered dicts of pairs (level_id -> filename_hash)
-    levels: OrderedDict[str, bytes] = {}
-    secret_levels: OrderedDict[str, bytes] = {}
-
-    # Ordered dict of pairs (secret_level -> answer)
-    secret_answers: OrderedDict[str, bytes] = {}
-
-    # Hash of final level's answer
-    final_answer_hash: bytes
+    # Lists of level IDs
+    levels = []
+    secret_levels = []
 
     # Suffix to be appended to winners' nicknames
     winner_suffix: str

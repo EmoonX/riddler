@@ -1,10 +1,16 @@
-from quart import Blueprint, make_response, request
+from urllib.parse import urlparse
+
+from quart import Blueprint, request
 
 # Create app blueprint
 process = Blueprint('process', __name__)
 
 
 @process.route('/process/', methods=['POST'])
-async def proc():
+async def process_url():
+    # Receive URL from request and parse it
     url = (await request.data).decode('utf-8')
-    return {'url': url}
+    parsed = urlparse(url)
+
+    path = parsed.path
+    return {'path': path}
