@@ -1,15 +1,11 @@
 from quart import Blueprint, request, render_template, \
         session, redirect, url_for, make_response
-from discord.ext.ipc import Client
-import bcrypt
 
+from ipc import web_ipc
 from util.db import database
 
 # Create app blueprint
 guild = Blueprint('guild', __name__)
-
-# Web client for inter-process communication with discord.py bot
-web_ipc = Client(secret_key='RASPUTIN')
 
 
 @guild.route('/guild/<alias>/', methods=['GET', 'POST'])

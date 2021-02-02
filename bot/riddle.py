@@ -31,8 +31,7 @@ class Riddle:
         # Get riddle's level info from database query
         for level in levels:
             id = level['level_id']
-            filename_hash = level['filename_hash'].encode('utf-8')
-            self.levels[id] = filename_hash
+            self.levels[id] = level['path']
 
 
 # Global dict of (guild_alias -> riddle) which bot supervises
