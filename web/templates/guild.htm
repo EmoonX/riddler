@@ -6,6 +6,7 @@
   </head>
   <body>
     <form method="post">
+      <h1>Levels</h1>
       <table>
         <tr>
           <th>Level ID</th>
@@ -14,12 +15,35 @@
       {% for level in levels %}
         <tr>
           <td><input type="text" value="{{ level['level_id'] }}"></td>
-          <td><input type="text" value="{{ paths[level['level_id']] }}"></td>
+          <td><input type="text" value="{{ level['path'] }}"></td>
         </tr>
       {% endfor %}
         <tr>
           <td><input type="text" name="new_id"></td>
           <td><input type="text" name="new_path"></td>
+        </tr>
+      </table>
+      <h1>Secret Levels</h1>
+      <table>
+        <tr>
+          <th>Level ID</th>
+          <th>Path</th>
+          <th>Previous level</th>
+          <th>Answer's path</th>
+        </tr>
+      {% for level in secret_levels %}
+        <tr>
+          <td><input type="text" value="{{ level['level_id'] }}"></td>
+          <td><input type="text" value="{{ level['path'] }}"></td>
+          <td><input type="text" value="{{ level['previous_level'] }}"></td>
+          <td><input type="text" value="{{ level['answer_path'] }}"></td>
+        </tr>
+      {% endfor %}
+        <tr>
+          <td><input type="text" name="new_secret_id"></td>
+          <td><input type="text" name="new_secret_path"></td>
+          <td><input type="text" name="new_secret_prev"></td>
+          <td><input type="text" name="new_secret_answer"></td>
         </tr>
       </table>
       <input type="submit" value="Save changes">
