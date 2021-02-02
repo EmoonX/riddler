@@ -27,7 +27,7 @@ async def config(alias: str):
     def r(msg, new_id='', new_filename=''):
         '''Render page and get filename cookies locally.'''
         filenames = {}
-        s = 'filename_%s_' % alias
+        s = 'path_%s_' % alias
         for name, value in request.cookies.items():
             print(name, value)
             if s in name:
@@ -43,30 +43,25 @@ async def config(alias: str):
     # Render page normally on GET
     if request.method == 'GET':
         return await r('')
-    
-    # Generate hash to safely store filename on database
-    form = await request.form
-    filename = form['new_filename']
-    filename_hash = bcrypt.hashpw(filename.encode('utf-8'), bcrypt.gensalt())
-    filename_hash = filename_hash.decode('utf-8')
 
     # Insert new level info on database
+    form = await request.form
     query = 'INSERT IGNORE INTO levels VALUES ' \
-            '(:guild, :category, :level_id, :filename_hash)'
+            '(:guild, :category, :level_id, :path)'
     values = {'guild': alias, 'category': 'Levels',
-            'level_id': form['new_id'], 'filename_hash': filename_hash}
+            'level_id': form['new_id'], 'path': form['new_path']}
     await database.execute(query, values)
 
     # Update Discord guild channels and roles with new levels info.
     # This is done by sending an request to the bot's IPC server
     levels.append(values)
-    await web_ipc.request('update',
-            guild_id=session['id'], levels=values)
+    # await web_ipc.request('update',
+    #         guild_id=session['id'], levels=values)
 
     # Save cookie for locally setting level filenames and render page
     resp = await make_response(
             await r('Guild info updated successfully!',
-                values['level_id'], filename))
-    name = 'filename_%s_%s' % (alias, values['level_id'])
-    resp.set_cookie(name, filename)
+                values['level_id'], values['path']))
+    name = 'path_%s_%s' % (alias, values['level_id'])
+    resp.set_cookie(name, values['path'])
     return resp
