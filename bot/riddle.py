@@ -12,8 +12,11 @@ class Riddle:
     guild: discord.Guild
 
     # Lists of level IDs
-    levels = []
-    secret_levels = []
+    levels: OrderedDict[str, str] = {}
+    secret_levels: OrderedDict[str, str] = {}
+
+    # Ordered dict of pairs (secret_level -> answer)
+    secret_answers: OrderedDict[str, str] = {}
 
     # Suffix to be appended to winners' nicknames
     winner_suffix: str
