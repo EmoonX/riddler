@@ -6,11 +6,8 @@ from bot import bot
 from riddle import riddles
 from unlock import update_nickname
 
-# Bot server for inter-process communication with Quart
-bot_ipc = Server(bot, secret_key='RASPUTIN')
 
-
-@bot_ipc.route()
+@bot.ipc.route()
 async def update(data):
     '''Update guild channels and roles according to database changes.'''
 
@@ -63,7 +60,3 @@ async def update(data):
                 await update_nickname(member, '[%s]' % id)
 
     print('> [%s] Channel and roles building complete :)' % guild.name)
-
-
-# Start the IPC server
-bot_ipc.start()

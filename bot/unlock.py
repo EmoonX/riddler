@@ -6,15 +6,15 @@ from bot import bot
 from riddle import riddles
 
 
-async def unlock(alias: str, player_id: int, path: str):
+@bot.ipc.route()
+async def unlock(data):
     '''Unlock level when extension user arrives at a level front page.
     "reached" role is granted to user and thus given access to channel(s).'''
     
     # Get guild and member object from player's id
-    riddle = riddles[alias]
+    riddle = riddles[data.alias]
     guild = riddle.guild
-    member = get(guild.members, id=player_id)
-
+    member = get(guild.members, id=data.player_id)
     if not member:
         # Not currently a member
         return
@@ -31,7 +31,7 @@ async def unlock(alias: str, player_id: int, path: str):
     # Find if the path corresponds to a level front page
     id = ''
     for level_id, level_path in riddle.levels.items():
-        if level_path == path:
+        if level_path == data.path:
             id = level_id
             break
     if not id:

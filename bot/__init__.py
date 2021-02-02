@@ -1,8 +1,6 @@
 import os
-import re
 import sys
 import logging
-from discord.member import Member
 from dotenv import load_dotenv
 
 # Allow util folder to be visible
