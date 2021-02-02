@@ -11,7 +11,13 @@
       "js": ["riddler.js"]
     }
   ],
+
+  "options_ui": {
+    "page": "options.htm"
+  },
+
   "permissions": [
-    "*://*.74.208.183.127/*"
+    "*://*.74.208.183.127/*",
+    "storage"
   ]
 }
