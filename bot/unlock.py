@@ -75,9 +75,16 @@ async def unlock(data):
         s = '[' + id + ']'
         await update_nickname(member, s)
 
-    # Log unlocking procedure
+    # Log unlocking procedure and send message to member
     print('> [%s] Member %s#%s unlocked channel #%s' \
             % (guild.name, member.name, member.discriminator, id))
+    text = '**[%s]** You successfuly unlocked channel **#%s**!\n' \
+            % (guild.name, id)
+    if id in riddle.levels:
+        text += 'Your nickname is now **%s**.' % member.nick
+    else:
+        text += 'Your nickname is unchanged.'
+    await member.send(text)
 
 
 @bot.command()
@@ -144,13 +151,6 @@ async def finish(ctx):
                         text = 'Please, go back and finish the final level...'
     
     await message.channel.send(text)
-
-
-def hash_match(input: str, answer_hash: bytes):
-    '''Return if input's hash matches answer's one.'''
-    match = bcrypt.checkpw(
-            input.encode('utf-8'), answer_hash)
-    return match
 
 
 async def update_nickname(member: Member, s: str):

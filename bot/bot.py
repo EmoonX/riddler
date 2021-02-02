@@ -8,7 +8,7 @@ intents.members = True
 
 
 class Bot(commands.Bot):
-    '''Extended class to report errors on IPC coroutines.'''
+    '''Extended class to contain IPC server.'''
 
     # Bot server for inter-process communication with Quart
     ipc: Server
@@ -20,8 +20,8 @@ class Bot(commands.Bot):
         self.ipc.start()
 
     async def on_ipc_error(self, endpoint, error):
-        """Called upon an error being raised within an IPC route"""
-        print(endpoint, "raised", error)
+        '''Called upon an error being raised within an IPC route.'''
+        print(endpoint, 'raised', error)
 
 
 # Create bot (commands are designated starting with '!')
