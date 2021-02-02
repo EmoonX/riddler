@@ -14,12 +14,12 @@ const params = {
   body: url_from
 };
 
-// Set URL containing player's ID to send request
-var url_to = SERVER_URL
-let getting = browser.storage.local.get('player_id');
-getting.then(function (result) {
-  // Open and send request to server containing URL text
+var url_to = SERVER_URL;
+chrome.storage.local.get('player_id', function (result) {
+  // Set URL containing player's ID
   url_to += result.player_id;
+
+  // Send request to server containing URL text
   console.log(url_to);
   fetch(url_to, params)
     .then(res => {
