@@ -13,7 +13,7 @@ from bot import bot
 from util.db import database
 from riddle import Riddle, riddles
 import begin
-from unlock import update_nickname
+import unlock
 import update
 import send
 
@@ -40,36 +40,6 @@ async def on_ready():
         levels = await database.fetch_all(query, values)
         riddle = Riddle(guild, levels)
         riddles[guild['alias']] = riddle
-    
-    # Grant initial attributes to those without nicknames
-    for riddle in riddles.values():
-        for member in riddle.guild.members:
-            if not member.nick:
-                await init_member(member, riddle)
-
-
-@bot.event
-async def on_member_join(member: discord.Member):
-    '''Initialize member features upon join.'''
-    guild = member.guild
-    riddle = get(riddles.values(), guild=guild)
-    await init_member(member, riddle)
-
-
-async def init_member(member: discord.Member, riddle: Riddle):
-    '''Grant first level role and nickname to member.'''
-    # Ignore bots and admins
-    if member.bot or member.guild_permissions.administrator:
-        return
-    
-    # Find first level ID from riddle's level list
-    id = next(iter(riddle.levels))
-    
-    # Process changes to member
-    name = 'reached-%s' % id
-    role = get(riddle.guild.roles, name=name)
-    await member.add_roles(role)
-    await update_nickname(member, '[%s]' % id)
 
 
 @bot.command()
