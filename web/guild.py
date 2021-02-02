@@ -41,9 +41,12 @@ async def config(alias: str):
     if '' not in levels_values.values():
         await database.execute(query, levels_values)
     query = 'INSERT IGNORE INTO secret_levels VALUES ' \
-            '(:guild, :category, :level_id, :path)'
-    secret_levels_values = {'guild': alias, 'category': 'Levels',
-            'level_id': form['new_secret_id'], 'path': form['new_secret_path']}
+            '(:guild, :category, :level_id, :path, ' \
+                ':previous_level, :answer_path)'
+    secret_levels_values = {'guild': alias, 'category': 'Secret Levels',
+            'level_id': form['new_secret_id'], 'path': form['new_secret_path'],
+            'previous_level': form['new_secret_prev'],
+            'answer_path': form['new_secret_answer']}
     if '' not in secret_levels_values.values():
         await database.execute(query, secret_levels_values)
 
@@ -55,5 +58,5 @@ async def config(alias: str):
             guild_id=session['id'],
             levels=levels_values, secret_levels=secret_levels_values)
 
-    return r('Guild info updated successfully!')
+    return await r('Guild info updated successfully!')
 
