@@ -30,7 +30,8 @@ async def unlock(data):
     
     # Find if the path corresponds to a level front page
     id = ''
-    for level_id, level_path in riddle.levels.items():
+    for level_id, level_path in \
+            {**riddle.levels, **riddle.secret_levels}.items():
         if level_path == data.path:
             id = level_id
             break
@@ -55,7 +56,7 @@ async def unlock(data):
         # User already unlocked that channel
         return
 
-    # In case of normal levels, remove old "reached" roles from user
+    # If a normal level, remove old "reached" roles from user
     if id in riddle.levels:
         for role in member.roles:
             if 'reached-' in role.name:
@@ -69,7 +70,7 @@ async def unlock(data):
     role = get(guild.roles, name=name)
     await member.add_roles(role)
 
-    # Change nickname to current level
+    # If a normal level, change nickname to current level
     if id in riddle.levels:
         s = '[' + id + ']'
         await update_nickname(member, s)

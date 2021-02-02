@@ -21,7 +21,7 @@ class Riddle:
     # Suffix to be appended to winners' nicknames
     winner_suffix: str
 
-    def __init__(self, guild: dict, levels: dict):
+    def __init__(self, guild: dict, levels: dict, secret_levels: dict):
         '''Build riddle object by row extracted from database.'''
         # Get info from guild's database data
         self.guild = bot.get_guild(guild['id'])
@@ -32,6 +32,9 @@ class Riddle:
         for level in levels:
             id = level['level_id']
             self.levels[id] = level['path']
+        for level in secret_levels:
+            id = level['level_id']
+            self.secret_levels[id] = level['path']
 
 
 # Global dict of (guild_alias -> riddle) which bot supervises
