@@ -83,7 +83,7 @@ async def advance(riddle: Riddle, member: Member, id: str, current_level: str):
         await update_nickname(member, s)
 
     # Log unlocking procedure and send message to member
-    print('> [%s] Member %s#%s unlocked channel #%s' \
+    print('> [%s] %s#%s unlocked channel #%s' \
             % (guild.name, member.name, member.discriminator, id))
     text = '**[%s]** You successfully unlocked channel **#%s**!\n' \
             % (guild.name, id)
@@ -97,24 +97,29 @@ async def advance(riddle: Riddle, member: Member, id: str, current_level: str):
 async def solve(riddle: Riddle, member: Member, level: dict):
     '''Grant "solved" role upon completion of a level (like a secret one).'''
 
-    # Check if user already solved level
+    # Check if member already solved level
+    guild = riddle.guild
     id = level['level_id']
     name = 'solved-' + id
-    role = get(member.roles, name=name)
-    if role:
+    solved = get(guild.roles, name=name)
+    if solved in member.roles:
+        return
+
+    # Deny solve if member didn't arrive at the level proper yet
+    name = 'reached-' + id
+    reached = get(member.roles, name=name)
+    if not reached:
+        print('> [%s] [WARNING] %s#%s tried to solve ' \
+                'secret level "%s" without reaching it' \
+                % (guild.name, member.name, member.discriminator, id))
         return
     
     # Remove old "reached" role and add "solved" role to member
-    guild = riddle.guild
-    name = 'reached-' + id
-    role = get(guild.roles, name=name)
-    await member.remove_roles(role)
-    name = 'solved-' + id
-    role = get(guild.roles, name=name)
-    await member.add_roles(role)
+    await member.remove_roles(reached)
+    await member.add_roles(solved)
 
     # Log solving procedure and send message to member
-    print('> [%s] Member %s#%s completed secret level %s' \
+    print('> [%s] %s#%s completed secret level "%s"' \
             % (guild.name, member.name, member.discriminator, id))
     text = '**[%s]** You successfully solved secret level **%s**!\n' \
             % (guild.name, id)
