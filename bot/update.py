@@ -1,6 +1,5 @@
 import discord
 from discord.utils import get
-from discord.ext.ipc import Server
 
 from bot import bot
 from riddle import riddles
@@ -35,17 +34,14 @@ async def update(data):
             overwrites = {guild.default_role: overwrite}
             await channel.edit(overwrites=overwrites)
 
-        # Create level user role
+        # Create "reached" level role
         name = 'reached-' + id
-        role = get(guild.roles, name=name)
-        if not role:
+        reached = get(guild.roles, name=name)
+        if not reached:
             color = discord.Color.from_rgb(0xcc, 0xcc, 0xcc)
-            role = await guild.create_role(name=name, color=color)
-        
-        # Create secret level "solved" role, if applicable
-        pass
+            reached = await guild.create_role(name=name, color=color)  
 
-
+        winners = get(guild.roles, name='winners')
         if id in data.levels.values():
             # Set read permission to current roles for 
             # this channel and every other level channel before it
@@ -53,24 +49,36 @@ async def update(data):
                 name = 'reached-%s' % channel.name
                 level_role = get(guild.roles, name=name)
                 if level_role:
-                    await channel.set_permissions(role, read_messages=True)
+                    await channel.set_permissions(reached, read_messages=True)
 
             # Add new level immediately to riddle's level list
-            riddle.levels[id] = level['path']
+            riddle.levels[id] = level
 
             # Swap "winners" role for just created "reached" level role
-            winners = get(guild.roles, name='winners')
             for member in guild.members:
                 if winners in member.roles:
                     await member.remove_roles(winners)
-                    await member.add_roles(role)
+                    await member.add_roles(reached)
                     await update_nickname(member, '[%s]' % id)
         
         elif id in data.secret_levels.values():
-            # Just set read permission to the new channel
-            await channel.set_permissions(role, read_messages=True)
+            # Create "solved" secret level role
+            name = 'solved-' + id
+            solved = get(guild.roles, name=name)
+            if not solved:
+                color = discord.Color.teal()
+                solved = await guild.create_role(name=name, color=color)
+
+                # Place role just after "winners" on role list (to show color)
+                pos = winners.position - 1
+                positions = {solved: pos}
+                await guild.edit_role_positions(positions)
+
+            # Set "reached" and "solved" read permission to the new channel
+            await channel.set_permissions(reached, read_messages=True)
+            await channel.set_permissions(solved, read_messages=True)
 
             # Add new level immediately to riddle's level list
-            riddle.secret_levels[id] = level['path']
+            riddle.secret_levels[id] = level
 
     print('> [%s] Channel and roles building complete :)' % guild.name)

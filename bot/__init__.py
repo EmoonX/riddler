@@ -43,7 +43,6 @@ async def on_ready():
         riddle = Riddle(guild, levels, secret_levels)
         riddles[guild['alias']] = riddle
 
-
 @bot.command()
 async def ping(ctx):
     # Ping-pong

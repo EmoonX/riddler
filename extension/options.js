@@ -7,7 +7,7 @@ function saveOptions(e) {
 }
   
 function restoreOptions() {
-  // Restore extension setting to form fields
+  // Restore extension settings to form fields
   chrome.storage.local.get('player_id', function (result) {
     document.querySelector('input[name="player_id"]').value = result.player_id;
   });
