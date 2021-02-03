@@ -19,7 +19,7 @@ class Bot(commands.Bot):
         self.ipc = Server(self, secret_key='RASPUTIN')
         self.ipc.start()
 
-    async def on_ipc_error(self, endpoint, error):
+    async def on_ipc_error(self, endpoint: str, error):
         '''Called upon an error being raised within an IPC route.'''
         print(endpoint, 'raised', error)
 

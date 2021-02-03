@@ -41,6 +41,10 @@ async def update(data):
         if not role:
             color = discord.Color.from_rgb(0xcc, 0xcc, 0xcc)
             role = await guild.create_role(name=name, color=color)
+        
+        # Create secret level "solved" role, if applicable
+        pass
+
 
         if id in data.levels.values():
             # Set read permission to current roles for 
