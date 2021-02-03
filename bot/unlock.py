@@ -1,16 +1,16 @@
-from discord import Member
+from discord import Guild, Member
 from discord.utils import get
 import bcrypt
 
 from bot import bot
-from riddle import riddles
+from riddle import Riddle, riddles
 
 
 @bot.ipc.route()
 async def unlock(data):
-    '''Unlock level when extension user arrives at a level front page.
-    "reached" role is granted to user and thus given access to channel(s).'''
-    
+    '''Unlock channels and/or roles in case path corresponds
+    to a level front page or secret answer.'''
+
     # Get guild and member object from player's id
     riddle = riddles[data.alias]
     guild = riddle.guild
@@ -28,18 +28,25 @@ async def unlock(data):
                 current_level = aux
                 break
     
-    # Find if the path corresponds to a level front page
-    id = ''
-    for level_id, level_path in \
-            {**riddle.levels, **riddle.secret_levels}.items():
-        if level_path == data.path:
-            id = level_id
-            break
-    if not id:
-        # Not a level front page
-        return
+    # Find if the path corresponds to a level front page or secret answer
+    for id, level in riddle.levels.items():
+        if level['path'] == data.path:
+            advance(riddle, member, id, current_level)
+            return
+    for id, level in riddle.secret_levels.items():
+        if level['path'] == data.path:
+            advance(riddle, member, id, current_level)
+            return
+        elif level['answer_path'] == data.path:
+            solve(riddle, member, id)
+
+
+async def advance(riddle: Riddle, member: Member, id: str, current_level: str):
+    '''Advance to further level when player arrives at a level front page.
+    "reached" role is granted to user and thus given access to channel(s).'''
 
     # Get channel and roles corresponding to level
+    guild = riddle.guild
     channel = get(guild.channels, name=id)
     role = None
     if id in riddle.levels:
@@ -49,7 +56,7 @@ async def unlock(data):
         name = 'reached-' + id
         role = get(member.roles, name=name)
         if not role:
-            # For secret levels
+            # For secret levels, solved implies reached too
             name = 'solved-' + id
             role = get(member.roles, name=name)
     if role:
@@ -85,6 +92,10 @@ async def unlock(data):
     else:
         text += 'Your nickname is unchanged.'
     await member.send(text)
+
+
+async def solve(riddle: Riddle, member: Member, id: str):
+    pass
 
 
 @bot.command()

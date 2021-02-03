@@ -11,12 +11,9 @@ class Riddle:
     # Discord guild object
     guild: discord.Guild
 
-    # Lists of level IDs
-    levels: OrderedDict[str, str] = {}
-    secret_levels: OrderedDict[str, str] = {}
-
-    # Ordered dict of pairs (secret_level -> answer)
-    secret_answers: OrderedDict[str, str] = {}
+    # Ordered dict of pairs (level_id -> path)
+    levels: OrderedDict[str, dict] = {}
+    secret_levels: OrderedDict[str, dict] = {}
 
     # Suffix to be appended to winners' nicknames
     winner_suffix: str
@@ -34,7 +31,7 @@ class Riddle:
             self.levels[id] = level['path']
         for level in secret_levels:
             id = level['level_id']
-            self.secret_levels[id] = level['path']
+            self.secret_levels[id] = level
 
 
 # Global dict of (guild_alias -> riddle) which bot supervises
