@@ -1,5 +1,3 @@
-import sys
-
 from quart import Blueprint, request, render_template, \
         session, redirect, url_for
 import bcrypt
@@ -7,10 +5,10 @@ import bcrypt
 from util.db import database
 
 # Create app blueprint
-auth = Blueprint('auth', __name__)
+admin_auth = Blueprint('admin_auth', __name__)
 
 
-@auth.route('/admin/login/', methods=['GET', 'POST'])
+@admin_auth.route('/admin/login/', methods=['GET', 'POST'])
 async def login():
     '''Riddle administration login system.'''
 
@@ -49,7 +47,7 @@ async def login():
     return redirect(url_for("admin.config", alias=alias))
 
 
-@auth.route('/admin/logout/', methods=['GET'])
+@admin_auth.route('/admin/logout/', methods=['GET'])
 async def logout():
     '''Logout from session and return to login page.'''
 
