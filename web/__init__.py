@@ -1,4 +1,7 @@
 import sys
+import asyncio
+from asyncio.events import AbstractEventLoop
+from ssl import SSLError
 
 # Allow util folder to be visible
 sys.path.append('..')
@@ -22,6 +25,19 @@ app.secret_key = 'RASPUTIN'
 
 
 @app.before_first_request
-async def connect():
-    '''Connect to MySQL database on app start.'''
+async def before():
+    '''Procedures to be done upon app start.'''
+    # Connect to MySQL database
     await database.connect()
+    
+    # Define exception handler for async loop
+    loop = asyncio.get_event_loop()
+    loop.set_exception_handler(_exception_handler)
+
+
+def _exception_handler(loop: AbstractEventLoop, context: dict):
+    '''Ígnore annoying ssl.SSLError useless exceptions due to HTTPS.'''
+    exception = context.get('exception')
+    if isinstance(exception, SSLError):
+        return
+    loop.default_exception_handler(context)
