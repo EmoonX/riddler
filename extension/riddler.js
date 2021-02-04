@@ -1,5 +1,5 @@
 // URL to where request will be sent to
-const SERVER_URL = 'http://74.208.183.127/process/'
+const SERVER_URL = 'http://riddler.emoon.dev/process/'
 
 // Get URL of current page
 const url_from = document.location.href;

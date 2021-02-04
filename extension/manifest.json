@@ -17,7 +17,7 @@
   },
 
   "permissions": [
-    "*://*.74.208.183.127/*",
+    "*://riddler.emoon.dev/*",
     "storage"
   ]
 }
