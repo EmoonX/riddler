@@ -8,12 +8,12 @@ from quart import Quart
 # Quart app object
 app = Quart(__name__)
 
-from auth import auth
-from guild import guild
+from admin.auth import auth
+from admin.admin import admin
 from process import process
 from util.db import database
 
-for blueprint in (auth, guild, process):
+for blueprint in (auth, admin, process):
     # Register app blueprint to allow other modules
     app.register_blueprint(blueprint)
 

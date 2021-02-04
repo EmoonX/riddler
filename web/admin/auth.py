@@ -10,12 +10,12 @@ from util.db import database
 auth = Blueprint('auth', __name__)
 
 
-@auth.route('/login/', methods=['GET', 'POST'])
+@auth.route('/admin/login/', methods=['GET', 'POST'])
 async def login():
-    '''Guild login system.'''
+    '''Riddle administration login system.'''
 
     def r(msg):
-        return render_template('login.htm', msg=msg)
+        return render_template('admin/login.htm', msg=msg)
 
     # Just render page normally on GET
     if request.method == 'GET':
@@ -46,10 +46,10 @@ async def login():
     session['id'] = guild.id
 
     # Login is successful, redirect to guild page
-    return redirect(url_for("guild.config", alias=alias))
+    return redirect(url_for("admin.config", alias=alias))
 
 
-@auth.route('/logout/', methods=['GET'])
+@auth.route('/admin/logout/', methods=['GET'])
 async def logout():
     '''Logout from session and return to login page.'''
 

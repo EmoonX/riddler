@@ -1,16 +1,16 @@
 from quart import Blueprint, request, render_template, \
-        session, redirect, url_for, make_response
+        session, redirect, url_for
 
 from ipc import web_ipc
 from util.db import database
 
 # Create app blueprint
-guild = Blueprint('guild', __name__)
+admin = Blueprint('admin', __name__)
 
 
-@guild.route('/guild/<alias>/', methods=['GET', 'POST'])
+@admin.route('/admin/<alias>/', methods=['GET', 'POST'])
 async def config(alias: str):
-    '''Guild configuration.'''
+    '''Riddle administration configuration.'''
     
     # Need to be corrrectly logged to access guild config
     if not 'guild' in session or session['guild'] != alias:
@@ -24,7 +24,7 @@ async def config(alias: str):
     
     def r(msg):
         '''Render page and get filename cookies locally.'''
-        return render_template('guild.htm', 
+        return render_template('admin/admin.htm', 
                 alias=alias, levels=levels,
                 secret_levels=secret_levels, msg=msg)
 
