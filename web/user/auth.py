@@ -14,7 +14,7 @@ discord: DiscordOAuth2Session
 
 
 def discord_session_init(app: Quart):
-    '''Configure and create Discord OAuth2 session.'''
+    '''Configure and create Discord OAuth2 object.'''
     # Discord OAuth2 configs
     app.config['DISCORD_CLIENT_ID'] = 803127673165053993
     app.config['DISCORD_CLIENT_SECRET'] = os.getenv('DISCORD_CLIENT_SECRET')
@@ -22,22 +22,28 @@ def discord_session_init(app: Quart):
             'https://riddler.emoon.dev/callback/'
     app.config['DISCORD_BOT_TOKEN'] = os.getenv('DISCORD_BOT_TOKEN')
 
-    # Create instance of session object
+    # Create session object
     global discord
     discord = DiscordOAuth2Session(app)
 
 
 @user_auth.route('/login/', methods=['GET'])
 async def login():
-    '''Create Discord session and redirects to callback URL.'''
-    return await discord.create_session()
+    '''Create Discord session and redirect to callback URL.'''
+    return await discord.create_session(scope=['identify'])
 
 
 @user_auth.route('/callback/')
 async def callback():
     '''Callback for OAuth2 authentication.'''
     await discord.callback()
-    print('HMM')
     user = await discord.fetch_user()
-    print(user)
-    return 'Hello %s!' % user.name
+    return 'Hello %s!<br>Here\'s your user info: %s' \
+            % (user.name, user)
+
+
+@user_auth.route('/logout/')
+async def logout():
+    '''Revokes credentials and logs user out of application.'''
+    discord.revoke()
+    return 'Logged out. :('

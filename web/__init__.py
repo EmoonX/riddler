@@ -11,15 +11,7 @@ from quart import Quart
 # Quart app object
 app = Quart(__name__)
 
-from admin.auth import admin_auth
-from admin.admin import admin
 from user.auth import user_auth, discord_session_init
-from process import process
-from util.db import database
-
-# Register app blueprints to allow other modules
-for blueprint in (admin_auth, admin, user_auth, process):
-    app.register_blueprint(blueprint)
 
 # Really unique secret key
 app.secret_key = \
@@ -27,6 +19,15 @@ app.secret_key = \
 
 # Create Discord OAuth2 session
 discord_session_init(app)
+
+from admin.auth import admin_auth
+from admin.admin import admin
+from process import process
+from util.db import database
+
+# Register app blueprints to allow other modules
+for blueprint in (admin_auth, admin, user_auth, process):
+    app.register_blueprint(blueprint)
 
 
 @app.before_first_request
