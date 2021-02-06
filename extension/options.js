@@ -2,7 +2,7 @@ function saveOptions(e) {
   // Save extension settings from form on browser
   e.preventDefault();
   chrome.storage.local.set({
-    'player_id': document.querySelector('input[name="player_id"]').value
+    player_id: document.querySelector('input[name="player_id"]').value
   });
 }
   

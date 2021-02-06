@@ -8,15 +8,20 @@
   "content_scripts": [
     {
       "matches": ["*://*.gamemastertips.com/*"],
-      "js": ["riddler.js"]
+      "js": ["content.js"]
     }
   ],
+
+  "background": {
+    "scripts": ["background.js"]
+  },
 
   "options_ui": {
     "page": "options.htm"
   },
 
   "permissions": [
+    "cookies",
     "*://riddler.emoon.dev/*"
   ]
 }

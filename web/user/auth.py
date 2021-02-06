@@ -1,7 +1,9 @@
 import os
 
-from quart import Blueprint, Quart
-from quart_discord import DiscordOAuth2Session
+from quart import Blueprint, Quart, redirect, url_for
+from quart.sessions import SecureCookieSessionInterface
+from quart_discord import DiscordOAuth2Session, requires_authorization
+import quart_discord
 
 # !! Only in development environment.
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = 'true'
@@ -9,8 +11,11 @@ os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = 'true'
 # Create app blueprint
 user_auth = Blueprint('user_auth', __name__)
 
-# Discord OAuth2 session
+# Discord OAuth2 sessionz
 discord: DiscordOAuth2Session
+
+# Interface for storing Quart session cookie
+session_cookie: SecureCookieSessionInterface
 
 
 def discord_session_init(app: Quart):
@@ -26,6 +31,11 @@ def discord_session_init(app: Quart):
     global discord
     discord = DiscordOAuth2Session(app)
 
+    # Create session cookie
+    global session_cookie
+    session_cookie = \
+            SecureCookieSessionInterface().get_signing_serializer(app)
+
 
 @user_auth.route('/login/', methods=['GET'])
 async def login():
@@ -37,9 +47,16 @@ async def login():
 async def callback():
     '''Callback for OAuth2 authentication.'''
     await discord.callback()
+    return redirect(url_for('.me'))
+
+
+@user_auth.route('/me/')
+@requires_authorization
+async def me():
     user = await discord.fetch_user()
+    token = await DiscordOAuth2Session.get_authorization_token()
     return 'Hello %s!<br>Here\'s your user info: %s' \
-            % (user.name, user)
+            % (user.name, token)
 
 
 @user_auth.route('/logout/')
