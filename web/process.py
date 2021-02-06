@@ -2,7 +2,7 @@ from urllib.parse import urlparse
 
 from quart import Blueprint, request, jsonify
 
-from user.auth import discord, session_cookie
+from user.auth import discord
 from ipc import web_ipc
 
 # Create app blueprint
@@ -19,7 +19,9 @@ async def process_url():
 
     response = None
     if not await discord.authorized:
-        response = jsonify({'path': 'ERROR'})
+        # Unauthorized, return status 401
+        response = jsonify({'message': 'Unauthorized'})
+        return response, 401
     else:
         # Send Unlocking request to bot's IPC server
         # player_id = int(player_id)

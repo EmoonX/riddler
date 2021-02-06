@@ -28,10 +28,12 @@ chrome.runtime.sendMessage(message, cookie => {
   const url_to = SERVER_URL + '/process/';
   fetch(url_to, params)
     .then(res => {
-      res.json().then(data => {
-        console.log(params);
-        console.log(data.path);
-      });
+      console.log(res);
+      if (res.status == 401) {
+        // Unauthorized, so open Discord auth page on new tab
+        const url_login = SERVER_URL + '/login/'
+        window.open(url_login,'_blank');
+      }
     })
     .then(error => {console.log(error)})
   ;
