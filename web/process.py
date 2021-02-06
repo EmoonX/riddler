@@ -18,17 +18,19 @@ async def process_url():
     path = parsed.path
 
     response = None
+    status = None
     if not await discord.authorized:
         # Unauthorized, return status 401
         response = jsonify({'message': 'Unauthorized'})
-        return response, 401
+        status = 401 if request.method == 'POST' else 200
     else:
         # Send Unlocking request to bot's IPC server
-        # player_id = int(player_id)
-        # await web_ipc.request('unlock',
-        #         alias='snowflake', player_id=player_id,
-        #         path=path)
+        user = await discord.fetch_user()
+        await web_ipc.request('unlock',
+                alias='snowflake', player_id=user.id,
+                path=path)
         response = jsonify({'path': path})
+        status = 200
     
     # (Chrome fix) Allow CORS to be requested from other domains
     response.headers.add('Access-Control-Allow-Origin',
@@ -38,4 +40,4 @@ async def process_url():
     response.headers.add('Access-Control-Allow-Credentials', 'true')
     
     # Return response
-    return response
+    return response, status

@@ -46,6 +46,8 @@ async def before():
 async def cookies(response):
     '''Set session cookie to be valid accross sites (SameSite=None).'''
     value = session_cookie.dumps(dict(session))
+    if 'Set-Cookie' in response.headers:
+        response.headers.pop('Set-Cookie')
     response.set_cookie('session', value,
             secure=True, samesite='None')
     return response
