@@ -38,10 +38,11 @@ async def on_ready():
         values = {'guild': guild['alias']}
         query = 'SELECT * FROM levels WHERE guild = :guild'
         levels = await database.fetch_all(query, values)
-        query = 'SELECT * FROM secret_levels WHERE guild = :guild'
-        secret_levels = await database.fetch_all(query, values)
-        riddle = Riddle(guild, levels, secret_levels)
+        # query = 'SELECT * FROM secret_levels WHERE guild = :guild'
+        # secret_levels = await database.fetch_all(query, values)
+        riddle = Riddle(guild, levels)
         riddles[guild['alias']] = riddle
+
 
 @bot.command()
 async def ping(ctx):
