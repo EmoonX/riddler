@@ -1,5 +1,4 @@
 from quart import Blueprint, session, render_template
-from sqlalchemy.engine.result import RowProxy
 
 from util.db import database
 
@@ -23,8 +22,9 @@ async def level_list(riddle: str):
 
     # Get level list (and mark them as unlocked and/or beaten appropriately)
     query = 'SELECT * FROM levels WHERE riddle = :riddle'
-    levels = await database.fetch_all(query, {'riddle': riddle})
-    for level in levels:
+    result = await database.fetch_all(query, {'riddle': riddle})
+    levels = []
+    for level in result:
         level = dict(level)
         if 'username' in session:
             query = 'SELECT username, rating_given FROM user_levelcompletion ' \
@@ -32,7 +32,6 @@ async def level_list(riddle: str):
                     'AND username = :name AND level_id = :id ' \
                     'AND discriminator = :disc'
             values = {**base_values, 'id': level['id']}
-            print(values)
             result = await database.fetch_one(query, values)
             level['beaten'] = (result is not None)
             level['unlocked'] = level['beaten']
@@ -46,9 +45,13 @@ async def level_list(riddle: str):
                 values = {**base_values, 'path': level['path']}
                 result = await database.fetch_one(query, values)
                 level['unlocked'] = (result is not None)
-
             else:
                 level['rating_given'] = result['rating_given']
+            
+            if level['unlocked']:
+                # Get image absolute path
+                s = level['path'].rsplit('/', maxsplit=1)[0]
+                level['image_path'] = s + '/' + level['image']
         else:
             level['beaten'] = False
             level['unlocked'] = False
@@ -59,6 +62,9 @@ async def level_list(riddle: str):
         values = {'riddle': riddle, 'id': level['id']}
         result = await database.fetch_all(query, values)
         level['users'] = result
+
+        levels.append(level)
+        # Append level to levels list
 
     if not 'username' in session:
         # First level is always visible
@@ -81,16 +87,17 @@ async def level_list(riddle: str):
     }
     # return render_and_count('levels.htm', locals())
     # return render_and_count('levels.htm', locals())
+    print(dict(levels[0]))
+    print(dict(levels[1]))
     return await render_template('levels.htm', **locals())
 
 
-async def _get_user_unlocked_pages(riddle: str, levels: RowProxy):
+async def _get_user_unlocked_pages(riddle: str, levels: dict):
     '''Build dict of pairs (folder -> list of pages),
     containing all user accessed pages ordered by extension.'''
 
     for level in levels:
         # Get all pages (paths) user accessed in respective level
-        level = dict(level)
         query = 'SELECT path FROM user_pageaccess ' \
                 'WHERE riddle = :riddle ' \
                 'AND username = :name AND discriminator = :disc ' \

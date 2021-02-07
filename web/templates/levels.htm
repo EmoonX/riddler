@@ -23,8 +23,8 @@
             <td class="level-id{% if level['unlocked'] %} unlocked{% endif %}"><var>{{ level['id'] }}</var>{% if level['unlocked'] %}<var>☰</var>{% endif %}</td>
           {% if level['unlocked'] %}
             <td class="level-thumb">
-              <a href="/cipher/{{ level['path'] }}">
-                <img {% if level['borderless_image'] %}class="borderless" {% endif %}src="/cipher/thumbs/{{ level['image'] }}">
+              <a href="http://gamemastertips.com/cipher/{{ level['path'] }}">
+                <img src="http://gamemastertips.com/cipher/{{ level['image_path'] }}">
               </a>
             </td>
           {% else %}
@@ -72,7 +72,7 @@
                   {% else %}
                     {% set s = 'empty' %}
                   {% endif %}
-                  <img src="/cipher/icons/heart-{{ s }}.png" alt="Heart {{ s }}">
+                  <img src="/static/icons/heart-{{ s }}.png" alt="Heart {{ s }}">
                 {% endfor %}
                 <var>({{ level['rating_count'] }})</var>
                 </div>
@@ -83,8 +83,8 @@
             <td class="level-cur-in">
               <div>
             {% for user in level['users'] %}
-                {% set avatar = get_avatar(user['username']) %}
-                <a href="{{ url_for('account.profile', username=user['username']) }}"><img class="avatar-small" src="{{ avatar[0] }}?{{ time() }}" data-gif="{{ avatar[1] }}?{{ time() }}" title="{{ user['username'] }}"></a>
+                {% set avatar = user['username'] %}
+                <a href="#"><img class="avatar-small" src="#" data-gif="#" title="{{ user['username'] }}"></a>
               </div>{% if not loop.last %}<div>{% endif %}
             {% endfor %}
             </td>
@@ -95,7 +95,7 @@
                 <nav>
                   <div class="title">Page Explorer</div>
                   <div class="content">
-                    <img class="folder-up" src="/cipher/icons/folderup.png"><div class="path">/{{ folder }}/</div>
+                    <img class="folder-up" src="/static/icons/folderup.png"><div class="path">/{{ folder }}/</div>
                     <div class="completion"><span class="check">✅</span><var>{{ level['files_count'][folder] }}</var> uncovered files of <var>{{ level['files_total'][folder] }}</var> in this folder</div>
                   </div>
                 </nav>
@@ -107,7 +107,7 @@
                     {% set name = 'folder' %}
                   {% endif %}
                --><figure>
-                    <img src="/cipher/icons/{{ name }}.png">
+                    <img src="/static/icons/{{ name }}.png">
                     <figcaption>{{ page }}</figcaption>
                   </figure><!--
                 {% endfor %}

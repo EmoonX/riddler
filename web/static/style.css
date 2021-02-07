@@ -499,7 +499,7 @@ figcaption.rank {
   max-width: 150px;
   max-height: 150px;
   border-radius: 5px;
-  box-shadow: 0 0 0.8em #aaa;
+  /* box-shadow: 0 0 0.8em #aaa; */
 }
 
 figure > figcaption {

@@ -31,6 +31,10 @@ from util.db import database
 for blueprint in (admin_auth, admin, user_auth, process, levels):
     app.register_blueprint(blueprint)
 
+# Disable annoying newlines on Jinja rendered HTML templates
+app.jinja_env.trim_blocks = True
+app.jinja_env.lstrip_blocks = True
+
 
 @app.before_first_request
 async def before():
