@@ -1,4 +1,4 @@
-from typing import Dict, OrderedDict
+from collections import OrderedDict, defaultdict
 
 import discord
 
@@ -12,8 +12,8 @@ class Riddle:
     guild: discord.Guild
 
     # Ordered dict of pairs (level_id -> path)
-    levels: OrderedDict[str, dict] = {}
-    secret_levels: OrderedDict[str, dict] = {}
+    levels = OrderedDict[str, dict]()
+    secret_levels = OrderedDict[str, dict]()
 
     # Suffix to be appended to winners' nicknames
     winner_suffix: str
@@ -35,4 +35,4 @@ class Riddle:
 
 
 # Global dict of (guild_alias -> riddle) which bot supervises
-riddles: Dict[str, Riddle] = {}
+riddles = defaultdict[str, Riddle]()

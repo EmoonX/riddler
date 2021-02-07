@@ -23,7 +23,7 @@ async def build(data):
         await add(guild, level)
 
     # Send success message to guild admins
-    text = '[%s] Channel and roles building complete :)'
+    text = '**[%s]** Channel and roles building complete :)' % guild.name
     for member in guild.members:
         if member.guild_permissions.administrator and not member.bot:
             await member.send(text)
@@ -63,6 +63,8 @@ async def add(guild: discord.Guild, level: dict, is_secret=False):
             level_role = get(guild.roles, name=name)
             if level_role:
                 await channel.set_permissions(reached, read_messages=True)
+            if channel.name == id:
+                break
         
         # Set red permission for @winners too
         await channel.set_permissions(winners, read_messages=True)
