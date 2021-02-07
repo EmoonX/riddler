@@ -43,6 +43,14 @@ async def on_ready():
         riddle = Riddle(guild, levels)
         riddles[guild['alias']] = riddle
 
+    guild = get(bot.guilds, name='Wonderland')
+    for channel in guild.channels:
+        if len(channel.name) == 2:
+            await channel.delete()
+    for role in guild.roles:
+        if 'reached-' in role.name:
+            await role.delete()
+    
 
 @bot.command()
 async def ping(ctx):

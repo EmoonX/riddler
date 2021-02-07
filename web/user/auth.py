@@ -3,7 +3,8 @@ import os
 from quart import Blueprint, Quart, redirect, url_for
 from quart.sessions import SecureCookieSessionInterface
 from quart_discord import DiscordOAuth2Session, requires_authorization
-import quart_discord
+
+from util.db import database
 
 # !! Only in development environment.
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = 'true'
@@ -46,7 +47,22 @@ async def login():
 @user_auth.route('/callback/')
 async def callback():
     '''Callback for OAuth2 authentication.'''
+    # Execute the callback
     await discord.callback()
+
+    # If user doesn't have an account on database, create it
+    user = await discord.fetch_user()
+    query = 'SELECT * FROM accounts WHERE ' \
+            'username = :name AND discriminator = :disc'
+    values = {'name': user.name, 'disc': user.discriminator}
+    result = await database.fetch_one(query, values)
+    if not result:
+        query = 'INSERT INTO accounts ' \
+                '(username, discriminator, title) ' \
+                'VALUES (:name, :disc, "Player")'
+        await database.execute(query, values)
+
+    # Redirect to post-login page
     return redirect(url_for('.me'))
 
 

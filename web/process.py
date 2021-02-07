@@ -27,7 +27,7 @@ async def process_url():
         # Send Unlocking request to bot's IPC server
         user = await discord.fetch_user()
         path = path.replace('/cipher/', '')
-        await web_ipc.request('unlock',
+        await web_ipc.request('process',
                 alias='cipher', player_id=user.id,
                 path=path)
         response = jsonify({'path': path})

@@ -63,8 +63,6 @@ async def add(guild: discord.Guild, level: dict, is_secret=False):
             level_role = get(guild.roles, name=name)
             if level_role:
                 await channel.set_permissions(reached, read_messages=True)
-            if channel.name == id:
-                break
         
         # Set red permission for @winners too
         await channel.set_permissions(winners, read_messages=True)
