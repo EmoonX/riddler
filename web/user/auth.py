@@ -64,9 +64,10 @@ async def callback():
         query = 'SELECT * FROM accounts WHERE ' \
             'username = :name AND discriminator = :disc'
         result = await database.fetch_one(query, values)
-
-    # Store session user data
-    session['user'] = dict(result)
+    
+    # Save some important user info on session dict
+    session['username'] = user.username
+    session['disc'] = user.discriminator
 
     # Redirect to post-login page
     return redirect(url_for('.me'))

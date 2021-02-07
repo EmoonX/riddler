@@ -26,13 +26,27 @@ async def process_url():
         response = jsonify({'message': 'Unauthorized'})
         status = 401 if request.method == 'POST' else 200
     else:
-        # Send Unlocking request to bot's IPC server
+        # Store session riddle user data
+        riddle = 'cipher'
         user = await discord.fetch_user()
+        query = 'SELECT * FROM accounts ' \
+                'WHERE  riddle = :riddle AND ' \
+                    'username = :name AND discriminator = :disc'
+        values = {'riddle': riddle,
+                'name': user.name, 'disc': user.discriminator}
+        result = await database.fetch_one(query, values)
+        session[riddle] = dict(result)
+        
+        # Process page and register player info on database
         path = path.replace('/cipher/', '')
         await process_page('cipher', user.id, path)
+
+        # Send unlocking request to bot's IPC server
         await web_ipc.request('unlock',
                 alias='cipher', player_id=user.id,
                 path=path)
+        
+        # Successful response
         response = jsonify({'path': path})
         status = 200
     
@@ -47,16 +61,16 @@ async def process_url():
     return response, status
 
 
-async def process_page(riddle: str, player_id: int, path:str):
+async def process_page(riddle: str, player_id: int, path: str):
     """Process level pages (one or more folders deep)."""
 
-    async def search_and_add_to_db(table, id, rank=''):
+    async def search_and_add_to_db(table: str, id: int, rank=''):
         """Search if level was yet not completed or secret yet not found.
         If true, add user and datetime of completion to respective table."""
 
         # Check if level has been completed
-        username = session['user']['username']
-        disc = session['user']['discriminator']
+        username = session['username']
+        disc = session['disc']
         query = ('SELECT * FROM %s ' % table) + \
                 'WHERE riddle = :riddle AND username = :name ' \
                 'AND discriminator = :disc AND level_id = :id'
@@ -67,7 +81,7 @@ async def process_page(riddle: str, player_id: int, path:str):
         
         # Register level completion in designated table
         time = datetime.utcnow()
-        count = session['user']['cur_page_count']
+        count = session[riddle]['cur_page_count']
         query = ('INSERT INTO %s ' % table) + \
                 '(riddle, username, discriminator, ' \
                     'level_id, completion_time, page_count) ' \
@@ -80,7 +94,9 @@ async def process_page(riddle: str, player_id: int, path:str):
             query = 'UPDATE levels ' \
                     'SET completion_count = completion_count + 1 ' \
                     'WHERE riddle = :riddle AND id = :id'
-            values = {**values, 'riddle': riddle}
+            values = {'riddle': riddle, 'id': id}
+            print(query, values)
+            await database.execute(query, values)
 
             # Update user and country scores
             # points = level_ranks[rank][0]
@@ -92,16 +108,21 @@ async def process_page(riddle: str, player_id: int, path:str):
             #         "WHERE alpha_2 = %s",
             #         (points, session['user']['country']))
 
-            if not 'Status' in level:
-                pass
+            if not 'Status' in id:
                 # Update current_level count and reset user's page count
-                # id_next = '%02d' % (int(id) + 1)
-                # query = 'UPDATE accounts ' \
-                #         'SET current_level = :id_next, cur_page_count = 0 ' \
-                #         'WHERE username = :name',
-                # values = {'id_next': id_next, 'name': username}
-                # session['user']['current_level'] = current_level
-                # session['user']['cur_page_count'] = 0
+                id_next = '%02d' % (int(id) + 1)
+                query = 'UPDATE accounts ' \
+                        'SET current_level = :id_next, cur_page_count = 1 ' \
+                        'WHERE riddle = :riddle AND ' \
+                            'username = :name AND discriminator = :disc'
+                values = {'id_next': id_next,
+                        'riddle': riddle, 'name': username, 'disc': disc}
+                print(query, values)
+                await database.execute(query, values)
+
+                # Also Update session info
+                session[riddle]['current_level'] = current_level
+                session[riddle]['cur_page_count'] = 1
 
                 # Update countries table too
                 # cursor.execute("UPDATE countries "
@@ -138,12 +159,12 @@ async def process_page(riddle: str, player_id: int, path:str):
     if is_htm:
         query = 'UPDATE accounts SET cur_page_count = cur_page_count + 1 ' \
                 'WHERE username = :user'
-        values = {'user': session['user']['username']}
+        values = {'user': session['username']}
         await database.execute(query, values)
-        session['user']['cur_page_count'] += 1
+        session[riddle]['cur_page_count'] += 1
 
     # Get user's current reached level and requested level number
-    current_level = session['user']['current_level']
+    current_level = session[riddle]['current_level']
     if not current_level:
         current_level = '01'
     query = 'SELECT * FROM level_pages WHERE path = :path'
