@@ -1,4 +1,5 @@
 from urllib.parse import urlparse
+from datetime import datetime
 
 from quart import Blueprint, request, session, jsonify
 
@@ -28,7 +29,10 @@ async def process_url():
         # Send Unlocking request to bot's IPC server
         user = await discord.fetch_user()
         path = path.replace('/cipher/', '')
-        await process_page(user.id, path)
+        await process_page('cipher', user.id, path)
+        await web_ipc.request('unlock',
+                alias='cipher', player_id=user.id,
+                path=path)
         response = jsonify({'path': path})
         status = 200
     
@@ -43,79 +47,91 @@ async def process_url():
     return response, status
 
 
-async def process_page(player_id: int, path:str):
+async def process_page(riddle: str, player_id: int, path:str):
     """Process level pages (one or more folders deep)."""
 
-    def search_and_add_to_db(table, level, rank=''):
+    async def search_and_add_to_db(table, id, rank=''):
         """Search if level was yet not completed or secret yet not found.
         If true, add user and datetime of completion to respective table."""
-        cursor.execute("SELECT username FROM " + table + " "
-                "WHERE username = %s AND level_id = %s",
-                (session['user']['username'], level,))
-        found = cursor.fetchone()
-        if not found:
-            time = datetime.utcnow()
-            aux = ", NULL)" if table == 'user_levelcompletion' else ")"
-            cursor.execute("INSERT INTO " + table +
-                    " VALUES (%s, %s, %s, %s" + aux,
-                    (session['user']['username'], level, time,
-                        session['user']['cur_page_count']))
 
-            if table == 'user_levelcompletion':
-                # Update global user completion count
-                cursor.execute("UPDATE levels "
-                        "SET completion_count = completion_count + 1 "
-                        "WHERE id = %s", (level,))
+        # Check if level has been completed
+        username = session['user']['username']
+        disc = session['user']['discriminator']
+        query = ('SELECT * FROM %s ' % table) + \
+                'WHERE riddle = :riddle AND username = :name ' \
+                'AND discriminator = :disc AND level_id = :id'
+        values = {'riddle': riddle, 'name': username, 'disc': disc, 'id': id}
+        found = await database.fetch_one(query, values)
+        if found:
+            return
+        
+        # Register level completion in designated table
+        time = datetime.utcnow()
+        count = session['user']['cur_page_count']
+        query = ('INSERT INTO %s ' % table) + \
+                '(riddle, username, discriminator, ' \
+                    'level_id, completion_time, page_count) ' \
+                'VALUES (:riddle, :name, :disc, :id, :time, :count)'
+        values = {**values, 'time': time, 'count': count}
+        await database.execute(query, values)
 
-                # Update user and country scores
-                points = level_ranks[rank][0]
-                cursor.execute("UPDATE accounts "
-                        "SET score = score + %s WHERE username = %s",
-                        (points, session['user']['username']))
-                cursor.execute("UPDATE countries "
-                        "SET total_score = total_score + %s "
-                        "WHERE alpha_2 = %s",
-                        (points, session['user']['country']))
+        if table == 'user_levelcompletion':
+            # Update global user completion count
+            query = 'UPDATE levels ' \
+                    'SET completion_count = completion_count + 1 ' \
+                    'WHERE riddle = :riddle AND id = :id'
+            values = {**values, 'riddle': riddle}
 
-                if not 'Status' in level:
-                    # Update current_level count and reset user's page count
-                    nonlocal current_level
-                    current_level = "%02d" % (int(level) + 1)
-                    cursor.execute("UPDATE accounts "
-                            "SET current_level = %s, cur_page_count = 0 "
-                            "WHERE username = %s",
-                            (current_level, session['user']['username']))
-                    session['user']['current_level'] = current_level
-                    session['user']['cur_page_count'] = 0
+            # Update user and country scores
+            # points = level_ranks[rank][0]
+            # cursor.execute("UPDATE accounts "
+            #         "SET score = score + %s WHERE username = %s",
+            #         (points, session['user']['username']))
+            # cursor.execute("UPDATE countries "
+            #         "SET total_score = total_score + %s "
+            #         "WHERE alpha_2 = %s",
+            #         (points, session['user']['country']))
 
-                    # Update countries table too
-                    cursor.execute("UPDATE countries "
-                            "SET highest_level = GREATEST(highest_level, %s) "
-                            "WHERE alpha_2 = %s",
-                            (current_level, session['user']['country']))
-                    if int(current_level) > get_level_count()[0]:
-                        cursor.execute("UPDATE countries "
-                                "SET winners_count = winners_count + 1 "
-                                "WHERE alpha_2 = %s",
-                                (session['user']['country'],))
+            if not 'Status' in level:
+                pass
+                # Update current_level count and reset user's page count
+                # id_next = '%02d' % (int(id) + 1)
+                # query = 'UPDATE accounts ' \
+                #         'SET current_level = :id_next, cur_page_count = 0 ' \
+                #         'WHERE username = :name',
+                # values = {'id_next': id_next, 'name': username}
+                # session['user']['current_level'] = current_level
+                # session['user']['cur_page_count'] = 0
+
+                # Update countries table too
+                # cursor.execute("UPDATE countries "
+                #         "SET highest_level = GREATEST(highest_level, %s) "
+                #         "WHERE alpha_2 = %s",
+                #         (current_level, session['user']['country']))
+                # if int(current_level) > get_level_count()[0]:
+                #     cursor.execute("UPDATE countries "
+                #             "SET winners_count = winners_count + 1 "
+                #             "WHERE alpha_2 = %s",
+                #             (session['user']['country'],))
 
     def has_access():
         """Check if user can access level_id,
                 having reached current_level so far."""
-        # Admins can access everything!
-        if session['user']['rank'] == 'Site Administrator':
-            return True
+        return True
+        # # Admins can access everything!
+        # if session['user']['rank'] == 'Site Administrator':
+        #     return True
 
-        if "Status" in level_id:
-            # Secret level, check previous id in respective table
-            cursor = get_cursor()
-            cursor.execute("SELECT * FROM user_secretsfound "
-                    "WHERE level_id = %s", (level_id,))
-            secret_found = cursor.fetchone()
-            return secret_found
+        # if "Status" in level_id:
+        #     # Secret level, check previous id in respective table
+        #     cursor = get_cursor()
+        #     cursor.execute("SELECT * FROM user_secretsfound "
+        #             "WHERE level_id = %s", (level_id,))
+        #     secret_found = cursor.fetchone()
+        #     return secret_found
 
-        # Return if level is *at most* the current_level
-        return int(level_id) <= int(current_level)
+        # # Return if level is *at most* the current_level
+        # return int(level_id) <= int(current_level)
 
     # Increment user current page count (if it's an .htm one)
     is_htm = path[-4:] == '.htm'
@@ -125,53 +141,50 @@ async def process_page(player_id: int, path:str):
         values = {'user': session['user']['username']}
         await database.execute(query, values)
         session['user']['cur_page_count'] += 1
-    
-    return
 
     # Get user's current reached level and requested level number
     current_level = session['user']['current_level']
-    cursor.execute("SELECT * FROM level_pages WHERE path = %s", (path,))
-    page = cursor.fetchone()
+    if not current_level:
+        current_level = '01'
+    query = 'SELECT * FROM level_pages WHERE path = :path'
+    values = {'path': path}
+    page = await database.fetch_one(query, values)
     if not page:
         # Page not found!
-        abort(404)
-    level_id = page["level_id"]
+        return
+    level_id = page['level_id']
 
-    if htm:
+    if is_htm:
         # Get user's current level info from DB
-        cursor.execute("SELECT * FROM levels WHERE id = %s",
-                (current_level,))
-        level = cursor.fetchone()
+        query = 'SELECT * FROM levels WHERE riddle = :riddle AND id = :id'
+        values = {'riddle': riddle, 'id': current_level}
+        level = await database.fetch_one(query, values)
 
         # If user entered a correct and new answer, register time on DB
-        total, _ = get_level_count()
-        if int(current_level) <= total and path == level["answer"]:
-            search_and_add_to_db("user_levelcompletion",
+        #if int(current_level) <= total and path == level["answer"]:
+        if path == level['answer']:
+            await search_and_add_to_db('user_levelcompletion',
                     current_level, level['rank'])
-
-            # Create unique filename with user/level for Discord use
-            discord_tag = session['user']['discord_tag']
-            filename = "%s-%s" % (discord_tag, level['id'])
-            #os.mknod("tmp/" + filename)
-
         else:
+            pass
             # Check if a secret level has been found
-            cursor.execute("SELECT * FROM levels "
-                    "WHERE SUBSTR(id, 1, 6) = 'Status' AND "
-                    "path = %s", (path,))
-            secret = cursor.fetchone()
-            if secret:
-                search_and_add_to_db('user_secretsfound', secret['id'])
-            else:
-                # Otherwise, check if a secret level has been beaten
-                cursor.execute("SELECT * FROM levels "
-                        "WHERE SUBSTR(id, 1, 6) = 'Status' AND "
-                        "answer = %s", (path,))
-                secret = cursor.fetchone()
-                if secret:
-                    search_and_add_to_db('user_levelcompletion',
-                            secret['id'], secret['rank'])
+            # cursor.execute("SELECT * FROM levels "
+            #         "WHERE SUBSTR(id, 1, 6) = 'Status' AND "
+            #         "path = %s", (path,))
+            # secret = cursor.fetchone()
+            # if secret:
+            #     search_and_add_to_db('user_secretsfound', secret['id'])
+            # else:
+            #     # Otherwise, check if a secret level has been beaten
+            #     cursor.execute("SELECT * FROM levels "
+            #             "WHERE SUBSTR(id, 1, 6) = 'Status' AND "
+            #             "answer = %s", (path,))
+            #     secret = cursor.fetchone()
+            #     if secret:
+            #         search_and_add_to_db('user_levelcompletion',
+            #                 secret['id'], secret['rank'])
 
+    return
     if not has_access():
         # Forbid user from accessing any level further than permitted
         abort(403)

@@ -32,25 +32,16 @@ async def on_ready():
 
     # Build riddles dict from database guild and level data
     await database.connect()
-    query = 'SELECT * from guilds'
-    guilds = await database.fetch_all(query)
-    for guild in guilds:
-        values = {'guild': guild['alias']}
-        query = 'SELECT * FROM levels WHERE guild = :guild'
+    query = 'SELECT * from riddles'
+    result = await database.fetch_all(query)
+    for riddle in result:
+        query = 'SELECT * FROM levels WHERE riddle = :riddle'
+        values = {'riddle': riddle['alias']}
         levels = await database.fetch_all(query, values)
         # query = 'SELECT * FROM secret_levels WHERE guild = :guild'
         # secret_levels = await database.fetch_all(query, values)
-        riddle = Riddle(guild, levels)
-        riddles[guild['alias']] = riddle
+        riddles[riddle['alias']] = Riddle(riddle, levels)
 
-    guild = get(bot.guilds, name='Wonderland')
-    for channel in guild.channels:
-        if len(channel.name) == 2:
-            await channel.delete()
-    for role in guild.roles:
-        if 'reached-' in role.name:
-            await role.delete()
-    
 
 @bot.command()
 async def ping(ctx):
