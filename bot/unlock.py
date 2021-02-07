@@ -46,6 +46,17 @@ async def advance(riddle: Riddle, member: Member, id: str, current_level: str):
     '''Advance to further level when player arrives at a level front page.
     "reached" role is granted to user and thus given access to channel(s).'''
 
+    # Avoid backtracking if level has already been unlocked
+    ok = False
+    for level in riddle.levels:
+        if level == current_level:
+            ok = True
+        elif level == id:
+            if not ok:
+                return
+            else:
+                break
+
     # Get channel and roles corresponding to level
     guild = riddle.guild
     channel = get(guild.channels, name=id)
