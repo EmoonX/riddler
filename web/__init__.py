@@ -23,8 +23,8 @@ discord_session_init(app)
 from admin.auth import admin_auth
 from admin.admin import admin
 from user.auth import user_auth, session_cookie
-from user.levels import levels
 from process import process
+from levels import levels
 from util.db import database
 
 # Register app blueprints to allow other modules

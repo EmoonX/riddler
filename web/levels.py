@@ -81,7 +81,7 @@ async def level_list(riddle: str):
     }
     # return render_and_count('levels.htm', locals())
     # return render_and_count('levels.htm', locals())
-    return await render_template('user/levels.htm', **locals())
+    return await render_template('levels.htm', **locals())
 
 
 async def _get_user_unlocked_pages(riddle: str, levels: RowProxy):

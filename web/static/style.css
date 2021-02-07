@@ -2,16 +2,16 @@
 
 @font-face {
   font-family: standard-font;
-  src: url("/cipher/fonts/font.ttf");
+  src: url("/static/fonts/font.ttf");
 }
 @font-face {
   font-family: standard-font;
-  src: url("/cipher/fonts/font-bold.ttf");
+  src: url("/static/fonts/font-bold.ttf");
   font-weight: bold;
 }
 @font-face {
   font-family: calculator;
-  src: url("/cipher/fonts/calculator.ttf");
+  src: url("/static/fonts/calculator.ttf");
 }
 
 ::selection {
@@ -25,7 +25,7 @@ input::selection, textarea::selection {
 
 body {
   margin: 0 auto 50px auto;
-  background: url("wallpaper.png") black repeat;
+  background: url("images/wallpaper.png") black repeat;
   background-size: 800px 800px;
   color: white;
   text-align: center;
