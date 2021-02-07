@@ -1,6 +1,6 @@
 import os
 
-from quart import Blueprint, Quart, redirect, url_for
+from quart import Blueprint, Quart, session, redirect, url_for
 from quart.sessions import SecureCookieSessionInterface
 from quart_discord import DiscordOAuth2Session, requires_authorization
 
@@ -61,6 +61,12 @@ async def callback():
                 '(username, discriminator, title) ' \
                 'VALUES (:name, :disc, "Player")'
         await database.execute(query, values)
+        query = 'SELECT * FROM accounts WHERE ' \
+            'username = :name AND discriminator = :disc'
+        result = await database.fetch_one(query, values)
+
+    # Store session user data
+    session['user'] = dict(result)
 
     # Redirect to post-login page
     return redirect(url_for('.me'))
