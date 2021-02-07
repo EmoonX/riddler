@@ -183,9 +183,10 @@ async def process_page(riddle: str, path: str):
 
     # If user entered a correct and new answer, register time on DB
     #if int(current_level) <= total and path == level["answer"]:
-    if path == level['answer']:
+    if current_level == '00' or path == level['answer']:
+        rank = level['rank'] if level else 'D'
         await search_and_add_to_db('user_levelcompletion',
-                current_level, level['rank'])
+                current_level, rank)
     else:
         pass
         # Check if a secret level has been found

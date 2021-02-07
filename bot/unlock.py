@@ -99,12 +99,11 @@ async def advance(riddle: Riddle, member: Member, id: str, current_level: str):
     # Log unlocking procedure and send message to member
     print('> [%s] %s#%s unlocked channel #%s' \
             % (guild.name, member.name, member.discriminator, id))
-    text = '**[%s]** You successfully unlocked channel **#%s**!\n' \
-            % (guild.name, id)
     if id in riddle.levels:
-        text += 'Your nickname is now **%s**.' % member.nick
+        text = '**[%s]** You advanced to level **%s**!\n'
     else:
-        text += 'Your nickname is unchanged.'
+        text = '**[%s]** You found secret level **%s**!\n'
+    text %= (guild.name, id)
     await member.send(text)
 
 

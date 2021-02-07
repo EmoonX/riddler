@@ -15,9 +15,9 @@ $(document).ready(function () {
     var i = $(this).index() - 1
     $(this).parent().children("img").each(function (j) {
       if (j <= i) {
-        $(this).attr("src", "/cipher/icons/heart-full.png")
+        $(this).attr("src", "/static/icons/heart-full.png")
       } else {
-        $(this).attr("src", "/cipher/icons/heart-empty.png")
+        $(this).attr("src", "/static/icons/heart-empty.png")
       }
     });
   });
@@ -39,7 +39,7 @@ $(document).ready(function () {
     var aux = response.responseText.split(" ")
     if (aux[0] == "403") {
       // Go back to login page if trying to rate after timeout
-      window.location.replace("/cipher/login")
+      window.location.replace("/login/")
       return
     }
 
@@ -59,7 +59,7 @@ $(document).ready(function () {
     // Update filled-up hearts
     average = Math.round(2 * average) / 2
     for (var i = 0; i < 5; i++) {
-      imgs[level_id][i] = "/cipher/icons/"
+      imgs[level_id][i] = "/static/icons/"
       if ((i+1) <= average) {
         imgs[level_id][i] += "heart-full.png"
       } else if ((i+1) - average == 0.5) {
@@ -125,7 +125,7 @@ $(document).ready(function () {
       if (j != -1) {
         name = page.substr(j + 1)
       }
-      var img = '<img src="/cipher/icons/' + name + '.png">'
+      var img = '<img src="/static/icons/' + name + '.png">'
       var fc = '<figcaption>' + page + '</figcaption>'
       var figure = '<figure>' + img + fc + '</figure>'
       div.append(figure)
@@ -170,7 +170,8 @@ $(document).ready(function () {
       var parent = $(this).parents(".page-explorer")
       var path = parent.find("nav > .content > .path")[0].textContent +
           $(this).find("figcaption")[0].textContent
-      window.open(path, "_blank")
+      var url = "http://gamemastertips.com" + path
+      window.open(url, "_blank")
     } else {
       // Change current directory to folder's one
       var parent = $(this).parents(".page-explorer")

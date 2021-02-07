@@ -13,12 +13,12 @@ async def config(alias: str):
     '''Riddle administration configuration.'''
     
     # Need to be corrrectly logged to access guild config
-    if not 'guild' in session or session['guild'] != alias:
-        return redirect(url_for('auth.login'))
+    if not 'admin' in session or not alias in session['admin']:
+        return redirect(url_for('admin_auth.login'))
     
     # Fetch guild levels info from database
-    query = 'SELECT * FROM levels WHERE guild = :guild'
-    levels = await database.fetch_all(query, {'guild': alias})
+    query = 'SELECT * FROM levels WHERE riddle = :riddle'
+    levels = await database.fetch_all(query, {'riddle': alias})
     # query = 'SELECT * FROM secret_levels WHERE guild = :guild'
     # secret_levels = await database.fetch_all(query, {'guild': alias})
     
@@ -51,9 +51,10 @@ async def config(alias: str):
 
     # Update Discord guild channels and roles with new levels info.
     # This is done by sending an request to the bot's IPC server
+    id = session['admin'][alias]
     levels = [dict(level) for level in levels]
     await web_ipc.request('build',
-            guild_id=session['id'], levels=levels)
+            guild_id=id, levels=levels)
 
     return await r('Guild info updated successfully!')
 

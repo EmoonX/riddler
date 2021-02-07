@@ -40,8 +40,9 @@ async def login():
         return await r('Wrong password.')
     
     # Create session data
-    session['guild'] = alias
-    session['id'] = guild.id
+    if not 'admin' in session:
+        session['admin'] = {}
+        session['admin'][alias] = guild['id']
 
     # Login is successful, redirect to guild page
     return redirect(url_for("admin.config", alias=alias))
@@ -51,8 +52,8 @@ async def login():
 async def logout():
     '''Logout from session and return to login page.'''
 
-    # Pop alias from session (if still logged)
-    if 'guild' in session:
-        session.pop('guild')
+    # Pop admin entry from session (if still logged)
+    if 'admin' in session:
+        session.pop('admin')
     
-    return redirect(url_for('auth.login'))
+    return redirect(url_for('admin_auth.login'))
