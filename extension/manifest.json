@@ -7,7 +7,9 @@
 
   "content_scripts": [
     {
-      "matches": ["*://*.gamemastertips.com/*"],
+      "matches": [
+        "*://*.gamemastertips.com/*",
+        "*://*.rnsriddle.com/*"],
       "js": ["content.js"]
     }
   ],

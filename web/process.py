@@ -24,10 +24,13 @@ async def process_url():
     if not await discord.authorized:
         # Unauthorized, return status 401
         response = jsonify({'message': 'Unauthorized'})
+        print(':(')
         status = 401 if request.method == 'POST' else 200
     else:
         # Store session riddle user data
         riddle = 'cipher'
+        if 'rnsriddle.com' in url:
+            riddle = 'rns'
         user = await discord.fetch_user()
         query = 'SELECT * FROM accounts ' \
                 'WHERE  riddle = :riddle AND ' \
@@ -38,12 +41,16 @@ async def process_url():
         session[riddle] = dict(result)
         
         # Process page and register player info on database
-        path = path.replace('/cipher/', '')
-        await process_page('cipher', path)
+        if riddle == 'cipher':
+            path = path.replace('/cipher/', '')
+        else:
+            path = path.replace('/riddle/', '')
+        print(path)
+        await process_page(riddle, path)
 
         # Send unlocking request to bot's IPC server
         await web_ipc.request('unlock',
-                alias='cipher', player_id=user.id,
+                alias=riddle, player_id=user.id,
                 path=path)
         
         # Successful response
@@ -109,7 +116,10 @@ async def process_page(riddle: str, path: str):
 
             if not 'Status' in id:
                 # Update current_level count and reset user's page count
-                id_next = '%02d' % (int(id) + 1)
+                if riddle == 'cipher':
+                    id_next = '%02d' % (int(id) + 1)
+                if riddle == 'rns':
+                    id_next = 'level-%d' % (int(id[-1:]) + 1)
                 query = 'UPDATE accounts ' \
                         'SET current_level = :id_next, cur_page_count = 1 ' \
                         'WHERE riddle = :riddle AND ' \

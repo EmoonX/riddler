@@ -51,7 +51,8 @@ async def level_list(riddle: str):
             if level['unlocked']:
                 # Get image absolute path
                 s = level['path'].rsplit('/', maxsplit=1)[0]
-                level['image_path'] = s + '/' + level['image']
+                if level['image']:
+                    level['image_path'] = s + '/' + level['image']                
         else:
             level['beaten'] = False
             level['unlocked'] = False
@@ -87,8 +88,13 @@ async def level_list(riddle: str):
     }
     # return render_and_count('levels.htm', locals())
     # return render_and_count('levels.htm', locals())
-    print(dict(levels[0]))
-    print(dict(levels[1]))
+    print('LOL')
+    s = 'cipher'
+    if riddle == 'rns':
+        s = 'riddle'
+    url = 'http://gamemastertips.com/cipher'
+    if riddle == 'rns':
+        url = 'https://rnsriddle.com/riddle'
     return await render_template('levels.htm', **locals())
 
 
@@ -96,6 +102,9 @@ async def _get_user_unlocked_pages(riddle: str, levels: dict):
     '''Build dict of pairs (folder -> list of pages),
     containing all user accessed pages ordered by extension.'''
 
+    s = 'cipher'
+    if riddle == 'rns':
+        s = 'riddle'
     for level in levels:
         # Get all pages (paths) user accessed in respective level
         query = 'SELECT path FROM user_pageaccess ' \
@@ -105,7 +114,7 @@ async def _get_user_unlocked_pages(riddle: str, levels: dict):
         values = {'riddle': riddle, 'name': session['username'],
                 'disc': session['disc'], 'id': level['id']}
         result = await database.fetch_all(query, values)
-        paths = [('cipher/' + row['path']) for row in result]
+        paths = [(s + '/' + row['path']) for row in result]
 
         # Build dict of pairs (folder -> list of paths)
         level['folders'] = {}
@@ -157,7 +166,7 @@ async def _get_user_unlocked_pages(riddle: str, levels: dict):
         result = await database.fetch_all(query, values)
         paths = [row['path'] for row in result]
         for path in paths:
-            folder = 'cipher/' + path.rsplit('/', 1)[0]
+            folder = s + '/' + path.rsplit('/', 1)[0]
             if not folder in folders:
                 # Avoid spoiling things in HTML!
                 continue

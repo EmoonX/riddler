@@ -51,7 +51,7 @@ async def callback():
     await discord.callback()
 
     # If user doesn't have an account on database, create it
-    riddle = 'cipher'
+    riddle = 'rns'
     user = await discord.fetch_user()
     query = 'SELECT * FROM accounts WHERE ' \
             'riddle = :riddle AND username = :name AND discriminator = :disc'

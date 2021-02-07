@@ -1,5 +1,5 @@
 {% extends 'layout.htm' %}
-{% block title %}Cipher | Levels{% endblock %}
+{% block title %}{{ s }} | Levels{% endblock %}
 {% block extra %}
     <script src="/static/scripts/levels.js"></script>
 {% endblock %}
@@ -21,10 +21,10 @@
         {% for level in levels %}
           <tr>
             <td class="level-id{% if level['unlocked'] %} unlocked{% endif %}"><var>{{ level['id'] }}</var>{% if level['unlocked'] %}<var>☰</var>{% endif %}</td>
-          {% if level['unlocked'] %}
+          {% if level['unlocked'] and level['image'] %}
             <td class="level-thumb">
-              <a href="http://gamemastertips.com/cipher/{{ level['path'] }}">
-                <img src="http://gamemastertips.com/cipher/{{ level['image_path'] }}">
+              <a href="{{ url }}/{{ level['path'] }}">
+                <img src="{{ url }}/{{ level['image_path'] }}">
               </a>
             </td>
           {% else %}
@@ -91,7 +91,7 @@
           {% if level['unlocked'] %}
             <tr class="page-explorer" data-files_count="{{ level['files_count'] }}" data-files_total="{{ level['files_total'] }}" data-folders="{{ level['folders'] }}">
               <td colspan="5">
-                {% set folder = 'cipher/' + level['path'].rsplit('/', 1)[0] %}
+                {% set folder = s + '/' + level['path'].rsplit('/', 1)[0] %}
                 <nav>
                   <div class="title">Page Explorer</div>
                   <div class="content">

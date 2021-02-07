@@ -145,7 +145,7 @@ $(document).ready(function () {
     // Change current directory to one up
     var parent = $(this).parents(".page-explorer")
     var node = parent.find("nav > .content > .path")
-    if (node.text() == "/cipher/") {
+    if (node.text() == "/cipher/" || node.text() == "/riddle/") {
       // Nothing to do if already on top folder
       return
     }
