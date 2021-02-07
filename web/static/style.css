@@ -1,0 +1,797 @@
+/* -- Front page and general elements -- */
+
+@font-face {
+  font-family: standard-font;
+  src: url("/cipher/fonts/font.ttf");
+}
+@font-face {
+  font-family: standard-font;
+  src: url("/cipher/fonts/font-bold.ttf");
+  font-weight: bold;
+}
+@font-face {
+  font-family: calculator;
+  src: url("/cipher/fonts/calculator.ttf");
+}
+
+::selection {
+  background-color: white;
+  color: black;
+}
+input::selection, textarea::selection {
+  background-color: black;
+  color: white;
+}
+
+body {
+  margin: 0 auto 50px auto;
+  background: url("wallpaper.png") black repeat;
+  background-size: 800px 800px;
+  color: white;
+  text-align: center;
+  font-family: standard-font;
+  font-size: 1.5em;
+  letter-spacing: 0.5px;
+  line-height: 1.2em;
+}
+
+body > img {
+  margin: 40px;
+  border-radius: 5px;
+  box-shadow: 0 0 1.5em #aaa;
+}
+
+.borderless {
+  box-shadow: none !important;
+}
+
+figure {
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------------- */
+/* -- Header and navbar -- */
+
+header {
+  height: 100px;
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+header > nav {
+  display: block;
+  margin: 0 auto;
+  max-width: 1200px;
+  height: 100%;
+}
+
+header > nav > div:first-child {
+  float: left;
+}
+
+header > nav > div:last-child {
+  float: right;
+}
+
+.nav-button {
+  display: inline-block;
+  width: 170px;
+  line-height: 100px;
+  font-size: 1.2em;
+  font-weight: bold;
+  text-align: center;
+  text-transform: uppercase;
+  text-decoration: none;
+  text-shadow: 0 0 0.4em white;
+}
+
+.nav-button::first-letter {
+  font-size: 1.6em;
+}
+
+.nav-button:hover {
+  background-color: rgba(127, 127, 127, 0.5);
+}
+
+.profile-button {
+  width: 100%;
+  padding-right: 30px;
+  text-align: right;
+  text-transform: none;
+}
+
+/* -- Dropdown menus -- */
+
+.dropdown {
+  position: relative;
+  display: inline-block;
+}
+
+.dropdown > button {
+  border: 0;
+  background-color: transparent;
+  font-family: standard-font;
+  color: white;
+}
+
+.dropdown > button:not(.profile-button)::after {
+  content: "▼";
+  margin-left: 10px;
+  font-size: 1.6em;
+}
+
+.dropdown > div {
+  position: absolute;
+  top: 100px;
+  display: none;
+  z-index: 1;
+  width: 100%;
+  outline: medium solid white;
+  background-color: rgba(64, 64, 64, 0.9);
+  font-size: 0.8em;
+}
+
+.dropdown:hover div {
+  display: block;
+}
+
+.dropdown > div > .nav-button {
+  max-width: 100%;
+}
+
+/* ------------------------------------------------------------------------- */
+/* -- Main page content -- */
+
+main {
+  max-width: 1200px;
+  margin: 50px auto;
+}
+
+main > nav {
+  display: flex;
+  justify-content: center;
+}
+
+main > nav > a {
+  display: block;
+  float: left;
+  width: 360px;
+  height: 120px;
+  line-height: 120px;
+  margin: 50px 20px 0 20px;
+  border: thick solid white;
+  border-radius: 40px;
+  box-shadow: 0 0 0.5em white, inset 0 0 0.5em white;
+  font-size: 2em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: white;
+  text-shadow: 0 0 0.2em black, 0 0 0.4em white;
+  transition: all 0.5s;
+}
+
+main > nav > a::first-letter {
+  font-size: 1.6em;
+}
+
+main > nav > a:hover {
+  background-color: white;
+  color: black;
+}
+
+section {
+  margin: 50px;
+  clear: both;
+  text-align: justify;
+}
+
+h1, h2, h3 {
+  margin: 70px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0px;
+  text-shadow: gray 2px 2px;
+}
+
+h1 {
+  font-size: 4em;
+  text-shadow: 0 0 0.6em white;
+}
+
+h1::before, h1::after {
+  content: "";
+  width: 108px;
+  height: 192px;
+  margin: 0 60px;
+  background-image: url("logo.png");
+  background-size: 100% 100%;
+}
+
+h3 {
+  font-size: 1.5em;
+}
+
+h3::before {
+  margin: 0 20px;
+  content: url("stencilleft.png");
+}
+
+h3::after {
+  margin: 0 20px;
+  content: url("stencilright.png");
+}
+
+p {
+  margin: 40px 0px;
+}
+
+a, a:visited {
+  color: white;
+  font-weight: bold;
+}
+
+var {
+  font: 2em calculator;
+  font-weight: bold;
+  text-shadow: 0 0 8px crimson, 0 0 16px crimson, 0 0 24px crimson;
+}
+
+:not(dd) > var {
+  margin: 0 0.2em;
+}
+
+/* ------------------------------------------------------------------------- */
+/* -- User lists -- */
+
+.flag_small {
+  max-width: 3em;
+  max-height: 3em;
+  border-radius: 10%;
+}
+
+.username_cell {
+  width: 300px;
+  text-align: left;
+}
+
+.avatar-small {
+  margin: 20px;
+}
+
+a > .avatar-small {
+  margin: 0;
+}
+
+.current-level, .winner {
+  font-size: 1.5em;
+  cursor: help;
+}
+.winner {
+  text-shadow: 0 0 8px aliceblue
+}
+.first-place {
+  text-shadow: 0 0 8px gold;
+}
+.second-place {
+  text-shadow: 0 0 8px silver;
+}
+.third-place {
+  text-shadow: 0 0 8px sienna;
+}
+
+.points {
+  font-size: 1.5em;
+  text-shadow: 0 0 8px green, 0 0 16px green, 0 0 24px green;
+}
+
+.cheevo-cell {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  width: 400px;
+  min-height: 90px;
+}
+
+.cheevo {
+  position: absolute;
+  display: block;
+  opacity: 0;
+  width: 50px;
+  margin: 10px;
+  border: thin solid;
+  border-radius: 20%;
+  cursor: help;
+}
+
+.cheevo-cell:hover > .cheevo {
+  position: static;
+  opacity: 1;
+  transition: opacity 0.5s 0.1s;
+}
+
+figure.flag {
+  margin: 3em;
+}
+
+figure.flag > img {
+  max-width: 8em;
+  max-height: 8em;
+}
+
+figure.flag > figcaption {
+  margin-top: 1em;
+  font-size: 2em;
+  font-weight: bold;
+}
+
+/* ------------------------------------------------------------------------- */
+/* -- Forms -- */
+
+form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin: 0 auto;
+}
+
+fieldset {
+  margin: 20px;
+  width: 320px;
+  height: 500px;
+}
+
+legend {
+  line-height: 0px;
+}
+
+/* Wrapper for Chrome and Edge fix */
+fieldset > div {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100%;
+}
+
+label {
+  position: relative;
+  display: block;
+  margin: 20px auto;
+  text-align: left;
+  font-size: 0.7em;
+  font-style: italic;
+}
+
+label.icon:before {
+  content: " ";
+  position: absolute;
+  left: -35px;
+  width: 30px;
+  height: 30px;
+  background-image: url("/cipher/discord-icon.png");
+  background-size: 30px 30px;
+}
+
+input:not([type="checkbox"]), select {
+  display: block;
+  clear: both;
+  padding: 5px;
+  border-radius: 5px;
+  font-size: 1.1em;
+}
+
+select {
+  width: 200px;
+}
+
+/* figure {
+  width: 150px;
+  height: 150px;
+}
+
+figure > img {
+  max-width: 150px;
+  max-height: 150px;
+} */
+
+input:not([name]) {
+  padding: 5px 10px;
+  font-size: 0.8em;
+  word-wrap: break-word;
+}
+
+label.checkbox > * {
+  vertical-align: middle;
+}
+
+input[type="checkbox"] {
+  margin: 0 10px;
+}
+
+textarea {
+  display: block;
+  margin: 20px;
+  width: 800px;
+  height: 300px;
+  font-size: 1.4em;
+}
+
+/* ------------------------------------------------------------------------- */
+/* -- Profile pages -- */
+
+dl, dl + figure {
+  display: inline-block;
+  width: 400px;
+  vertical-align: top;
+}
+
+dt, dd {
+  margin: 20px auto;
+}
+
+dt {
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+dd {
+  font-style: italic;
+  margin-bottom: 40px;
+}
+
+img.avatar {
+  margin: 50px auto;
+  max-width: 250px;
+  max-height: 250px;
+  border-radius: 50%;
+}
+
+img.avatar-small {
+  width: 50px;
+  vertical-align: middle;
+  border-radius: 50%;
+}
+
+figcaption.rank {
+  text-align: center;
+  font-size: 1.2em;
+  font-weight: bold;
+  font-style: italic;
+}
+
+.graph {
+  display: inline-block;
+  margin-top: 50px;
+  background-color: white;
+  border-radius: 10%;
+}
+
+.graph > figcaption {
+  color: black;
+}
+
+/* ------------------------------------------------------------------------- */
+/* -- Level list -- */
+
+.level-id {
+  max-width: 140px;
+  word-wrap: break-word;
+}
+.level-id.unlocked {
+  cursor: pointer;
+}
+.level-id.unlocked.active {
+  background-color: #600;
+  border-bottom-width: 0;
+  transition: background-color 0.25s;
+}
+
+.level-thumb {
+  width: 200px;
+  height: 200px;
+}
+
+.level-thumb > a > img {
+  max-width: 150px;
+  max-height: 150px;
+  border-radius: 5px;
+  box-shadow: 0 0 0.8em #aaa;
+}
+
+figure > figcaption {
+  text-align: center;
+  font-size: 0.7em;
+  font-style: italic;
+}
+
+.level-rank {
+  width: 200px;
+}
+
+.level-rank > figure > div {
+  font-family: "Segoe UI Emoji";
+  font-size: 1.6em;
+  letter-spacing: -4px;
+  user-select: none;
+}
+
+.level-rank > figure > div > span {
+  display: inline-block;
+}
+
+.level-rank:hover > figure > div > span {
+  transform: rotate(360deg);
+}
+
+.level-rank > figure > figcaption {
+  margin-top: 10px;
+}
+
+.level-rank > figure > figcaption > .rank-letter {
+  font-size: 1.3em;
+  font-weight: bold;
+}
+
+.level-comp {
+  margin: auto 0;
+  font-size: 0.7em;
+}
+
+.level-comp > var {
+  font-size: 1.5em;
+}
+
+.level-rating {
+  margin: 20px 0 auto 0;
+}
+
+.level-rating > div {
+  color: crimson;
+  font-size: 0;
+}
+
+.level-rating > div > var {
+  margin: 0 8px;
+  vertical-align: middle;
+  font-size: 22px;
+}
+
+.level-rating > div > img {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  padding: 1px;
+  vertical-align: middle;
+  user-select: none;
+  cursor: pointer;
+  transition: width 0.5s, height 0.5s;
+}
+
+.level-rating > figcaption {
+  margin-top: 5px;
+}
+
+.level-rating > figcaption > span > var {
+  font-size: 20px;
+}
+
+.level-cur-in {
+  width: 300px;
+}
+
+.level-cur-in > div {
+  display: inline-block;
+  margin: 0.4em;
+}
+
+.page-explorer > td {
+  position:absolute;
+  z-index: -1;
+  opacity: 0;
+  padding: 0;
+  height: 0;
+  border-width: 0;
+  background-color: white;
+  color: black;
+  text-align: left;
+}
+.page-explorer.active > td {
+  position: static;
+  opacity: 1;
+  transition: opacity 0.5s;
+}
+
+.page-explorer nav {
+  display: flex;
+  opacity: 0;
+  height: 60px;
+  border: 1px solid #ffd;
+  background-color: #600;
+  box-shadow: 0 0 0.5em #600, inset 0.5em 0 0.5em -0.5em orange,
+      inset -0.5em 0 0.5em -0.5em orange;
+}
+.page-explorer.active nav {
+  opacity: 1;
+  transition: opacity 0.25s;
+}
+
+.page-explorer nav > div {
+  line-height: 60px;
+  box-shadow: inset 0.5em 0 0.5em -0.5em orange,
+      inset -0.5em 0 0.5em -0.5em orange;
+}
+
+.page-explorer nav > .title {
+  flex: 0 0 140px;
+  padding: 0 15px;
+  border-right: 2px solid #ffd;
+  text-align: center;
+  color: #ffd;
+  font-size: 0.8em;
+  font-weight: bold;
+  font-style: italic;
+}
+
+.page-explorer nav > .content {
+  width: 100%;
+}
+
+.page-explorer nav .folder-up {
+  margin: 10px 15px;
+  height: 32px;
+  vertical-align: middle;
+  cursor: pointer;
+  user-select: none;
+}
+
+.page-explorer nav > .content > .path {
+  display: inline-block;
+  padding: 5px 15px;
+  min-width: 400px;
+  border-radius: 20px;
+  background-color: white;
+  line-height: 30px;
+  font-size: 0.8em;
+}
+.page-explorer nav > .content > .path::selection {
+  background-color: skyblue;
+}
+
+.page-explorer nav > .content > .completion {
+  float: right;
+  margin: 0 15px;
+  color: #ffd;
+  font-size: 0.7em;
+  font-style: italic;
+}
+
+.page-explorer nav > .content > .completion > var {
+  font-size: 1.5em;
+  font-style: italic;
+}
+
+.page-explorer nav > .content > .completion > .check {
+  margin: 5px;
+  font-size: 1.5em;
+  font-style: normal;
+}
+
+.page-explorer > td > div {
+  opacity: 0;
+  padding: 20px;
+}
+.page-explorer.active > td > div {
+  opacity: 1;
+  transition: opacity 0.5s 0.2s;
+}
+
+.page-explorer figure {
+  display: inline-block;
+  padding: 10px;
+  width: 125px;
+  border-radius: 5%;
+  text-align: center;
+  cursor: default;
+  user-select: none;
+}
+
+.page-explorer figure > img {
+  width: 80px;
+  height: 80px;
+}
+
+.page-explorer figure > figcaption {
+  font-size: 0.6em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: "(...)";
+}
+
+.page-explorer figure.active {
+  background-color: skyblue;
+}
+
+/* ------------------------------------------------------------------------- */
+/* -- Hall of Fame -- */
+
+table {
+  margin: 0 auto;
+  border-spacing: 0;
+}
+
+th:first-child {
+  width: 50px;
+}
+
+thead > tr > th {
+  background-color: #ffd;
+  color: black;
+  text-shadow: 0 0 16px black;
+}
+
+tbody:before {
+  /* Spacing between <thead> and <tbody> */
+  content: "\200C";
+  line-height: 1em;
+  display: block;
+}
+
+tbody > tr {
+  transition: background-color 0.5s;
+}
+
+tbody > tr:hover, tbody > tr.active {
+  background-color: rgba(127, 127, 127, 0.4);
+}
+
+/* tbody > tr > :nth-child(2) > a {
+  animation: glow 1.2s linear infinite alternate;
+}
+@keyframes glow {
+  from { text-shadow: 0 0 8px crimson, 0 0 16px crimson; }
+  to { text-shadow: 0 0 8px crimson, 0 0 16px crimson,
+      0 0 24px crimson, 0 0 32px crimson; }
+} */
+
+time {
+  font: 1.1em calculator;
+  font-weight: bold;
+  letter-spacing: 4px;
+  text-decoration: underline dotted 1px;
+  cursor: default;
+}
+
+th, td {
+  padding: 15px;
+  border: 2px solid #ffd;
+  border-left-width: 1px;
+  border-right-width: 1px;
+  border-radius: 5px;
+  box-shadow: inset 0 0 0.5em orange;
+  color: #ffd;
+}
+
+td > a {
+  text-decoration: none;
+}
+
+td > a:hover {
+  text-decoration: underline;
+}
+
+td > code {
+  font-size: 0.9em;
+  color: #cfc;
+}
+
+td > code:before {
+  content: "<!-- "
+}
+
+td > code:after {
+  content: " -->"
+}
