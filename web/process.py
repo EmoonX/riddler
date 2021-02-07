@@ -95,7 +95,6 @@ async def process_page(riddle: str, player_id: int, path: str):
                     'SET completion_count = completion_count + 1 ' \
                     'WHERE riddle = :riddle AND id = :id'
             values = {'riddle': riddle, 'id': id}
-            print(query, values)
             await database.execute(query, values)
 
             # Update user and country scores
@@ -117,7 +116,6 @@ async def process_page(riddle: str, player_id: int, path: str):
                             'username = :name AND discriminator = :disc'
                 values = {'id_next': id_next,
                         'riddle': riddle, 'name': username, 'disc': disc}
-                print(query, values)
                 await database.execute(query, values)
 
                 # Also Update session info
@@ -158,8 +156,10 @@ async def process_page(riddle: str, player_id: int, path: str):
     is_htm = path[-4:] == '.htm'
     if is_htm:
         query = 'UPDATE accounts SET cur_page_count = cur_page_count + 1 ' \
-                'WHERE username = :user'
-        values = {'user': session['username']}
+                'WHERE riddle = :riddle ' \
+                'AND username = :name AND discriminator = :disc'
+        values = {'riddle': riddle,
+                'name': session['username'], 'disc': session['disc']}
         await database.execute(query, values)
         session[riddle]['cur_page_count'] += 1
 
@@ -205,43 +205,37 @@ async def process_page(riddle: str, player_id: int, path: str):
             #         search_and_add_to_db('user_levelcompletion',
             #                 secret['id'], secret['rank'])
 
-    return
-    if not has_access():
-        # Forbid user from accessing any level further than permitted
-        abort(403)
+    # if not has_access():
+    #     # Forbid user from accessing any level further than permitted
+    #     abort(403)
 
     # Register into database new page access (if applicable)
     tnow = datetime.utcnow()
-    cursor.execute("INSERT IGNORE INTO user_pageaccess VALUES (%s, %s, %s, %s)",
-            (session['user']['username'], level_id, path, tnow))
+    query = 'INSERT IGNORE INTO user_pageaccess ' \
+            'VALUES (:riddle, :name, :disc, :id, :path, :time)'
+    values = {'riddle': riddle,
+            'name': session['username'], 'disc': session['disc'],
+            'id': level_id, 'path': path, 'time': tnow}
+    await database.execute(query, values)
 
     # If it's an achievement page, add it to user's collection
-    cursor.execute("SELECT * FROM achievements "
-            "WHERE path = %s", (path,))
-    cheevo = cursor.fetchone()
-    if cheevo:
-        cursor.execute("SELECT username from user_achievements "
-                "WHERE username = %s and title = %s",
-                (session['user']['username'], cheevo['title']))
-        has_cheevo = (cursor.fetchone() is not None)
-        if not has_cheevo:
-            cursor.execute("INSERT INTO user_achievements VALUES (%s, %s)",
-                    (session['user']['username'], cheevo['title']))
-            # Update user and country score
-            points = cheevo['points']
-            cursor.execute("UPDATE accounts "
-                    "SET score = score + %s WHERE username = %s",
-                    (points, session['user']['username']))
-            cursor.execute("UPDATE countries "
-                    "SET total_score = total_score + %s "
-                    "WHERE alpha_2 = %s",
-                    (points, session['user']['country']))
-
-
-    # Commit changes to DB
-    mysql.connection.commit()
-
-    # If the level page is indeed a .htm, render its template
-    if htm:
-        path = "levels/" + path
-        return render_and_count(path, {})
+    # cursor.execute("SELECT * FROM achievements "
+    #         "WHERE path = %s", (path,))
+    # cheevo = cursor.fetchone()
+    # if cheevo:
+    #     cursor.execute("SELECT username from user_achievements "
+    #             "WHERE username = %s and title = %s",
+    #             (session['user']['username'], cheevo['title']))
+    #     has_cheevo = (cursor.fetchone() is not None)
+    #     if not has_cheevo:
+    #         cursor.execute("INSERT INTO user_achievements VALUES (%s, %s)",
+    #                 (session['user']['username'], cheevo['title']))
+    #         # Update user and country score
+    #         points = cheevo['points']
+    #         cursor.execute("UPDATE accounts "
+    #                 "SET score = score + %s WHERE username = %s",
+    #                 (points, session['user']['username']))
+    #         cursor.execute("UPDATE countries "
+    #                 "SET total_score = total_score + %s "
+    #                 "WHERE alpha_2 = %s",
+    #                 (points, session['user']['country']))
