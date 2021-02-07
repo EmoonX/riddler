@@ -11,7 +11,7 @@ from quart import Quart, request, session
 # Quart app object
 app = Quart(__name__)
 
-from user.auth import discord_session_init
+from auth import discord_session_init
 
 # Really unique secret key
 app.secret_key = \
@@ -22,12 +22,13 @@ discord_session_init(app)
 
 from admin.auth import admin_auth
 from admin.admin import admin
-from user.auth import user_auth, session_cookie
+from auth import auth, session_cookie
 from process import process
+from levels import levels
 from util.db import database
 
 # Register app blueprints to allow other modules
-for blueprint in (admin_auth, admin, user_auth, process):
+for blueprint in (admin_auth, admin, auth, process, levels):
     app.register_blueprint(blueprint)
 
 

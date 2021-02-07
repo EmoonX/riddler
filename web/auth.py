@@ -10,7 +10,7 @@ from util.db import database
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = 'true'
 
 # Create app blueprint
-user_auth = Blueprint('user_auth', __name__)
+auth = Blueprint('auth', __name__)
 
 # Discord OAuth2 sessionz
 discord: DiscordOAuth2Session
@@ -38,31 +38,32 @@ def discord_session_init(app: Quart):
             SecureCookieSessionInterface().get_signing_serializer(app)
 
 
-@user_auth.route('/login/', methods=['GET'])
+@auth.route('/login/', methods=['GET'])
 async def login():
     '''Create Discord session and redirect to callback URL.'''
     return await discord.create_session(scope=['identify'])
 
 
-@user_auth.route('/callback/')
+@auth.route('/callback/')
 async def callback():
     '''Callback for OAuth2 authentication.'''
     # Execute the callback
     await discord.callback()
 
     # If user doesn't have an account on database, create it
+    riddle = 'cipher'
     user = await discord.fetch_user()
     query = 'SELECT * FROM accounts WHERE ' \
-            'username = :name AND discriminator = :disc'
-    values = {'name': user.name, 'disc': user.discriminator}
+            'riddle = :riddle AND username = :name AND discriminator = :disc'
+    values = {'riddle': riddle, 'name': user.name, 'disc': user.discriminator}
     result = await database.fetch_one(query, values)
     if not result:
         query = 'INSERT INTO accounts ' \
-                '(username, discriminator, title) ' \
-                'VALUES (:name, :disc, "Player")'
+                '(riddle, username, discriminator, title) ' \
+                'VALUES (:riddle, :name, :disc, "Player")'
         await database.execute(query, values)
         query = 'SELECT * FROM accounts WHERE ' \
-            'username = :name AND discriminator = :disc'
+            'riddle = :riddle AND username = :name AND discriminator = :disc'
         result = await database.fetch_one(query, values)
     
     # Save some important user info on session dict
@@ -73,7 +74,7 @@ async def callback():
     return redirect(url_for('.me'))
 
 
-@user_auth.route('/me/')
+@auth.route('/me/')
 @requires_authorization
 async def me():
     user = await discord.fetch_user()
@@ -82,7 +83,7 @@ async def me():
             % (user.name, token)
 
 
-@user_auth.route('/logout/')
+@auth.route('/logout/')
 async def logout():
     '''Revokes credentials and logs user out of application.'''
     discord.revoke()

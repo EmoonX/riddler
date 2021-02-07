@@ -3,7 +3,7 @@ from datetime import datetime
 
 from quart import Blueprint, request, session, jsonify
 
-from user.auth import discord
+from auth import discord
 from ipc import web_ipc
 from util.db import database
 
@@ -39,7 +39,7 @@ async def process_url():
         
         # Process page and register player info on database
         path = path.replace('/cipher/', '')
-        await process_page('cipher', user.id, path)
+        await process_page('cipher', path)
 
         # Send unlocking request to bot's IPC server
         await web_ipc.request('unlock',
@@ -61,7 +61,7 @@ async def process_url():
     return response, status
 
 
-async def process_page(riddle: str, player_id: int, path: str):
+async def process_page(riddle: str, path: str):
     """Process level pages (one or more folders deep)."""
 
     async def search_and_add_to_db(table: str, id: int, rank=''):
@@ -153,15 +153,15 @@ async def process_page(riddle: str, player_id: int, path: str):
         # return int(level_id) <= int(current_level)
 
     # Increment user current page count (if it's an .htm one)
-    is_htm = path[-4:] == '.htm'
-    if is_htm:
-        query = 'UPDATE accounts SET cur_page_count = cur_page_count + 1 ' \
-                'WHERE riddle = :riddle ' \
-                'AND username = :name AND discriminator = :disc'
-        values = {'riddle': riddle,
-                'name': session['username'], 'disc': session['disc']}
-        await database.execute(query, values)
-        session[riddle]['cur_page_count'] += 1
+    # is_htm = path[-4:] == '.htm'
+    # if is_htm:
+    query = 'UPDATE accounts SET cur_page_count = cur_page_count + 1 ' \
+            'WHERE riddle = :riddle ' \
+            'AND username = :name AND discriminator = :disc'
+    values = {'riddle': riddle,
+            'name': session['username'], 'disc': session['disc']}
+    await database.execute(query, values)
+    session[riddle]['cur_page_count'] += 1
 
     # Get user's current reached level and requested level number
     current_level = session[riddle]['current_level']
@@ -175,35 +175,35 @@ async def process_page(riddle: str, player_id: int, path: str):
         return
     level_id = page['level_id']
 
-    if is_htm:
-        # Get user's current level info from DB
-        query = 'SELECT * FROM levels WHERE riddle = :riddle AND id = :id'
-        values = {'riddle': riddle, 'id': current_level}
-        level = await database.fetch_one(query, values)
+    # if is_htm:
+    # Get user's current level info from DB
+    query = 'SELECT * FROM levels WHERE riddle = :riddle AND id = :id'
+    values = {'riddle': riddle, 'id': current_level}
+    level = await database.fetch_one(query, values)
 
-        # If user entered a correct and new answer, register time on DB
-        #if int(current_level) <= total and path == level["answer"]:
-        if path == level['answer']:
-            await search_and_add_to_db('user_levelcompletion',
-                    current_level, level['rank'])
-        else:
-            pass
-            # Check if a secret level has been found
-            # cursor.execute("SELECT * FROM levels "
-            #         "WHERE SUBSTR(id, 1, 6) = 'Status' AND "
-            #         "path = %s", (path,))
-            # secret = cursor.fetchone()
-            # if secret:
-            #     search_and_add_to_db('user_secretsfound', secret['id'])
-            # else:
-            #     # Otherwise, check if a secret level has been beaten
-            #     cursor.execute("SELECT * FROM levels "
-            #             "WHERE SUBSTR(id, 1, 6) = 'Status' AND "
-            #             "answer = %s", (path,))
-            #     secret = cursor.fetchone()
-            #     if secret:
-            #         search_and_add_to_db('user_levelcompletion',
-            #                 secret['id'], secret['rank'])
+    # If user entered a correct and new answer, register time on DB
+    #if int(current_level) <= total and path == level["answer"]:
+    if path == level['answer']:
+        await search_and_add_to_db('user_levelcompletion',
+                current_level, level['rank'])
+    else:
+        pass
+        # Check if a secret level has been found
+        # cursor.execute("SELECT * FROM levels "
+        #         "WHERE SUBSTR(id, 1, 6) = 'Status' AND "
+        #         "path = %s", (path,))
+        # secret = cursor.fetchone()
+        # if secret:
+        #     search_and_add_to_db('user_secretsfound', secret['id'])
+        # else:
+        #     # Otherwise, check if a secret level has been beaten
+        #     cursor.execute("SELECT * FROM levels "
+        #             "WHERE SUBSTR(id, 1, 6) = 'Status' AND "
+        #             "answer = %s", (path,))
+        #     secret = cursor.fetchone()
+        #     if secret:
+        #         search_and_add_to_db('user_levelcompletion',
+        #                 secret['id'], secret['rank'])
 
     # if not has_access():
     #     # Forbid user from accessing any level further than permitted

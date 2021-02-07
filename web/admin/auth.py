@@ -26,7 +26,7 @@ async def login():
 
     # Check if alias exists in database
     alias = form['alias']
-    query = 'SELECT * FROM guilds where alias = :alias'
+    query = 'SELECT * FROM riddles where alias = :alias'
     values = {'alias': alias}
     guild = await database.fetch_one(query, values)
     if not guild:
