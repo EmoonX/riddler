@@ -14,7 +14,7 @@ async def level_list(riddle: str):
             'name': session['username'], 'disc': session['disc']}
     if 'username' in session:
         # Get user's current level
-        query = 'SELECT current_level FROM accounts WHERE ' \
+        query = 'SELECT current_level FROM riddle_accounts WHERE ' \
                 'riddle = :riddle AND ' \
                 'username = :name AND discriminator = :disc'
         result = await database.fetch_one(query, base_values)
@@ -58,7 +58,7 @@ async def level_list(riddle: str):
             level['unlocked'] = False
 
         # Register list of users currently on level
-        query = 'SELECT * FROM accounts ' \
+        query = 'SELECT * FROM riddle_accounts ' \
                 'WHERE riddle = :riddle and current_level = :id'
         values = {'riddle': riddle, 'id': level['id']}
         result = await database.fetch_all(query, values)
