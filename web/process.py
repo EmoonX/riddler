@@ -3,7 +3,7 @@ from datetime import datetime
 
 from quart import Blueprint, request, session, jsonify
 
-from player.auth import discord
+from players.auth import discord
 from ipc import web_ipc
 from util.db import database
 

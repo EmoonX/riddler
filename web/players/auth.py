@@ -10,7 +10,7 @@ from util.db import database
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = 'true'
 
 # Create app blueprint
-player_auth = Blueprint('player_auth', __name__)
+players_auth = Blueprint('players_auth', __name__)
 
 # Discord OAuth2 sessionz
 discord: DiscordOAuth2Session
@@ -39,13 +39,13 @@ def discord_session_init(app: Quart):
             SecureCookieSessionInterface().get_signing_serializer(app)
 
 
-@player_auth.route('/login/', methods=['GET'])
+@players_auth.route('/login/', methods=['GET'])
 async def login():
     '''Create Discord session and redirect to callback URL.'''
     return await discord.create_session(scope=['identify'])
 
 
-@player_auth.route('/callback/')
+@players_auth.route('/callback/')
 async def callback():
     '''Callback for OAuth2 authentication.'''
     # Execute the callback
@@ -75,7 +75,7 @@ async def callback():
     return redirect(url_for('.me'))
 
 
-@player_auth.route('/me/')
+@players_auth.route('/me/')
 @requires_authorization
 async def me():
     user = await discord.fetch_user()
@@ -84,7 +84,7 @@ async def me():
             % (user.name, token)
 
 
-@player_auth.route('/logout/')
+@players_auth.route('/logout/')
 async def logout():
     '''Revokes credentials and logs user out of application.'''
     discord.revoke()

@@ -11,7 +11,7 @@ from quart import Quart,  session
 # Quart app object
 app = Quart(__name__)
 
-from player.auth import discord_session_init
+from players.auth import discord_session_init
 
 # Really unique secret key
 app.secret_key = \
@@ -22,14 +22,14 @@ discord_session_init(app)
 
 from admin.auth import admin_auth
 from admin.admin import admin
-from player.auth import player_auth, session_cookie
-from player.account import account
+from players.auth import players_auth, session_cookie
+from players.account import account
 from process import process
 from levels import levels
 from util.db import database
 
 # Register app blueprints to allow other modules
-for blueprint in (admin_auth, admin, player_auth, account, process, levels):
+for blueprint in (admin_auth, admin, players_auth, account, process, levels):
     app.register_blueprint(blueprint)
 
 # Disable annoying newlines on Jinja rendered HTML templates
