@@ -1,0 +1,40 @@
+{% extends 'layout.htm' %}
+{% block title %}{{ riddle['alias'] }} | Players{% endblock %}
+{% block content %}
+    <main>
+      <h1>{{ riddle['alias'] }}</h1>
+      <table>
+        <thead>
+          <tr>
+            <th>Country</th>
+            <th>User</th>
+            <th>Current level</th>
+            <th>Points</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for player in accounts %}
+          <tr>
+            {% set country_name = pycountries.get(alpha_2=player['country']).name %}
+            <td>
+              <a href="{{ player['country'] }}">
+                <img src="/static/flags/{{ player['country'] }}.png" title="{{ country_name }}" class="flag_small">
+              </a>
+            </td>
+            <td class="username_cell">
+              <img class="avatar-small" src="{{ player['avatar_url'] }}">
+              <a href="#">
+                {{ player['username'] }}
+              </a>
+            <td>
+              <var>{{ player['current_level'] }}</var>
+            </td>
+            <td>
+              <var class="points">{{ player['score'] }}</var>
+            </td>
+          </tr>
+        {% endfor %}
+        <tbody>
+      </table>
+    </main>
+{% endblock %}

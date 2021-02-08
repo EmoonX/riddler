@@ -17,7 +17,8 @@
           <tr>
             <td>
               <a href="{{ player['country'] }}">
-                <img src="/static/flags/{{ player['country'] }}.png" title="pycountries.get(alpha_2=player['country']).name" class="flag_small">
+                {% set country_name = pycountries.get(alpha_2=player['country']).name %}
+                <img src="/static/flags/{{ player['country'] }}.png" title="{{ country_name }}" class="flag_small">
               </a>
             </td>
             <td class="username_cell">
