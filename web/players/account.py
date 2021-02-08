@@ -1,4 +1,4 @@
-from quart import Blueprint, render_template
+from quart import Blueprint, render_template, session
 
 from util.db import database
 
@@ -14,4 +14,5 @@ async def players():
     query = 'SELECT * FROM accounts'
     accounts = await database.fetch_all(query)
 
-    return await render_template("players/index.htm", accounts=accounts)
+    return await render_template("players/index.htm",
+            accounts=accounts, session=session)

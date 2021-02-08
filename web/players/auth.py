@@ -55,16 +55,16 @@ async def callback():
     riddle = 'rns'
     user = await discord.fetch_user()
     query = 'SELECT * FROM accounts WHERE ' \
-            'riddle = :riddle AND username = :name AND discriminator = :disc'
-    values = {'riddle': riddle, 'name': user.name, 'disc': user.discriminator}
+            'username = :name AND discriminator = :disc'
+    values = {'name': user.name, 'disc': user.discriminator}
     result = await database.fetch_one(query, values)
     if not result:
         query = 'INSERT INTO accounts ' \
-                '(riddle, username, discriminator, title) ' \
-                'VALUES (:riddle, :name, :disc, "Player")'
+                '(username, discriminator) ' \
+                'VALUES (:name, :disc)'
         await database.execute(query, values)
         query = 'SELECT * FROM accounts WHERE ' \
-            'riddle = :riddle AND username = :name AND discriminator = :disc'
+                'username = :name AND discriminator = :disc'
         result = await database.fetch_one(query, values)
     
     # Save some important user info on session dict
@@ -86,6 +86,13 @@ async def me():
 
 @players_auth.route('/logout/')
 async def logout():
-    '''Revokes credentials and logs user out of application.'''
+    '''Revoke credentials and logs user out of application.'''
+    # Discord credentials are gone
     discord.revoke()
+
+    # Get rid of session data
+    if 'username' in session:
+        session.pop('username')
+
+    # Return something
     return 'Logged out. :('

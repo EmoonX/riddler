@@ -11,7 +11,7 @@
         </div>
         <div>
         {# Verify if user is logged in #}
-        {% if not session['user'] %}
+        {% if 'username' not in session %}
           <a href="{{ url_for('players_auth.login') }}" class="nav-button">Login</a>
         {% else %}
           <nav class="dropdown">
