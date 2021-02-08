@@ -58,6 +58,10 @@ async def begin(ctx):
         values = {'alias': alias, 'password_hash': pw_hash, 'id': guild.id}
         await database.execute(query, values)
 
+        # Create entry on general_info table
+        query = 'INSERT INTO general_info (riddle) VALUES (:riddle)'
+        await database.execute(query, {'riddle': alias})
+
         text += 'Guild successfully registered!'
 
     await ctx.message.author.send(text)

@@ -66,12 +66,13 @@ async def process_url():
         response = jsonify({'path': path})
         status = 200
     
-    ref = request.referrer[:-1]
-    # (Chrome fix) Allow CORS to be requested from other domains
-    response.headers.add('Access-Control-Allow-Origin', ref)
-    response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-    response.headers.add('Access-Control-Allow-Headers', 'Cookie')
-    response.headers.add('Access-Control-Allow-Credentials', 'true')
+    # (Chrome security issues) Allow CORS to be requested from other domains
+    if request.referrer:
+        ref = request.referrer[:-1]
+        response.headers.add('Access-Control-Allow-Origin', ref)
+        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
+        response.headers.add('Access-Control-Allow-Headers', 'Cookie')
+        response.headers.add('Access-Control-Allow-Credentials', 'true')
     
     # Return response
     return response, status
@@ -98,7 +99,7 @@ async def process_page(riddle: str, path: str):
         
         # Register level completion in designated table
         time = datetime.utcnow()
-        count = session[riddle]['cur_page_count']
+        count = session[riddle]['cur_hit_counter']
         query = ('INSERT INTO %s ' % table) + \
                 '(riddle, username, discriminator, ' \
                     'level_id, completion_time, page_count) ' \
@@ -139,7 +140,7 @@ async def process_page(riddle: str, path: str):
                 if riddle == 'rns':
                     id_next = 'level-%d' % (int(id[-1:]) + 1)
                 query = 'UPDATE riddle_accounts ' \
-                        'SET current_level = :id_next, cur_page_count = 1 ' \
+                        'SET current_level = :id_next, cur_hit_counter = 0 ' \
                         'WHERE riddle = :riddle AND ' \
                             'username = :name AND discriminator = :disc'
                 values = {'id_next': id_next,
@@ -148,7 +149,7 @@ async def process_page(riddle: str, path: str):
 
                 # Also Update session info
                 session[riddle]['current_level'] = current_level
-                session[riddle]['cur_page_count'] = 1
+                session[riddle]['cur_hit_counter'] = 0
 
                 # Update countries table too
                 # cursor.execute("UPDATE countries "
@@ -179,17 +180,34 @@ async def process_page(riddle: str, path: str):
 
         # # Return if level is *at most* the current_level
         # return int(level_id) <= int(current_level)
+    
+    # Check if it's not an txt/image/video/etc
+    dot_index = path.rfind('.')
+    is_page = None
+    if dot_index == -1:
+        # No file extension
+        is_page = True
+    else:
+        # HTML or PHP extensions are valid pages
+        extension = path[(dot_index + 1):]
+        is_page = 'htm' in extension or 'php' in extension    
 
-    # Increment user current page count (if it's an .htm one)
-    # is_htm = path[-4:] == '.htm'
-    # if is_htm:
-    query = 'UPDATE riddle_accounts SET cur_page_count = cur_page_count + 1 ' \
-            'WHERE riddle = :riddle ' \
-            'AND username = :name AND discriminator = :disc'
-    values = {'riddle': riddle,
-            'name': session['username'], 'disc': session['disc']}
-    await database.execute(query, values)
-    session[riddle]['cur_page_count'] += 1
+    if is_page:
+        # If a normal page, increment user current hit counter
+        query = 'UPDATE riddle_accounts ' \
+                'SET cur_hit_counter = cur_hit_counter + 1 ' \
+                'WHERE riddle = :riddle ' \
+                'AND username = :name AND discriminator = :disc'
+        values = {'riddle': riddle,
+                'name': session['username'], 'disc': session['disc']}
+        await database.execute(query, values)
+        session[riddle]['cur_hit_counter'] += 1
+
+        # Also update riddle hit counter
+        query = 'UPDATE general_info ' \
+                'SET hit_counter = hit_counter + 1 ' \
+                'WHERE riddle = :riddle '
+        await database.execute(query, {'riddle': riddle})
 
     # Get user's current reached level and requested level number
     current_level = session[riddle]['current_level']
