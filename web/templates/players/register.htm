@@ -1,0 +1,34 @@
+{% extends 'layout.htm' %}
+{% block title %}Riddler | Registration{% endblock %}
+{% block extra %}
+    <script src="/static/scripts/settings.js"></script>
+{% endblock %}
+{% block content %}
+    <main>
+      <h1>Registration</h1>
+      <form method="post">
+        <fieldset>
+          <legend>Personal info</legend>
+          <div>
+            <label class="icon"> DiscordTag
+              <input type="text" name="discord_tag" value="{{ user.name }}#{{ user.discriminator }}" disabled>
+            </label>
+            <label>Country
+              <select name="country" required>
+                <option disabled>-- Choose your destiny --</option>
+              {% for country in get_sorted_countries() %}
+                <option value="{{ country['alpha_2'] }}">{{ country['name'] }}</option>
+              {% endfor %}
+              </select>
+            </label>
+            <figure>
+              <img class="flag_small" alt=" ">
+              <figcaption></figcaption>
+            </figure>
+          </div>
+        </fieldset>
+        <input type="submit" value="Create account">
+      </form>
+      <footer>{{ msg }}</footer>
+    </main>
+{% endblock %}

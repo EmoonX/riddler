@@ -6,7 +6,9 @@ $(document).ready(function () {
     $("figure > img").attr("src", path);
     $("figcaption").text(text);
   }
-  $("select").change(displayFlag)
-  $("select").val($("#selected").val()).change()
-  displayFlag();
+  $("select").change(displayFlag);
+  if ($("#selected")) {
+    $("select").val($("#selected").val()).change();
+  }
+  displayFlag();;
 });

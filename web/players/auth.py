@@ -1,6 +1,7 @@
 import os
 
-from quart import Blueprint, Quart, session, redirect, url_for
+from quart import Blueprint, Quart, request, session, \
+        render_template, redirect, url_for
 from quart.sessions import SecureCookieSessionInterface
 from quart_discord import DiscordOAuth2Session, requires_authorization
 
@@ -39,6 +40,32 @@ def discord_session_init(app: Quart):
             SecureCookieSessionInterface().get_signing_serializer(app)
 
 
+@players_auth.route('/register/', methods=['GET', 'POST'])
+async def register():
+    '''Register new account on database based on Discord auth.'''
+    
+    # Render registration page on GET
+    user = await discord.fetch_user()
+    if request.method == 'GET':
+        return await render_template('players/register.htm', user=user)
+    
+    # Insert value on accounts table
+    form = await request.form
+    query = 'INSERT INTO accounts ' \
+            '(username, discriminator, country) ' \
+            'VALUES (:name, :disc, :country)'
+    values = {'name': user.name, 'disc': user.discriminator,
+            'country': form['country']}
+    await database.execute(query, values)
+    
+    # Save account database info on session dict
+    session['user'] = values
+
+    # Redirect to post-registration page
+    return redirect(url_for('account.settings',
+            msg='Registration successful!'))
+
+
 @players_auth.route('/login/', methods=['GET'])
 async def login():
     '''Create Discord session and redirect to callback URL.'''
@@ -48,49 +75,35 @@ async def login():
 @players_auth.route('/callback/')
 async def callback():
     '''Callback for OAuth2 authentication.'''
+
     # Execute the callback
     await discord.callback()
 
-    # If user doesn't have an account on database, create it
-    riddle = 'rns'
+    # If user doesn't have an account on database, do registration
     user = await discord.fetch_user()
-    query = 'SELECT * FROM riddle_accounts WHERE ' \
-            'riddle = :riddle AND username = :name AND discriminator = :disc'
-    values = {'riddle': riddle, 'name': user.name, 'disc': user.discriminator}
-    result = await database.fetch_one(query, values)
-    if not result:
-        query = 'INSERT INTO riddle_accounts ' \
-                '(riddle, username, discriminator) ' \
-                'VALUES (:riddle, :name, :disc)'
-        await database.execute(query, values)
-        query = 'SELECT * FROM riddle_accounts ' \
-                'WHERE riddle = :riddle ' \
-                'AND username = :name AND discriminator = :disc'
-        result = await database.fetch_one(query, values)
+    query = 'SELECT * FROM accounts ' \
+            'WHERE username = :name AND discriminator = :disc'
+    values= {'name': user.name, 'disc': user.discriminator}
+    found = await database.fetch_one(query, values)
+    if not found:
+        return redirect(url_for('.register'))
     
-    # Save user database info on session dict
+    # Save account database info on session dict
     query = 'SELECT * FROM accounts ' \
             'WHERE username = :name AND discriminator = :disc'
     values = {'name': user.name, 'disc': user.discriminator}
     result = await database.fetch_one(query, values)
     session['user'] = dict(result)
 
-    # Redirect to post-login page
-    return redirect(url_for('.me'))
-
-
-@players_auth.route('/me/')
-@requires_authorization
-async def me():
-    user = await discord.fetch_user()
-    token = await DiscordOAuth2Session.get_authorization_token()
-    return 'Hello %s!<br>Here\'s your user info: %s' \
-            % (user.name, token)
+    # Otherwise, redirect to post-login page
+    return redirect(url_for('account.settings',
+            msg='Successful login!'))
 
 
 @players_auth.route('/logout/')
 async def logout():
     '''Revoke credentials and logs user out of application.'''
+
     # Discord credentials are gone
     discord.revoke()
 
