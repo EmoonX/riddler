@@ -1,0 +1,36 @@
+{% extends 'layout.htm' %}
+{% block title %}{{ session['user']['username'] }} | Account settings{% endblock %}
+{% block extra %}
+    <script src="/static/scripts/settings.js"></script>
+{% endblock %}
+{% block content %}
+    {% set account = session['user'] %}
+    <main>
+      <h1>Settings</h1>
+      <form method="post">
+        <fieldset>
+          <legend>Personal info</legend>
+          <div>
+            <label class="icon"> DiscordTag
+              <input type="text" name="discord_tag" value="{{ account['username'] }}#{{ account['discriminator'] }}" disabled>
+            </label>
+            <label>Country
+              <input type="hidden" id="selected" value="{{ account['country'] }}">
+              <select name="country" required>
+                <option disabled>-- Choose your destiny --</option>
+              {% for country in get_sorted_countries() %}
+                <option value="{{ country['alpha_2'] }}">{{ country['name'] }}</option>
+              {% endfor %}
+              </select>
+            </label>
+            <figure>
+              <img class="flag_small" alt=" ">
+              <figcaption></figcaption>
+            </figure>
+          </div>
+        </fieldset>
+        <input type="submit" value="Update">
+      </form>
+      <footer>{{ msg }}</footer>
+    </main>
+{% endblock %}

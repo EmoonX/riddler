@@ -215,7 +215,6 @@ async def process_page(riddle: str, path: str):
     if current_level == '00' or path == level['answer']:
         rank = level['rank'] if level else 'D'
         points = level_ranks[rank]['points']
-        print(points)
         await search_and_add_to_db('user_levelcompletion',
                 current_level, points)
     else:

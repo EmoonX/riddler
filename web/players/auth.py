@@ -68,9 +68,12 @@ async def callback():
                 'AND username = :name AND discriminator = :disc'
         result = await database.fetch_one(query, values)
     
-    # Save some important user info on session dict
-    session['username'] = user.username
-    session['disc'] = user.discriminator
+    # Save user database info on session dict
+    query = 'SELECT * FROM accounts ' \
+            'WHERE username = :name AND discriminator = :disc'
+    values = {'name': user.name, 'disc': user.discriminator}
+    result = await database.fetch_one(query, values)
+    session['user'] = dict(result)
 
     # Redirect to post-login page
     return redirect(url_for('.me'))
@@ -92,8 +95,8 @@ async def logout():
     discord.revoke()
 
     # Get rid of session data
-    if 'username' in session:
-        session.pop('username')
+    if 'user' in session:
+        session.pop('user')
 
     # Return something
     return 'Logged out. :('
