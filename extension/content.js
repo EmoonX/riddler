@@ -1,7 +1,4 @@
 function sendToServer() {
-  console.log('OK!')
-  return
-  
   // URL to where request will be sent to
   const SERVER_URL = 'https://riddler.emoon.dev';
 

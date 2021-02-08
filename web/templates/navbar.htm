@@ -1,40 +1,29 @@
     <header>
       <nav>
         <div>
-          <a href="{{ url_for('index.page', page='cipher') }}" class="nav-button">Home</a>
-          <nav class="dropdown">
-            <button class="nav-button">Info</button>
-            <div>
-              <a href="{{ url_for('index.page', page='about') }}" class="nav-button">About</a>
-              <a href="{{ url_for('index.page', page='help') }}" class="nav-button" style="z-index:14357">Help</a>
-              <a href="{{ url_for('index.page', page='halloffamelvl50') }}" class="nav-button">HOF 50</a>
-              <a href="{{ url_for('index.page', page='halloffametempend') }}" class="nav-button">HOF 60+</a>
-            </div>
-          </nav>
           <nav class="dropdown">
             <button class="nav-button">Lists</button>
             <div>
-              <a href="{{ url_for('account.users') }}" class="nav-button">Users</a>
-              <a href="{{ url_for('country.countries') }}" class="nav-button">Countries</a>
-              <a href="{{ url_for('levellist.levels') }}" class="nav-button">Levels</a>
+              <a href="{{ url_for('account.players') }}" class="nav-button">Players</a>
+              <a href="#" class="nav-button">Countries</a>
             </div>
           </nav>
         </div>
         <div>
         {# Verify if user is logged in #}
         {% if not session['user'] %}
-          <a href="{{ url_for('auth.register') }}" class="nav-button">Register</a>
-          <a href="{{ url_for('auth.login') }}" class="nav-button">Login</a>
+          <a href="{{ url_for('players_auth.login') }}" class="nav-button">Login</a>
         {% else %}
-          <!-- Profile dropdown menu -->
           <nav class="dropdown">
-            {% set username = session['user']['username'] %}
-            {% set avatar = get_avatar(session['user']['username']) %}
-            <button class="nav-button profile-button"><img class="avatar-small" src="{{ avatar[0] }}?{{ time() }}" data-gif="{{ avatar[1] }}?{{ time() }}">{{ username }}</a></button>
+            {% set username = session['username'] %}
+            {% set avatar = '' %}
+            <button class="nav-button profile-button">
+              <img class="avatar-small" src="">{{ username }}
+            </button>
             <div>
-              <a href="{{ url_for('account.profile', username=session['user']['username']) }}" class="nav-button">Public info</a>
-              <a href="{{ url_for('account.page', username=session['user']['username'], page='account') }}" class="nav-button">Account</a>
-              <a href="{{ url_for('auth.logout') }}" class="nav-button">Logout</a>
+              <a href="#" class="nav-button">Public info</a>
+              <a href="#" class="nav-button">Settings</a>
+              <a href="{{ url_for('players_auth.logout') }}" class="nav-button">Logout</a>
             </div>
           </nav>
         {% endif %}
