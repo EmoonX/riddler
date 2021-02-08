@@ -1,8 +1,8 @@
 {% extends 'layout.htm' %}
-{% block title %}{{ riddle['alias'] }} | Players{% endblock %}
+{% block title %}{{ riddle['full_name'] }} | Players{% endblock %}
 {% block content %}
     <main>
-      <h1>{{ riddle['alias'] }}</h1>
+      <h1>{{ riddle['full_name'] }}</h1>
       <table>
         <thead>
           <tr>

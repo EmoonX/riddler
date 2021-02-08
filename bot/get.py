@@ -5,10 +5,8 @@ from bot import bot
 
 @bot.ipc.route()
 async def get_riddle_icon_url(data):
-    '''Get riddle/guild icon URL from guild's ID.'''
-    print(data)
-    guild = get(bot.guilds, id=data.id)
-    print(guild.icon)
+    '''Get riddle's Discord guild info (in dict form) from name.'''
+    guild = get(bot.guilds, name=data.name)
     url = str(guild.icon_url)
     return url
 

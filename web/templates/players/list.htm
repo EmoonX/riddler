@@ -32,7 +32,9 @@
             </td>
             <td>
             {% for riddle in player['riddles'] %}
-              <img class="avatar-small" src="{{ riddle['icon_url'] }}" title="{{ riddle['alias'] }}">
+              <a href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}">
+                <img class="avatar-small" src="{{ riddle['icon_url'] }}" title="{{ riddle['full_name'] }}">
+              </a>
             {% endfor %}
             </td>
           </tr>

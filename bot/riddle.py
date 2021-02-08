@@ -1,6 +1,7 @@
 from collections import OrderedDict, defaultdict
 
 import discord
+from discord.utils import get
 
 from bot import bot
 
@@ -21,8 +22,7 @@ class Riddle:
     def __init__(self, riddle: dict, levels: dict):
         '''Build riddle object by row extracted from database.'''
         # Get info from guild's database data
-        self.guild = bot.get_guild(riddle['guild_id'])
-        self.final_answer_hash = riddle['final_answer_hash'].encode('utf-8')
+        self.guild = get(bot.guilds, name=riddle['full_name'])
         self.winner_suffix = riddle['winner_suffix']
 
         # Get riddle's level info from database query

@@ -19,7 +19,7 @@ async def global_list():
     # Get riddles' icon URLs
     for riddle in riddles:
         url = await web_ipc.request('get_riddle_icon_url',
-                id=riddle['guild_id'])
+                name=riddle['full_name'])
         riddle['icon_url'] = url
     
     # Get players data from database
@@ -51,8 +51,8 @@ async def global_list():
 
 
 @players.route("/<alias>/players/")
-async def alias_list(alias: str):
-    """Riddle player lists."""
+async def riddle_list(alias: str):
+    """Riddle player list."""
 
     # Get riddle data from database
     query = 'SELECT * from riddles WHERE alias = :alias'
@@ -61,7 +61,7 @@ async def alias_list(alias: str):
 
     # Get riddles' icon URL
     url = await web_ipc.request('get_riddle_icon_url',
-            id=riddle['guild_id'])
+                name=riddle['full_name'])
     riddle['icon_url'] = url
     
     # Get players data from database
