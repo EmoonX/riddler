@@ -10,6 +10,17 @@ from util.db import database
 # Create app blueprint
 process = Blueprint('process', __name__)
 
+# Dict of pairs (level rank -> (points, color))
+level_ranks = {
+    "D": (10, "cornflowerblue"),
+    "C": (15, "lawngreen"),
+    "B": (25, "gold"),
+    "A": (40, "crimson"),
+    "S": (60, "lightcyan")
+}
+for rank, pair in level_ranks.items():
+    level_ranks[rank] = {'points': pair[0], 'color': pair[1]}
+
 
 @process.route('/process/', methods=['POST', 'OPTIONS'])
 async def process_url():
@@ -44,19 +55,18 @@ async def process_url():
             path = path.replace('/cipher/', '')
         else:
             path = path.replace('/riddle/', '')
-        await process_page(riddle, path)
+        points = await process_page(riddle, path)
 
         # Send unlocking request to bot's IPC server
         await web_ipc.request('unlock',
                 alias=riddle, player_id=user.id,
-                path=path)
+                path=path, points=points)
         
         # Successful response
         response = jsonify({'path': path})
         status = 200
     
     ref = request.referrer[:-1]
-    print(ref)
     # (Chrome fix) Allow CORS to be requested from other domains
     response.headers.add('Access-Control-Allow-Origin', ref)
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
@@ -68,11 +78,12 @@ async def process_url():
 
 
 async def process_page(riddle: str, path: str):
-    """Process level pages (one or more folders deep)."""
+    '''Process level pages (one or more folders deep).
+    Return total points gotten.'''
 
-    async def search_and_add_to_db(table: str, id: int, rank=''):
-        """Search if level was yet not completed or secret yet not found.
-        If true, add user and datetime of completion to respective table."""
+    async def search_and_add_to_db(table: str, id: int, points: int):
+        '''Search if level was yet not completed or secret yet not found.
+        If true, add user and datetime of completion to respective table.'''
 
         # Check if level has been completed
         username = session['username']
@@ -103,15 +114,22 @@ async def process_page(riddle: str, path: str):
             values = {'riddle': riddle, 'id': id}
             await database.execute(query, values)
 
-            # Update user and country scores
-            # points = level_ranks[rank][0]
-            # cursor.execute("UPDATE accounts "
-            #         "SET score = score + %s WHERE username = %s",
-            #         (points, session['user']['username']))
+            # Update user, country and global scores
+            query = 'UPDATE riddle_accounts ' \
+                    'SET score = score + :points ' \
+                    'WHERE riddle = :riddle AND username = :name'
+            values = {'points': points, 
+                    'riddle': riddle, 'name': session['username']}
+            await database.execute(query, values)
             # cursor.execute("UPDATE countries "
             #         "SET total_score = total_score + %s "
             #         "WHERE alpha_2 = %s",
             #         (points, session['user']['country']))
+            query = 'UPDATE accounts ' \
+                    'SET global_score = global_score + :points ' \
+                    'WHERE username = :name'
+            values = {'points': points, 'name': session['username']}
+            await database.execute(query, values)
 
             if not 'Status' in id:
                 # Update current_level count and reset user's page count
@@ -193,10 +211,13 @@ async def process_page(riddle: str, path: str):
 
     # If user entered a correct and new answer, register time on DB
     #if int(current_level) <= total and path == level["answer"]:
+    points = 0
     if current_level == '00' or path == level['answer']:
         rank = level['rank'] if level else 'D'
+        points = level_ranks[rank]['points']
+        print(points)
         await search_and_add_to_db('user_levelcompletion',
-                current_level, rank)
+                current_level, points)
     else:
         pass
         # Check if a secret level has been found
@@ -250,3 +271,5 @@ async def process_page(riddle: str, path: str):
     #                 "SET total_score = total_score + %s "
     #                 "WHERE alpha_2 = %s",
     #                 (points, session['user']['country']))
+
+    return points

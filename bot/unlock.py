@@ -33,17 +33,18 @@ async def unlock(data):
     print(data.path)
     for id, level in riddle.levels.items():
         if level['path'] == data.path:
-            await advance(riddle, member, id, current_level)
+            await advance(riddle, member, id, current_level, data.points)
             return
     for id, level in riddle.secret_levels.items():
         if level['path'] == data.path:
-            await advance(riddle, member, id, current_level)
+            await advance(riddle, member, id, current_level, data.points)
             return
         elif level['answer_path'] == data.path:
             await solve(riddle, member, level)
 
 
-async def advance(riddle: Riddle, member: Member, id: str, current_level: str):
+async def advance(riddle: Riddle, member: Member,
+        id: str, current_level: str, points: int):
     '''Advance to further level when player arrives at a level front page.
     "reached" role is granted to user and thus given access to channel(s).'''
 
@@ -100,10 +101,11 @@ async def advance(riddle: Riddle, member: Member, id: str, current_level: str):
     print('> [%s] %s#%s unlocked channel #%s' \
             % (guild.name, member.name, member.discriminator, id))
     if id in riddle.levels:
-        text = '**[%s]** You advanced to level **%s**!\n'
+        text = ('**[%s]** You advanced to level **%s** ' % (guild.name, id)) \
+                + ('and won **%d** points!\n' % points)
     else:
-        text = '**[%s]** You found secret level **%s**!\n'
-    text %= (guild.name, id)
+        text = '**[%s]** You found secret level **%s**!\n' \
+                % (guild.name, id)
     await member.send(text)
 
 

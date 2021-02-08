@@ -1,4 +1,4 @@
-from quart import Blueprint, render_template, session
+from quart import Blueprint, render_template
 
 from ipc import web_ipc
 from util.db import database
