@@ -6,12 +6,12 @@ from ssl import SSLError
 # Allow util folder to be visible
 sys.path.append('..')
 
-from quart import Quart, request, session
+from quart import Quart,  session
 
 # Quart app object
 app = Quart(__name__)
 
-from user.auth import discord_session_init
+from player.auth import discord_session_init
 
 # Really unique secret key
 app.secret_key = \
@@ -22,13 +22,14 @@ discord_session_init(app)
 
 from admin.auth import admin_auth
 from admin.admin import admin
-from user.auth import user_auth, session_cookie
+from player.auth import player_auth, session_cookie
+from player.account import account
 from process import process
 from levels import levels
 from util.db import database
 
 # Register app blueprints to allow other modules
-for blueprint in (admin_auth, admin, user_auth, process, levels):
+for blueprint in (admin_auth, admin, player_auth, account, process, levels):
     app.register_blueprint(blueprint)
 
 # Disable annoying newlines on Jinja rendered HTML templates

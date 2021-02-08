@@ -3,7 +3,7 @@ from datetime import datetime
 
 from quart import Blueprint, request, session, jsonify
 
-from user.auth import discord
+from player.auth import discord
 from ipc import web_ipc
 from util.db import database
 
@@ -45,7 +45,6 @@ async def process_url():
             path = path.replace('/cipher/', '')
         else:
             path = path.replace('/riddle/', '')
-        print(path)
         await process_page(riddle, path)
 
         # Send unlocking request to bot's IPC server
@@ -57,9 +56,10 @@ async def process_url():
         response = jsonify({'path': path})
         status = 200
     
+    ref = request.referrer[:-1]
+    print(ref)
     # (Chrome fix) Allow CORS to be requested from other domains
-    response.headers.add('Access-Control-Allow-Origin',
-            'http://gamemastertips.com')
+    response.headers.add('Access-Control-Allow-Origin', ref)
     response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
     response.headers.add('Access-Control-Allow-Headers', 'Cookie')
     response.headers.add('Access-Control-Allow-Credentials', 'true')

@@ -1,0 +1,35 @@
+{% extends 'layout.htm' %}
+{% block title %}Riddler | Global user list{% endblock %}
+{% block content %}
+    <main>
+      <h1>User List</h1>
+      <table>
+        <thead>
+          <tr>
+            <th>Country</th>
+            <th>User</th>
+            <th>Global points</th>
+          </tr>
+        </thead>
+        <tbody>
+        {% for player in accounts %}
+          <tr>
+            <td>
+              <a href="{{ player['country'] }}">
+                <img src="/static/flags/{{ player['country'] }}.png" title="pycountries.get(alpha_2=player['country']).name" class="flag_small">
+              </a>
+            </td>
+            <td class="username_cell">
+              <a href="url_for('account.profile', username=player['username'])">
+                {{ player['username'] }}#{{ player['discriminator'] }}
+              </a>
+            </td>
+            <td>
+              <var class="points">{{ player['total_score'] }}</var>
+            </td>
+          </tr>
+        {% endfor %}
+        <tbody>
+      </table>
+    </main>
+{% endblock %}
