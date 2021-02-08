@@ -1,5 +1,5 @@
-from quart import session
 from pycountry import pycountry
+from flag import flag
 
 from players.auth import discord
 
@@ -24,6 +24,9 @@ async def context_processor():
     if await discord.authorized:
         user = await discord.fetch_user()
         avatar_url = str(user.avatar_url)
+    
+    # Get emoji flag from alpha_2 code (for players pages titles)
+    get_emoji_flag = flag
 
     # Return dict of variables to be injected
     return locals()

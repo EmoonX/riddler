@@ -1,5 +1,5 @@
 {% extends 'layout.htm' %}
-{% block title %}{{ session['user']['username'] }} | Account settings{% endblock %}
+{% block title %}{{ get_emoji_flag(session['user']['country']) }} {{ session['user']['username'] }} | Settings{% endblock %}
 {% block extra %}
     <script src="/static/scripts/settings.js"></script>
 {% endblock %}
