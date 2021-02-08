@@ -10,6 +10,18 @@ account = Blueprint("account", __name__, template_folder="templates")
 @account.route("/players/")
 async def players():
     """Player list page and table."""
+    # Get riddles data from database
+    query = 'SELECT * from riddles'
+    result = await database.fetch_all(query)
+    riddles = [dict(riddle) for riddle in result]
+
+    # Get players' avatar URLs
+    for riddle in riddles:
+        url = await web_ipc.request('get_riddle_icon_url',
+                id=riddle['guild_id'])
+        riddle['icon_url'] = url
+        print(url)
+
     # Get players data from database
     query = 'SELECT * FROM accounts'
     result = await database.fetch_all(query)
@@ -22,4 +34,5 @@ async def players():
         account['avatar_url'] = url
 
     # Render page with account info
-    return await render_template("players/index.htm", accounts=accounts)
+    return await render_template("players/index.htm",
+            riddles=riddles, accounts=accounts)

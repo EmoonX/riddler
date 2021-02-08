@@ -24,7 +24,6 @@ async def process_url():
     if not await discord.authorized:
         # Unauthorized, return status 401
         response = jsonify({'message': 'Unauthorized'})
-        print(':(')
         status = 401 if request.method == 'POST' else 200
     else:
         # Store session riddle user data
@@ -32,8 +31,8 @@ async def process_url():
         if 'rnsriddle.com' in url:
             riddle = 'rns'
         user = await discord.fetch_user()
-        query = 'SELECT * FROM accounts ' \
-                'WHERE  riddle = :riddle AND ' \
+        query = 'SELECT * FROM riddle_accounts ' \
+                'WHERE riddle = :riddle AND ' \
                     'username = :name AND discriminator = :disc'
         values = {'riddle': riddle,
                 'name': user.name, 'disc': user.discriminator}
@@ -116,11 +115,12 @@ async def process_page(riddle: str, path: str):
 
             if not 'Status' in id:
                 # Update current_level count and reset user's page count
+                id_next = ''
                 if riddle == 'cipher':
                     id_next = '%02d' % (int(id) + 1)
                 if riddle == 'rns':
                     id_next = 'level-%d' % (int(id[-1:]) + 1)
-                query = 'UPDATE accounts ' \
+                query = 'UPDATE riddle_accounts ' \
                         'SET current_level = :id_next, cur_page_count = 1 ' \
                         'WHERE riddle = :riddle AND ' \
                             'username = :name AND discriminator = :disc'
@@ -165,7 +165,7 @@ async def process_page(riddle: str, path: str):
     # Increment user current page count (if it's an .htm one)
     # is_htm = path[-4:] == '.htm'
     # if is_htm:
-    query = 'UPDATE accounts SET cur_page_count = cur_page_count + 1 ' \
+    query = 'UPDATE riddle_accounts SET cur_page_count = cur_page_count + 1 ' \
             'WHERE riddle = :riddle ' \
             'AND username = :name AND discriminator = :disc'
     values = {'riddle': riddle,

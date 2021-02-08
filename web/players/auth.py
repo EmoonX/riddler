@@ -54,17 +54,18 @@ async def callback():
     # If user doesn't have an account on database, create it
     riddle = 'rns'
     user = await discord.fetch_user()
-    query = 'SELECT * FROM accounts WHERE ' \
-            'username = :name AND discriminator = :disc'
-    values = {'name': user.name, 'disc': user.discriminator}
+    query = 'SELECT * FROM riddle_accounts WHERE ' \
+            'riddle = :riddle AND username = :name AND discriminator = :disc'
+    values = {'riddle': riddle, 'name': user.name, 'disc': user.discriminator}
     result = await database.fetch_one(query, values)
     if not result:
-        query = 'INSERT INTO accounts ' \
-                '(username, discriminator) ' \
-                'VALUES (:name, :disc)'
+        query = 'INSERT INTO riddle_accounts ' \
+                '(riddle, username, discriminator) ' \
+                'VALUES (:riddle, :name, :disc)'
         await database.execute(query, values)
-        query = 'SELECT * FROM accounts WHERE ' \
-                'username = :name AND discriminator = :disc'
+        query = 'SELECT * FROM riddle_accounts ' \
+                'WHERE riddle = :riddle ' \
+                'AND username = :name AND discriminator = :disc'
         result = await database.fetch_one(query, values)
     
     # Save some important user info on session dict
