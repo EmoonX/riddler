@@ -199,16 +199,16 @@ h1 {
 }
 h1::before, h1::after {
   content: "";
-  width: 108px;
-  height: 192px;
-  margin: 0 60px;
+  width: 60px;
+  height: 120px;
+  margin: 0 50px;
   background-size: 100% 100%;
 }
 h1::before {
-  content: url("images/stencil-left.png");
+  background-image: url("images/stencil-left.png");
 }
 h1::after {
-  content: url("images/stencil-right.png");
+  background-image: url("images/stencil-right.png");
 }
 
 h3 {

@@ -27,10 +27,17 @@ from players.account import account
 from process import process
 from levels import levels
 from util.db import database
+from inject import context_processor
 
-# Register app blueprints to allow other modules
 for blueprint in (admin_auth, admin, players_auth, account, process, levels):
+    # Register app blueprint to allow other modules
     app.register_blueprint(blueprint)
+
+    # Define context processor for blueprint
+    blueprint.context_processor(context_processor)
+
+# Define context processor for main app
+app.context_processor(context_processor)
 
 # Disable annoying newlines on Jinja rendered HTML templates
 app.jinja_env.trim_blocks = True

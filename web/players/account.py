@@ -22,5 +22,4 @@ async def players():
         account['avatar_url'] = url
 
     # Render page with account info
-    return await render_template("players/index.htm",
-            accounts=accounts, session=session)
+    return await render_template("players/index.htm", accounts=accounts)
