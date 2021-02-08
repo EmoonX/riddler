@@ -16,6 +16,7 @@ import begin
 import unlock
 import update
 import send
+import avatar
 
 # Get Discord token securely from environment variable
 load_dotenv()

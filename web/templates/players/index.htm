@@ -1,8 +1,8 @@
 {% extends 'layout.htm' %}
-{% block title %}Riddler | Global user list{% endblock %}
+{% block title %}Riddler | All users{% endblock %}
 {% block content %}
     <main>
-      <h1>User List</h1>
+      <h1>All users</h1>
       <table>
         <thead>
           <tr>
@@ -20,6 +20,7 @@
               </a>
             </td>
             <td class="username_cell">
+              <img class="avatar-small" src="{{ player['avatar_url'] }}"">
               <a href="url_for('account.profile', username=player['username'])">
                 {{ player['username'] }}#{{ player['discriminator'] }}
               </a>

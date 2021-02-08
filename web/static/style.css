@@ -197,14 +197,18 @@ h1 {
   font-size: 4em;
   text-shadow: 0 0 0.6em white;
 }
-
 h1::before, h1::after {
   content: "";
   width: 108px;
   height: 192px;
   margin: 0 60px;
-  background-image: url("logo.png");
   background-size: 100% 100%;
+}
+h1::before {
+  content: url("images/stencil-left.png");
+}
+h1::after {
+  content: url("images/stencil-right.png");
 }
 
 h3 {
@@ -250,7 +254,7 @@ var {
 }
 
 .username_cell {
-  width: 300px;
+  width: 400px;
   text-align: left;
 }
 
