@@ -63,7 +63,7 @@ async def level_list(riddle: str):
                 'WHERE riddle = :riddle and current_level = :id'
         values = {'riddle': riddle, 'id': level['id']}
         result = await database.fetch_all(query, values)
-        level['users'] = result
+        level['users'] = [dict(level) for level in result]
 
         levels.append(level)
         # Append level to levels list

@@ -64,10 +64,11 @@ async def process_url():
                 path = path.replace('/riddle/', '')
             points = await _process_page(riddle, path)
 
-            # Send unlocking request to bot's IPC server
-            await web_ipc.request('unlock',
-                    alias=riddle, player_id=user.id,
-                    path=path, points=points)
+            # Send unlocking request to bot's IPC server (if everything's good)
+            if points:
+                await web_ipc.request('unlock',
+                        alias=riddle, player_id=user.id,
+                        path=path, points=points)
         
         # Successful response
         response = jsonify({'path': path})

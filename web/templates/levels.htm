@@ -82,11 +82,13 @@
             </td>
             <td class="level-cur-in">
               <div>
-            {% for user in level['users'] %}
-                {% set avatar = user['username'] %}
-                <a href="#"><img class="avatar-small" src="#" data-gif="#" title="{{ user['username'] }}"></a>
+              {% for user in level['users'] %}
+                {% set account = accounts[user['username']] %}
+                <a href="#">
+                  <img class="avatar-small" src="{{ account['avatar_url'] }}" title="{{ account['username'] }}">
+                </a>
               </div>{% if not loop.last %}<div>{% endif %}
-            {% endfor %}
+              {% endfor %}
             </td>
           {% if level['unlocked'] %}
             <tr class="page-explorer" data-files_count="{{ level['files_count'] }}" data-files_total="{{ level['files_total'] }}" data-folders="{{ level['folders'] }}">
