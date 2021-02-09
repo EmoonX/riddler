@@ -34,15 +34,15 @@ async def login():
 
     # Check if password's hash matches stored hash
     password = form['password']
-    match = bcrypt.checkpw(
-            password.encode('utf-8'), guild['password_hash'].encode('utf-8'))
+    match = bcrypt.checkpw(password.encode('utf-8'),
+            guild['password_hash'].encode('utf-8'))
     if not match:
         return await r('Wrong password.')
     
     # Create session data
     if not 'admin' in session:
         session['admin'] = {}
-        session['admin'][alias] = guild['id']
+        session['admin'][alias] = guild['full_name']
 
     # Login is successful, redirect to guild page
     return redirect(url_for("admin.config", alias=alias))

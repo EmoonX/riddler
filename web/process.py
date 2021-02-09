@@ -13,11 +13,11 @@ process = Blueprint('process', __name__)
 
 # Dict of pairs (level rank -> (points, color))
 level_ranks = {
-    "D": (10, "cornflowerblue"),
-    "C": (15, "lawngreen"),
-    "B": (25, "gold"),
-    "A": (40, "crimson"),
-    "S": (60, "lightcyan")
+    'D': (10, 'cornflowerblue'),
+    'C': (15, 'lawngreen'),
+    'B': (25, 'gold'),
+    'A': (40, 'crimson'),
+    'S': (60, 'lightcyan')
 }
 for rank, pair in level_ranks.items():
     level_ranks[rank] = {'points': pair[0], 'color': pair[1]}

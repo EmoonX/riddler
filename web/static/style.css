@@ -185,15 +185,13 @@ section {
 }
 
 h1, h2, h3 {
-  margin: 70px 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 0px;
   text-shadow: gray 2px 2px;
 }
 
 h1 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-size: 4em;
   text-shadow: 0 0 0.6em white;
 }
@@ -211,18 +209,10 @@ h1::after {
   background-image: url("images/stencil-right.png");
 }
 
-h3 {
-  font-size: 1.5em;
-}
-
-h3::before {
-  margin: 0 20px;
-  content: url("stencilleft.png");
-}
-
-h3::after {
-  margin: 0 20px;
-  content: url("stencilright.png");
+h2 {
+  margin: 100px 0;
+  font-size: 2em;
+  line-height: 100%;
 }
 
 p {
@@ -242,6 +232,10 @@ var {
 
 :not(dd) > var {
   margin: 0 0.2em;
+}
+
+hr {
+  margin: 50px 0;
 }
 
 /* ------------------------------------------------------------------------- */

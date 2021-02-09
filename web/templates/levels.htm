@@ -6,6 +6,9 @@
 {% block content %}
     <main>
       <h1>Levels</h1>
+      {% set total = 100 %}
+    {% for set_name, set in levels.items() %}
+      <h2>{{ set_name }}</h2>
       <table>
         <thead>
           <tr>
@@ -17,10 +20,9 @@
           </tr>
         </thead>
         <tbody>
-          {% set total = 65 %}
-        {% for level in levels %}
+        {% for level in set %}
           <tr>
-            <td class="level-id{% if level['unlocked'] %} unlocked{% endif %}"><var>{{ level['id'] }}</var>{% if level['unlocked'] %}<var>☰</var>{% endif %}</td>
+            <td class="level-id{% if level['unlocked'] %} unlocked{% endif %}"><var>{{ level['name'] }}</var>{% if level['unlocked'] %}<var>☰</var>{% endif %}</td>
           {% if level['unlocked'] and level['image'] %}
             <td class="level-thumb">
               <a href="{{ url }}/{{ level['path'] }}">
@@ -121,5 +123,6 @@
         {% endfor %}
         </tbody>
       </table>
+    {% endfor %}
     </main>
 {% endblock %}

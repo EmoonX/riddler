@@ -27,7 +27,7 @@ class Riddle:
 
         # Get riddle's level info from database query
         for level in levels:
-            id = level['id']
+            id = level['name']
             self.levels[id] = level
         # for level in secret_levels:
         #     id = level['level_id']

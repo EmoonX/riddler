@@ -30,7 +30,7 @@ async def unlock(data):
                 break
     
     for id, level in riddle.levels.items():
-        if current_level and level['answer'] == data.path:
+        if data.points and level['answer'] == data.path:
             # If path corresponds to a level answer, level is beaten
             await _beat(riddle, member, id, current_level, data.points)
         elif level['path'] == data.path:

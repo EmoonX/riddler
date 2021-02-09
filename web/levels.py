@@ -21,10 +21,10 @@ async def level_list(riddle: str):
         result = await database.fetch_one(query, base_values)
         current_level = result['current_level']
 
-    # Get level list (and mark them as unlocked and/or beaten appropriately)
+    # Get level dict (and mark them as unlocked and/or beaten appropriately)
     query = 'SELECT * FROM levels WHERE riddle = :riddle'
     result = await database.fetch_all(query, {'riddle': riddle})
-    levels = []
+    levels = {}
     for level in result:
         level = dict(level)
         if 'user' in session:
@@ -32,7 +32,7 @@ async def level_list(riddle: str):
                     'WHERE riddle = :riddle ' \
                     'AND username = :name AND level_id = :id ' \
                     'AND discriminator = :disc'
-            values = {**base_values, 'id': level['id']}
+            values = {**base_values, 'id': level['name']}
             result = await database.fetch_one(query, values)
             level['beaten'] = (result is not None)
             level['unlocked'] = level['beaten']
@@ -56,12 +56,15 @@ async def level_list(riddle: str):
         # Register list of users currently on level
         query = 'SELECT * FROM riddle_accounts ' \
                 'WHERE riddle = :riddle and current_level = :id'
-        values = {'riddle': riddle, 'id': level['id']}
+        values = {'riddle': riddle, 'id': level['name']}
         result = await database.fetch_all(query, values)
         level['users'] = [dict(level) for level in result]
 
-        levels.append(level)
-        # Append level to levels list
+        # Append level to its set subdict
+        if not level['set'] in levels:
+            levels[level['set']] = []
+        levels[level['set']].append(level)
+        
 
     if 'user' not in session:
         # First level is always visible
@@ -100,76 +103,77 @@ async def _get_user_unlocked_pages(riddle: str, levels: dict):
     s = 'cipher'
     if riddle == 'rns':
         s = 'riddle'
-    for level in levels:
-        # Get all pages (paths) user accessed in respective level
-        query = 'SELECT path FROM user_pageaccess ' \
-                'WHERE riddle = :riddle ' \
-                'AND username = :name AND discriminator = :disc ' \
-                'AND level_id = :id'
-        values = {'riddle': riddle, 
-                'name': session['user']['username'],
-                'disc': session['user']['discriminator'],
-                'id': level['id']}
-        result = await database.fetch_all(query, values)
-        paths = [(s + '/' + row['path']) for row in result]
+    for level_set in levels.values():
+        for level in level_set:
+            # Get all pages (paths) user accessed in respective level
+            query = 'SELECT path FROM user_pageaccess ' \
+                    'WHERE riddle = :riddle ' \
+                    'AND username = :name AND discriminator = :disc ' \
+                    'AND level_id = :id'
+            values = {'riddle': riddle, 
+                    'name': session['user']['username'],
+                    'disc': session['user']['discriminator'],
+                    'id': level['name']}
+            result = await database.fetch_all(query, values)
+            paths = [(s + '/' + row['path']) for row in result]
 
-        # Build dict of pairs (folder -> list of paths)
-        level['folders'] = {}
-        folders = level['folders']
-        for path in paths:
-            folder, page = path.rsplit('/', 1)
-            if not folder in folders:
-                folders[folder] = []
-            folders[folder].append(page)
+            # Build dict of pairs (folder -> list of paths)
+            level['folders'] = {}
+            folders = level['folders']
+            for path in paths:
+                folder, page = path.rsplit('/', 1)
+                if not folder in folders:
+                    folders[folder] = []
+                folders[folder].append(page)
 
-        # Save number of pages/files in folder
-        level['files_count'] = {}
-        for folder in folders:
-            level['files_count'][folder] = len(folders[folder])
+            # Save number of pages/files in folder
+            level['files_count'] = {}
+            for folder in folders:
+                level['files_count'][folder] = len(folders[folder])
 
-        def extension_cmp(page: str):
-            '''Compare pages based firstly on their extension.
-            Order is: folders first, then .htm, then the rest.'''
-            if len(page) < 4 or page[-4] != '.':
-                return 'aaa'
-            if page[-3:] == 'htm':
-                return 'aab'
-            return page[-3:]
+            def extension_cmp(page: str):
+                '''Compare pages based firstly on their extension.
+                Order is: folders first, then .htm, then the rest.'''
+                if len(page) < 4 or page[-4] != '.':
+                    return 'aaa'
+                if page[-3:] == 'htm':
+                    return 'aab'
+                return page[-3:]
 
-        # Add folders to directories
-        aux = {}
-        for folder in folders:
-            f = folder
-            while f.count('/'):
-                parent, name = f.rsplit('/', 1)
-                if not parent in aux:
-                    aux[parent] = set()
-                aux[parent].add(name)
-                f = parent
-        for folder, names in aux.items():
-            if not folder in folders:
-                folders[folder] = []
-            folders[folder].extend(names)
+            # Add folders to directories
+            aux = {}
+            for folder in folders:
+                f = folder
+                while f.count('/'):
+                    parent, name = f.rsplit('/', 1)
+                    if not parent in aux:
+                        aux[parent] = set()
+                    aux[parent].add(name)
+                    f = parent
+            for folder, names in aux.items():
+                if not folder in folders:
+                    folders[folder] = []
+                folders[folder].extend(names)
 
-        # Sort pages from each folder
-        for _, pages in folders.items():
-            pages.sort(key=extension_cmp)
+            # Sort pages from each folder
+            for _, pages in folders.items():
+                pages.sort(key=extension_cmp)
 
-        # Count total number of pages (unlocked or not) in each folder
-        level['files_total'] = {}
-        query = 'SELECT path FROM level_pages WHERE ' \
-                'riddle = :riddle AND level_id = :id'
-        values = {'riddle': riddle, 'id': level['id']}
-        result = await database.fetch_all(query, values)
-        paths = [row['path'] for row in result]
-        for path in paths:
-            folder = s + '/' + path.rsplit('/', 1)[0]
-            if not folder in folders:
-                # Avoid spoiling things in HTML!
-                continue
-            if not folder in level['files_total']:
-                level['files_total'][folder] = 0
-            level['files_total'][folder] += 1
+            # Count total number of pages (unlocked or not) in each folder
+            level['files_total'] = {}
+            query = 'SELECT path FROM level_pages WHERE ' \
+                    'riddle = :riddle AND level_id = :id'
+            values = {'riddle': riddle, 'id': level['name']}
+            result = await database.fetch_all(query, values)
+            paths = [row['path'] for row in result]
+            for path in paths:
+                folder = s + '/' + path.rsplit('/', 1)[0]
+                if not folder in folders:
+                    # Avoid spoiling things in HTML!
+                    continue
+                if not folder in level['files_total']:
+                    level['files_total'][folder] = 0
+                level['files_total'][folder] += 1
 
 
 

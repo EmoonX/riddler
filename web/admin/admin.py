@@ -51,10 +51,10 @@ async def config(alias: str):
 
     # Update Discord guild channels and roles with new levels info.
     # This is done by sending an request to the bot's IPC server
-    id = session['admin'][alias]
+    full_name = session['admin'][alias]
     levels = [dict(level) for level in levels]
     await web_ipc.request('build',
-            guild_id=id, levels=levels)
+            guild_name=full_name, levels=levels)
 
     return await r('Guild info updated successfully!')
 

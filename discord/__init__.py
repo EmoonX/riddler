@@ -1,13 +1,11 @@
 import os
 import sys
 import logging
-from dotenv import load_dotenv
+
+from discord.utils import get
 
 # Allow util folder to be visible
 sys.path.append('..')
-
-import discord
-from discord.utils import get
 
 from bot import bot
 from util.db import database
@@ -16,10 +14,9 @@ import begin
 import unlock
 import update
 import send
-import get
+import get as g
 
 # Get Discord token securely from environment variable
-load_dotenv()
 token = os.getenv('DISCORD_TOKEN')
 
 # Allow logging info
@@ -42,6 +39,14 @@ async def on_ready():
         # query = 'SELECT * FROM secret_levels WHERE guild = :guild'
         # secret_levels = await database.fetch_all(query, values)
         riddles[riddle['alias']] = Riddle(riddle, levels)
+    
+    # guild = get(bot.guilds, name='RNS Riddle II')
+    # for role in guild.roles:
+    #     if 'reached-' in role.name:
+    #         name = role.name[8:]
+    #         channel = get(guild.channels, name=name)
+    #         await channel.delete()
+    #         await role.delete()
 
 
 @bot.command()
