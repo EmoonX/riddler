@@ -2,6 +2,7 @@ from urllib.parse import urlparse
 from datetime import datetime
 
 from quart import Blueprint, request, session, jsonify
+from quart_discord.models import User
 
 from players.auth import discord
 from ipc import web_ipc
@@ -24,7 +25,8 @@ for rank, pair in level_ranks.items():
 
 @process.route('/process/', methods=['POST', 'OPTIONS'])
 async def process_url():
-    '''Process an URL sent by the browser extension.'''
+    '''Process an URL sent by browser extension.'''
+
     # Receive URL from request and parse it
     url = (await request.data).decode('utf-8')
     parsed = urlparse(url)
@@ -37,30 +39,35 @@ async def process_url():
         response = jsonify({'message': 'Unauthorized'})
         status = 401 if request.method == 'POST' else 200
     else:
-        # Store session riddle user data
-        riddle = 'cipher'
-        if 'rnsriddle.com' in url:
-            riddle = 'rns'
-        user = await discord.fetch_user()
-        query = 'SELECT * FROM riddle_accounts ' \
-                'WHERE riddle = :riddle AND ' \
-                    'username = :name AND discriminator = :disc'
-        values = {'riddle': riddle,
-                'name': user.name, 'disc': user.discriminator}
-        result = await database.fetch_one(query, values)
-        session[riddle] = dict(result)
-        
-        # Process page and register player info on database
-        if riddle == 'cipher':
-            path = path.replace('/cipher/', '')
-        else:
-            path = path.replace('/riddle/', '')
-        points = await process_page(riddle, path)
+        if request.method =='POST':
+            # Store session riddle user data
+            riddle = 'cipher'
+            if 'rnsriddle.com' in url:
+                riddle = 'rns'
+            user = await discord.fetch_user()
+            query = 'SELECT * FROM riddle_accounts ' \
+                    'WHERE riddle = :riddle AND ' \
+                        'username = :name AND discriminator = :disc'
+            values = {'riddle': riddle,
+                    'name': user.name, 'disc': user.discriminator}
+            result = await database.fetch_one(query, values)
+            if not result:
+                # If user don't have a riddle account yet, create it
+                await _create_riddle_account(riddle, user)
+            # Register player's riddle session data
+            await _get_player_riddle_data(riddle, user)
+            
+            # Process page and register player info on database
+            if riddle == 'cipher':
+                path = path.replace('/cipher/', '')
+            else:
+                path = path.replace('/riddle/', '')
+            points = await _process_page(riddle, path)
 
-        # Send unlocking request to bot's IPC server
-        await web_ipc.request('unlock',
-                alias=riddle, player_id=user.id,
-                path=path, points=points)
+            # Send unlocking request to bot's IPC server
+            await web_ipc.request('unlock',
+                    alias=riddle, player_id=user.id,
+                    path=path, points=points)
         
         # Successful response
         response = jsonify({'path': path})
@@ -75,20 +82,42 @@ async def process_url():
         response.headers.add('Access-Control-Allow-Credentials', 'true')
     
     # Return response
+    print(url)
     return response, status
 
 
-async def process_page(riddle: str, path: str):
+async def _create_riddle_account(riddle: str, user: User):
+    '''Insert new user riddle account on riddle_accounts table.'''
+    query = 'INSERT INTO riddle_accounts ' \
+            '(riddle, username, discriminator) ' \
+            'VALUES (:riddle, :name, :disc)'
+    values = {'riddle': riddle,
+            'name': user.name, 'disc': user.discriminator}
+    await database.execute(query, values)
+
+
+async def _get_player_riddle_data(riddle: str, user: User):
+    '''Save player's riddle data to session.'''
+    query = 'SELECT * FROM riddle_accounts ' \
+            'WHERE riddle = :riddle ' \
+            'AND username = :name AND discriminator = :disc'
+    values = {'riddle': riddle,
+            'name': user.name, 'disc': user.discriminator}
+    result = await database.fetch_one(query, values)
+    session[riddle] = dict(result)
+
+
+async def _process_page(riddle: str, path: str):
     '''Process level pages (one or more folders deep).
     Return total points gotten.'''
 
-    async def search_and_add_to_db(table: str, id: int, points: int):
+    async def _search_and_add_to_db(table: str, id: int, points: int):
         '''Search if level was yet not completed or secret yet not found.
         If true, add user and datetime of completion to respective table.'''
 
         # Check if level has been completed
-        username = session['username']
-        disc = session['disc']
+        username = session['user']['username']
+        disc = session['user']['discriminator']
         query = ('SELECT * FROM %s ' % table) + \
                 'WHERE riddle = :riddle AND username = :name ' \
                 'AND discriminator = :disc AND level_id = :id'
@@ -120,7 +149,7 @@ async def process_page(riddle: str, path: str):
                     'SET score = score + :points ' \
                     'WHERE riddle = :riddle AND username = :name'
             values = {'points': points, 
-                    'riddle': riddle, 'name': session['username']}
+                    'riddle': riddle, 'name': username}
             await database.execute(query, values)
             # cursor.execute("UPDATE countries "
             #         "SET total_score = total_score + %s "
@@ -129,7 +158,7 @@ async def process_page(riddle: str, path: str):
             query = 'UPDATE accounts ' \
                     'SET global_score = global_score + :points ' \
                     'WHERE username = :name'
-            values = {'points': points, 'name': session['username']}
+            values = {'points': points, 'name': username}
             await database.execute(query, values)
 
             if not 'Status' in id:
@@ -162,7 +191,7 @@ async def process_page(riddle: str, path: str):
                 #             "WHERE alpha_2 = %s",
                 #             (session['user']['country'],))
 
-    def has_access():
+    def _has_access():
         """Check if user can access level_id,
                 having reached current_level so far."""
         return True
@@ -199,7 +228,8 @@ async def process_page(riddle: str, path: str):
                 'WHERE riddle = :riddle ' \
                 'AND username = :name AND discriminator = :disc'
         values = {'riddle': riddle,
-                'name': session['username'], 'disc': session['disc']}
+                'name': session['user']['username'],
+                'disc': session['user']['discriminator']}
         await database.execute(query, values)
         session[riddle]['cur_hit_counter'] += 1
 
@@ -211,10 +241,9 @@ async def process_page(riddle: str, path: str):
 
     # Get user's current reached level and requested level number
     current_level = session[riddle]['current_level']
-    if not current_level:
-        current_level = '01'
-    query = 'SELECT * FROM level_pages WHERE path = :path'
-    values = {'path': path}
+    query = 'SELECT * FROM level_pages ' \
+            'WHERE riddle = :riddle AND path = :path'
+    values = {'riddle': riddle, 'path': path}
     page = await database.fetch_one(query, values)
     if not page:
         # Page not found!
@@ -226,6 +255,7 @@ async def process_page(riddle: str, path: str):
     query = 'SELECT * FROM levels WHERE riddle = :riddle AND id = :id'
     values = {'riddle': riddle, 'id': current_level}
     level = await database.fetch_one(query, values)
+    print(values)
 
     # If user entered a correct and new answer, register time on DB
     #if int(current_level) <= total and path == level["answer"]:
@@ -233,7 +263,7 @@ async def process_page(riddle: str, path: str):
     if current_level == '00' or path == level['answer']:
         rank = level['rank'] if level else 'D'
         points = level_ranks[rank]['points']
-        await search_and_add_to_db('user_levelcompletion',
+        await _search_and_add_to_db('user_levelcompletion',
                 current_level, points)
     else:
         pass
@@ -263,7 +293,8 @@ async def process_page(riddle: str, path: str):
     query = 'INSERT IGNORE INTO user_pageaccess ' \
             'VALUES (:riddle, :name, :disc, :id, :path, :time)'
     values = {'riddle': riddle,
-            'name': session['username'], 'disc': session['disc'],
+            'name': session['user']['username'],
+            'disc': session['user']['discriminator'],
             'id': level_id, 'path': path, 'time': tnow}
     await database.execute(query, values)
 

@@ -11,8 +11,9 @@ async def level_list(riddle: str):
     '''Fetch list of levels, showing only desired public info.'''
     pages = None
     base_values = {'riddle': riddle,
-            'name': session['username'], 'disc': session['disc']}
-    if 'username' in session:
+            'name': session['user']['username'],
+            'disc': session['user']['discriminator']}
+    if 'user' in session:
         # Get user's current level
         query = 'SELECT current_level FROM riddle_accounts WHERE ' \
                 'riddle = :riddle AND ' \
@@ -26,7 +27,7 @@ async def level_list(riddle: str):
     levels = []
     for level in result:
         level = dict(level)
-        if 'username' in session:
+        if 'user' in session:
             query = 'SELECT username, rating_given FROM user_levelcompletion ' \
                     'WHERE riddle = :riddle ' \
                     'AND username = :name AND level_id = :id ' \
@@ -67,7 +68,7 @@ async def level_list(riddle: str):
         levels.append(level)
         # Append level to levels list
 
-    if not 'username' in session:
+    if 'user' not in session:
         # First level is always visible
         levels[0]['unlocked'] = True
         levels[0]['image'] = 'enter.jpg'
@@ -88,7 +89,6 @@ async def level_list(riddle: str):
     }
     # return render_and_count('levels.htm', locals())
     # return render_and_count('levels.htm', locals())
-    print('LOL')
     s = 'cipher'
     if riddle == 'rns':
         s = 'riddle'
@@ -111,8 +111,10 @@ async def _get_user_unlocked_pages(riddle: str, levels: dict):
                 'WHERE riddle = :riddle ' \
                 'AND username = :name AND discriminator = :disc ' \
                 'AND level_id = :id'
-        values = {'riddle': riddle, 'name': session['username'],
-                'disc': session['disc'], 'id': level['id']}
+        values = {'riddle': riddle, 
+                'name': session['user']['username'],
+                'disc': session['user']['discriminator'],
+                'id': level['id']}
         result = await database.fetch_all(query, values)
         paths = [(s + '/' + row['path']) for row in result]
 
