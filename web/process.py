@@ -27,18 +27,6 @@ for rank, pair in level_ranks.items():
 async def process_url():
     '''Process an URL sent by browser extension.'''
 
-    # Receive URL from request and parse it
-    url = (await request.data).decode('utf-8')
-    parsed = urlparse(url)
-    path = parsed.path
-
-    # If no explicit file, add 'index.htm' to end of path
-    dot_index = path.rfind('.')
-    if dot_index == -1:
-        if path[-1] != '/':
-            path += '/'
-        path += 'index.htm'
-
     response = None
     status = None
     if not await discord.authorized:
@@ -46,7 +34,20 @@ async def process_url():
         response = jsonify({'message': 'Unauthorized'})
         status = 401 if request.method == 'POST' else 200
     else:
+        # Receive URL from request and parse it
+        url = (await request.data).decode('utf-8')
+        parsed = urlparse(url)
+        path = parsed.path
+        
         if request.method =='POST':
+            # If no explicit file, add 'index.htm' to end of path
+            dot_index = path.rfind('.')
+            print(path)
+            if dot_index == -1:
+                if path[-1] != '/':
+                    path += '/'
+                path += 'index.htm'
+            
             # Store session riddle user data
             riddle = 'cipher'
             if 'rnsriddle.com' in url:
@@ -76,6 +77,8 @@ async def process_url():
                 await web_ipc.request('unlock',
                         alias=riddle, player_id=user.id,
                         path=path, points=points)
+            
+            print('[%s] Received path "%s"' % (riddle, path))
         
         # Successful response
         response = jsonify({'path': path})
@@ -90,7 +93,6 @@ async def process_url():
         response.headers.add('Access-Control-Allow-Credentials', 'true')
     
     # Return response
-    print(path)
     return response, status
 
 
@@ -257,7 +259,6 @@ async def _process_page(riddle: str, path: str):
     query = 'SELECT * FROM levels WHERE riddle = :riddle AND id = :id'
     values = {'riddle': riddle, 'id': current_level}
     level = await database.fetch_one(query, values)
-    print(values)
 
     # If user entered a correct and new answer, register time on DB
     #if int(current_level) <= total and path == level["answer"]:

@@ -48,12 +48,7 @@ async def level_list(riddle: str):
                 level['unlocked'] = (result is not None)
             else:
                 level['rating_given'] = result['rating_given']
-            
-            if level['unlocked']:
-                # Get image absolute path
-                s = level['path'].rsplit('/', maxsplit=1)[0]
-                if level['image']:
-                    level['image_path'] = s + '/' + level['image']                
+                   
         else:
             level['beaten'] = False
             level['unlocked'] = False

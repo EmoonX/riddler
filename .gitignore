@@ -133,3 +133,7 @@ dmypy.json
 
 # We don't want any answer files on the remote!
 levels.txt
+
+# Level thumbs folder subfolders
+web/static/thumbs/*
+!web/static/thumbs
