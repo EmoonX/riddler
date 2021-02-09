@@ -1,9 +1,6 @@
-function sendToServer() {
+function sendToServer(url_list) {
   // URL to where request will be sent to
   const SERVER_URL = 'https://riddler.emoon.dev';
-
-  // Get URL of current page
-  const url_from = document.location.href;
 
   // Payload message
   const message = {
@@ -23,7 +20,7 @@ function sendToServer() {
         'Content-Type': 'text/uri-list',
         'Cookie': cookie.name + '=' + cookie.value
       },
-      body: url_from
+      body: url_list
     };
     // Send request to server containing URL text
     const url_to = SERVER_URL + '/process/';
@@ -41,5 +38,13 @@ function sendToServer() {
   });
 }
 
-// Run script upon document load (no 401 permitted!)
-window.onload = sendToServer;
+// Get document resources URLs and send them in concatenated string form
+window.onload = function () {
+  const resources = performance.getEntriesByType("resource");
+  var url_list = location.href + '\n';
+  resources.forEach(resource => {
+    url_list += resource.name + '\n';
+  });
+  console.log(url_list);
+  sendToServer(url_list);
+}

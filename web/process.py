@@ -35,52 +35,58 @@ async def process_url():
         status = 401 if request.method == 'POST' else 200
     else:
         # Receive URL from request and parse it
-        url = (await request.data).decode('utf-8')
-        parsed = urlparse(url)
-        path = parsed.path
+        url_list = (await request.data).decode('utf-8')
+        url_list = url_list.split('\n')
 
         if request.method =='POST':
-            # If no explicit file, add 'index.htm' to end of path
-            dot_index = path.rfind('.')
-            if dot_index == -1:
-                if path[-1] != '/':
-                    path += '/'
-                path += 'index.htm'
-            
-            # Store session riddle user data
-            riddle = 'cipher'
-            if 'rnsriddle.com' in url:
-                riddle = 'rns'
-            user = await discord.fetch_user()
-            query = 'SELECT * FROM riddle_accounts ' \
-                    'WHERE riddle = :riddle AND ' \
-                        'username = :name AND discriminator = :disc'
-            values = {'riddle': riddle,
-                    'name': user.name, 'disc': user.discriminator}
-            result = await database.fetch_one(query, values)
-            if not result:
-                # If user don't have a riddle account yet, create it
-                await _create_riddle_account(riddle, user)
-            # Register player's riddle session data
-            await _get_player_riddle_data(riddle, user)
-            
-            # Process page and register player info on database
-            if riddle == 'cipher':
-                path = path.replace('/cipher/', '')
-            else:
-                path = path.replace('/riddle/', '')
-            points = await _process_page(riddle, path)
+            for url in url_list:
+                # Parse path from url
+                parsed = urlparse(url)
+                path = parsed.path
+                if not path:
+                    continue
 
-            # Send unlocking request to bot's IPC server (if everything's good)
-            await web_ipc.request('unlock',
-                    alias=riddle, player_id=user.id,
-                    path=path, points=points)
-            
-            print('[%s] Received path "%s" from %s#%s'
-                    % (riddle, path, user.name, user.discriminator))
+                # If no explicit file, add 'index.htm' to end of path
+                dot_index = path.rfind('.')
+                if dot_index == -1:
+                    if path[-1] != '/':
+                        path += '/'
+                    path += 'index.htm'
+                
+                # Store session riddle user data
+                riddle = 'cipher'
+                if 'rnsriddle.com' in url:
+                    riddle = 'rns'
+                user = await discord.fetch_user()
+                query = 'SELECT * FROM riddle_accounts ' \
+                        'WHERE riddle = :riddle AND ' \
+                            'username = :name AND discriminator = :disc'
+                values = {'riddle': riddle,
+                        'name': user.name, 'disc': user.discriminator}
+                result = await database.fetch_one(query, values)
+                if not result:
+                    # If user don't have a riddle account yet, create it
+                    await _create_riddle_account(riddle, user)
+                # Register player's riddle session data
+                await _get_player_riddle_data(riddle, user)
+                
+                # Process page and register player info on database
+                if riddle == 'cipher':
+                    path = path.replace('/cipher/', '')
+                else:
+                    path = path.replace('/riddle/', '')
+                points = await _process_page(riddle, path)
+
+                # Send unlocking request to bot's IPC server (if everything's good)
+                await web_ipc.request('unlock',
+                        alias=riddle, player_id=user.id,
+                        path=path, points=points)
+                
+                print('[%s] Received path "%s" from %s#%s'
+                        % (riddle, path, user.name, user.discriminator))
         
         # Successful response
-        response = jsonify({'path': path})
+        response = jsonify({'message': 'Success!'})
         status = 200
     
     # (Chrome security issues) Allow CORS to be requested from other domains
@@ -149,8 +155,8 @@ async def _process_page(riddle: str, path: str):
             # Update global user completion count
             query = 'UPDATE levels ' \
                     'SET completion_count = completion_count + 1 ' \
-                    'WHERE riddle = :riddle AND id = :id'
-            values = {'riddle': riddle, 'id': id}
+                    'WHERE riddle = :riddle AND id = :name'
+            values = {'riddle': riddle, 'name': id}
             await database.execute(query, values)
 
             # Update user, country and global scores
@@ -255,8 +261,9 @@ async def _process_page(riddle: str, path: str):
 
     # if is_htm:
     # Get user's current level info from DB
-    query = 'SELECT * FROM levels WHERE riddle = :riddle AND id = :id'
-    values = {'riddle': riddle, 'id': current_level}
+    query = 'SELECT * FROM levels ' \
+            'WHERE riddle = :riddle AND name = :name'
+    values = {'riddle': riddle, 'name': current_level}
     level = await database.fetch_one(query, values)
 
     # If user entered a correct and new answer, register time on DB
