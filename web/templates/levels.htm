@@ -1,5 +1,5 @@
 {% extends 'layout.htm' %}
-{% block title %}{{ s }} | Levels{% endblock %}
+{% block title %}{{ riddle }} | Levels{% endblock %}
 {% block extra %}
     <script src="/static/scripts/levels.js"></script>
 {% endblock %}
@@ -24,7 +24,7 @@
           {% if level['unlocked'] and level['image'] %}
             <td class="level-thumb">
               <a href="{{ url }}/{{ level['path'] }}">
-                <img src="/static/thumbs/{{ s }}/{{ level['image'] }}">
+                <img src="/static/thumbs/{{ riddle }}/{{ level['image'] }}">
               </a>
             </td>
           {% else %}

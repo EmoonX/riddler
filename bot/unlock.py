@@ -29,21 +29,46 @@ async def unlock(data):
                 current_level = aux
                 break
     
-    # Find if the path corresponds to a level front page or secret answer
     for id, level in riddle.levels.items():
-        if level['path'] == data.path:
-            await advance(riddle, member, id, current_level, data.points)
-            return
+        if current_level and level['answer'] == data.path:
+            # If path corresponds to a level answer, level is beaten
+            await _beat(riddle, member, id, current_level, data.points)
+        elif level['path'] == data.path:
+            # If path corresponds to a level front page, advance to next one
+            await _advance(riddle, member, id, current_level)
     for id, level in riddle.secret_levels.items():
         if level['path'] == data.path:
-            await advance(riddle, member, id, current_level, data.points)
+            await _advance(riddle, member, id, current_level, data.points)
             return
         elif level['answer_path'] == data.path:
             await solve(riddle, member, level)
 
 
-async def advance(riddle: Riddle, member: Member,
+async def _beat(riddle: Riddle, member: Member,
         id: str, current_level: str, points: int):
+    '''Send congratulations message upon level completion.'''
+    
+    # Avoid backtracking if level has already been beaten
+    ok = False
+    for level in riddle.levels:
+        if level == current_level:
+            ok = True
+        elif level == id:
+            if not ok:
+                return
+            else:
+                break
+    
+    # Log beating and send message to member
+    guild = riddle.guild
+    print('> [%s] %s#%s has beaten level #%s' \
+            % (guild.name, member.name, member.discriminator, id))
+    text = ('**[%s]** You solved level **%s** ' % (guild.name, id)) \
+            + ('and won **%d** points!\n' % points)
+    await member.send(text)
+
+
+async def _advance(riddle: Riddle, member: Member, id: str, current_level: str):
     '''Advance to further level when player arrives at a level front page.
     "reached" role is granted to user and thus given access to channel(s).'''
 
@@ -95,17 +120,6 @@ async def advance(riddle: Riddle, member: Member,
     if id in riddle.levels:
         s = '[' + id + ']'
         await update_nickname(member, s)
-
-    # Log unlocking procedure and send message to member
-    print('> [%s] %s#%s unlocked channel #%s' \
-            % (guild.name, member.name, member.discriminator, id))
-    if id in riddle.levels:
-        text = ('**[%s]** You advanced to level **%s** ' % (guild.name, id)) \
-                + ('and won **%d** points!\n' % points)
-    else:
-        text = '**[%s]** You found secret level **%s**!\n' \
-                % (guild.name, id)
-    await member.send(text)
 
 
 async def solve(riddle: Riddle, member: Member, level: dict):

@@ -38,11 +38,10 @@ async def process_url():
         url = (await request.data).decode('utf-8')
         parsed = urlparse(url)
         path = parsed.path
-        
+
         if request.method =='POST':
             # If no explicit file, add 'index.htm' to end of path
             dot_index = path.rfind('.')
-            print(path)
             if dot_index == -1:
                 if path[-1] != '/':
                     path += '/'
@@ -73,12 +72,12 @@ async def process_url():
             points = await _process_page(riddle, path)
 
             # Send unlocking request to bot's IPC server (if everything's good)
-            if points:
-                await web_ipc.request('unlock',
-                        alias=riddle, player_id=user.id,
-                        path=path, points=points)
+            await web_ipc.request('unlock',
+                    alias=riddle, player_id=user.id,
+                    path=path, points=points)
             
-            print('[%s] Received path "%s"' % (riddle, path))
+            print('[%s] Received path "%s" from %s#%s'
+                    % (riddle, path, user.name, user.discriminator))
         
         # Successful response
         response = jsonify({'path': path})
