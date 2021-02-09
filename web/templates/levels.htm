@@ -63,8 +63,8 @@
             {% if level['beaten'] %}
               <figure class="level-rating">
                 <div>
-                <var>{% if level['rating_avg'] > 0 %}{{ "%.1f" % level['rating_avg'] }}{% else %}--{% endif %}</var>
-                {% set rating = (2 * level['rating_avg'])|round(1) %}
+                <var>{% if level['rating_avg'] %}{{ "%.1f" % level['rating_avg'] }}{% else %}--{% endif %}</var>
+                {% set rating = (2 * 0)|round(1) %}
                 {% set rating = rating / 2 %}
                 {% for i in range(5) %}
                   {% if i+1 <= rating %}
@@ -91,6 +91,7 @@
                 </a>
               </div>{% if not loop.last %}<div>{% endif %}
               {% endfor %}
+              </div>
             </td>
           {% if level['unlocked'] %}
             <tr class="page-explorer" data-files_count="{{ level['files_count'] }}" data-files_total="{{ level['files_total'] }}" data-folders="{{ level['folders'] }}">
@@ -100,7 +101,7 @@
                   <div class="title">Page Explorer</div>
                   <div class="content">
                     <img class="folder-up" src="/static/icons/folderup.png"><div class="path">/{{ folder }}/</div>
-                    <div class="completion"><span class="check">✅</span><var>{{ level['files_count'][folder] }}</var> uncovered files of <var>{{ level['files_total'][folder] }}</var> in this folder</div>
+                    <div class="completion"><span class="check">✅</span><var>{{ level['files_count'][folder] }}</var> / <var>{{ level['files_total'][folder] }}</var> files in this folder</div>
                   </div>
                 </nav>
                 <div><!--

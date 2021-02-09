@@ -155,7 +155,7 @@ async def _process_page(riddle: str, path: str):
             # Update global user completion count
             query = 'UPDATE levels ' \
                     'SET completion_count = completion_count + 1 ' \
-                    'WHERE riddle = :riddle AND id = :name'
+                    'WHERE riddle = :riddle AND name = :name'
             values = {'riddle': riddle, 'name': id}
             await database.execute(query, values)
 
@@ -178,11 +178,7 @@ async def _process_page(riddle: str, path: str):
 
             if not 'Status' in id:
                 # Update current_level count and reset user's page count
-                id_next = ''
-                if riddle == 'cipher':
-                    id_next = '%02d' % (int(id) + 1)
-                if riddle == 'rns':
-                    id_next = 'level-%d' % (int(id[-1:]) + 1)
+                id_next = '%02d' % (int(id) + 1)
                 query = 'UPDATE riddle_accounts ' \
                         'SET current_level = :id_next, cur_hit_counter = 0 ' \
                         'WHERE riddle = :riddle AND ' \

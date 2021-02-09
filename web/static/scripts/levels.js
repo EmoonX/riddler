@@ -1,8 +1,9 @@
 $(document).ready(function () {
   // Build dict of (level ID -> list of image URLs)
   imgs = {}
-  $("tr:not(.page-explorer)").each(function (j) {
-    if (j == 0) return
+  $("tbody > tr:not(.page-explorer)").each(function (j) {
+    console.log($(this))
+    console.log($(this).find("var"))
     var level_id = $(this).find("var")[0].textContent
     imgs[level_id] = []
     $(this).find(".level-rating > div > img").each(function (j) {
@@ -170,7 +171,7 @@ $(document).ready(function () {
       var parent = $(this).parents(".page-explorer")
       var path = parent.find("nav > .content > .path")[0].textContent +
           $(this).find("figcaption")[0].textContent
-      var url = "http://gamemastertips.com" + path
+      var url = "http://rnsriddle.com" + path
       window.open(url, "_blank")
     } else {
       // Change current directory to folder's one
