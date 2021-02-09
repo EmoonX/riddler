@@ -32,6 +32,13 @@ async def process_url():
     parsed = urlparse(url)
     path = parsed.path
 
+    # If no explicit file, add 'index.htm' to end of path
+    dot_index = path.rfind('.')
+    if dot_index == -1:
+        if path[-1] != '/':
+            path += '/'
+        path += 'index.htm'
+
     response = None
     status = None
     if not await discord.authorized:
@@ -83,7 +90,7 @@ async def process_url():
         response.headers.add('Access-Control-Allow-Credentials', 'true')
     
     # Return response
-    print(url)
+    print(path)
     return response, status
 
 
@@ -213,14 +220,8 @@ async def _process_page(riddle: str, path: str):
     
     # Check if it's not an txt/image/video/etc
     dot_index = path.rfind('.')
-    is_page = None
-    if dot_index == -1:
-        # No file extension
-        is_page = True
-    else:
-        # HTML or PHP extensions are valid pages
-        extension = path[(dot_index + 1):]
-        is_page = 'htm' in extension or 'php' in extension    
+    extension = path[(dot_index + 1):]
+    is_page = 'htm' in extension or 'php' in extension
 
     if is_page:
         # If a normal page, increment user current hit counter
