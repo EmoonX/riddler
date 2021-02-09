@@ -8,7 +8,9 @@
       <h1>Levels</h1>
       {% set total = 100 %}
     {% for set_name, set in levels.items() %}
+    {% if set_name %}
       <h2>{{ set_name }}</h2>
+    {% endif %}
       <table>
         <thead>
           <tr>
@@ -101,7 +103,7 @@
                   <div class="title">Page Explorer</div>
                   <div class="content">
                     <img class="folder-up" src="/static/icons/folderup.png"><div class="path">/{{ folder }}/</div>
-                    <div class="completion"><span class="check">✅</span><var>{{ level['files_count'][folder] }}</var> / <var>{{ level['files_total'][folder] }}</var> files in this folder</div>
+                    <div class="completion"><span class="check">✅</span><var>{{ level['files_count'][folder] }} / {{ level['files_total'][folder] }}</var> files in this folder</div>
                   </div>
                 </nav>
                 <div><!--

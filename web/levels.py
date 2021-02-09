@@ -61,9 +61,9 @@ async def level_list(riddle: str):
         level['users'] = [dict(level) for level in result]
 
         # Append level to its set subdict
-        if not level['set'] in levels:
-            levels[level['set']] = []
-        levels[level['set']].append(level)
+        if not level['level_set'] in levels:
+            levels[level['level_set']] = []
+        levels[level['level_set']].append(level)
         
 
     if 'user' not in session:
