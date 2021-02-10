@@ -1,0 +1,8 @@
+pycountry==20.7.3
+emoji_country_flag==1.2.3
+Quart_Discord==2.1.4
+Quart==0.14.1
+databases==0.4.1
+flag==0.1.1
+Flask==1.1.2
+python_bcrypt==0.3.2
