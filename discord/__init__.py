@@ -2,10 +2,13 @@ import os
 import sys
 import logging
 
-from discord.utils import get
+from dotenv import load_dotenv
 
 # Allow util folder to be visible
 sys.path.append('..')
+
+# Load environment variables from .env file
+load_dotenv(verbose=True)
 
 from bot import bot
 from util.db import database
@@ -14,7 +17,6 @@ import begin
 import unlock
 import update
 import send
-import get as g
 
 # Get Discord token securely from environment variable
 token = os.getenv('DISCORD_TOKEN')

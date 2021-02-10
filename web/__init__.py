@@ -1,3 +1,4 @@
+import os
 import sys
 import asyncio
 from asyncio.events import AbstractEventLoop
@@ -6,10 +7,14 @@ from ssl import SSLError
 # Allow util folder to be visible
 sys.path.append('..')
 
-from quart import Quart,  session
+from quart import Quart, session
+from dotenv import load_dotenv
 
 # Quart app object
 app = Quart(__name__)
+
+# Load environment variables from .env file
+load_dotenv(verbose=True)
 
 from players.auth import discord_session_init
 
@@ -40,6 +45,8 @@ for blueprint in (admin_auth, admin,
 
 # Define context processor for main app
 app.context_processor(context_processor)
+
+app.config['DEBUG'] = True
 
 # Disable annoying newlines on Jinja rendered HTML templates
 app.jinja_env.trim_blocks = True
