@@ -13,11 +13,11 @@ process = Blueprint('process', __name__)
 
 # Dict of pairs (level rank -> (points, color))
 level_ranks = {
-    'D': (10, 'cornflowerblue'),
-    'C': (15, 'lawngreen'),
-    'B': (25, 'gold'),
-    'A': (40, 'crimson'),
-    'S': (60, 'lightcyan')
+    'D': (50, 'cornflowerblue'),
+    'C': (100, 'lawngreen'),
+    'B': (200, 'gold'),
+    'A': (400, 'crimson'),
+    'S': (1000, 'lightcyan')
 }
 for rank, pair in level_ranks.items():
     level_ranks[rank] = {'points': pair[0], 'color': pair[1]}
@@ -181,7 +181,7 @@ async def _process_page(riddle: str, path: str):
         count = session[riddle]['cur_hit_counter']
         query = 'INSERT INTO %s user_levelcompletion ' \
                 '(riddle, username, discriminator, ' \
-                    'level_id, completion_time, page_count) ' \
+                    'level_name, completion_time, page_count) ' \
                 'VALUES (:riddle, :name, :disc, :id, :time, :count)'
         values = {**values, 'time': time, 'count': count}
         await database.execute(query, values)
@@ -265,23 +265,23 @@ async def _process_page(riddle: str, path: str):
         #             (session['user']['country'],))            
 
     def _has_access():
-        """Check if user can access level_id,
+        """Check if user can access level_name,
                 having reached current_level so far."""
         return True
         # # Admins can access everything!
         # if session['user']['rank'] == 'Site Administrator':
         #     return True
 
-        # if "Status" in level_id:
+        # if "Status" in level_name:
         #     # Secret level, check previous id in respective table
         #     cursor = get_cursor()
         #     cursor.execute("SELECT * FROM user_secretsfound "
-        #             "WHERE level_id = %s", (level_id,))
+        #             "WHERE level_name = %s", (level_name,))
         #     secret_found = cursor.fetchone()
         #     return secret_found
 
         # # Return if level is *at most* the current_level
-        # return int(level_id) <= int(current_level)
+        # return int(level_name) <= int(current_level)
     
     # Check if it's not an txt/image/video/etc
     dot_index = path.rfind('.')
@@ -315,7 +315,7 @@ async def _process_page(riddle: str, path: str):
     if not page:
         # Page not found!
         return
-    level_id = page['level_id']
+    level_name = page['level_name']
 
     # if is_htm:
     # Get user's current level info from DB
@@ -363,7 +363,7 @@ async def _process_page(riddle: str, path: str):
     values = {'riddle': riddle,
             'name': session['user']['username'],
             'disc': session['user']['discriminator'],
-            'id': level_id, 'path': path, 'time': tnow}
+            'id': level_name, 'path': path, 'time': tnow}
     await database.execute(query, values)
 
     # If it's an achievement page, add it to user's collection

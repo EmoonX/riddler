@@ -34,16 +34,16 @@ async def config(alias: str):
     # Insert new level and secret_level info on database
     form = await request.form
     # query = 'INSERT IGNORE INTO levels VALUES ' \
-    #         '(:guild, :category, :level_id, :path)'
+    #         '(:guild, :category, :level_name, :path)'
     # levels_values = {'guild': alias, 'category': 'Levels',
-    #         'level_id': form['new_id'], 'path': form['new_path']}
+    #         'level_name': form['new_id'], 'path': form['new_path']}
     # if '' not in levels_values.values():
     #     await database.execute(query, levels_values)
     # query = 'INSERT IGNORE INTO secret_levels VALUES ' \
-    #         '(:guild, :category, :level_id, :path, ' \
+    #         '(:guild, :category, :level_name, :path, ' \
     #             ':previous_level, :answer_path)'
     # secret_levels_values = {'guild': alias, 'category': 'Secret Levels',
-    #         'level_id': form['new_secret_id'], 'path': form['new_secret_path'],
+    #         'level_name': form['new_secret_id'], 'path': form['new_secret_path'],
     #         'previous_level': form['new_secret_prev'],
     #         'answer_path': form['new_secret_answer']}
     # if '' not in secret_levels_values.values():

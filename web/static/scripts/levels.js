@@ -4,10 +4,10 @@ $(document).ready(function () {
   $("tbody > tr:not(.page-explorer)").each(function (j) {
     console.log($(this))
     console.log($(this).find("var"))
-    var level_id = $(this).find("var")[0].textContent
-    imgs[level_id] = []
+    var level_name = $(this).find("var")[0].textContent
+    imgs[level_name] = []
     $(this).find(".level-rating > div > img").each(function (j) {
-      imgs[level_id].push($(this).attr("src"))
+      imgs[level_name].push($(this).attr("src"))
     });
   });
 
@@ -24,18 +24,18 @@ $(document).ready(function () {
   });
   $(".level-rating > div").mouseout(function () {
     // Empty all hearts upon moving mouse away
-    var level_id = $(this).parents("tr").find("var")[0].textContent
+    var level_name = $(this).parents("tr").find("var")[0].textContent
     $(this).children("img").each(function (j) {
-      $(this).attr("src", imgs[level_id][j])
+      $(this).attr("src", imgs[level_name][j])
     });
   });
   $(".level-rating > div > img").click(function () {
     // Get level ID and rating info
-    var level_id = $(this).parents("tr").find("var")[0].textContent
+    var level_name = $(this).parents("tr").find("var")[0].textContent
     var rating = $(this).index()
 
     // Send an HTTP request by Ajax
-    var url = "rate/" + level_id + "/" + rating
+    var url = "rate/" + level_name + "/" + rating
     var response = $.ajax({type: "GET", url: url, async: false})
     var aux = response.responseText.split(" ")
     if (aux[0] == "403") {
@@ -60,15 +60,15 @@ $(document).ready(function () {
     // Update filled-up hearts
     average = Math.round(2 * average) / 2
     for (var i = 0; i < 5; i++) {
-      imgs[level_id][i] = "/static/icons/"
+      imgs[level_name][i] = "/static/icons/"
       if ((i+1) <= average) {
-        imgs[level_id][i] += "heart-full.png"
+        imgs[level_name][i] += "heart-full.png"
       } else if ((i+1) - average == 0.5) {
-        imgs[level_id][i] += "heart-half.png"
+        imgs[level_name][i] += "heart-half.png"
       } else {
-        imgs[level_id][i] += "heart-empty.png"
+        imgs[level_name][i] += "heart-empty.png"
       }
-      $(this).parent().children("img")[i].src = imgs[level_id][i]
+      $(this).parent().children("img")[i].src = imgs[level_name][i]
     }
 
     // Update current user's rating

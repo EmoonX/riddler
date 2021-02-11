@@ -31,9 +31,11 @@ async def level_list(riddle: str):
     for level in result:
         level = dict(level)
         if 'user' in session:
-            query = 'SELECT username, rating_given FROM user_levelcompletion ' \
+            table = 'user_levelcompletion' if not level['is_secret'] \
+                    else 'user_secrets'
+            query = ('SELECT username, rating_given FROM %s ' % table) + \
                     'WHERE riddle = :riddle ' \
-                    'AND username = :name AND level_id = :id ' \
+                    'AND username = :name AND level_name = :id ' \
                     'AND discriminator = :disc'
             values = {**base_values, 'id': level['name']}
             result = await database.fetch_one(query, values)
@@ -82,11 +84,11 @@ async def level_list(riddle: str):
 
     # Dict of pairs rank -> (points, color)
     level_ranks = {
-        'D': (10, 'cornflowerblue'),
-        'C': (15, 'lawngreen'),
-        'B': (25, 'gold'),
-        'A': (40, 'crimson'),
-        'S': (60, 'lightcyan')
+        'D': (50, 'cornflowerblue'),
+        'C': (100, 'lawngreen'),
+        'B': (200, 'gold'),
+        'A': (400, 'crimson'),
+        'S': (1000, 'lightcyan')
     }
     # return render_and_count('levels.htm', locals())
     # return render_and_count('levels.htm', locals())
@@ -112,7 +114,7 @@ async def _get_user_unlocked_pages(riddle: str, levels: dict):
             query = 'SELECT path FROM user_pageaccess ' \
                     'WHERE riddle = :riddle ' \
                     'AND username = :name AND discriminator = :disc ' \
-                    'AND level_id = :id'
+                    'AND level_name = :id'
             values = {'riddle': riddle, 
                     'name': session['user']['username'],
                     'disc': session['user']['discriminator'],
@@ -165,7 +167,7 @@ async def _get_user_unlocked_pages(riddle: str, levels: dict):
             # Count total number of pages (unlocked or not) in each folder
             level['files_total'] = {}
             query = 'SELECT path FROM level_pages WHERE ' \
-                    'riddle = :riddle AND level_id = :id'
+                    'riddle = :riddle AND level_name = :id'
             values = {'riddle': riddle, 'id': level['name']}
             result = await database.fetch_all(query, values)
             paths = [row['path'] for row in result]
@@ -180,8 +182,8 @@ async def _get_user_unlocked_pages(riddle: str, levels: dict):
 
 
 
-@levels.route('/cipher/levels/rate/<level_id>/<rating>')
-def rate(level_id, rating):
+@levels.route('/cipher/levels/rate/<level_name>/<rating>')
+def rate(level_name, rating):
     '''Update level rating upon user giving new one.'''
 
     # Must not have logged out meanwhile
@@ -191,8 +193,8 @@ def rate(level_id, rating):
     # Get user's previous rating
     cursor = get_cursor()
     cursor.execute('SELECT rating_given FROM user_levelcompletion '
-            'WHERE username = %s AND level_id = %s',
-            (session['user']['username'], level_id))
+            'WHERE username = %s AND level_name = %s',
+            (session['user']['username'], level_name))
     aux = cursor.fetchone()
     if not aux:
         return 'FORBIDDEN OPERATION'
@@ -200,7 +202,7 @@ def rate(level_id, rating):
 
     # Get level's overall rating info
     cursor.execute('SELECT rating_avg, rating_count FROM levels '
-            'WHERE id = %s', (level_id,))
+            'WHERE id = %s', (level_name,))
     level = cursor.fetchone()
 
     # Calculate new average and count
@@ -223,10 +225,10 @@ def rate(level_id, rating):
 
     # Update both user_levelcompletion and levels tables
     cursor.execute('UPDATE user_levelcompletion SET rating_given = %s '
-            'WHERE username = %s AND level_id = %s',
-            (rating, session['user']['username'], level_id))
+            'WHERE username = %s AND level_name = %s',
+            (rating, session['user']['username'], level_name))
     cursor.execute('UPDATE levels SET rating_avg = %s, rating_count = %s '
-            'WHERE id = %s', (average, count, level_id))
+            'WHERE id = %s', (average, count, level_name))
     mysql.connection.commit()
 
     return str(average) + ' ' + str(count) + ' ' + str(rating)

@@ -58,10 +58,10 @@ async def _beat(riddle: Riddle, member: Member,
     
     # Avoid backtracking if level has already been beaten
     ok = False
-    for level in riddle.levels:
-        if level == current_level:
+    for lev in riddle.levels:
+        if lev == current_level:
             ok = True
-        elif level == level['name']:
+        elif lev == level['name']:
             if not ok:
                 return
             else:
