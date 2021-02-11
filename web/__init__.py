@@ -7,7 +7,8 @@ from ssl import SSLError
 # Allow util folder to be visible
 sys.path.append('..')
 
-from quart import Quart, session
+from quart import Quart, session, redirect, url_for
+from quart_discord import Unauthorized
 from dotenv import load_dotenv
 
 # Quart app object
@@ -73,6 +74,12 @@ async def cookies(response):
     response.set_cookie('session', value,
             secure=True, samesite='None')
     return response
+
+
+@app.errorhandler(Unauthorized)
+async def redirect_unauthorized(e: Exception):
+    '''Redirect user back to login if not logged on restricted pages.'''
+    return redirect(url_for("players_auth.login"))
 
 
 def _exception_handler(loop: AbstractEventLoop, context: dict):

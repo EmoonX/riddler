@@ -4,7 +4,10 @@ Quart_Discord==2.1.4
 Quart==0.14.1
 databases==0.4.1
 aiomysql==0.0.21
-flag==0.1.1
+emoji-country-flag==1.2.3
 python_bcrypt==0.3.2
 python-dotenv==0.15.0
 discord-ext-ipc==2.0.0
+uvicorn==0.13.3
+uvloop==0.15.0
+httptools==0.1.1

@@ -3,7 +3,7 @@ import os
 from quart import Blueprint, Quart, request, session, \
         render_template, redirect, url_for
 from quart.sessions import SecureCookieSessionInterface
-from quart_discord import DiscordOAuth2Session, requires_authorization
+from quart_discord import DiscordOAuth2Session
 
 from util.db import database
 

@@ -1,4 +1,5 @@
 from quart import Blueprint, session, render_template
+from quart_discord import requires_authorization
 
 from util.db import database
 
@@ -7,6 +8,7 @@ levels = Blueprint('levels', __name__)
 
 
 @levels.route('/<riddle>/levels/')
+@requires_authorization
 async def level_list(riddle: str):
     '''Fetch list of levels, showing only desired public info.'''
     pages = None
