@@ -58,7 +58,6 @@ async def _beat(riddle: Riddle, member: Member,
     
     # Avoid backtracking if level has already been beaten
     ok = False
-    print(locals())
     for lev in riddle.levels:
         if lev == current_level:
             ok = True
@@ -70,7 +69,7 @@ async def _beat(riddle: Riddle, member: Member,
     
     # Log beating and send message to member
     guild = riddle.guild
-    print('> [%s] %s#%s has beaten level <%s>' \
+    print('> \033[1m[%s]\033[0m %s#%s has beaten level \033[1m%s\033[0m' \
             % (guild.name, member.name, member.discriminator, level['name']))
     text = ('**[%s]** You solved level **%s** ' % (guild.name, level['name'])) \
             + ('and won **%d** points!\n' % points)
@@ -138,7 +137,7 @@ async def _secret_found(riddle: Riddle, member: Member, level: dict):
     await member.add_roles(reached)
     
     # Log reaching secret and send message to member
-    print('> [%s] %s#%s has found secret level <%s>' \
+    print('> \033[1m[%s]\033[0m %s#%s has found secret level \033[1m%s\033[0m' \
             % (guild.name, member.name, member.discriminator, level['name']))
     text = '**[%s]** You found secret level **%s**. Congratulations!' \
             % (guild.name, level['name'])
@@ -172,7 +171,7 @@ async def _secret_solve(riddle: Riddle, member: Member,
     await member.add_roles(solved)
 
     # Log solving procedure and send message to member
-    print('> [%s] %s#%s has completed secret level <%s>' \
+    print('> \033[1m[%s]\033[0m %s#%s has completed secret level \033[1m%s\033[0m' \
             % (guild.name, member.name, member.discriminator, level['name']))
     text = ('**[%s]** You successfully solved secret level ' % guild.name) + \
             ('**%s** and won **%d** points!\n' % (level['name'], points))

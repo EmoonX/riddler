@@ -387,6 +387,8 @@ async def _process_page(riddle: str, path: str):
                 'name': username, 'disc': disc,
                 'title': cheevo['title'], 'time': time}
         await database.execute(query, values)
+        print('> [%s] %s got cheevo %s!' %
+                (riddle, username, cheevo['title']))
 
         # Also Update user, country and global scores
         query = 'UPDATE riddle_accounts ' \
