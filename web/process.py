@@ -124,83 +124,171 @@ async def _get_player_riddle_data(riddle: str, user: User):
 
 async def _process_page(riddle: str, path: str):
     '''Process level pages (one or more folders deep).
-    Return total points gotten.'''
+    Return points gotten (if level completed, else 0).'''
 
-    async def _search_and_add_to_db(table: str, id: int, points: int):
-        '''Search if level was yet not completed or secret yet not found.
-        If true, add user and datetime of completion to respective table.'''
+    # Basic player info
+    username = session['user']['username']
+    disc = session['user']['discriminator']
 
-        # Check if level has been completed
-        username = session['user']['username']
-        disc = session['user']['discriminator']
+    async def _get_user_level_row(table: str, level: dict):
+        '''Return row corresponding to user and level register on table.'''
+
         query = ('SELECT * FROM %s ' % table) + \
                 'WHERE riddle = :riddle AND username = :name ' \
-                'AND discriminator = :disc AND level_id = :id'
-        values = {'riddle': riddle, 'name': username, 'disc': disc, 'id': id}
-        found = await database.fetch_one(query, values)
-        if found:
+                'AND discriminator = :disc AND level_name = :level_name'
+        values = {'riddle': riddle, 'name':
+                username, 'disc': disc, 'level_name': level['name']}
+        row = await database.fetch_one(query, values)
+        return row
+
+    async def _register_completion(level: dict, points: int):
+        '''Register level completion and update all needed tables.'''
+
+        # Check if level has been completed
+        row = await _get_user_level_row('user_levelcompletion', level)
+        if not row:
             return
         
         # Register level completion in designated table
         time = datetime.utcnow()
         count = session[riddle]['cur_hit_counter']
-        query = ('INSERT INTO %s ' % table) + \
+        query = 'INSERT INTO %s user_levelcompletion ' \
                 '(riddle, username, discriminator, ' \
                     'level_id, completion_time, page_count) ' \
                 'VALUES (:riddle, :name, :disc, :id, :time, :count)'
         values = {**values, 'time': time, 'count': count}
         await database.execute(query, values)
+    
+        # Update global user completion count
+        query = 'UPDATE levels ' \
+                'SET completion_count = completion_count + 1 ' \
+                'WHERE riddle = :riddle AND name = :name'
+        values = {'riddle': riddle, 'name': id}
+        await database.execute(query, values)
 
-        if table == 'user_levelcompletion':
-            # Update global user completion count
-            query = 'UPDATE levels ' \
-                    'SET completion_count = completion_count + 1 ' \
-                    'WHERE riddle = :riddle AND name = :name'
-            values = {'riddle': riddle, 'name': id}
+        # Update user, country and global scores
+        query = 'UPDATE riddle_accounts ' \
+                'SET score = score + :points ' \
+                'WHERE riddle = :riddle AND username = :name'
+        values = {'points': points, 
+                'riddle': riddle, 'name': username}
+        await database.execute(query, values)
+        # cursor.execute("UPDATE countries "
+        #         "SET total_score = total_score + %s "
+        #         "WHERE alpha_2 = %s",
+        #         (points, session['user']['country']))
+        query = 'UPDATE accounts ' \
+                'SET global_score = global_score + :points ' \
+                'WHERE username = :name'
+        values = {'points': points, 'name': username}
+        await database.execute(query, values)
+       
+        # Update current_level count and reset user's page count
+        id_next = '%02d' % (int(id) + 1)
+        query = 'UPDATE riddle_accounts ' \
+                'SET current_level = :id_next, cur_hit_counter = 0 ' \
+                'WHERE riddle = :riddle AND ' \
+                    'username = :name AND discriminator = :disc'
+        values = {'id_next': id_next,
+                'riddle': riddle, 'name': username, 'disc': disc}
+        await database.execute(query, values)
+
+        # Also Update session info
+        session[riddle]['current_level'] = current_level
+        session[riddle]['cur_hit_counter'] = 0
+
+        # Update countries table too
+        # cursor.execute("UPDATE countries "
+        #         "SET highest_level = GREATEST(highest_level, %s) "
+        #         "WHERE alpha_2 = %s",
+        #         (current_level, session['user']['country']))
+        # if int(current_level) > get_level_count()[0]:
+        #     cursor.execute("UPDATE countries "
+        #             "SET winners_count = winners_count + 1 "
+        #             "WHERE alpha_2 = %s",
+        #             (session['user']['country'],))
+    
+    async def _register_secret(level: dict, points: int):
+        '''Register secret completion and update all needed tables.'''
+
+        # Check if secret has been already completed
+        row = await _get_user_level_row('user_secrets', level)
+        if row and not row['completion_time']:
+            return
+
+        # Register new secret if not yet been found
+        if not row:
+            time = datetime.utcnow()
+            query = 'INSERT INTO user_secrets ' \
+                    '(riddle, username, discriminator, ' \
+                        'level_name, find_time) ' \
+                    'VALUES (:riddle, :name, :disc, ' \
+                        ':level_name, :time)'
+            values = {'riddle': riddle, 'name': username, 'disc': disc,
+                    'level_name': level['name'], 'time': time}
             await database.execute(query, values)
+            return
 
-            # Update user, country and global scores
-            query = 'UPDATE riddle_accounts ' \
-                    'SET score = score + :points ' \
-                    'WHERE riddle = :riddle AND username = :name'
-            values = {'points': points, 
-                    'riddle': riddle, 'name': username}
-            await database.execute(query, values)
-            # cursor.execute("UPDATE countries "
-            #         "SET total_score = total_score + %s "
-            #         "WHERE alpha_2 = %s",
-            #         (points, session['user']['country']))
-            query = 'UPDATE accounts ' \
-                    'SET global_score = global_score + :points ' \
-                    'WHERE username = :name'
-            values = {'points': points, 'name': username}
-            await database.execute(query, values)
+        return
+        
+        # Register level completion in designated table
+        time = datetime.utcnow()
+        count = session[riddle]['cur_hit_counter']
+        query = 'INSERT INTO %s user_levelcompletion ' \
+                '(riddle, username, discriminator, ' \
+                    'level_id, completion_time, page_count) ' \
+                'VALUES (:riddle, :name, :disc, :id, :time, :count)'
+        values = {**values, 'time': time, 'count': count}
+        await database.execute(query, values)
+    
+        # Update global user completion count
+        query = 'UPDATE levels ' \
+                'SET completion_count = completion_count + 1 ' \
+                'WHERE riddle = :riddle AND name = :name'
+        values = {'riddle': riddle, 'name': id}
+        await database.execute(query, values)
 
-            if not 'Status' in id:
-                # Update current_level count and reset user's page count
-                id_next = '%02d' % (int(id) + 1)
-                query = 'UPDATE riddle_accounts ' \
-                        'SET current_level = :id_next, cur_hit_counter = 0 ' \
-                        'WHERE riddle = :riddle AND ' \
-                            'username = :name AND discriminator = :disc'
-                values = {'id_next': id_next,
-                        'riddle': riddle, 'name': username, 'disc': disc}
-                await database.execute(query, values)
+        # Update user, country and global scores
+        query = 'UPDATE riddle_accounts ' \
+                'SET score = score + :points ' \
+                'WHERE riddle = :riddle AND username = :name'
+        values = {'points': points, 
+                'riddle': riddle, 'name': username}
+        await database.execute(query, values)
+        # cursor.execute("UPDATE countries "
+        #         "SET total_score = total_score + %s "
+        #         "WHERE alpha_2 = %s",
+        #         (points, session['user']['country']))
+        query = 'UPDATE accounts ' \
+                'SET global_score = global_score + :points ' \
+                'WHERE username = :name'
+        values = {'points': points, 'name': username}
+        await database.execute(query, values)
+       
+        # Update current_level count and reset user's page count
+        id_next = '%02d' % (int(id) + 1)
+        query = 'UPDATE riddle_accounts ' \
+                'SET current_level = :id_next, cur_hit_counter = 0 ' \
+                'WHERE riddle = :riddle AND ' \
+                    'username = :name AND discriminator = :disc'
+        values = {'id_next': id_next,
+                'riddle': riddle, 'name': username, 'disc': disc}
+        await database.execute(query, values)
 
-                # Also Update session info
-                session[riddle]['current_level'] = current_level
-                session[riddle]['cur_hit_counter'] = 0
+        # Also Update session info
+        session[riddle]['current_level'] = current_level
+        session[riddle]['cur_hit_counter'] = 0
 
-                # Update countries table too
-                # cursor.execute("UPDATE countries "
-                #         "SET highest_level = GREATEST(highest_level, %s) "
-                #         "WHERE alpha_2 = %s",
-                #         (current_level, session['user']['country']))
-                # if int(current_level) > get_level_count()[0]:
-                #     cursor.execute("UPDATE countries "
-                #             "SET winners_count = winners_count + 1 "
-                #             "WHERE alpha_2 = %s",
-                #             (session['user']['country'],))
+        # Update countries table too
+        # cursor.execute("UPDATE countries "
+        #         "SET highest_level = GREATEST(highest_level, %s) "
+        #         "WHERE alpha_2 = %s",
+        #         (current_level, session['user']['country']))
+        # if int(current_level) > get_level_count()[0]:
+        #     cursor.execute("UPDATE countries "
+        #             "SET winners_count = winners_count + 1 "
+        #             "WHERE alpha_2 = %s",
+        #             (session['user']['country'],))            
 
     def _has_access():
         """Check if user can access level_id,
@@ -262,23 +350,25 @@ async def _process_page(riddle: str, path: str):
     values = {'riddle': riddle, 'name': current_level}
     level = await database.fetch_one(query, values)
 
+    # Get number of possible points to be gained upon level completion
+    points = 0
+    if level:
+        rank = level['rank']
+        points = level_ranks[rank]['points']
+
     # If user entered a correct and new answer, register time on DB
     #if int(current_level) <= total and path == level["answer"]:
-    points = 0
     if current_level == '00' or path == level['answer']:
-        rank = level['rank'] if level else 'D'
-        points = level_ranks[rank]['points']
-        await _search_and_add_to_db('user_levelcompletion',
-                current_level, points)
+        await _register_completion(level, points)
     else:
-        pass
         # Check if a secret level has been found
-        # cursor.execute("SELECT * FROM levels "
-        #         "WHERE SUBSTR(id, 1, 6) = 'Status' AND "
-        #         "path = %s", (path,))
-        # secret = cursor.fetchone()
-        # if secret:
-        #     search_and_add_to_db('user_secretsfound', secret['id'])
+        query = 'SELECT * FROM levels ' \
+                'WHERE riddle = :riddle AND is_secret IS TRUE ' \
+                'AND path = :path'
+        values = {'riddle': riddle, 'path': path}
+        found = (await database.fetch_one(query, values) is not None)
+        if found:
+            await _register_secret(level, points)
         # else:
         #     # Otherwise, check if a secret level has been beaten
         #     cursor.execute("SELECT * FROM levels "
