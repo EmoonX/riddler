@@ -136,4 +136,4 @@ levels.txt
 
 # Level thumbs folder subfolders
 web/static/thumbs/*
-!web/static/thumbs
+web/static/cheevos/*

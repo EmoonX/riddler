@@ -58,6 +58,10 @@ async def process_url():
                 if 'rnsriddle.com' in url:
                     riddle = 'rns'
                 user = await discord.fetch_user()
+
+                print('[%s] Received path "%s" from %s#%s'
+                        % (riddle, path, user.name, user.discriminator))
+
                 query = 'SELECT * FROM riddle_accounts ' \
                         'WHERE riddle = :riddle AND ' \
                             'username = :name AND discriminator = :disc'
@@ -81,9 +85,6 @@ async def process_url():
                 await web_ipc.request('unlock',
                         alias=riddle, player_id=user.id,
                         path=path, points=points)
-                
-                print('[%s] Received path "%s" from %s#%s'
-                        % (riddle, path, user.name, user.discriminator))
         
         # Successful response
         response = jsonify({'message': 'Success!'})

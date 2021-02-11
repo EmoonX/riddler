@@ -33,8 +33,33 @@ async def context_processor():
                 disc=account['discriminator'])
         return url
     
+    async def get_achievements(user: dict):
+        '''Get achievements user has gotten, grouped by points.'''
+        # Get user's achievement list
+        query = 'SELECT title FROM user_achievements ' \
+                'WHERE username = :name AND discriminator = :disc'
+        values = {'name': user['username'], 'disc': user['discriminator']}
+        result = await database.fetch_all(query, values)
+
+        # Create dict of pairs (points -> list of cheevos)
+        cheevos = {10: [], 20: [], 30: [], 50: []}
+        for row in result:
+            title = row['title']
+            query = 'SELECT * FROM achievements WHERE title = :title'
+            cheevo = await database.fetch_one(query, {'title': title})
+            cheevos[cheevo['points']].append(cheevo)
+
+        return cheevos
+    
     # Get emoji flag from alpha_2 code (for players pages titles)
     get_emoji_flag = flag
 
+    # Colors for achievements outline based on points value
+    cheevo_colors = {
+        10: 'sienna',
+        20: 'silver',
+        30: 'gold',
+        50: 'lightblue'
+    }
     # Return dict of variables to be injected
     return locals()

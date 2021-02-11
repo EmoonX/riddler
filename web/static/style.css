@@ -296,14 +296,15 @@ a > .avatar-small {
   position: absolute;
   display: block;
   opacity: 0;
-  width: 50px;
+  width: 40px;
   margin: 10px;
   border: thin solid;
   border-radius: 20%;
   cursor: help;
 }
 
-.cheevo-cell:hover > .cheevo {
+/* .cheevo-cell:hover > .cheevo { */
+.cheevo-cell > .cheevo {
   position: static;
   opacity: 1;
   transition: opacity 0.5s 0.1s;
