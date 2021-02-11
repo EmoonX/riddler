@@ -37,12 +37,14 @@ async def on_ready():
     query = 'SELECT * from riddles'
     result = await database.fetch_all(query)
     for row in result:
-        query = 'SELECT * FROM levels WHERE riddle = :riddle'
+        query = 'SELECT * FROM levels ' \
+                'WHERE riddle = :riddle AND is_secret IS FALSE'
         values = {'riddle': row['alias']}
         levels = await database.fetch_all(query, values)
-        # query = 'SELECT * FROM secret_levels WHERE guild = :guild'
-        # secret_levels = await database.fetch_all(query, values)
-        riddle = Riddle(row, levels)
+        query = 'SELECT * FROM levels ' \
+                'WHERE riddle = :riddle AND is_secret IS TRUE'
+        secret_levels = await database.fetch_all(query, values)
+        riddle = Riddle(row, levels, secret_levels)
         riddles[row['alias']] = riddle
     
     # guild = get(bot.guilds, name='RNS Riddle II')

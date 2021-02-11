@@ -14,7 +14,7 @@ async def build(data):
     guild = get(bot.guilds, name=data.guild_name)
 
     # Add level channels and roles to the guild
-    for level in data.levels:
+    for level in (data.levels + data.secret_levels):
         text = '**[%s]** Processing level **%s**...' \
                  % (guild.name, level['name'])
         for member in guild.members:
@@ -37,18 +37,17 @@ async def add(guild: discord.Guild, level: dict, is_secret=False):
     '''Add guild channels and roles.'''
     
     # Create channel which defaults to no read permission
-    name = level['name']
+    name = level['discord_name']
     channel = get(guild.channels, name=name)
     if not channel:
-        category = get(guild.categories, name=level['category'])
+        category = get(guild.categories, name=level['discord_category'])
         if not category:
             # Create category if nonexistent
-            category = await guild.create_category(name=level['category'])
+            category = await guild.create_category(name=level['discord_category'])
         channel = await category.create_text_channel(name)
     if channel:
-        overwrite = discord.PermissionOverwrite(read_messages=False)
-        overwrites = {guild.default_role: overwrite}
-        await channel.edit(overwrites=overwrites)
+        everyone = guild.default_role
+        await channel.set_permissions(everyone, read_messages=False)
 
     # Create "reached" level role
     role_name = 'reached-' + name
@@ -59,7 +58,7 @@ async def add(guild: discord.Guild, level: dict, is_secret=False):
 
     riddle = get(riddles.values(), guild=guild)
     winners = get(guild.roles, name='winners')
-    if not is_secret:
+    if not level['is_secret']:
         # Set read permission to current roles for 
         # this channel and every other level channel before it
         for channel in guild.channels:

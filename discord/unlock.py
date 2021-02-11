@@ -38,10 +38,11 @@ async def unlock(data):
             # If path corresponds to a level front page, advance to next one
             await _advance(riddle, member, id, current_level)
     for id, level in riddle.secret_levels.items():
+        break
         if level['path'] == data.path:
             await _advance(riddle, member, id, current_level, data.points)
             return
-        elif level['answer_path'] == data.path:
+        elif level['answer'] == data.path:
             await solve(riddle, member, level)
 
 

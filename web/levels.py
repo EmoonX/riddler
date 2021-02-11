@@ -11,6 +11,7 @@ levels = Blueprint('levels', __name__)
 @requires_authorization
 async def level_list(riddle: str):
     '''Fetch list of levels, showing only desired public info.'''
+    
     pages = None
     base_values = {'riddle': riddle,
             'name': session['user']['username'],

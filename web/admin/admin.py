@@ -1,5 +1,5 @@
-from quart import Blueprint, request, render_template, \
-        session, redirect, url_for, json
+from quart import Blueprint, request, render_template
+from quart_discord import requires_authorization
 
 from ipc import web_ipc
 from util.db import database
@@ -9,18 +9,18 @@ admin = Blueprint('admin', __name__)
 
 
 @admin.route('/admin/<alias>/', methods=['GET', 'POST'])
+@requires_authorization
 async def config(alias: str):
     '''Riddle administration configuration.'''
     
-    # Need to be corrrectly logged to access guild config
-    if not 'admin' in session or not alias in session['admin']:
-        return redirect(url_for('admin_auth.login'))
-    
     # Fetch guild levels info from database
-    query = 'SELECT * FROM levels WHERE riddle = :riddle'
-    levels = await database.fetch_all(query, {'riddle': alias})
-    # query = 'SELECT * FROM secret_levels WHERE guild = :guild'
-    # secret_levels = await database.fetch_all(query, {'guild': alias})
+    query = 'SELECT * FROM levels ' \
+            'WHERE riddle = :riddle AND is_secret IS FALSE'
+    values = {'riddle': alias}
+    levels = await database.fetch_all(query, values)
+    query = 'SELECT * FROM levels ' \
+            'WHERE riddle = :riddle AND is_secret IS TRUE'
+    secret_levels = await database.fetch_all(query, values)
     
     def r(msg):
         '''Render page and get filename cookies locally.'''
@@ -51,10 +51,14 @@ async def config(alias: str):
 
     # Update Discord guild channels and roles with new levels info.
     # This is done by sending an request to the bot's IPC server
-    full_name = session['admin'][alias]
-    levels = [dict(level) for level in levels]
-    await web_ipc.request('build',
-            guild_name=full_name, levels=levels)
+    full_name = 'Wonderland'
+    if alias == 'rns':
+        full_name = 'RNS Riddle II'
+    #levels = [dict(level) for level in levels]
+    levels = []
+    secret_levels = [dict(level) for level in secret_levels]
+    await web_ipc.request('build', guild_name=full_name,
+            levels=levels, secret_levels=secret_levels)
 
     return await r('Guild info updated successfully!')
 
