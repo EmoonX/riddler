@@ -373,26 +373,37 @@ async def _process_page(riddle: str, path: str):
             'id': level_name, 'path': path, 'time': tnow}
     await database.execute(query, values)
 
-    # If it's an achievement page, add it to user's collection
-    # cursor.execute("SELECT * FROM achievements "
-    #         "WHERE path = %s", (path,))
-    # cheevo = cursor.fetchone()
-    # if cheevo:
-    #     cursor.execute("SELECT username from user_achievements "
-    #             "WHERE username = %s and title = %s",
-    #             (session['user']['username'], cheevo['title']))
-    #     has_cheevo = (cursor.fetchone() is not None)
-    #     if not has_cheevo:
-    #         cursor.execute("INSERT INTO user_achievements VALUES (%s, %s)",
-    #                 (session['user']['username'], cheevo['title']))
-    #         # Update user and country score
-    #         points = cheevo['points']
-    #         cursor.execute("UPDATE accounts "
-    #                 "SET score = score + %s WHERE username = %s",
-    #                 (points, session['user']['username']))
-    #         cursor.execute("UPDATE countries "
-    #                 "SET total_score = total_score + %s "
-    #                 "WHERE alpha_2 = %s",
-    #                 (points, session['user']['country']))
+    # Check if it's an achievement page
+    query = 'SELECT * FROM achievements ' \
+            'WHERE riddle = :riddle AND path = :path'
+    values = {'riddle': riddle, 'path': path}
+    cheevo = await database.fetch_one(query, values)
+    if cheevo:
+        # If positive, add it to user's collection
+        time = datetime.utcnow()
+        query = 'INSERT INTO user_achievements ' \
+                'VALUES (:riddle, :name, :disc, :title, :time)'
+        values = {'riddle': riddle,
+                'name': username, 'disc': disc,
+                'title': cheevo['title'], 'time': time}
+        await database.execute(query, values)
+
+        # Also Update user, country and global scores
+        query = 'UPDATE riddle_accounts ' \
+                'SET score = score + :points ' \
+                'WHERE riddle = :riddle ' \
+                    'AND username = :name AND discriminator = :disc'
+        values = {'points': cheevo['points'], 'riddle': riddle,
+                'name': username, 'disc': disc}
+        await database.execute(query, values)
+        # cursor.execute("UPDATE countries "
+        #         "SET total_score = total_score + %s "
+        #         "WHERE alpha_2 = %s",
+        #         (points, session['user']['country']))
+        query = 'UPDATE accounts ' \
+                'SET global_score = global_score + :points ' \
+                'WHERE username = :name AND discriminator = :disc'
+        values.pop('riddle')
+        await database.execute(query, values)
 
     return points
