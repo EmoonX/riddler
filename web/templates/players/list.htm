@@ -22,7 +22,7 @@
               </a>
             </td>
             <td class="username_cell">
-              <img class="avatar-small" src="{{ player['avatar_url'] }}">
+              <img class="avatar-small" src="{{ get_avatar_url(player) }}">
               <a href="url_for('account.profile', username=player['username'])">
                 {{ player['username'] }}#{{ player['discriminator'] }}
               </a>

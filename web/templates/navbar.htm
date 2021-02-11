@@ -11,14 +11,14 @@
         </div>
         <div>
         {# Verify if user is logged in #}
-        {% if 'username' not in session %}
+        {% if 'user' not in session %}
           <a href="{{ url_for('players_auth.login') }}" class="nav-button">Login</a>
         {% else %}
           <nav class="dropdown">
-            {% set username = session['username'] %}
+            {% set user = session['user'] %}
             {% set avatar = '' %}
             <button class="nav-button profile-button">
-              <img class="avatar-small" src="{{ avatar_url }}">{{ username }}
+              <img class="avatar-small" src="{{ get_avatar_url(user) }}">{{ user['username'] }}
             </button>
             <div>
               <a href="#" class="nav-button">Public info</a>

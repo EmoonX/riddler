@@ -28,11 +28,6 @@ async def global_list():
     accounts = [dict(account) for account in result]
 
     for account in accounts:
-        # Get players' avatar URLs
-        url = await web_ipc.request('get_avatar_url',
-                username=account['username'], disc=account['discriminator'])
-        account['avatar_url'] = url
-
         # Build list of riddle current account plays
         account['riddles'] = []
         for riddle in riddles:
@@ -69,12 +64,8 @@ async def riddle_list(alias: str):
     result = await database.fetch_all(query, {'riddle': alias})
     accounts = [dict(account) for account in result]
 
-    # Get players' avatar URLs and countries
+    # Get players' countries
     for account in accounts:
-        url = await web_ipc.request('get_avatar_url',
-                username=account['username'], disc=account['discriminator'])
-        account['avatar_url'] = url
-
         query = 'SELECT * FROM accounts WHERE ' \
                 'username = :name AND discriminator = :disc'
         values = {'name': account['username'],

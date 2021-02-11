@@ -17,6 +17,7 @@ import begin
 import unlock
 import update
 import send
+import get
 
 # Get Discord token securely from environment variable
 token = os.getenv('DISCORD_TOKEN')

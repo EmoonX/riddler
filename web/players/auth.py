@@ -28,7 +28,7 @@ def discord_session_init(app: Quart):
     app.config['DISCORD_CLIENT_SECRET'] = os.getenv('DISCORD_CLIENT_SECRET')
     app.config['DISCORD_REDIRECT_URI'] = \
             'https://riddler.emoon.dev/callback/'
-    app.config['DISCORD_BOT_TOKEN'] = os.getenv('DISCORD_BOT_TOKEN')
+    app.config['DISCORD_BOT_TOKEN'] = os.getenv('DISCORD_TOKEN')
 
     # Create session object
     global discord
