@@ -31,7 +31,6 @@ async def context_processor():
         url = await web_ipc.request('get_avatar_url',
                 username=account['username'],
                 disc=account['discriminator'])
-        print(url)
         return url
     
     # Get emoji flag from alpha_2 code (for players pages titles)

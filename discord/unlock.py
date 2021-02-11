@@ -24,8 +24,8 @@ async def unlock(data):
     current_level = ''
     for role in member.roles:
         if 'reached-' in role.name:
-            aux = role.name.strip('reached-')
-            if aux not in riddle.secret_levels:
+            aux = role.name.replace('reached-', '')
+            if aux in riddle.levels:
                 current_level = aux
                 break
     
@@ -58,6 +58,7 @@ async def _beat(riddle: Riddle, member: Member,
     
     # Avoid backtracking if level has already been beaten
     ok = False
+    print(locals())
     for lev in riddle.levels:
         if lev == current_level:
             ok = True
@@ -69,7 +70,6 @@ async def _beat(riddle: Riddle, member: Member,
     
     # Log beating and send message to member
     guild = riddle.guild
-    id = level['discord_name']
     print('> [%s] %s#%s has beaten level <%s>' \
             % (guild.name, member.name, member.discriminator, level['name']))
     text = ('**[%s]** You solved level **%s** ' % (guild.name, level['name'])) \
@@ -85,10 +85,10 @@ async def _advance(riddle: Riddle, member: Member,
     # Avoid backtracking if level has already been unlocked
     if current_level != '':
         ok = False
-        for level in riddle.levels:
-            if level == current_level:
+        for lev in riddle.levels:
+            if lev == current_level:
                 ok = True
-            elif level == level['name']:
+            elif lev == level['name']:
                 if not ok:
                     return
                 else:
@@ -96,10 +96,10 @@ async def _advance(riddle: Riddle, member: Member,
 
     # Get channel and roles corresponding to level
     guild = riddle.guild
-    id = level['discord_name']
+    id = level['name']
     channel = get(guild.channels, name=id)
-    name = 'reached-' + current_level
-    role = get(channel.changed_roles, name=name)
+    name = 'reached-' + id
+    role = get(member.roles, name=name)
     if role:
         # User already unlocked that channel
         return

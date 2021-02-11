@@ -173,30 +173,31 @@ async def _process_page(riddle: str, path: str):
 
         # Check if level has been completed
         row = await _get_user_level_row(level, 'user_levelcompletion')
-        if not row:
+        if row:
             return
         
         # Register level completion in designated table
         time = datetime.utcnow()
         count = session[riddle]['cur_hit_counter']
-        query = 'INSERT INTO %s user_levelcompletion ' \
+        query = 'INSERT INTO user_levelcompletion ' \
                 '(riddle, username, discriminator, ' \
                     'level_name, completion_time, page_count) ' \
-                'VALUES (:riddle, :name, :disc, :id, :time, :count)'
-        values = {**values, 'time': time, 'count': count}
+                'VALUES (:riddle, :name, :disc, :level_name, :time, :count)'
+        values = {'riddle': riddle, 'name': username, 'disc': disc,
+                'level_name': level['name'], 'time': time, 'count': count}
         await database.execute(query, values)
 
         # Update level-related tables
-        _update_info(level)    
+        await _update_info(level)    
         
         # Update current_level count and reset user's page count
-        id_next = '%02d' % (int(id) + 1)
+        name_next = '%02d' % (int(level['name']) + 1)
         query = 'UPDATE riddle_accounts ' \
-                'SET current_level = :id_next, cur_hit_counter = 0 ' \
+                'SET current_level = :name_next, cur_hit_counter = 0 ' \
                 'WHERE riddle = :riddle AND ' \
                     'username = :name AND discriminator = :disc'
-        values = {'id_next': id_next,
-                'riddle': riddle, 'name': username, 'disc': disc}
+        values = {'name_next': name_next, 'riddle': riddle,
+                'name': username, 'disc': disc}
         await database.execute(query, values)
 
         # Also Update session info
@@ -251,7 +252,7 @@ async def _process_page(riddle: str, path: str):
         await database.execute(query, values)
 
         # Update level-related tables
-        _update_info(level)
+        await _update_info(level)
 
         # Update countries table too
         # cursor.execute("UPDATE countries "
@@ -307,7 +308,7 @@ async def _process_page(riddle: str, path: str):
         await database.execute(query, {'riddle': riddle})
 
     # Get user's current reached level and requested level number
-    current_level = session[riddle]['current_level']
+    current_name = session[riddle]['current_level']
     query = 'SELECT * FROM level_pages ' \
             'WHERE riddle = :riddle AND path = :path'
     values = {'riddle': riddle, 'path': path}
@@ -321,16 +322,21 @@ async def _process_page(riddle: str, path: str):
     # Get user's current level info from DB
     query = 'SELECT * FROM levels ' \
             'WHERE riddle = :riddle AND name = :name'
-    values = {'riddle': riddle, 'name': current_level}
-    level = await database.fetch_one(query, values)        
+    values = {'riddle': riddle, 'name': current_name}
+    current_level = await database.fetch_one(query, values)
+
+    query = 'SELECT * FROM levels ' \
+            'WHERE riddle = :riddle AND name = :name'
+    values = {'riddle': riddle, 'name': level_name}
+    level = await database.fetch_one(query, values)
 
     # If user entered a correct and new answer, register time on DB
     #if int(current_level) <= total and path == level["answer"]:
     points = 0
-    if current_level == '00' or path == level['answer']:
-        rank = level['rank']
+    if current_name == '00' or path == current_level['answer']:
+        rank = current_level['rank']
         points = level_ranks[rank]['points']
-        await _register_completion(level, points)
+        await _register_completion(current_level, points)
     else:
         # Check if a secret level has been found
         query = 'SELECT * FROM levels ' \
@@ -388,5 +394,4 @@ async def _process_page(riddle: str, path: str):
     #                 "WHERE alpha_2 = %s",
     #                 (points, session['user']['country']))
 
-    print(points)
     return points
