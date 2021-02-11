@@ -49,7 +49,7 @@ async def unlock(data):
             await _secret_found(riddle, member, level)
             return
         elif level['answer'] == data.path:
-            await _secret_solve(riddle, member, level)
+            await _secret_solve(riddle, member, level, data.points)
 
 
 async def _beat(riddle: Riddle, member: Member,
@@ -70,9 +70,9 @@ async def _beat(riddle: Riddle, member: Member,
     # Log beating and send message to member
     guild = riddle.guild
     id = level['discord_name']
-    print('> [%s] %s#%s has beaten level #%s' \
-            % (guild.name, member.name, member.discriminator, id))
-    text = ('**[%s]** You solved level **%s** ' % (guild.name, id)) \
+    print('> [%s] %s#%s has beaten level <%s>' \
+            % (guild.name, member.name, member.discriminator, level['name']))
+    text = ('**[%s]** You solved level **%s** ' % (guild.name, level['name'])) \
             + ('and won **%d** points!\n' % points)
     await member.send(text)
 
@@ -129,7 +129,6 @@ async def _secret_found(riddle: Riddle, member: Member, level: dict):
     # Do nothing if secret has already been found or beaten
     guild = riddle.guild
     id = level['discord_name']
-    print(id)
     reached = get(guild.roles, name=('reached-%s' % id))
     solved = get(guild.roles, name=('solved-%s' % id))
     if reached in member.roles or solved in member.roles:
@@ -139,66 +138,22 @@ async def _secret_found(riddle: Riddle, member: Member, level: dict):
     await member.add_roles(reached)
     
     # Log reaching secret and send message to member
-    print('> [%s] %s#%s has found secret level #%s' \
+    print('> [%s] %s#%s has found secret level <%s>' \
             % (guild.name, member.name, member.discriminator, level['name']))
     text = '**[%s]** You found secret level **%s**. Congratulations!' \
             % (guild.name, level['name'])
     await member.send(text)
 
 
-async def _secret_solve(riddle: Riddle, member: Member, level: dict):
+async def _secret_solve(riddle: Riddle, member: Member,
+        level: dict, points: int):
     '''Advance to further level when player arrives at a level front page.
     "reached" role is granted to user and thus given access to channel(s).'''
-    print('OOPS')
-    return
-
-    # Get channel and roles corresponding to level
+    
+    # Check if user has already solved secret
     guild = riddle.guild
     id = level['discord_name']
-    channel = get(guild.channels, name=id)
-    role = None
-    if id in riddle.levels:
-        name = 'reached-' + current_level
-        role = get(channel.changed_roles, name=name)
-    elif id in riddle.secret_levels:
-        name = 'reached-' + id
-        role = get(member.roles, name=name)
-        if not role:
-            # For secret levels, solved implies reached too
-            name = 'solved-' + id
-            role = get(member.roles, name=name)
-    if role:
-        # User already unlocked that channel
-        return
-
-    # If a normal level, remove old "reached" roles from user
-    if id in riddle.levels:
-        for role in member.roles:
-            if 'reached-' in role.name:
-                old_level = role.name.strip('reached-')
-                if old_level in riddle.levels:
-                    await member.remove_roles(role)
-                    break
-
-    # Add "reached" role to member
-    name = 'reached-' + id
-    role = get(guild.roles, name=name)
-    await member.add_roles(role)
-
-    # If a normal level, change nickname to current level
-    if id in riddle.levels:
-        s = '[' + id + ']'
-        await update_nickname(member, s)
-
-
-async def solve(riddle: Riddle, member: Member, level: dict):
-    '''Grant "solved" role upon completion of a level (like a secret one).'''
-
-    # Check if member already solved level
-    guild = riddle.guild
-    id = level['level_id']
-    name = 'solved-' + id
-    solved = get(guild.roles, name=name)
+    solved = get(guild.roles, name=('solved-%s' % id))
     if solved in member.roles:
         return
 
@@ -207,8 +162,9 @@ async def solve(riddle: Riddle, member: Member, level: dict):
     reached = get(member.roles, name=name)
     if not reached:
         print('> [%s] [WARNING] %s#%s tried to solve ' \
-                'secret level "%s" without reaching it' \
-                % (guild.name, member.name, member.discriminator, id))
+                'secret level <%s> without reaching it' \
+                % (guild.name, member.name, member.discriminator,
+                    level['name']))
         return
     
     # Remove old "reached" role and add "solved" role to member
@@ -216,11 +172,11 @@ async def solve(riddle: Riddle, member: Member, level: dict):
     await member.add_roles(solved)
 
     # Log solving procedure and send message to member
-    print('> [%s] %s#%s completed secret level "%s"' \
-            % (guild.name, member.name, member.discriminator, id))
-    text = '**[%s]** You successfully solved secret level **%s**!\n' \
-            % (guild.name, id)
-    await member.send(text)
+    print('> [%s] %s#%s has completed secret level <%s>' \
+            % (guild.name, member.name, member.discriminator, level['name']))
+    text = ('**[%s]** You successfully solved secret level ' % guild.name) + \
+            ('**%s** and won **%d** points!\n' % (level['name'], points))
+    await member.send(text)    
 
 
 @bot.command()
