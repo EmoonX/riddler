@@ -28,19 +28,21 @@ logging.basicConfig(level=logging.INFO)
 @bot.event
 async def on_ready():
     '''Procedures upon bot initialization.'''
+
     print('> Bot up and running!')
 
     # Build riddles dict from database guild and level data
     await database.connect()
     query = 'SELECT * from riddles'
     result = await database.fetch_all(query)
-    for riddle in result:
+    for row in result:
         query = 'SELECT * FROM levels WHERE riddle = :riddle'
-        values = {'riddle': riddle['alias']}
+        values = {'riddle': row['alias']}
         levels = await database.fetch_all(query, values)
         # query = 'SELECT * FROM secret_levels WHERE guild = :guild'
         # secret_levels = await database.fetch_all(query, values)
-        riddles[riddle['alias']] = Riddle(riddle, levels)
+        riddle = Riddle(row, levels)
+        riddles[row['alias']] = riddle
     
     # guild = get(bot.guilds, name='RNS Riddle II')
     # for role in guild.roles:

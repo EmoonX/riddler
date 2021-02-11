@@ -33,6 +33,7 @@ async def unlock(data):
         if data.points and level['answer'] == data.path:
             # If path corresponds to a level answer, level is beaten
             await _beat(riddle, member, id, current_level, data.points)
+            current_level = id
         elif level['path'] == data.path:
             # If path corresponds to a level front page, advance to next one
             await _advance(riddle, member, id, current_level)
