@@ -178,6 +178,25 @@ async def _secret_solve(riddle: Riddle, member: Member,
     await member.send(text)    
 
 
+@bot.ipc.route()
+async def cheevo_found(data):
+    '''Congratulating procedures upon achievement being found.'''
+
+    # Get data from request
+    riddle = riddles[data.alias]
+    guild = riddle.guild
+    member = get(guild.members,
+            name=data.name, discriminator=data.disc)
+    title = data.cheevo['title']
+    points = data.cheevo['points']
+
+    print('> \033[1m[%s]\033[0m %s#%s has found achievement \033[1m%s\033[0m' \
+            % (guild.name, member.name, member.discriminator, title))
+    text = '**[%s]** You found **_%s_** achievement ' % (guild.name, title) + \
+            'and won **%d** points!\n' % (points)
+    await member.send(text)
+
+
 @bot.command()
 async def finish(ctx):
     # Only allow finishing by PM to bot

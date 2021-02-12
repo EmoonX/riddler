@@ -16,6 +16,5 @@ async def get_avatar_url(data):
     '''Get avatar URL from a user by their DiscordTag.'''
     members = bot.get_all_members()
     user = get(members, name=data.username, discriminator=data.disc)
-    print(user)
     url = str(user.avatar_url)
     return url

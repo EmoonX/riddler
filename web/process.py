@@ -408,4 +408,8 @@ async def _process_page(riddle: str, path: str):
         values.pop('riddle')
         await database.execute(query, values)
 
+        # Send request for bot to congratulate member
+        await web_ipc.request('cheevo_found',
+                alias=riddle, name=username, disc=disc, cheevo=dict(cheevo))
+
     return points
