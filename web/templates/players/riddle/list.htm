@@ -28,7 +28,11 @@
                 {{ player['username'] }}
               </a>
             <td>
-              <var>{{ player['current_level'] }}</var>
+              {% set current = player['current_level'] %}
+              {% if current == 'END' %}
+                {% set current = riddle['winner_suffix'] %}
+              {% endif %}
+              <var>{{ current }}</var>
             </td>
             <td>
               <var class="points">{{ player['score'] }}</var>

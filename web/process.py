@@ -46,12 +46,14 @@ async def process_url():
                 if not path:
                     continue
 
-                # If no explicit file, add 'index.htm' to end of path
-                dot_index = path.rfind('.')
-                if dot_index == -1:
-                    if path[-1] != '/':
-                        path += '/'
+                if path[-1] == '/':
+                    # If a folder itself, add "index.htm" to path's end
                     path += 'index.htm'
+                else:
+                    # If no extension, force an explicit ".htm" to the end
+                    has_dot = path.count('.')
+                    if not has_dot:
+                        path += '.htm'
                 
                 # Store session riddle user data
                 riddle = 'cipher'
@@ -193,6 +195,8 @@ async def _process_page(riddle: str, path: str):
         
         # Update current_level count and reset user's page count
         name_next = '%02d' % (int(level['name']) + 1)
+        if name_next == '66':
+            name_next = '🏅'
         query = 'UPDATE riddle_accounts ' \
                 'SET current_level = :name_next, cur_hit_counter = 0 ' \
                 'WHERE riddle = :riddle AND ' \
@@ -265,25 +269,6 @@ async def _process_page(riddle: str, path: str):
         #             "SET winners_count = winners_count + 1 "
         #             "WHERE alpha_2 = %s",
         #             (session['user']['country'],))            
-
-    def _has_access():
-        """Check if user can access level_name,
-                having reached current_level so far."""
-        return True
-        # # Admins can access everything!
-        # if session['user']['rank'] == 'Site Administrator':
-        #     return True
-
-        # if "Status" in level_name:
-        #     # Secret level, check previous id in respective table
-        #     cursor = get_cursor()
-        #     cursor.execute("SELECT * FROM user_secretsfound "
-        #             "WHERE level_name = %s", (level_name,))
-        #     secret_found = cursor.fetchone()
-        #     return secret_found
-
-        # # Return if level is *at most* the current_level
-        # return int(level_name) <= int(current_level)
     
     # Check if it's not an txt/image/video/etc
     dot_index = path.rfind('.')
@@ -296,9 +281,7 @@ async def _process_page(riddle: str, path: str):
                 'SET cur_hit_counter = cur_hit_counter + 1 ' \
                 'WHERE riddle = :riddle ' \
                 'AND username = :name AND discriminator = :disc'
-        values = {'riddle': riddle,
-                'name': session['user']['username'],
-                'disc': session['user']['discriminator']}
+        values = {'riddle': riddle, 'name': username, 'disc': disc}
         await database.execute(query, values)
         session[riddle]['cur_hit_counter'] += 1
 
@@ -321,43 +304,44 @@ async def _process_page(riddle: str, path: str):
 
     # if is_htm:
     # Get user's current level info from DB
-    query = 'SELECT * FROM levels ' \
-            'WHERE riddle = :riddle AND name = :name'
-    values = {'riddle': riddle, 'name': current_name}
-    current_level = await database.fetch_one(query, values)
-
-    query = 'SELECT * FROM levels ' \
-            'WHERE riddle = :riddle AND name = :name'
-    values = {'riddle': riddle, 'name': level_name}
-    level = await database.fetch_one(query, values)
-
-    # If user entered a correct and new answer, register time on DB
-    #if int(current_level) <= total and path == level["answer"]:
     points = 0
-    if current_name == '00' or path == current_level['answer']:
-        rank = current_level['rank']
-        points = level_ranks[rank]['points']
-        await _register_completion(current_level, points)
-    else:
-        # Check if a secret level has been found
+    if current_name != '🏅':
         query = 'SELECT * FROM levels ' \
-                'WHERE riddle = :riddle AND is_secret IS TRUE ' \
-                'AND path = :path'
-        values = {'riddle': riddle, 'path': path}
+                'WHERE riddle = :riddle AND name = :name'
+        values = {'riddle': riddle, 'name': current_name}
+        current_level = await database.fetch_one(query, values)
+
+        query = 'SELECT * FROM levels ' \
+                'WHERE riddle = :riddle AND name = :name'
+        values = {'riddle': riddle, 'name': level_name}
         level = await database.fetch_one(query, values)
-        if level:
-            await _register_secret_found(level, points)
+
+        # If user entered a correct and new answer, register time on DB
+        #if int(current_level) <= total and path == level["answer"]:
+        if current_name == '00' or path == current_level['answer']:
+            rank = current_level['rank']
+            points = level_ranks[rank]['points']
+            await _register_completion(current_level, points)
         else:
-            # Otherwise, check if a secret level was beaten
+            # Check if a secret level has been found
             query = 'SELECT * FROM levels ' \
                     'WHERE riddle = :riddle AND is_secret IS TRUE ' \
-                    'AND answer = :answer'
-            values = {'riddle': riddle, 'answer': path}
+                    'AND path = :path'
+            values = {'riddle': riddle, 'path': path}
             level = await database.fetch_one(query, values)
             if level:
-                rank = level['rank']
-                points = level_ranks[rank]['points']
-                await _register_secret_completion(level, points)
+                await _register_secret_found(level, points)
+            else:
+                # Otherwise, check if a secret level was beaten
+                query = 'SELECT * FROM levels ' \
+                        'WHERE riddle = :riddle AND is_secret IS TRUE ' \
+                        'AND answer = :answer'
+                values = {'riddle': riddle, 'answer': path}
+                level = await database.fetch_one(query, values)
+                if level:
+                    rank = level['rank']
+                    points = level_ranks[rank]['points']
+                    await _register_secret_completion(level, points)
 
     # if not has_access():
     #     # Forbid user from accessing any level further than permitted
