@@ -197,70 +197,35 @@ async def cheevo_found(data):
     await member.send(text)
 
 
-@bot.command()
-async def finish(ctx):
-    # Only allow finishing by PM to bot
-    message = ctx.message
-    author = message.author
-    if message.guild and not message.channel.name == 'command-test':
-        # Purge all traces of wrong message >:)
-        await message.delete()
-        text = '`!finish` must be sent by PM to me!'
-        await author.send(text)
-        return
+@bot.ipc.route()
+async def game_completed(data):
+    '''Congratulating and guild procedures upon game being completed.'''
 
-    aux = message.content.split()[1:]
-    text = ''
-    if len(aux) != 2:
-        # Command usage
-        text = '> `!finish`: Finish game ||(for now?)|| (PM ONLY!)\n' \
-                '> \n' \
-                '> • Usage: `!finish guild_alias final_answer`\n' \
-                '> `guild_alias`: the alias of riddle\'s guild/server\n' \
-                '> `final_answer`: the final level\'s answer\n'
-    else:
-        alias, answer = aux
-        if not alias in riddles:
-            # Invalid alias
-            text = 'Inserted alias doesn\'t match any valid guild!\n'
-        else:
-            riddle = riddles[alias]
-            guild = riddle.guild
-            member = get(guild.members, id=author.id)
-            if not member:
-                # Not currently a member
-                text = 'You aren\'t currently a member ' \
-                        'of the _%s_ guild.\n' % guild.name
-            else :
-                # Check if player unlocked final level before trying to finish
-                final_level = next(reversed(riddle.levels))
-                name = 'reached-%s' % final_level
-                final_role = get(member.roles, name=name)
-                if not final_role:
-                    text = 'You need to `!unlock` the final level first. :)'
-                else:
-                    # Check if inputted answer matches correct one (by hash)
-                    match = bcrypt.checkpw(answer.encode('utf-8'),
-                            riddle.final_answer_hash) 
+    # Get member object
+    riddle = riddles[data.alias]
+    guild = riddle.guild
+    member = get(guild.members,
+            name=data.name, discriminator=data.disc)
 
-                    if match:
-                        # Player completed the game (for now?)
-                        text = 'Congrats!'
+    # Remove last level's "reached" role
+    for role in member.roles:
+        name = role.name.replace('reached-', '')
+        if name in riddle.levels:
+            await member.remove_roles(role)
+            return
 
-                        # Swap last level's "reached" role for "winners" role
-                        await member.remove_roles(final_role)
-                        winners = get(guild.roles, name='winners')
-                        await member.add_roles(winners)
+    # Add flashy "winners" role
+    winners = get(guild.roles, name='winners')
+    await member.add_roles(winners)
 
-                        # Update nickname with winner's badge
-                        s = riddle.winner_suffix
-                        await update_nickname(member, s)
+    # Update nickname with winner's badge
+    await update_nickname(member, '🏅')
 
-                    else:
-                        # Player got answer "wrong"
-                        text = 'Please, go back and finish the final level...'
-    
-    await message.channel.send(text)
+    # Player has completed the game (for now?)
+    print('> \033[1m[%s]\033[0m %s#%s has finished the game!' \
+            % (guild.name, member.name, member.discriminator))
+    text = '**[%s]** You just completed the game! **Congrats!**' % guild.name
+    await member.send(text)
 
 
 async def update_nickname(member: Member, s: str):

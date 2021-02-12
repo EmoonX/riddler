@@ -193,10 +193,17 @@ async def _process_page(riddle: str, path: str):
         # Update level-related tables
         await _update_info(level)    
         
-        # Update current_level count and reset user's page count
+        # Get next level name (if any)
         name_next = '%02d' % (int(level['name']) + 1)
         if name_next == '66':
+            # User has just completed the game :)
             name_next = '🏅'
+            
+            # Send request for bot to do game-finish procedures
+            await web_ipc.request('game_completed',
+                    alias=riddle, name=username, disc=disc)
+
+        # Update current_level count and reset user's page count
         query = 'UPDATE riddle_accounts ' \
                 'SET current_level = :name_next, cur_hit_counter = 0 ' \
                 'WHERE riddle = :riddle AND ' \
