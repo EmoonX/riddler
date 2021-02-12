@@ -11,11 +11,11 @@ async def context_processor():
     # List of pycountry country objects
     pycountries = pycountry.countries
 
-    async def get_accounts(riddle: dict = None):
+    async def get_accounts(alias=''):
         '''Get players data from database.
             riddle: if present, also get riddle-specific data.'''
         accounts = []
-        if not riddle:
+        if not alias:
             query = 'SELECT * FROM accounts'
             accounts = await database.fetch_all(query)
         else:
@@ -25,8 +25,9 @@ async def context_processor():
                         'AND accounts.discriminator ' \
                         '= riddle_accounts.discriminator ' \
                     'WHERE riddle = :riddle'
-            values = {'riddle': riddle['alias']}
+            values = {'riddle': alias}
             accounts = await database.fetch_all(query, values)
+        accounts = {account['username']: account for account in accounts}
         return accounts
 
     def get_sorted_countries():

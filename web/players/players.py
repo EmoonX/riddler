@@ -41,8 +41,7 @@ async def global_list():
                 account['riddles'].append(riddle)
 
     # Render page with account info
-    return await render_template('players/list.htm',
-            riddles=riddles, accounts=accounts)
+    return await render_template('players/list.htm', riddles=riddles)
 
 
 @players.route("/<alias>/players/")
@@ -74,5 +73,4 @@ async def riddle_list(alias: str):
         account['country'] = result['country']
 
     # Render page with account info
-    return await render_template('players/riddle/list.htm',
-            riddle=riddle, accounts=accounts)
+    return await render_template('players/riddle/list.htm', riddle=riddle)

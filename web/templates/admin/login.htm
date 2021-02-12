@@ -1,21 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <title>Login | Riddle Bot Web UI</title>
-  </head>
-  <body>
-    <form method="post">
-      <label>
-        Guild alias
-        <input type="text" name="alias" required>
-      </label>
-      <label>
-        Password
-        <input type="password" name="password" required>
-      </label>
-      <input type="submit" value="Login">
-      <div class="msg">{{ msg }}</div>
-    </form>
-  </body>
-</html>
+{% extends 'levels/layout.htm' %}
+{% block title %}Please input administrator password{% endblock %}
+{% block content %}
+    <p>Welcome to the Cipher levels administration database.</p>
+    <img src="/static/nullnullnullnull.png" class="borderless" alt="nullnullnullnull.jpg" usemap="#map">
+    <map name="map">
+      <area href="doesnotcompute.htm" coords="72,189,93,265,411,174,389,95" shape="poly" alt="Does not compute">
+    </map>
+{% endblock %}

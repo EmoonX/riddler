@@ -12,8 +12,9 @@
             <th>Riddles played</th>
           </tr>
         </thead>
+        {% set accounts = get_accounts() %}
         <tbody>
-        {% for player in accounts %}
+        {% for player in accounts.values() %}
           <tr>
             <td>
               <a href="{{ player['country'] }}">

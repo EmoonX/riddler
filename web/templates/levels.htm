@@ -7,6 +7,7 @@
     <main>
       <h1>Levels</h1>
       {% set total = 100 %}
+      {% set accounts = get_accounts(riddle) %}
     {% for set_name, set in levels.items() %}
     {% if set_name %}
       <h2>{{ set_name }}</h2>
