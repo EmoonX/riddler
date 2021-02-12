@@ -11,6 +11,24 @@ async def context_processor():
     # List of pycountry country objects
     pycountries = pycountry.countries
 
+    async def get_accounts(riddle: dict = None):
+        '''Get players data from database.
+            riddle: if present, also get riddle-specific data.'''
+        accounts = []
+        if not riddle:
+            query = 'SELECT * FROM accounts'
+            accounts = await database.fetch_all(query)
+        else:
+            query = 'SELECT * FROM accounts ' \
+                    'INNER JOIN riddle_accounts ' \
+                    'ON accounts.username = riddle_accounts.username ' \
+                        'AND accounts.discriminator ' \
+                        '= riddle_accounts.discriminator ' \
+                    'WHERE riddle = :riddle'
+            values = {'riddle': riddle['alias']}
+            accounts = await database.fetch_all(query, values)
+        return accounts
+
     def get_sorted_countries():
         '''Get sorted list of countries by name.'''
         def comp_names(country):
@@ -19,12 +37,6 @@ async def context_processor():
         countries = list(pycountries)
         countries.sort(key=comp_names)
         return countries
-    
-    # Get players data from database
-    query = 'SELECT * FROM accounts'
-    result = await database.fetch_all(query)
-    accounts = {account['username']: dict(account)
-            for account in result}
     
     async def get_avatar_url(account):
         '''Returns user's avatar url from a request sent to bot.'''

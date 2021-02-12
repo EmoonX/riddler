@@ -14,7 +14,7 @@
           </tr>
         </thead>
         <tbody>
-        {% for player in accounts %}
+        {% for player in get_accounts(riddle) %}
           <tr>
             {% set country_name = pycountries.get(alpha_2=player['country']).name %}
             <td>
