@@ -222,7 +222,8 @@ async def game_completed(data):
     await update_nickname(member, '🏅')
 
     # Player has completed the game (for now?)
-    print('> \033[1m[%s]\033[0m %s#%s has finished the game!' \
+    print(('> \033[1m[%s]\033[0m \033[1m%s\033[0m#%\033[1m%s\033[0m ' \
+            'has finished the game!') \
             % (guild.name, member.name, member.discriminator))
     text = '**[%s]** You just completed the game! **Congrats!**' % guild.name
     await member.send(text)

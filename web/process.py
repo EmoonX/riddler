@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from urllib.parse import urlparse
 from datetime import datetime
 
@@ -47,9 +46,9 @@ async def process_url():
 
             # Process all received paths
             for path in ph.paths:
-                print(('\033[1m[%s]\033[0m Processing path \033[1m[%s]\033[0m '
-                        'from \033[1m[%s]\033[0m#\033[1m[%s]\033[0m')
-                        % (ph.riddle, path, ph.username, ph.disc))
+                print(('\033[1m[%s]\033[0m Processing path \033[1m%s\033[0m '
+                        'from \033[1m%s\033[0m#\033[1m%s\033[0m')
+                        % (ph.riddle_alias, path, ph.username, ph.disc))
                 await ph.process(path)
         
         # Successful response :)
@@ -85,9 +84,9 @@ class _PathsHandler:
     riddle_account: dict
 
     # Paths to be processed by handler
-    paths = list
+    paths: list
 
-    def __init__(self, url_list: list, user: User):
+    def __init__(self, user: User, url_list: list):
         '''Ṕarse riddle and paths from url list and get user info.
         
         @param url_list: the list of received URLs
@@ -102,13 +101,14 @@ class _PathsHandler:
         
         # Save basic user info
         self.username = user.username
-        self.disc = user.discriminato
+        self.disc = user.discriminator
 
+        self.paths = []
         for url in url_list:
             # Parse path from url (ignore external pages)
             parsed = urlparse(url)
             path = parsed.path
-            if parsed.domain != domain or not path:
+            if parsed.netloc != domain or not path:
                 continue
 
             # Remove base folder from path, if any
@@ -173,7 +173,7 @@ class _PathsHandler:
             # Page not found!
             return
 
-        current_name = self.riddle_alias_account['current_level']
+        current_name = self.riddle_account['current_level']
         if current_name != '🏅':
             # Get current level info from DB
             query = 'SELECT * FROM levels ' \
@@ -190,8 +190,8 @@ class _PathsHandler:
             # If user entered a correct and new answer, register completion
             if current_name == '00' and page['level_name'] == '01' \
                     or path == current_level['answer']:
-                lh = _NormalLevelHandler(current_level)
-                await lh.register_completion(current_level)
+                lh = _NormalLevelHandler(current_level, self)
+                await lh.register_completion()
             else:
                 # Check if a secret level has been found
                 query = 'SELECT * FROM levels ' \
@@ -200,7 +200,7 @@ class _PathsHandler:
                 values = {'riddle': self.riddle_alias, 'path': path}
                 secret = await database.fetch_one(query, values)
                 if secret:
-                    sh = _SecretLevelHandler(secret)
+                    sh = _SecretLevelHandler(secret, self)
                     await sh.register_finding()
                 else:
                     # Otherwise, check if a secret level was beaten
@@ -210,7 +210,7 @@ class _PathsHandler:
                     values = {'riddle': self.riddle_alias, 'answer': path}
                     secret = await database.fetch_one(query, values)
                     if secret:
-                        sh = _SecretLevelHandler(secret)
+                        sh = _SecretLevelHandler(secret, self)
                         await sh._register_completion()
 
         # if not has_access():
@@ -302,12 +302,12 @@ class _LevelHandler:
     level: dict
     
     # Points awarded upon level completion
-    points_awarded: int
+    points: int
 
     # User table to be accessed on DB
     table: str
     
-    def __init__(self, level: dict, table: str, ph: _PathsHandler):
+    def __init__(self, level: dict, ph: _PathsHandler, table: str):
         '''Register level DB data and points,
         as well as parent attributes from PH.
         
@@ -316,10 +316,12 @@ class _LevelHandler:
 
         self.level = level
         self.table = table
+        rank = level['rank']
+        self.points = level_ranks[rank]['points']
         
         # Set some attributes from parent caller PH for easier access
         for name in ('riddle_alias', 'username', 'disc', 'riddle_account'):
-            attr = ph.__getattr__(name)
+            attr = ph.__getattribute__(name)
             self.__setattr__(name, attr)
     
     async def _get_user_level_row(self):
@@ -335,15 +337,18 @@ class _LevelHandler:
         return row
     
     async def register_completion(self):
-        '''Register level completion and update all needed tables.'''
+        '''Register level completion and update all needed tables.
+        
+        @return: If level has been already completed.'''
 
         # Check if level has been completed
-        row = await self._get_user_level_row(self.table)
+        row = await self._get_user_level_row()
         if row and row['completion_time']:
-            return
+            return True
 
         # Update level-related tables
-        await self._update_info(self.level)
+        await self._update_info()
+        return False
 
     async def _update_info(self):
         '''Update level-related tables.'''
@@ -379,14 +384,16 @@ class _LevelHandler:
 class _NormalLevelHandler(_LevelHandler):
     '''Handler for processing normal (non secret) levels.'''
 
-    def __init__(self, *args):
-        super().__init__(*args, 'user_levelcompletion')
+    def __init__(self, level: dict, ph: _PathsHandler):
+        super().__init__(level, ph, 'user_levelcompletion')
 
     async def register_completion(self):
         '''Register normal level completion and update all needed tables.'''
 
         # Do base completion procedures first
-        super().register_completion(self)
+        completed = await super().register_completion()
+        if completed:
+            return
         
         # Register level completion in designated table
         time = datetime.utcnow()
@@ -400,9 +407,6 @@ class _NormalLevelHandler(_LevelHandler):
                 'level_name': self.level['name'],
                 'time': time, 'count': count}
         await database.execute(query, values)
-
-        # Update level-related tables
-        await self._update_info(self.level)
         
         # Get next level name (if any)
         name_next = '%02d' % (int(self.level['name']) + 1)
@@ -439,8 +443,8 @@ class _NormalLevelHandler(_LevelHandler):
 class _SecretLevelHandler(_LevelHandler):
     '''Handler for processing secret levels.'''
 
-    def __init__(self, *args):
-        super().__init__(*args, 'user_secrets')
+    def __init__(self, level: dict, ph: _PathsHandler):
+        super().__init__(level, ph, 'user_secrets')
 
     async def register_finding(self):
         '''Register secret finding on the respective table.'''
@@ -463,7 +467,9 @@ class _SecretLevelHandler(_LevelHandler):
         '''Register normal level completion and update all needed tables.'''
 
         # Do base completion procedures first
-        super().register_completion(self)
+        completed = await super().register_completion()
+        if completed:
+            return
         
         # Register level completion in designated table
         time = datetime.utcnow()
