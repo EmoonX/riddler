@@ -314,7 +314,7 @@ class _LevelHandler:
         @param level: Level DB table row data
         @param ph: The parent's paths handler'''
 
-        self.level = level
+        self.level = dict(level)
         self.table = table
         rank = level['rank']
         self.points = level_ranks[rank]['points']
@@ -382,7 +382,7 @@ class _LevelHandler:
 
 
 class _NormalLevelHandler(_LevelHandler):
-    '''Handler for processing normal (non secret) levels.'''
+    '''Handler for normal (non secret) levels.'''
 
     def __init__(self, level: dict, ph: _PathsHandler):
         super().__init__(level, ph, 'user_levelcompletion')
@@ -410,11 +410,17 @@ class _NormalLevelHandler(_LevelHandler):
         
         # Get next level name (if any)
         name_next = '%02d' % (int(self.level['name']) + 1)
-        if name_next == '66':
+        if name_next != '66':
+            # Bot level beat procedures
+            await web_ipc.request('unlock', method='beat',
+                    alias=self.riddle_alias,
+                    level=self.level, points=self.points,
+                    name=self.username, disc=self.disc)
+        else:
             # Player has just completed the game :)
             name_next = '🏅'
             
-            # Send request for bot to do game-finish procedures
+            # Bot game finish procedures
             await web_ipc.request('game_completed',
                     alias=self.riddle_alias,
                     name=self.username, disc=self.disc)
@@ -441,7 +447,7 @@ class _NormalLevelHandler(_LevelHandler):
 
 
 class _SecretLevelHandler(_LevelHandler):
-    '''Handler for processing secret levels.'''
+    '''Handler for secret levels.'''
 
     def __init__(self, level: dict, ph: _PathsHandler):
         super().__init__(level, ph, 'user_secrets')

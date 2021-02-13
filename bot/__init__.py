@@ -13,11 +13,11 @@ load_dotenv(verbose=True)
 from bot import bot
 from util.db import database
 from riddle import Riddle, riddles
-import begin
 import unlock
+import begin
 import update
 import send
-import get
+import ipc
 
 # Get Discord token securely from environment variable
 token = os.getenv('DISCORD_TOKEN')

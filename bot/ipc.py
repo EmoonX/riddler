@@ -1,6 +1,7 @@
 from discord.utils import get
 
 from bot import bot
+from riddle import riddles
 
 
 @bot.ipc.route()
@@ -18,3 +19,17 @@ async def get_avatar_url(data):
     user = get(members, name=data.username, discriminator=data.disc)
     url = str(user.avatar_url)
     return url
+
+
+@bot.ipc.route()
+async def unlock(data):
+    
+    # Get unlock handler for guild member
+    riddle = riddles[data.alias]
+    member = get(riddle.guild.members,
+            name=data.name, discriminator=data.disc)
+    uh = riddle.uh_dict[member]
+
+    # Call unlocking method by name
+    method = uh.__getattribute__(data.method)
+    await method(data.level, data.points)

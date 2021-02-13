@@ -4,20 +4,26 @@ import discord
 from discord.utils import get
 
 from bot import bot
+from unlock import UnlockHandler
 
 
 class Riddle:
     '''Container for guild's riddle levels and info.'''
 
-    # Discord guild object
     guild: discord.Guild
+    '''Discord guild object'''
 
-    # Lists of levels
     levels: OrderedDict[str, dict]
+    '''Ordered dict of (normal) levels'''
+    
     secret_levels: OrderedDict[str, dict]
+    '''Ordered dict of secret levels'''
 
-    # Suffix to be appended to winners' nicknames
     winner_suffix: str
+    '''Suffix to be appended to winners' nicknames'''
+
+    uh_dict: DefaultDict[discord.Member, UnlockHandler]
+    '''Handlers for guild members unlocking procedures'''
 
     def __init__(self, riddle: dict, levels: dict, secret_levels: dict):
         '''Build riddle object by row extracted from database.'''
@@ -35,6 +41,12 @@ class Riddle:
         for level in secret_levels:
             id = level['name']
             self.secret_levels[id] = level
+
+        # Build dict of riddle's unlock handlers
+        self.uh_dict = {}
+        for member in self.guild.members:
+            uh = UnlockHandler(self.guild, member)
+            self.uh_dict[member] = uh
 
 
 # Global dict of (guild_alias -> riddle) which bot supervises
