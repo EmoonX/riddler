@@ -182,36 +182,42 @@ class _PathsHandler:
             current_level = await database.fetch_one(query, values)
 
             # Get requested page's level info from DB
-            # query = 'SELECT * FROM levels ' \
-            #         'WHERE riddle = :riddle AND name = :name'
-            # values = {'riddle': self.riddle_alias, 'name': page['level_name']}
-            # page_level = await database.fetch_one(query, values)
+            query = 'SELECT * FROM levels ' \
+                    'WHERE riddle = :riddle AND name = :name'
+            values = {'riddle': self.riddle_alias, 'name': page['level_name']}
+            page_level = await database.fetch_one(query, values)
 
-            # If user entered a correct and new answer, register completion
-            if current_name == '00' and page['level_name'] == '01' \
-                    or path == current_level['answer']:
+            # Check for normal level pages
+            next_name = '%02d' % (int(current_level['name']) + 1)
+            if current_level and path == current_level['answer']:
+                # If user entered a correct and new answer, register completion
                 lh = _NormalLevelHandler(current_level, self)
                 await lh.register_completion()
+            if page_level['name'] == next_name and path == page_level['path']:
+                # If it's the next level's front page, register progress
+                lh = _NormalLevelHandler(page_level, self)
+                await lh.register_finding()
+            
+            # Check for normal level pages
+            query = 'SELECT * FROM levels ' \
+                    'WHERE riddle = :riddle AND is_secret IS TRUE ' \
+                    'AND path = :path'
+            values = {'riddle': self.riddle_alias, 'path': path}
+            secret = await database.fetch_one(query, values)
+            if secret:
+                # "A secret has been found"
+                sh = _SecretLevelHandler(secret, self)
+                await sh.register_finding()
             else:
-                # Check if a secret level has been found
+                # Otherwise, check if a secret level was beaten
                 query = 'SELECT * FROM levels ' \
                         'WHERE riddle = :riddle AND is_secret IS TRUE ' \
-                        'AND path = :path'
-                values = {'riddle': self.riddle_alias, 'path': path}
+                        'AND answer = :answer'
+                values = {'riddle': self.riddle_alias, 'answer': path}
                 secret = await database.fetch_one(query, values)
                 if secret:
                     sh = _SecretLevelHandler(secret, self)
-                    await sh.register_finding()
-                else:
-                    # Otherwise, check if a secret level was beaten
-                    query = 'SELECT * FROM levels ' \
-                            'WHERE riddle = :riddle AND is_secret IS TRUE ' \
-                            'AND answer = :answer'
-                    values = {'riddle': self.riddle_alias, 'answer': path}
-                    secret = await database.fetch_one(query, values)
-                    if secret:
-                        sh = _SecretLevelHandler(secret, self)
-                        await sh._register_completion()
+                    await sh.register_completion()
 
         # if not has_access():
         #     # Forbid user from accessing any level further than permitted
@@ -321,11 +327,11 @@ class _LevelHandler:
         
         # Set some attributes from parent caller PH for easier access
         for name in ('riddle_alias', 'username', 'disc', 'riddle_account'):
-            attr = ph.__getattribute__(name)
-            self.__setattr__(name, attr)
+            attr = getattr(ph, name)
+            setattr(self, name, attr)
     
     async def _get_user_level_row(self):
-        '''@return: User/level registry from DB.'''
+        ''':return: User/level registry from DB.'''
 
         query = ('SELECT * FROM %s ' % self.table) + \
                 'WHERE riddle = :riddle AND username = :name ' \
@@ -336,10 +342,20 @@ class _LevelHandler:
         row = await database.fetch_one(query, values)
         return row
     
-    async def register_completion(self):
+    async def register_finding(self, method: str):
+        '''Bot level finding procedures.
+        
+        :param method: IPC method name; "advance" or "secret_found",
+            whether it's a normal or secret level'''
+            
+        await web_ipc.request('unlock', method=method,
+                alias=self.riddle_alias, level=self.level,
+                name=self.username, disc=self.disc)
+    
+    async def register_completion(self) -> bool:
         '''Register level completion and update all needed tables.
         
-        @return: If level has been already completed.'''
+        :return: If level has been already completed.'''
 
         # Check if level has been completed
         row = await self._get_user_level_row()
@@ -386,6 +402,10 @@ class _NormalLevelHandler(_LevelHandler):
 
     def __init__(self, level: dict, ph: _PathsHandler):
         super().__init__(level, ph, 'user_levelcompletion')
+    
+    async def register_finding(self):
+        '''Increment player level upon reaching level's front page.'''        
+        await super().register_finding('advance')
 
     async def register_completion(self):
         '''Register normal level completion and update all needed tables.'''
@@ -453,9 +473,9 @@ class _SecretLevelHandler(_LevelHandler):
         super().__init__(level, ph, 'user_secrets')
 
     async def register_finding(self):
-        '''Register secret finding on the respective table.'''
+        '''Register new secret if not yet been found.'''
 
-        # Register new secret if not yet been found
+        # Register on  if not yet been found
         row = await self._get_user_level_row()
         if not row:
             time = datetime.utcnow()

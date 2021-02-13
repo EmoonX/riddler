@@ -23,6 +23,7 @@ async def get_avatar_url(data):
 
 @bot.ipc.route()
 async def unlock(data):
+    '''Ŕeceive data from IPC request and issue unlocking method.'''
     
     # Get unlock handler for guild member
     riddle = riddles[data.alias]
@@ -31,5 +32,8 @@ async def unlock(data):
     uh = riddle.uh_dict[member]
 
     # Call unlocking method by name
-    method = uh.__getattribute__(data.method)
-    await method(data.level, data.points)
+    method = getattr(uh, data.method)
+    if not hasattr(data, 'points'):
+        await method(data.level)
+    else:
+        await method(data.level, data.points)

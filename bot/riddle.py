@@ -45,7 +45,7 @@ class Riddle:
         # Build dict of riddle's unlock handlers
         self.uh_dict = {}
         for member in self.guild.members:
-            uh = UnlockHandler(self.guild, member)
+            uh = UnlockHandler(self.guild, self.levels, member)
             self.uh_dict[member] = uh
 
 
