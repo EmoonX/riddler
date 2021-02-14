@@ -1,5 +1,6 @@
 from urllib.parse import urlparse
 from datetime import datetime
+from pymysql.err import IntegrityError
 
 from quart import Blueprint, request, session, jsonify
 from quart_discord.models import User
@@ -258,8 +259,9 @@ class _PathsHandler:
 
         # Check if it's an achievement page
         query = 'SELECT * FROM achievements ' \
-                'WHERE riddle = :riddle AND path = :path'
-        values = {'riddle': self.riddle_alias, 'path': path}
+                'WHERE riddle = :riddle ' \
+                'AND JSON_CONTAINS(paths_json, :path)'
+        values = {'riddle': self.riddle_alias, 'path': ('\"%s\"' % path)}
         cheevo = await database.fetch_one(query, values)
         if not cheevo:
             return
@@ -271,10 +273,15 @@ class _PathsHandler:
         values = {'riddle': self.riddle_alias,
                 'name': self.username, 'disc': self.disc,
                 'title': cheevo['title'], 'time': time}
-        await database.execute(query, values)
-        print(('> [\033[1m[%s]\033[0m] \033[1m[%s]\033[0m '
-                'got cheevo \033[1m[%s]\033[0m!') %
-                (self.riddle_alias, self.username, cheevo['title']))
+        try:
+            await database.execute(query, values)
+            print(('> \033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
+                    'got cheevo \033[1m%s\033[0m!') %
+                    (self.riddle_alias, self.username,
+                        self.disc, cheevo['title']))
+        except IntegrityError:
+            print('Duplicate cheevo!')
+            return
 
         # Also Update user, country and global scores
         query = 'UPDATE riddle_accounts ' \
@@ -296,9 +303,9 @@ class _PathsHandler:
         await database.execute(query, values)
 
         # Send request to bot to congratulate member
-        await web_ipc.request('cheevo_found',
-                alias=self.riddle_alias,
-                name=self.username, disc=self.disc, cheevo=dict(cheevo))
+        await web_ipc.request('unlock', method='cheevo_found',
+                alias=self.riddle_alias, name=self.username, disc=self.disc,
+                cheevo=dict(cheevo))
 
 
 class _LevelHandler:

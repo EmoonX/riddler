@@ -48,6 +48,7 @@ async def context_processor():
     
     async def get_achievements(riddle: dict, user: dict):
         '''Get achievements user has gotten in riddle, grouped by points.'''
+        
         # Get user's achievement list
         query = 'SELECT title FROM user_achievements ' \
                 'WHERE riddle = :riddle ' \
@@ -57,7 +58,7 @@ async def context_processor():
         result = await database.fetch_all(query, values)
 
         # Create dict of pairs (points -> list of cheevos)
-        cheevos = {10: [], 20: [], 30: [], 50: []}
+        cheevos = {-100: [], 10: [], 20: [], 30: [], 50: []}
         for row in result:
             title = row['title']
             query = 'SELECT * FROM achievements ' \
@@ -73,6 +74,7 @@ async def context_processor():
 
     # Colors for achievements outline based on points value
     cheevo_colors = {
+        -100: 'lime',
         10: 'sienna',
         20: 'silver',
         30: 'gold',

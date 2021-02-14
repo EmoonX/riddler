@@ -104,10 +104,10 @@ class UnlockHandler:
     async def cheevo_found(self, cheevo: dict):
         '''Congratulations upon achievement being found.'''
         print(('> \033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
-              'has found achievement \033[1m%s\033[0m') \
-                % (self.guild.name, self.member.name,
-                    self.member.discriminator, cheevo['title']))
-        text = ('**[%s]** You found **_%s_** achievement '
+                    'got cheevo \033[1m%s\033[0m!') %
+                    (self.guild.name, self.member.name,
+                        self.member.discriminator, cheevo['title']))
+        text = ('**[%s]** You\'ve found **_%s_** achievement '
                 'and won **%d** points!\n') \
                 % (self.guild.name, cheevo['title'], cheevo['points'])
         await self.member.send(text)
