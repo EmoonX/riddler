@@ -31,9 +31,11 @@ async def unlock(data):
             name=data.name, discriminator=data.disc)
     uh = riddle.uh_dict[member]
 
-    # Call unlocking method by name
+    # Call unlocking method by name with correct number of args
     method = getattr(uh, data.method)
-    if not hasattr(data, 'points'):
+    if not hasattr(data, 'level'):
+        await method()
+    elif not hasattr(data, 'points'):
         await method(data.level)
     else:
         await method(data.level, data.points)

@@ -430,18 +430,19 @@ class _NormalLevelHandler(_LevelHandler):
         
         # Get next level name (if any)
         name_next = '%02d' % (int(self.level['name']) + 1)
-        if name_next != '66':
-            # Bot level beat procedures
-            await web_ipc.request('unlock', method='beat',
-                    alias=self.riddle_alias,
-                    level=self.level, points=self.points,
-                    name=self.username, disc=self.disc)
-        else:
+    
+        # Bot level beat procedures
+        await web_ipc.request('unlock', method='beat',
+                alias=self.riddle_alias,
+                level=self.level, points=self.points,
+                name=self.username, disc=self.disc)
+        
+        if name_next == '66':
             # Player has just completed the game :)
             name_next = '🏅'
             
             # Bot game finish procedures
-            await web_ipc.request('game_completed',
+            await web_ipc.request('unlock', method='game_completed',
                     alias=self.riddle_alias,
                     name=self.username, disc=self.disc)
 

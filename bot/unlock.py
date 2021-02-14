@@ -130,9 +130,9 @@ class UnlockHandler:
         await update_nickname(self.member, '🏅')
 
         # Player has completed the game (for now?)
-        print(('> \033[1m[%s]\033[0m \033[1m%s\033[0m#%\033[1m%s\033[0m ' \
+        print(('> \033[1m[%s]\033[0m \033[1m%s#%s\033[0m ' \
                 'has finished the game!') \
-                % (self.fguild.name,
+                % (self.guild.name,
                     self.member.name, self.member.discriminator))
         text = '**[%s]** You just completed the game! **Congrats!**' \
                 % self.guild.name
