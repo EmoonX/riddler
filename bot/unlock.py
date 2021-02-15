@@ -107,7 +107,7 @@ class UnlockHandler:
                     'got cheevo \033[1m%s\033[0m!') %
                     (self.guild.name, self.member.name,
                         self.member.discriminator, cheevo['title']))
-        text = ('**[%s]** You\'ve found **_%s_** achievement '
+        text = ('**[%s]** You\'ve found achievement **_%s_** '
                 'and won **%d** points!\n') \
                 % (self.guild.name, cheevo['title'], cheevo['points'])
         await self.member.send(text)

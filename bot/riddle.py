@@ -5,6 +5,7 @@ from discord.utils import get
 
 from bot import bot
 from unlock import UnlockHandler
+from util.db import database
 
 
 class Riddle:
@@ -51,3 +52,20 @@ class Riddle:
 
 # Global dict of (guild_alias -> riddle) which bot supervises
 riddles: DefaultDict[str, Riddle] = {}
+
+
+async def build_riddles():
+    '''Build riddles dict from database guild and level data.'''
+    await database.connect()
+    query = 'SELECT * from riddles'
+    result = await database.fetch_all(query)
+    for row in result:
+        query = 'SELECT * FROM levels ' \
+                'WHERE riddle = :riddle AND is_secret IS FALSE'
+        values = {'riddle': row['alias']}
+        levels = await database.fetch_all(query, values)
+        query = 'SELECT * FROM levels ' \
+                'WHERE riddle = :riddle AND is_secret IS TRUE'
+        secret_levels = await database.fetch_all(query, values)
+        riddle = Riddle(row, levels, secret_levels)
+        riddles[row['alias']] = riddle

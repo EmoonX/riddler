@@ -1,5 +1,6 @@
 import os
 import sys
+import asyncio
 import logging
 
 from dotenv import load_dotenv
@@ -7,17 +8,10 @@ from dotenv import load_dotenv
 # Allow util folder to be visible
 sys.path.append('..')
 
+from bot import Bot
+
 # Load environment variables from .env file
 load_dotenv(verbose=True)
-
-from bot import bot
-from util.db import database
-from riddle import Riddle, riddles
-import unlock
-import begin
-import update
-import send
-import ipc
 
 # Get Discord token securely from environment variable
 token = os.getenv('DISCORD_TOKEN')
@@ -26,66 +20,11 @@ token = os.getenv('DISCORD_TOKEN')
 logging.basicConfig(level=logging.INFO)
 
 
-@bot.event
-async def on_ready():
-    '''Procedures upon bot initialization.'''
-
-    print('> Bot up and running!')
-
-    # Build riddles dict from database guild and level data
-    await database.connect()
-    query = 'SELECT * from riddles'
-    result = await database.fetch_all(query)
-    for row in result:
-        query = 'SELECT * FROM levels ' \
-                'WHERE riddle = :riddle AND is_secret IS FALSE'
-        values = {'riddle': row['alias']}
-        levels = await database.fetch_all(query, values)
-        query = 'SELECT * FROM levels ' \
-                'WHERE riddle = :riddle AND is_secret IS TRUE'
-        secret_levels = await database.fetch_all(query, values)
-        riddle = Riddle(row, levels, secret_levels)
-        riddles[row['alias']] = riddle
-    
-    # guild = get(bot.guilds, name='RNS Riddle II')
-    # for role in guild.roles:
-    #     if 'reached-' in role.name:
-    #         name = role.name[8:]
-    #         channel = get(guild.channels, name=name)
-    #         await channel.delete()
-    #         await role.delete()
+async def main():
+    '''Create/start bot.'''
+    bot = Bot()
+    await bot.start(token)
 
 
-@bot.command()
-async def ping(ctx):
-    # Ping-pong
-    await ctx.send('pong')
-
-
-@bot.command()
-async def balthify(ctx):
-    text = ctx.message.content.split()
-    if len(text) == 1:
-        # Command usage
-        text = '> `!balthify` - Turn text into Balthazar-speak\n' \
-                '> • Usage: `!balthify <text>`'
-    else:
-        # Transform text into uppercase, remove spaces
-        # and punctuation and keep numbers
-        text = list(''.join(text[1:]))
-        for i in range((len(text))):
-            if text[i].isalpha():
-                text[i] = text[i].upper()
-            elif not text[i].isdigit():
-                text[i] = ''
-        text = ''.join(text)
-
-    # Send message
-    if text:
-        if not ctx.guild:
-            await ctx.author.send(text)
-        else:
-            await ctx.channel.send(text)
-
-
-bot.run(token)
+if __name__ == '__main__':
+    asyncio.run(main())
