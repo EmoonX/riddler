@@ -1,9 +1,5 @@
-from typing import OrderedDict
-
 from discord import Guild, Member
 from discord.utils import get
-
-from bot import bot
 
 
 class UnlockHandler:
@@ -149,3 +145,7 @@ async def update_nickname(member: Member, s: str):
         name = name[:(-(excess + 5))] + '(...)'
     nick = name + ' ' + s
     await member.edit(nick=nick)
+
+
+def setup(_):
+    pass

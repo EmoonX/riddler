@@ -1,6 +1,8 @@
 from discord.ext import commands
 from discord.utils import get
 
+from bot import bot
+
 
 class Send(commands.Cog):
     '''Admin commands to send messages to members or channels.'''

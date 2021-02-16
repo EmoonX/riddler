@@ -4,7 +4,7 @@ import discord
 from discord.utils import get
 
 from bot import bot
-from unlock import UnlockHandler
+from commands.unlock import UnlockHandler
 from util.db import database
 
 

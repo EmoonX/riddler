@@ -10,7 +10,7 @@ class Extra(commands.Cog):
     @commands.command()
     async def ping(self, ctx):
         '''Ping-pong.'''
-        await ctx.send('pong234')
+        await ctx.send('pong')
 
     @commands.command()
     async def balthify(self, ctx):
