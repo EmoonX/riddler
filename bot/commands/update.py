@@ -2,8 +2,8 @@ import discord
 from discord.utils import get
 
 from bot import bot
-from riddle import riddles
-from unlock import update_nickname
+from commands.riddle import riddles
+from commands.unlock import update_nickname
 
 
 @bot.ipc.route()
@@ -99,3 +99,7 @@ async def add(guild: discord.Guild, level: dict, is_secret=False):
 
         # Add new level immediately to riddle's level list
         riddle.secret_levels[id] = level
+
+
+def setup(_):
+    pass

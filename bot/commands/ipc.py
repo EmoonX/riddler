@@ -1,7 +1,7 @@
 from discord.utils import get
 
 from bot import bot
-from riddle import riddles
+from commands.riddle import riddles
 
 
 @bot.ipc.route()
@@ -43,3 +43,7 @@ async def unlock(data):
     # Call unlocking method by name with correct number of args
     method = getattr(uh, data.method)
     await method(*args)
+
+
+def setup(_):
+    pass
