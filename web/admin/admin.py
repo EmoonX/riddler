@@ -86,3 +86,43 @@ async def config(alias: str):
     levels = await fetch_levels()
 
     return await r('Guild info updated successfully!')
+
+
+def _save_image(avatar: str):
+    """Create a image from base64 string, croping it 1:1,
+    converting it to PNG and saving in avatars folder."""
+    
+    # Get pure base64 data from URL and convert it to image
+    mime, data = avatar.split(',', maxsplit=1)
+    mime += ','
+    format = guess_extension(guess_type(mime)[0])
+    data = b64decode(data)
+    img = Image.open(BytesIO(data))
+    username = session['user']['username']
+    dir = os.path.dirname(os.path.realpath(__file__)) + '/static/avatars'
+
+    # Center and crop image 1:1
+    left, top, right, bottom = (0, 0, img.width, img.height)
+    if img.width > img.height:
+        left = (img.width - img.height) / 2
+        right = left + img.height
+    elif img.height > img.width:
+        top = (img.height - img.width) / 2
+        bottom = top + img.width
+
+    if format == '.gif':
+        # Save also the animated GIF version
+        with open('/tmp/%s.gif' % username, 'wb') as file:
+            file.write(data)
+        command = "gifsicle --crop %d,%d-%d,%d /tmp/%s.gif --output %s/%s.gif" \
+                % (left, top, right, bottom, username, dir, username)
+        os.popen(command)
+    else:
+        # Remove traces of previous GIFs, if any
+        path = "%s/%s" % (dir, username)
+        if os.path.isfile(path):
+            os.remove(path)
+
+    # Save image on avatars folder
+    img = img.crop((left, top, right, bottom))
+    img.save("%s/%s.png" % (dir, username))

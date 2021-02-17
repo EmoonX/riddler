@@ -3,6 +3,7 @@
   <head>
     <meta charset="utf-8">
     <title>{{ alias }} | Riddle Bot Web UI</title>
+    <script src="/static/scripts/admin.js"></script>
   </head>
   <body>
     <form method="post">
@@ -19,8 +20,8 @@
       {% for level in levels %}
         <tr>
           <td>
-            <img src="/static/thumbs/{{ alias }}/{{ level['image'] }}" height="100">
-            <input type="file" name="{{ loop.index }}-image">
+            <img id="{{ loop.index }}-thumb" src="/static/thumbs/{{ alias }}/{{ level['image'] }}" height="100">
+            <input type="file" id="{{ loop.index }}-input" class="thumb-input" name="{{ loop.index }}-image">
           </td>
           <td><input type="text" name="{{ loop.index }}-name" value="{{ level['name'] }}" required></td>
           <td><input type="text" name="{{ loop.index }}-path" value="{{ level['path'] }}" required></td>
@@ -32,8 +33,8 @@
         <tr>
           {% set index = levels|length + 1 %}
           <td>
-            <img src="" height="100">
-            <input type="file" name="{{ index }}-image" required>
+            <img id="{{ index }}-thumb" src="" height="100">
+            <input type="file" id="{{ index }}-input" class="thumb-input" name="{{ index }}-image" required>
           </td>
           <td><input type="text" name="{{ index }}-name" required></td>
           <td><input type="text" name="{{ index }}-path" required></td>
