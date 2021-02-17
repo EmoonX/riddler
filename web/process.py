@@ -1,3 +1,4 @@
+import json
 from urllib.parse import urlparse
 from datetime import datetime
 from pymysql.err import IntegrityError
@@ -265,6 +266,23 @@ class _PathsHandler:
         cheevo = await database.fetch_one(query, values)
         if not cheevo:
             return
+        
+        paths_json = json.loads(cheevo['paths_json'])
+        if 'operator' in paths_json and paths_json['operator'] == 'AND':
+            # In case of 'AND' operator, all cheevo pages must have been found
+            ok = True
+            for path in paths_json['paths']:
+                query = 'SELECT * FROM user_pageaccess ' \
+                        'WHERE riddle = :riddle AND username = :name ' \
+                        'AND discriminator = :disc AND path = :path'
+                values = {'riddle': self.riddle_alias, 'name': self.username,
+                        'disc': self.disc, 'path': path}
+                result = await database.fetch_one(query, values)
+                if not result:
+                    ok = False
+                    break
+            if not ok:
+                return
             
         # If positive, add it to user's collection
         time = datetime.utcnow()
