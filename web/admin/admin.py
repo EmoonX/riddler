@@ -94,10 +94,24 @@ async def config(alias: str):
 
 async def fetch_levels(alias: str):
     '''Fetch guild levels and pages info from database.'''
+    
+    # Fetch basic level info
     query = 'SELECT * FROM levels ' \
             'WHERE riddle = :riddle AND is_secret IS FALSE'
     values = {'riddle': alias}
-    levels = await database.fetch_all(query, values)
+    result = await database.fetch_all(query, values)
+    levels = tuple(dict(level) for level in result)
+    
+    # Fetch level pages
+    for level in levels:
+        name = level['name']
+        query = 'SELECT * FROM level_pages ' \
+                'WHERE riddle = :riddle and level_name = :name'
+        values = {'riddle': alias, 'name': name}
+        result = await database.fetch_all(query, values)
+        pages = tuple(page['path'] for page in result)
+        level['pages'] = pages
+    
     return levels
 
 

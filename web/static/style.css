@@ -24,7 +24,7 @@ input::selection, textarea::selection {
 }
 
 body {
-  margin: 0 auto 50px auto;
+  margin: 0 auto 80px auto;
   background: url("images/wallpaper.png") black repeat;
   background-size: 800px 800px;
   color: white;
@@ -720,6 +720,7 @@ figure > figcaption {
 table {
   margin: 0 auto;
   border-spacing: 0;
+  width: 100%;
 }
 
 th:first-child {
@@ -743,9 +744,9 @@ tbody > tr {
   transition: background-color 0.5s;
 }
 
-tbody > tr:hover, tbody > tr.active {
+/* tbody > tr:hover, tbody > tr.active {
   background-color: rgba(127, 127, 127, 0.4);
-}
+} */
 
 /* tbody > tr > :nth-child(2) > a {
   animation: glow 1.2s linear infinite alternate;
@@ -766,11 +767,9 @@ time {
 
 th, td {
   padding: 15px;
-  border: 2px solid #ffd;
-  border-left-width: 1px;
-  border-right-width: 1px;
-  border-radius: 5px;
-  box-shadow: inset 0 0 0.5em orange;
+  border: 1px solid #ffd;;
+  border-left-width: 0;
+  border-right-width: 0;
   color: #ffd;
 }
 
@@ -793,4 +792,80 @@ td > code:before {
 
 td > code:after {
   content: " -->"
+}
+
+/* ------------------------------------------------------------------------- */
+/* -- Admin UI -- */
+
+table.admin-levels > tbody {
+  font-size: 1.2rem;
+}
+
+table.admin-levels > tbody > tr > td {
+  padding: 0;
+  height: 250px;
+  transition: background-color 0.5s;
+}
+
+table.admin-levels tr > td:first-child {
+  border-top-left-radius: 40px;
+  border-bottom-left-radius: 40px;
+  background: linear-gradient(
+    to right,
+    transparent,
+    rgba(127, 127, 127, 0.2) 10% 100%
+  );
+}
+table.admin-levels tr:hover > td:first-child {
+  background-color: rgba(127, 127, 127, 0.2);
+}
+table.admin-levels tr > td {
+  background-color: rgba(127, 127, 127, 0.2);
+}
+table.admin-levels tr:hover > td {
+  background-color: rgba(127, 127, 127, 0.355);
+}
+table.admin-levels tr > td:last-child {
+  border-top-right-radius: 40px;
+  border-bottom-right-radius: 40px;
+  background: linear-gradient(
+    to left,
+    transparent,
+    rgba(127, 127, 127, 0.2) 10% 100%
+  );
+}
+table.admin-levels tr:hover > td:last-child {
+  background-color: rgba(127, 127, 127, 0.2);
+}
+
+table.admin-levels td > label {
+  display: block;
+  margin: 20px auto;
+  text-align: center;
+}
+
+table.admin-levels td input {
+  display: block;
+  margin: 0 auto;
+  text-align: center;
+}
+
+table.admin-levels td.level-image > input {
+  font-size: 0.6em;
+}
+
+table.admin-levels input.level-name {
+  font-weight: bold;
+}
+
+table.admin-levels .paths {
+  font-style: italic;
+}
+
+table.admin-levels select {
+  margin: 0px auto;
+}
+
+table.admin-levels + input[type="submit"] {
+  margin-top: 80px;
 }
