@@ -59,15 +59,33 @@ async def config(alias: str):
                 levels_after[index] = {}
             levels_after[index][attr] = value
     
+    # Update changed levels both on DB and guild
     for index, level in levels_before.items():
+        
+        # Remove fields that were not modified by admin
         for attr, value in level.items():
             if attr in levels_after[index] \
                     and value == levels_after[index][attr]:
                 levels_after[index].pop(attr)
         if not levels_after[index]:
-                    levels_after.pop(index)
+            # Nothing to be done if no changes
+            continue
 
-    print(levels_after)
+        # Update level(s) database data
+        level = levels_after[index]
+        query = 'UPDATE levels SET '
+        values = {'riddle': alias, 'index': index}
+        aux = []
+        for attr, value in level.items():
+            s = '`%s` = :%s' % (attr, attr)
+            aux.append(s)
+            values[attr] = value
+        query += ', '.join(aux)
+        query += ' WHERE riddle = :riddle AND `index` = :index'
+        # print(query)
+        # print(values)
+        await database.execute(query, values)
+    
     return 'OK'
 
     # Insert new level data on database
@@ -76,7 +94,7 @@ async def config(alias: str):
                 '`rank`, discord_category, discord_name) VALUES ' \
             '(:riddle, :set, :index, :name, :path, :image, :answer, ' \
                 ':rank, :discord_category, :discord_name)'
-    index = len(levels) + 1
+    index = len(levels_after) + 1
     values = {'riddle': alias, 'set': 'Normal Levels',
             'index': index, 'name': form['%d-name' % index],
             'path': form['%d-path' % index],
