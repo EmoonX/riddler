@@ -48,14 +48,24 @@ async def config(alias: str):
     if request.method == 'GET':
         return await r('')
 
-    # Insert new level and secret_level info on database
+    # Insert new level info on database
     form = await request.form
-    # query = 'INSERT IGNORE INTO levels VALUES ' \
-    #         '(:guild, :category, :level_name, :path)'
-    # levels_values = {'guild': alias, 'category': 'Levels',
-    #         'level_name': form['new_id'], 'path': form['new_path']}
-    # if '' not in levels_values.values():
-    #     await database.execute(query, levels_values)
+    query = 'INSERT INTO levels ' \
+            '(riddle, level_set, `index`, `name`, path, image, answer, ' \
+                '`rank`, discord_category, discord_name) VALUES ' \
+            '(:riddle, :set, :index, :name, :path, :image, :answer, ' \
+                ':rank, :discord_category, :discord_name)'
+    print(query)
+    index = len(levels) + 1
+    values = {'riddle': alias, 'set': 'Normal Levels',
+            'index': index, 'name': form['%d-name' % index],
+            'path': form['%d-path' % index],
+            'image': form['%d-image' % index],
+            'answer': form['%d-answer' % index],
+            'rank': form['%d-rank' % index],
+            'discord_category': 'Normal Levels',
+            'discord_name': form['%d-discord_name' % index]}
+    await database.execute(query, values)
     # query = 'INSERT IGNORE INTO secret_levels VALUES ' \
     #         '(:guild, :category, :level_name, :path, ' \
     #             ':previous_level, :answer_path)'
@@ -67,12 +77,9 @@ async def config(alias: str):
     #     await database.execute(query, secret_levels_values)
 
     # Update Discord guild channels and roles with new levels info.
-    # This is done by sending an request to the bot's IPC server
-    #levels = [dict(level) for level in levels]
-    levels = []
-    secret_levels = [dict(level) for level in secret_levels]
-    await web_ipc.request('build', guild_name=full_name,
-            levels=levels, secret_levels=secret_levels)
+    # This is done by sending an request to the bot's IPC server.
+    values['is_secret'] = 0
+    await web_ipc.request('build', guild_name=full_name, levels=[values])
 
     return await r('Guild info updated successfully!')
 

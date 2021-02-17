@@ -14,45 +14,36 @@
           <th>Path</th>
           <th>Answer</th>
           <th>Rank</th>
+          <th>Discord name</th>
         </tr>
       {% for level in levels %}
         <tr>
-          <td><img src="/static/thumbs/{{ alias }}/{{ level['image'] }}" height="100"></td>
-          <td><input type="text" value="{{ level['name'] }}"></td>
-          <td><input type="text" value="{{ level['path'] }}"></td>
-          <td><input type="text" value="{{ level['answer'] }}"></td> 
-          <td><input type="text" value="{{ level['rank'] }}"></td>
-        </tr>
-      {% endfor %}
-        <!-- <tr>
-          <td><input type="text" name="new_id"></td>
-          <td><input type="text" name="new_path"></td>
-        </tr> -->
-      </table>
-      <h1>Secret Levels</h1>
-      <table>
-        <tr>
-          <th>Level ID</th>
-          <th>Path</th>
-          <th>Previous level</th>
-          <th>Answer's path</th>
-        </tr>
-      {% for level in secret_levels %}
-        <tr>
-          <td><input type="text" value="{{ level['level_name'] }}"></td>
-          <td><input type="text" value="{{ level['path'] }}"></td>
-          <td><input type="text" value="{{ level['previous_level'] }}"></td>
-          <td><input type="text" value="{{ level['answer_path'] }}"></td>
+          <td>
+            <img src="/static/thumbs/{{ alias }}/{{ level['image'] }}" height="100">
+            <input type="file" name="{{ loop.index }}-image">
+          </td>
+          <td><input type="text" name="{{ loop.index }}-name" value="{{ level['name'] }}" required></td>
+          <td><input type="text" name="{{ loop.index }}-path" value="{{ level['path'] }}" required></td>
+          <td><input type="text" name="{{ loop.index }}-answer" value="{{ level['answer'] }}" required></td> 
+          <td><input type="text" name="{{ loop.index }}-rank" value="{{ level['rank'] }}" required></td>
+          <td><input type="text" name="{{ loop.index }}-discord_name" value="{{ level['discord_name'] }}"></td>
         </tr>
       {% endfor %}
         <tr>
-          <td><input type="text" name="new_secret_id"></td>
-          <td><input type="text" name="new_secret_path"></td>
-          <td><input type="text" name="new_secret_prev"></td>
-          <td><input type="text" name="new_secret_answer"></td>
+          {% set index = levels|length + 1 %}
+          <td>
+            <img src="" height="100">
+            <input type="file" name="{{ index }}-image" required>
+          </td>
+          <td><input type="text" name="{{ index }}-name" required></td>
+          <td><input type="text" name="{{ index }}-path" required></td>
+          <td><input type="text" name="{{ index }}-answer" required></td> 
+          <td><input type="text" name="{{ index }}-rank" required></td>
+          <td><input type="text" name="{{ index }}-discord_name" required></td>
         </tr>
       </table>
-      <input type="submit" value="Save changes">
+      <br>
+      <input type="submit" value="Submit changes">
       <div class="msg">{{ msg }}</div>
     </form>
   </body>

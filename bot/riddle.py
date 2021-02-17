@@ -23,9 +23,6 @@ class Riddle:
     winner_suffix: str
     '''Suffix to be appended to winners' nicknames'''
 
-    uh_dict: DefaultDict[discord.Member, UnlockHandler]
-    '''Handlers for guild members unlocking procedures'''
-
     def __init__(self, riddle: dict, levels: dict, secret_levels: dict):
         '''Build riddle object by row extracted from database.'''
 

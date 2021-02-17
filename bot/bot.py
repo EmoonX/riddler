@@ -25,7 +25,7 @@ class Bot(commands.Bot):
 
     async def on_ipc_error(self, endpoint: str, error):
         '''Called upon error being raised within an IPC route.'''
-        print(endpoint, 'raised', error)
+        print('[ERROR]', endpoint, 'raised', error)
 
 
 # Global bot object to be used on other modules

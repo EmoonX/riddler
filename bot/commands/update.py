@@ -14,7 +14,7 @@ async def build(data):
     guild = get(bot.guilds, name=data.guild_name)
 
     # Add level channels and roles to the guild
-    for level in (data.levels + data.secret_levels):
+    for level in data.levels:
         text = '**[%s]** Processing level **%s**...' \
                  % (guild.name, level['name'])
         for member in guild.members:
