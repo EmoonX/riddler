@@ -30,14 +30,15 @@ async def config(alias: str):
                 return 'Unauthorized', 401
             break
     
-    # Fetch guild levels info from database
-    query = 'SELECT * FROM levels ' \
-            'WHERE riddle = :riddle AND is_secret IS FALSE'
-    values = {'riddle': alias}
-    levels = await database.fetch_all(query, values)
-    query = 'SELECT * FROM levels ' \
-            'WHERE riddle = :riddle AND is_secret IS TRUE'
-    secret_levels = await database.fetch_all(query, values)
+    async def fetch_levels():
+        '''Fetch guild levels info from database.'''
+        query = 'SELECT * FROM levels ' \
+                'WHERE riddle = :riddle AND is_secret IS FALSE'
+        values = {'riddle': alias}
+        levels = await database.fetch_all(query, values)
+        return levels
+    
+    levels = await fetch_levels()
     
     def r(msg):
         '''Render page and get filename cookies locally.'''
@@ -80,6 +81,8 @@ async def config(alias: str):
     # This is done by sending an request to the bot's IPC server.
     values['is_secret'] = 0
     await web_ipc.request('build', guild_name=full_name, levels=[values])
+    
+    # Fetch levels again to display page correctly on POST
+    levels = await fetch_levels()
 
     return await r('Guild info updated successfully!')
-
