@@ -36,25 +36,46 @@ async def config(alias: str):
                 return 'Unauthorized', 401
             break
     
-    levels = await fetch_levels(alias)
+    # Get initial level data from database
+    levels_before = await fetch_levels(alias)
     
-    def r(msg):
+    def r(levels: dict, msg: str):
         '''Render page and get filename cookies locally.'''
         return render_template('admin/admin.htm', 
                 alias=alias, levels=levels, msg=msg)
 
     # Render page normally on GET
     if request.method == 'GET':
-        return await r('')
-
-    # Insert new level info on database
+        return await r(levels_before.values(), '')
+    
+    # Build dict of levels after POST
     form = await request.form
-    query = 'INSERT IGNORE INTO levels ' \
+    levels_after = {}
+    for name, value in form.items():
+        i = name.find('-')
+        index, attr = int(name[:i]), name[(i+1):]
+        if attr != 'imgdata':
+            if index not in levels_after:
+                levels_after[index] = {}
+            levels_after[index][attr] = value
+    
+    for index, level in levels_before.items():
+        for attr, value in level.items():
+            if attr in levels_after[index] \
+                    and value == levels_after[index][attr]:
+                levels_after[index].pop(attr)
+        if not levels_after[index]:
+                    levels_after.pop(index)
+
+    print(levels_after)
+    return 'OK'
+
+    # Insert new level data on database
+    query = 'INSERT INTO levels ' \
             '(riddle, level_set, `index`, `name`, path, image, answer, ' \
                 '`rank`, discord_category, discord_name) VALUES ' \
             '(:riddle, :set, :index, :name, :path, :image, :answer, ' \
                 ':rank, :discord_category, :discord_name)'
-    print(query)
     index = len(levels) + 1
     values = {'riddle': alias, 'set': 'Normal Levels',
             'index': index, 'name': form['%d-name' % index],
@@ -100,10 +121,10 @@ async def fetch_levels(alias: str):
             'WHERE riddle = :riddle AND is_secret IS FALSE'
     values = {'riddle': alias}
     result = await database.fetch_all(query, values)
-    levels = tuple(dict(level) for level in result)
+    levels = {level['index']: dict(level) for level in result}
     
     # Fetch level pages
-    for level in levels:
+    for level in levels.values():
         name = level['name']
         query = 'SELECT * FROM level_pages ' \
                 'WHERE riddle = :riddle and level_name = :name'

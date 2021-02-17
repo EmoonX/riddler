@@ -12,14 +12,15 @@
           {% for level in levels %}
             <tr>
               <td class="level-image">
-                <img id="{{ loop.index }}-thumb" src="/static/thumbs/{{ alias }}/{{ level['image'] }}" height="100">
-                <input type="file" id="{{ loop.index }}-input" class="thumb-input" name="{{ loop.index }}-image" accept="image/*" value="{{ level['image'] }}">
-                <input type="hidden" name="{{ index }}-imgdata">
+                <img id="{{ loop.index }}-thumb" src="/static/thumbs/{{ alias }}/{{ level['image'] }}">
+                <input type="file" id="{{ loop.index }}-input" class="thumb-input" accept="image/*">
+                <input type="hidden" name="{{ loop.index }}-image" value="{{ level['image'] }}">
+                <input type="hidden" name="{{ loop.index }}-imgdata">
               </td>
               <td>
-                <label>
+                <label class="level-name">
                   Level name
-                  <input type="text" class="level-name" name="{{ loop.index }}-name" size="2" value="{{ level['name'] }}" required>
+                  <input type="text" name="{{ loop.index }}-name" size="2" value="{{ level['name'] }}" required>
                 </label>
                 <label>
                   Discord name
@@ -54,17 +55,17 @@
               </td>
             </tr>
           {% endfor %}
-            <tr>
+            <!-- <tr>
               {% set index = levels|length + 1 %}
               <td class="level-image">
-                <img id="{{ index }}-thumb" src="" height="100">
+                <img id="{{ index }}-thumb" src="">
                 <input type="file" id="{{ index }}-input" class="thumb-input" name="{{ index }}-image" required>
                 <input type="hidden" name="{{ index }}-imgdata">
               </td>
               <td>
-                <label>
+                <label class="level-name">
                   Level name
-                  <input type="text" class="level-name" name="{{ index }}-name" size="2" required>
+                  <input type="text" name="{{ index }}-name" size="2" required>
                 </label>
                 <label>
                   Discord name
@@ -93,7 +94,7 @@
                   <select class="paths" name="{{ index }}-pages" multiple></select>
                 </label>
               </td>
-            </tr>
+            </tr> -->
           </tbody>
         </table>
         <input type="submit" value="Submit changes">

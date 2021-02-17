@@ -801,19 +801,24 @@ table.admin-levels > tbody {
   font-size: 1.2rem;
 }
 
+table.admin-levels > tbody > tr {
+  margin: 0 80px;
+}
+
 table.admin-levels > tbody > tr > td {
   padding: 0;
-  height: 250px;
+  height: 12em;
   transition: background-color 0.5s;
 }
 
 table.admin-levels tr > td:first-child {
-  border-top-left-radius: 40px;
-  border-bottom-left-radius: 40px;
+  padding-left: 60px;
+  border-top-left-radius: 125px;
+  border-bottom-left-radius: 125px;
   background: linear-gradient(
     to right,
-    transparent,
-    rgba(127, 127, 127, 0.2) 10% 100%
+    rgba(127, 127, 127, 0.1),
+    rgba(127, 127, 127, 0.2) 25% 100%
   );
 }
 table.admin-levels tr:hover > td:first-child {
@@ -826,12 +831,13 @@ table.admin-levels tr:hover > td {
   background-color: rgba(127, 127, 127, 0.355);
 }
 table.admin-levels tr > td:last-child {
-  border-top-right-radius: 40px;
-  border-bottom-right-radius: 40px;
+  padding-right: 60px;
+  border-top-right-radius: 125px;
+  border-bottom-right-radius: 125px;
   background: linear-gradient(
     to left,
-    transparent,
-    rgba(127, 127, 127, 0.2) 10% 100%
+    rgba(127, 127, 127, 0.1),
+    rgba(127, 127, 127, 0.2) 25% 100%
   );
 }
 table.admin-levels tr:hover > td:last-child {
@@ -850,11 +856,25 @@ table.admin-levels td input {
   text-align: center;
 }
 
+table.admin-levels td.level-image {
+  width: 300px;
+}
+
+table.admin-levels td.level-image > img {
+  max-width: 160px;
+  max-height: 120px;
+}
+
 table.admin-levels td.level-image > input {
+  width: 95px;
   font-size: 0.6em;
 }
 
-table.admin-levels input.level-name {
+table.admin-levels label.level-name {
+  font-size: 1em;
+}
+
+table.admin-levels label.level-name > input {
   font-weight: bold;
 }
 
