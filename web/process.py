@@ -6,7 +6,7 @@ from pymysql.err import IntegrityError
 from quart import Blueprint, request, session, jsonify
 from quart_discord.models import User
 
-from players.auth import discord
+from auth import discord
 from ipc import web_ipc
 from util.db import database
 
@@ -268,8 +268,9 @@ class _PathsHandler:
             return
         
         paths_json = json.loads(cheevo['paths_json'])
+        print(paths_json)
         if 'operator' in paths_json and paths_json['operator'] == 'AND':
-            # In case of 'AND' operator, all cheevo pages must have been found
+            # If an 'AND' operator, all cheevo pages must have been found
             ok = True
             for path in paths_json['paths']:
                 query = 'SELECT * FROM user_pageaccess ' \

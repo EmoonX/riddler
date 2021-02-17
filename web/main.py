@@ -16,7 +16,7 @@ app = Quart(__name__)
 # Load environment variables from .env file
 load_dotenv(verbose=True)
 
-from players.auth import discord_session_init
+from auth import discord_session_init
 
 # Really unique secret key
 app.secret_key = \
@@ -25,18 +25,17 @@ app.secret_key = \
 # Create Discord OAuth2 session
 discord_session_init(app)
 
-from admin.auth import admin_auth
+from auth import auth, session_cookie
 from admin.admin import admin
 from players.players import players
-from players.auth import players_auth, session_cookie
 from players.account import account
 from process import process
 from levels import levels
 from util.db import database
 from inject import context_processor
 
-for blueprint in (admin_auth, admin,
-        players, players_auth, account, process, levels):
+for blueprint in (auth, admin, players, account,
+        process, levels):
     # Register app blueprint to allow other modules
     app.register_blueprint(blueprint)
 

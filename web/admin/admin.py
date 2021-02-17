@@ -1,6 +1,7 @@
 from quart import Blueprint, request, render_template
 from quart_discord import requires_authorization
 
+from auth import discord
 from ipc import web_ipc
 from util.db import database
 
@@ -12,6 +13,22 @@ admin = Blueprint('admin', __name__)
 @requires_authorization
 async def config(alias: str):
     '''Riddle administration configuration.'''
+    
+    # Get riddle/guild full name from database
+    query = 'SELECT * FROM riddles WHERE alias = :alias'
+    result = await database.fetch_one(query, {'alias': alias})
+    if not result:
+        # Invalid alias...
+        return 'Riddle not found!', 404
+    full_name = result['full_name']
+    
+    # Check if user is indeed an admin of given guild
+    guilds = await discord.fetch_guilds()
+    for guild in guilds:
+        if guild.name == full_name:
+            if not guild.permissions.administrator:
+                return 'Unauthorized', 401
+            break
     
     # Fetch guild levels info from database
     query = 'SELECT * FROM levels ' \
@@ -51,9 +68,6 @@ async def config(alias: str):
 
     # Update Discord guild channels and roles with new levels info.
     # This is done by sending an request to the bot's IPC server
-    full_name = 'Wonderland'
-    if alias == 'rns':
-        full_name = 'RNS Riddle II'
     #levels = [dict(level) for level in levels]
     levels = []
     secret_levels = [dict(level) for level in secret_levels]

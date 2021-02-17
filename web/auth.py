@@ -1,23 +1,20 @@
 import os
 
-from quart import Blueprint, Quart, request, session, \
+from quart import Quart, Blueprint, request, session, \
         render_template, redirect, url_for
-from quart.sessions import SecureCookieSessionInterface
 from quart_discord import DiscordOAuth2Session
+from quart.sessions import SecureCookieSessionInterface
 
 from util.db import database
-
-# !! Only in development environment.
-os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = 'true'
-
-# Create app blueprint
-players_auth = Blueprint('players_auth', __name__)
 
 # Discord OAuth2 sessionz
 discord: DiscordOAuth2Session
 
 # Interface for storing Quart session cookie
 session_cookie: SecureCookieSessionInterface
+
+# Create app blueprint
+auth = Blueprint('players_auth', __name__)
 
 
 def discord_session_init(app: Quart):
@@ -40,7 +37,7 @@ def discord_session_init(app: Quart):
             SecureCookieSessionInterface().get_signing_serializer(app)
 
 
-@players_auth.route('/register/', methods=['GET', 'POST'])
+@auth.route('/register/', methods=['GET', 'POST'])
 async def register():
     '''Register new account on database based on Discord auth.'''
     
@@ -66,13 +63,14 @@ async def register():
             msg='Registration successful!'))
 
 
-@players_auth.route('/login/', methods=['GET'])
+@auth.route('/login/', methods=['GET'])
 async def login():
     '''Create Discord session and redirect to callback URL.'''
-    return await discord.create_session(scope=['identify'])
+    scope = ['identify', 'guilds']
+    return await discord.create_session(scope=scope)
 
 
-@players_auth.route('/callback/')
+@auth.route('/callback/')
 async def callback():
     '''Callback for OAuth2 authentication.'''
 
@@ -100,7 +98,7 @@ async def callback():
             msg='Successful login!'))
 
 
-@players_auth.route('/logout/')
+@auth.route('/logout/')
 async def logout():
     '''Revoke credentials and logs user out of application.'''
 
