@@ -101,5 +101,30 @@ async def add(guild: discord.Guild, level: dict, is_secret=False):
         riddle.secret_levels[id] = level
 
 
+@bot.ipc.route()
+async def update(data):
+    '''Úpdate Discord-specific guild info.'''
+    
+    # Update channel name
+    guild = get(bot.guilds, name=data.guild_name)
+    channel = get(guild.channels, name=data.old_name)
+    await channel.edit(name=data.new_name)
+    
+    # Update "reached" (and possibly "solved") role name(s)
+    reached = get(guild.roles, name=('reached-%s' % data.old_name))
+    await reached.edit(name=('reached-%s' % data.new_name))
+    solved = get(guild.roles, name=('solved-%s' % data.old_name))
+    if solved:
+        await reached.edit(name=('solved-%s' % data.new_name))
+    
+    # Log message to admin by DM
+    text = '**[%s]** Renamed level **%s** channel and role(s) to **%s**' \
+            % (guild.name, data.old_name, data.new_name)
+    for member in guild.members:
+        if member.name == 'NinthLyfe':
+            continue
+        if member.guild_permissions.administrator and not member.bot:
+            await member.send(text)
+
 def setup(_):
     pass

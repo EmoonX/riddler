@@ -61,7 +61,6 @@ async def config(alias: str):
     
     # Update changed levels both on DB and guild
     for index, level in levels_before.items():
-        
         # Remove fields that were not modified by admin
         for attr, value in level.items():
             if attr in levels_after[index] \
@@ -82,9 +81,12 @@ async def config(alias: str):
             values[attr] = value
         query += ', '.join(aux)
         query += ' WHERE riddle = :riddle AND `index` = :index'
-        # print(query)
-        # print(values)
         await database.execute(query, values)
+        
+        # Update Discord channels and roles names if discord_name changed
+        await web_ipc.request('update', guild_name=full_name,
+                old_name=levels_before[index]['discord_name'],
+                new_name=level['discord_name'])
     
     return 'OK'
 
@@ -94,7 +96,7 @@ async def config(alias: str):
                 '`rank`, discord_category, discord_name) VALUES ' \
             '(:riddle, :set, :index, :name, :path, :image, :answer, ' \
                 ':rank, :discord_category, :discord_name)'
-    index = len(levels_after) + 1
+    index = len(levels_before) + 1
     values = {'riddle': alias, 'set': 'Normal Levels',
             'index': index, 'name': form['%d-name' % index],
             'path': form['%d-path' % index],
