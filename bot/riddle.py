@@ -69,7 +69,3 @@ async def build_riddles():
         secret_levels = await database.fetch_all(query, values)
         riddle = Riddle(row, levels, secret_levels)
         riddles[row['alias']] = riddle
-
-
-def setup(_):
-    pass

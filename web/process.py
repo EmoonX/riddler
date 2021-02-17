@@ -260,7 +260,7 @@ class _PathsHandler:
         # Check if it's an achievement page
         query = 'SELECT * FROM achievements ' \
                 'WHERE riddle = :riddle ' \
-                'AND JSON_CONTAINS(paths_json, :path)'
+                'AND JSON_CONTAINS(paths_json, :path, "$.paths")'
         values = {'riddle': self.riddle_alias, 'path': ('\"%s\"' % path)}
         cheevo = await database.fetch_one(query, values)
         if not cheevo:

@@ -17,7 +17,8 @@ load_dotenv(verbose=True)
 logging.basicConfig(level=logging.INFO)
 
 from bot import bot
-from commands.riddle import build_riddles
+from riddle import build_riddles
+from util.db import database
 
 
 @bot.event
@@ -40,7 +41,7 @@ async def on_ready():
     #         channel = get(guild.channels, name=name)
     #         await channel.delete()
     #         await role.delete()
-        
+
 
 if __name__ == '__main__':
     # Start bot with secret token

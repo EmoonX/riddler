@@ -1,4 +1,3 @@
-import os
 import sys
 import asyncio
 from asyncio.events import AbstractEventLoop

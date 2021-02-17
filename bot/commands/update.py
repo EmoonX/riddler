@@ -2,7 +2,7 @@ import discord
 from discord.utils import get
 
 from bot import bot
-from commands.riddle import riddles
+from riddle import riddles
 from commands.unlock import update_nickname
 
 

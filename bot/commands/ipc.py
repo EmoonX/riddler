@@ -1,7 +1,8 @@
 from discord.utils import get
 
 from bot import bot
-from commands.riddle import riddles
+from riddle import riddles
+from commands.unlock import UnlockHandler
 
 
 @bot.ipc.route()
@@ -29,7 +30,7 @@ async def unlock(data):
     riddle = riddles[data.alias]
     member = get(riddle.guild.members,
             name=data.name, discriminator=data.disc)
-    uh = riddle.uh_dict[member]
+    uh = UnlockHandler(riddle.guild, riddle.levels, member)
 
     # Get argument tuple according to method to be called
     args = ()
