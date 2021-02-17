@@ -1,5 +1,11 @@
+import os
+from base64 import b64decode
+from io import BytesIO
+from pathlib import Path
+
 from quart import Blueprint, request, render_template
 from quart_discord import requires_authorization
+from PIL import Image
 
 from auth import discord
 from ipc import web_ipc
@@ -30,15 +36,7 @@ async def config(alias: str):
                 return 'Unauthorized', 401
             break
     
-    async def fetch_levels():
-        '''Fetch guild levels info from database.'''
-        query = 'SELECT * FROM levels ' \
-                'WHERE riddle = :riddle AND is_secret IS FALSE'
-        values = {'riddle': alias}
-        levels = await database.fetch_all(query, values)
-        return levels
-    
-    levels = await fetch_levels()
+    levels = await fetch_levels(alias)
     
     def r(msg):
         '''Render page and get filename cookies locally.'''
@@ -51,7 +49,7 @@ async def config(alias: str):
 
     # Insert new level info on database
     form = await request.form
-    query = 'INSERT INTO levels ' \
+    query = 'INSERT IGNORE INTO levels ' \
             '(riddle, level_set, `index`, `name`, path, image, answer, ' \
                 '`rank`, discord_category, discord_name) VALUES ' \
             '(:riddle, :set, :index, :name, :path, :image, :answer, ' \
@@ -76,6 +74,12 @@ async def config(alias: str):
     #         'answer_path': form['new_secret_answer']}
     # if '' not in secret_levels_values.values():
     #     await database.execute(query, secret_levels_values)
+    
+    # Get image data and save image on thumbs folder
+    filename = form['%d-image' % index]
+    imgdata = form['%d-imgdata' % index]
+    print(imgdata)
+    await _save_image(alias, filename, imgdata)
 
     # Update Discord guild channels and roles with new levels info.
     # This is done by sending an request to the bot's IPC server.
@@ -83,46 +87,33 @@ async def config(alias: str):
     await web_ipc.request('build', guild_name=full_name, levels=[values])
     
     # Fetch levels again to display page correctly on POST
-    levels = await fetch_levels()
+    levels = await fetch_levels(alias)
 
     return await r('Guild info updated successfully!')
 
 
-def _save_image(avatar: str):
-    """Create a image from base64 string, croping it 1:1,
-    converting it to PNG and saving in avatars folder."""
+async def fetch_levels(alias: str):
+    '''Fetch guild levels and pages info from database.'''
+    query = 'SELECT * FROM levels ' \
+            'WHERE riddle = :riddle AND is_secret IS FALSE'
+    values = {'riddle': alias}
+    levels = await database.fetch_all(query, values)
+    return levels
+
+
+async def _save_image(alias: str, filename: str, imgdata: str):
+    '''Create a image from base64 string and 
+    save it on riddle's thumbs folder.'''
     
     # Get pure base64 data from URL and convert it to image
-    mime, data = avatar.split(',', maxsplit=1)
+    mime, data = imgdata.split(',', maxsplit=1)
     mime += ','
-    format = guess_extension(guess_type(mime)[0])
     data = b64decode(data)
     img = Image.open(BytesIO(data))
-    username = session['user']['username']
-    dir = os.path.dirname(os.path.realpath(__file__)) + '/static/avatars'
 
-    # Center and crop image 1:1
-    left, top, right, bottom = (0, 0, img.width, img.height)
-    if img.width > img.height:
-        left = (img.width - img.height) / 2
-        right = left + img.height
-    elif img.height > img.width:
-        top = (img.height - img.width) / 2
-        bottom = top + img.width
-
-    if format == '.gif':
-        # Save also the animated GIF version
-        with open('/tmp/%s.gif' % username, 'wb') as file:
-            file.write(data)
-        command = "gifsicle --crop %d,%d-%d,%d /tmp/%s.gif --output %s/%s.gif" \
-                % (left, top, right, bottom, username, dir, username)
-        os.popen(command)
-    else:
-        # Remove traces of previous GIFs, if any
-        path = "%s/%s" % (dir, username)
-        if os.path.isfile(path):
-            os.remove(path)
-
-    # Save image on avatars folder
-    img = img.crop((left, top, right, bottom))
-    img.save("%s/%s.png" % (dir, username))
+    # Save image on riddle's thumbs folder
+    dir = Path(os.path.dirname(os.path.realpath(__file__)))
+    dir = str(dir.parent) + ('/static/thumbs/%s' % alias)
+    path = '%s/%s' % (dir, filename)
+    print(path)
+    img.save(path)

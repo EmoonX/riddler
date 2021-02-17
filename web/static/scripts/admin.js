@@ -3,9 +3,11 @@ function changeThumb() {
   if (this.files && this.files[0]) {
     const index = this.id.substr(0, this.id.search('-'));
     const thumb = document.getElementById(index + '-thumb');
+    const data = document.getElementsByName(index + '-imgdata')[0];
     const reader = new FileReader();
     reader.onload = (e => {
       thumb.setAttribute('src', e.target.result);
+      data.setAttribute('value', e.target.result);
     });
     reader.readAsDataURL(this.files[0]);
   }

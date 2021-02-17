@@ -21,7 +21,8 @@
         <tr>
           <td>
             <img id="{{ loop.index }}-thumb" src="/static/thumbs/{{ alias }}/{{ level['image'] }}" height="100">
-            <input type="file" id="{{ loop.index }}-input" class="thumb-input" name="{{ loop.index }}-image">
+            <input type="file" id="{{ loop.index }}-input" class="thumb-input" name="{{ loop.index }}-image" value="{{ level['image'] }}">
+            <input type="hidden" name="{{ index }}-imgdata">
           </td>
           <td><input type="text" name="{{ loop.index }}-name" value="{{ level['name'] }}" required></td>
           <td><input type="text" name="{{ loop.index }}-path" value="{{ level['path'] }}" required></td>
@@ -35,6 +36,7 @@
           <td>
             <img id="{{ index }}-thumb" src="" height="100">
             <input type="file" id="{{ index }}-input" class="thumb-input" name="{{ index }}-image" required>
+            <input type="hidden" name="{{ index }}-imgdata">
           </td>
           <td><input type="text" name="{{ index }}-name" required></td>
           <td><input type="text" name="{{ index }}-path" required></td>
