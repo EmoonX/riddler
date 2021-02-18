@@ -48,7 +48,7 @@ for blueprint in (auth, admin, admin_levels, admin_cheevos,
 app.context_processor(context_processor)
 
 # Enable browser debug messages
-#app.config['DEBUG'] = True
+app.config['DEBUG'] = True
 
 # Disable annoying newlines on Jinja rendered HTML templates
 app.jinja_env.trim_blocks = True

@@ -2,6 +2,7 @@ from quart import Blueprint, request, render_template
 from quart_discord import requires_authorization
 
 from admin.admin import auth, save_image
+from inject import get_achievements
 from ipc import web_ipc
 from util.db import database
 
@@ -23,14 +24,22 @@ async def cheevos(alias: str):
     def r(cheevos: list, msg: str):
         '''Render page with correct data.'''
         return render_template('admin/cheevos.htm', 
-                alias=alias, msg=msg)
+                alias=alias, cheevos=cheevos, msg=msg)
     
-    # Get initial cheevos data from database
-    cheevos_before = await _fetch_cheevos(alias)
+    # Get initial cheevos data from database.
+    # Also save cheevos state before POST (match by index)
+    k = 1
+    cheevos_before = {}
+    cheevos = await get_achievements(alias)
+    for cheevo_list in cheevos.values():
+        for cheevo in cheevo_list:    
+            cheevo['index'] = k
+            cheevos_before[k] = cheevo
+            k += 1
 
     # Render page normally on GET
     if request.method == 'GET':
-        return await r(cheevos_before, '')
+        return await r(cheevos, '')
     
     # Build dict of cheevos after POST
     form = await request.form
@@ -43,19 +52,17 @@ async def cheevos(alias: str):
         cheevos_after[index][attr] = value
     
     # Update changed cheevos on DB
-    for cheevo in cheevos_before:
+    for index, cheevo_before in cheevos_before.items():
         # Remove fields that were not modified by admin
-        for attr, value in cheevo.items():
-            if attr in cheevos_after[index] \
-                    and value == cheevos_after[index][attr]:
-                cheevos_after[index].pop(attr)
-        
-        cheevo_before = cheevos_before[index]
         cheevo = cheevos_after[index]
+        for attr, value in cheevo_before.items():
+            if attr in cheevo and value == cheevo[attr]:
+                cheevo.pop(attr)
+        
         if len(cheevo) > 1 or (len(cheevo) == 1 and 'imgdata' not in cheevo):
             # Update level(s) database data
-            query = 'UPDATE levels SET '
-            values = {'riddle': alias, 'index': index}
+            query = 'UPDATE achievements SET '
+            values = {'riddle': alias, 'prev_title': cheevo_before['title']}
             aux = []
             for attr, value in cheevo.items():
                 if attr == 'imgdata':
@@ -64,14 +71,16 @@ async def cheevos(alias: str):
                 aux.append(s)
                 values[attr] = value
             query += ', '.join(aux)
-            query += ' WHERE riddle = :riddle AND `index` = :index'
+            query += ' WHERE riddle = :riddle AND `title` = :prev_title'
+            print(query, flush=True)
+            print(values, flush=True)
             await database.execute(query, values)
         
         # Swap image file if image was changed
         if 'imgdata' in cheevo and cheevo['imgdata']:
             if 'image' not in cheevo:
                 cheevo['image'] = cheevo_before['image']
-            await save_image(alias, 'cheevos',
+            await save_image('cheevos', alias,
                     cheevo['image'], cheevo['imgdata'], cheevo_before['image'])
     
     return 'OK'
@@ -117,11 +126,3 @@ async def cheevos(alias: str):
     levels = await fetch_levels(alias)
 
     return await r('Guild info updated successfully!')
-
-
-async def _fetch_cheevos(alias: str):
-    '''Fetch cheevos data from database.'''
-    query = 'SELECT * FROM achievements WHERE riddle = :riddle'
-    values = {'riddle': alias}
-    cheevos = await database.fetch_all(query, values)
-    return cheevos

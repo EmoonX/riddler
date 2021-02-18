@@ -5,6 +5,56 @@ from ipc import web_ipc
 from util.db import database
 
 
+async def get_achievements(alias: str, user: dict = None):
+    '''Get riddle achievements grouped by points.
+    If user is specified, return only cheevos user has gotten'''
+    
+    if not user:
+        # Get riddle's achievement list
+        query = 'SELECT title FROM achievements ' \
+                'WHERE riddle = :riddle '
+        values = {'riddle': alias}
+    else:
+        # Get user's riddle achievement list
+        query = 'SELECT title FROM user_achievements ' \
+                'WHERE riddle = :riddle ' \
+                    'AND username = :name AND discriminator = :disc'
+        values = {'riddle': riddle['alias'],
+                'name': user['username'], 'disc': user['discriminator']}
+    result = await database.fetch_all(query, values)
+    
+    # Colors for achievements outline based on ranks
+    cheevo_colors = {
+        'F': 'lime',
+        'C': 'firebrick',
+        'B': 'whitesmoke',
+        'A': 'gold',
+        'S': 'darkorchid'
+    }
+    # Create dict of pairs (rank -> list of cheevos)
+    cheevos = {'F': [], 'C': [], 'B': [], 'A': [], 'S': []}
+    for row in result:
+        title = row['title']
+        query = 'SELECT * FROM achievements ' \
+                'WHERE riddle = :riddle AND title = :title'
+        values = {'riddle': alias, 'title': title}
+        cheevo = await database.fetch_one(query, values)
+        cheevo = dict(cheevo)
+        rank = cheevo['rank']
+        cheevo['color'] = cheevo_colors[rank]
+        cheevos[rank].append(cheevo)
+    
+    # Ignore ranks without cheevos
+    erasable = []
+    for key, value in cheevos.items():
+        if not value:
+            erasable.append(key)
+    for key in erasable:
+        cheevos.pop(key)
+
+    return cheevos
+    
+
 async def context_processor():
     '''Inject variables and functions in Jinja.'''
 
@@ -45,47 +95,10 @@ async def context_processor():
                 username=account['username'],
                 disc=account['discriminator'])
         return url
-    
-    async def get_achievements(alias: str, user: dict = None):
-        '''Get riddle achievements grouped by points.
-        If user is specified, return only cheevos user has gotten'''
-        
-        if not user:
-            # Get riddle's achievement list
-            query = 'SELECT title FROM achievements ' \
-                    'WHERE riddle = :riddle '
-            values = {'riddle': alias}
-        else:
-            # Get user's riddle achievement list
-            query = 'SELECT title FROM user_achievements ' \
-                    'WHERE riddle = :riddle ' \
-                        'AND username = :name AND discriminator = :disc'
-            values = {'riddle': riddle['alias'],
-                    'name': user['username'], 'disc': user['discriminator']}
-        result = await database.fetch_all(query, values)
 
-        # Create dict of pairs (points -> list of cheevos)
-        cheevos = {'F': [], 'C': [], 'B': [], 'A': [], 'S': []}
-        for row in result:
-            title = row['title']
-            query = 'SELECT * FROM achievements ' \
-                    'WHERE riddle = :riddle AND title = :title'
-            values = {'riddle': alias, 'title': title}
-            cheevo = await database.fetch_one(query, values)
-            cheevos[cheevo['rank']].append(cheevo)
-
-        return cheevos
-    
-    # Get emoji flag from alpha_2 code (for players pages titles)
-    get_emoji_flag = flag
-
-    # Colors for achievements outline based on points value
-    cheevo_colors = {
-        'F': 'lime',
-        'C': 'firebrick',
-        'B': 'whitesmoke',
-        'A': 'gold',
-        'S': 'darkorchid'
+    # Dict for extra variables
+    extra = {
+        'get_achievements': get_achievements, 'get_emoji_flag': flag
     }
-    # Return dict of variables to be injected
-    return locals()
+    # Return concatenated dict with pairs ("var" -> var_value)
+    return {**locals(), **extra}

@@ -21,8 +21,8 @@ function changeThumb() {
 }
 
 window.onload = (_ => {
-  const thumb_inputs = document.getElementsByClassName('thumb-input');
-  Array.from(thumb_inputs).forEach(input => {
+  const thumbInputs = document.getElementsByClassName('thumb-input');
+  Array.from(thumbInputs).forEach(input => {
     input.addEventListener('change', changeThumb);
   });
 });

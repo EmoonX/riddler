@@ -71,7 +71,7 @@ async def levels(alias: str):
         if 'imgdata' in level and level['imgdata']:
             if 'image' not in level:
                 level['image'] = level_before['image']
-            await save_image(alias, 'thumbs',
+            await save_image('thumbs', alias,
                     level['image'], level['imgdata'], level_before['image'])
         
         # Update Discord channels and roles names if discord_name changed

@@ -37,7 +37,7 @@ async def auth(alias: str):
     return 'OK', 200
 
 
-async def save_image(alias: str, folder: str,
+async def save_image(folder: str, alias: str,
         filename: str, imgdata: str, prev_filename=''):
     '''Create a image from base64 string and 
     save it on riddle's thumbs folder.'''
@@ -66,5 +66,5 @@ async def save_image(alias: str, folder: str,
     # Save image on riddle's thumbs folder
     path = '%s/%s' % (dir, filename)
     img.save(path)
-    print('Image %s successfully saved'
+    print('[%s] Image %s successfully saved'
             % (alias, filename))

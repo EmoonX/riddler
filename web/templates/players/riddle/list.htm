@@ -42,8 +42,7 @@
             <td class="cheevo-cell">
           {% for rank in cheevos|reverse %}
             {% for cheevo in cheevos[rank] %}
-              {% set color = cheevo_colors[rank] %}
-              <img class="cheevo" src="/static/cheevos/{{ riddle['alias'] }}/{{ cheevo['image'] }}" title="[ {{ cheevo['title'] }} ] ({{ cheevo['rank'] }} points)&#10;&#10;{{ cheevo['description'] }}" style="border-color: {{ color }}; box-shadow: 0 0 0.8em {{ color }}" alt="{{ cheevo['title'] }}">
+              <img class="cheevo" src="/static/cheevos/{{ riddle['alias'] }}/{{ cheevo['image'] }}" title="[ {{ cheevo['title'] }} ] ({{ cheevo['rank'] }} points)&#10;&#10;{{ cheevo['description'] }}" style="border-color: {{ cheevo['color'] }}; box-shadow: 0 0 0.8em {{ cheevo['color'] }}" alt="{{ cheevo['title'] }}">
             {% endfor %}
           {% endfor %}
             </td>
