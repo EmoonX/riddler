@@ -66,6 +66,7 @@ async def config(alias: str):
                     and value == levels_after[index][attr]:
                 levels_after[index].pop(attr)
         
+        level_before = levels_before[index]
         level = levels_after[index]
         if len(level) > 1 or (len(level) == 1 and 'imgdata' not in level):
             # Update level(s) database data
@@ -85,9 +86,9 @@ async def config(alias: str):
         # Swap image file if image was changed
         if 'imgdata' in level and level['imgdata']:
             if 'image' not in level:
-                level['image'] = levels_before[index]['image']
-            print(level.keys())
-            await _save_image(alias, level['image'], level['imgdata'])
+                level['image'] = level_before['image']
+            await _save_image(alias,
+                    level['image'], level_before['image'], level['imgdata'])
         
         # Update Discord channels and roles names if discord_name changed
         if 'discord_name' in level:
@@ -163,7 +164,8 @@ async def _fetch_levels(alias: str):
     return levels
 
 
-async def _save_image(alias: str, filename: str, imgdata: str):
+async def _save_image(alias: str,
+        filename: str, prev_filename: str, imgdata: str):
     '''Create a image from base64 string and 
     save it on riddle's thumbs folder.'''
     
@@ -172,10 +174,24 @@ async def _save_image(alias: str, filename: str, imgdata: str):
     mime += ','
     data = b64decode(data)
     img = Image.open(BytesIO(data))
-
-    # Save image on riddle's thumbs folder
+    
+    # Get correct riddle thumbs dir
     dir = Path(os.path.dirname(os.path.realpath(__file__)))
     dir = str(dir.parent) + ('/static/thumbs/%s' % alias)
+    
+    # Erase previous file if filename was changed
+    if filename != prev_filename:
+        prev_path = '%s/%s' % (dir, prev_filename)
+        try:
+            os.remove(prev_path)
+            print('[%s] Image %s successfully removed'
+                    % (alias, prev_filename))
+        except:
+            print('[%s] Couldn\'t remove image %s'
+                    % (alias, prev_filename))
+
+    # Save image on riddle's thumbs folder
     path = '%s/%s' % (dir, filename)
-    print(path)
     img.save(path)
+    print('Image %s successfully saved'
+            % (alias, filename))
