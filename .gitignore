@@ -138,5 +138,5 @@ levels.txt
 web/static/thumbs/*
 web/static/cheevos/*
 
-# Less CSS: Use .less files that compiles to .css ones
+# Less CSS: Use .less files that work like CSS (but better)
 style.css

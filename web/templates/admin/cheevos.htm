@@ -1,70 +1,56 @@
 {% extends 'layout.htm' %}
-{% block title %}{{ alias }} | Admin UI{% endblock %}
+{% block title %}[ADMIN] {{ alias }} | Cheevos{% endblock %}
 {% block extra %}
 <script src="/static/scripts/admin.js"></script>
 {% endblock %}
 {% block content %}
     <main>
       <form method="post">
-        <h1>Levels</h1>
-        <table class='admin-levels'>
+        <h1>Achievements</h1>
+        <table class='admin'>
           <tbody>
-          {% for level in levels %}
+          {% for cheevo in cheevos %}
             <tr>
-              <td class="level-image">
-                <img id="{{ loop.index }}-thumb" src="/static/thumbs/{{ alias }}/{{ level['image'] }}">
+              <td class="thumb">
+                <img id="{{ loop.index }}-thumb" src="/static/cheevos/{{ alias }}/{{ cheevo['image'] }}">
                 <input type="file" id="{{ loop.index }}-input" class="thumb-input" accept="image/*">
-                <input type="hidden" name="{{ loop.index }}-image" value="{{ level['image'] }}">
+                <input type="hidden" name="{{ loop.index }}-image" value="{{ cheevo['image'] }}">
                 <input type="hidden" name="{{ loop.index }}-imgdata">
               </td>
               <td>
-                <label class="level-name">
-                  Level name
-                  <input type="text" name="{{ loop.index }}-name" size="2" value="{{ level['name'] }}" required>
+                <label>
+                  Title
+                  <input type="text" name="{{ loop.index }}-title" size="15" value="{{ cheevo['title'] }}" required>
                 </label>
                 <label>
-                  Discord name
-                  <input type="text" name="{{ loop.index }}-discord_name" size="2" value="{{ level['discord_name'] }}">
+                  Description
+                  <textarea name="{{ loop.index }}-description" required>{{ cheevo['description'] }}</textarea>
                 </label>
               </td>
-              <td>
-                <label>
-                  Front page path
-                  <input type="text" class="paths" name="{{ loop.index }}-path" size="15" value="{{ level['path'] }}" required>
-                </label>
-                <label>
-                  Answer path
-                  <input type="text" class="paths" name="{{ loop.index }}-answer" size="15" value="{{ level['answer'] }}" required>
-                </label>
-              </td> 
               <td>
                 <label>
                   Rank
-                  <input type="text" name="{{ loop.index }}-rank" size="1" value="{{ level['rank'] }}" required>
+                  <input type="text" name="{{ loop.index }}-rank" size="1" value="{{ cheevo['rank'] }}" required>
                 </label>
               </td>
               <td>
                 <label>
-                  Pages and files
-                  <select class="paths" name="{{ loop.index }}-pages" multiple>
-                  {% for page in level['pages'] %}
-                    <option value="{{ page }}">{{ page }}</option>
-                  {% endfor %}
-                  </select>
+                  Paths JSON
+                  <textarea name="{{ loop.index }}-paths_json" required>{{ cheevo['paths_json'] }}</textarea>
                 </label>
               </td>
             </tr>
           {% endfor %}
             <!-- <tr>
-              {% set index = levels|length + 1 %}
-              <td class="level-image">
+              {% set index = cheevos|length + 1 %}
+              <td class="cheevo-image">
                 <img id="{{ index }}-thumb" src="">
                 <input type="file" id="{{ index }}-input" class="thumb-input" name="{{ index }}-image" required>
                 <input type="hidden" name="{{ index }}-imgdata">
               </td>
               <td>
-                <label class="level-name">
-                  Level name
+                <label class="cheevo-name">
+                  cheevo name
                   <input type="text" name="{{ index }}-name" size="2" required>
                 </label>
                 <label>

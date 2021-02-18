@@ -3,16 +3,14 @@
   <head>
     <meta charset="utf-8">
     <title>{% block title %}{% endblock %}</title>
-    <link rel="stylesheet" href="/static/style.css">
-    <link rel="icon" href="/static/icon.ico" type="image/x-icon"/>
+    <link rel="icon" href="/static/icon.ico" type="image/x-icon">
+
+    <!-- Less CSS -->
+    <link rel="stylesheet/less" type="text/css" href="/static/style.less">
+    <script src="//cdn.jsdelivr.net/npm/less@3.13" ></script>
 
     <!-- jQuery library from Google CDN -->
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-    <script src="/static/scripts/avatar.js"></script>
-
-    <!-- Less CSS -->
-    <link rel="stylesheet/less" type="text/css" href="styles.less" />
-    <script src="//cdn.jsdelivr.net/npm/less@3.13" ></script>
     {% block extra %}{% endblock %}
   </head>
   <body>

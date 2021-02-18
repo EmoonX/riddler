@@ -27,6 +27,8 @@ discord_session_init(app)
 
 from auth import auth, session_cookie
 from admin.admin import admin
+from admin.levels import admin_levels
+from admin.cheevos import admin_cheevos
 from players.players import players
 from players.account import account
 from process import process
@@ -34,8 +36,8 @@ from levels import levels
 from util.db import database
 from inject import context_processor
 
-for blueprint in (auth, admin, players, account,
-        process, levels):
+for blueprint in (auth, admin, admin_levels, admin_cheevos, 
+        levels, players, account, process, levels):
     # Register app blueprint to allow other modules
     app.register_blueprint(blueprint)
 

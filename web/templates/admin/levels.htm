@@ -1,0 +1,104 @@
+{% extends 'layout.htm' %}
+{% block title %}[ADMIN] {{ alias }} | Levels{% endblock %}
+{% block extra %}
+<script src="/static/scripts/admin.js"></script>
+{% endblock %}
+{% block content %}
+    <main>
+      <form method="post">
+        <h1>Levels</h1>
+        <table class='admin'>
+          <tbody>
+          {% for level in levels %}
+            <tr>
+              <td class="thumb">
+                <img id="{{ loop.index }}-thumb" src="/static/thumbs/{{ alias }}/{{ level['image'] }}">
+                <input type="file" id="{{ loop.index }}-input" class="thumb-input" accept="image/*">
+                <input type="hidden" name="{{ loop.index }}-image" value="{{ level['image'] }}">
+                <input type="hidden" name="{{ loop.index }}-imgdata">
+              </td>
+              <td>
+                <label class="level-name">
+                  Level name
+                  <input type="text" name="{{ loop.index }}-name" size="2" value="{{ level['name'] }}" required>
+                </label>
+                <label>
+                  Discord name
+                  <input type="text" name="{{ loop.index }}-discord_name" size="2" value="{{ level['discord_name'] }}">
+                </label>
+              </td>
+              <td>
+                <label>
+                  Front page path
+                  <input type="text" class="paths" name="{{ loop.index }}-path" size="15" value="{{ level['path'] }}" required>
+                </label>
+                <label>
+                  Answer path
+                  <input type="text" class="paths" name="{{ loop.index }}-answer" size="15" value="{{ level['answer'] }}" required>
+                </label>
+              </td> 
+              <td>
+                <label>
+                  Rank
+                  <input type="text" name="{{ loop.index }}-rank" size="1" value="{{ level['rank'] }}" required>
+                </label>
+              </td>
+              <td>
+                <label>
+                  Pages and files
+                  <select class="paths" name="{{ loop.index }}-pages" multiple>
+                  {% for page in level['pages'] %}
+                    <option value="{{ page }}">{{ page }}</option>
+                  {% endfor %}
+                  </select>
+                </label>
+              </td>
+            </tr>
+          {% endfor %}
+            <!-- <tr>
+              {% set index = levels|length + 1 %}
+              <td class="level-image">
+                <img id="{{ index }}-thumb" src="">
+                <input type="file" id="{{ index }}-input" class="thumb-input" name="{{ index }}-image" required>
+                <input type="hidden" name="{{ index }}-imgdata">
+              </td>
+              <td>
+                <label class="level-name">
+                  Level name
+                  <input type="text" name="{{ index }}-name" size="2" required>
+                </label>
+                <label>
+                  Discord name
+                  <input type="text" name="{{ index }}-discord_name" size="2" required>
+                </label>
+              </td>
+              <td>
+                <label>
+                  Front page path
+                  <input type="text" class="paths" name="{{ index }}-path" size="15" required>
+                </label>
+                <label>
+                  Answer path
+                  <input type="text" class="paths" name="{{ index }}-answer" size="15" required>
+                </label>
+              </td>
+              <td>
+                <label>
+                  Rank
+                  <input type="text" name="{{ index }}-rank" size="1" required>
+                </label>
+              </td>
+              <td>
+                <label>
+                  Pages and files
+                  <select class="paths" name="{{ index }}-pages" multiple></select>
+                </label>
+              </td>
+            </tr> -->
+          </tbody>
+        </table>
+        <input type="submit" value="Submit changes">
+        <div class="msg">{{ msg }}</div>
+      </form>
+    </main>
+{% endblock %}
