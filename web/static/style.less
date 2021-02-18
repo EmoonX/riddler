@@ -24,7 +24,7 @@ input::selection, textarea::selection {
 }
 
 body {
-  margin: 0 auto 80px auto;
+  margin: 0 auto;
   background: url("images/wallpaper.png") black repeat;
   background-size: 800px 800px;
   color: white;
@@ -210,7 +210,7 @@ h1::after {
 }
 
 h2 {
-  margin: 40px 0;
+  margin: 50px 0;
   font-size: 2em;
   line-height: 100%;
 }
@@ -235,7 +235,15 @@ var {
 }
 
 hr {
-  margin: 50px 0;
+  width: 50%;
+  margin: 0;
+  border-image: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 221, 0.5) 10% 90%,
+    transparent
+  );
+  border-image-slice: 1;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -337,11 +345,11 @@ form {
   margin: 0 auto;
 }
 
-fieldset {
-  margin: 20px;
-  width: 320px;
-  height: 500px;
-}
+// fieldset {
+//   margin: 20px;
+//   width: 320px;
+//   height: 500px;
+// }
 
 legend {
   line-height: 0px;
@@ -359,7 +367,6 @@ fieldset > div {
 label {
   position: relative;
   display: block;
-  margin: 20px auto;
   text-align: left;
   font-size: 0.7em;
   font-style: italic;
@@ -375,7 +382,7 @@ label.icon:before {
   background-size: 30px 30px;
 }
 
-input:not([type="checkbox"]), select {
+input:not([type="checkbox"]):not([type="radio"]), select {
   display: block;
   clear: both;
   padding: 5px;
@@ -411,13 +418,13 @@ input[type="checkbox"] {
   margin: 0 10px;
 }
 
-textarea {
-  display: block;
-  margin: 20px;
-  width: 800px;
-  height: 300px;
-  font-size: 1.4em;
-}
+// textarea {
+//   display: block;
+//   margin: 20px;
+//   width: 800px;
+//   height: 300px;
+//   font-size: 1.4em;
+// }
 
 /* ------------------------------------------------------------------------- */
 /* -- Profile pages -- */
@@ -542,66 +549,6 @@ figure > figcaption {
 
 .level-comp > var {
   font-size: 1.5em;
-}
-
-.level-rating {
-  margin: 20px 0 auto 0;
-}
-
-.level-rating > div {
-  color: crimson;
-  font-size: 0;
-}
-
-.level-rating > div > var {
-  margin: 0 8px;
-  vertical-align: middle;
-  font-size: 22px;
-}
-
-.level-rating > div > img {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  padding: 1px;
-  vertical-align: middle;
-  user-select: none;
-  cursor: pointer;
-  transition: width 0.5s, height 0.5s;
-}
-
-.level-rating > figcaption {
-  margin-top: 5px;
-}
-
-.level-rating > figcaption > span > var {
-  font-size: 20px;
-}
-
-.level-cur-in {
-  width: 300px;
-}
-
-.level-cur-in > div {
-  display: inline-block;
-  margin: 0.4em;
-}
-
-.page-explorer > td {
-  position:absolute;
-  z-index: -1;
-  opacity: 0;
-  padding: 0;
-  height: 0;
-  border-width: 0;
-  background-color: white;
-  color: black;
-  text-align: left;
-}
-.page-explorer.active > td {
-  position: static;
-  opacity: 1;
-  transition: opacity 0.5s;
 }
 
 .page-explorer nav {
@@ -798,137 +745,151 @@ td > code:after {
 /* ------------------------------------------------------------------------- */
 /* -- Admin UI -- */
 
-table.admin tr {
-  height: 12em;
-  font-size: 1.2rem;
+section.admin {
+  width: 100%;
+  margin: 0 auto;
+  text-align: center;
 
-  & > td {
-    background-color: rgba(127, 127, 127, 0.2);
-    transition: background-color 0.5s;
+  & > button[type="button"], & ~ button[type="submit"] {
+    margin: 50px 0;
   }
-  & > td:first-child {
+}
+
+section.admin > .row {
+  position: relative;
+  z-index: 100;
+  display: flex;
+  flex-direction: row;
+  height: 12em;
+  width: 100%;
+  margin-bottom: 0.5em;
+  background-image: linear-gradient(
+    to right,
+    transparent,
+    rgba(127, 127, 127, 0.15) 10% 90%,
+    transparent
+  );
+  border: thin solid transparent;
+  border-image: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 221, 0.5) 10% 90%,
+    transparent
+  );
+  border-image-slice: 1;
+  text-align: center;
+  font-size: 1.2rem;
+  color: #ffd;
+
+  &:before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0;
+    z-index: -100;
+    height: 100%;
+    width: 100%;
+    background-image: linear-gradient(
+    to right,
+    transparent,
+    rgba(127, 127, 127, 0.15) 10% 90%,
+    transparent
+  );
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+
+  & > div {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+  }
+  & > div:first-child {
     padding-left: 50px;
-    background-image: linear-gradient(
-      to right,
-      transparent,
-      rgba(127, 127, 127, 0.2) 40% 100%
-    );
-    border-image: linear-gradient(
-      to right,
-      transparent,
-      rgba(255, 255, 221, 0.5) 40% 100%
-    );
-    &:before {
-      background-image: linear-gradient(
-        to right,
-        transparent,
-        rgba(127, 127, 127, 0.3) 40% 100%
-      );
-    }
   }
-  & > td:last-child {
+  & > div:last-child {
     padding-right: 50px;
-    background-image: linear-gradient(
-      to left,
-      transparent,
-      rgba(127, 127, 127, 0.2) 40% 100%
-    );
-    border-image: linear-gradient(
-      to left,
-      transparent,
-      rgba(255, 255, 221, 0.5) 40% 100%
-    );
-    &:before {
-      background-image: linear-gradient(
-        to left,
-        transparent,
-        rgba(127, 127, 127, 0.3) 40% 100%
-      );
+  }
+
+  & label {
+    text-align: center;
+
+    &.key {
+      font-size: 0.8em;
+      
+      & > input {
+        font-weight: bold;
+      }
     }
   }
-  & > td:first-child, & > td:last-child {
-    position: relative;
-    z-index: 100;
-    background-color: transparent;
-    border-image-slice: 1;
-    
-    &:before {
-      content: "";
-      position: absolute;
-      top: 0; left: 0;
-      z-index: -100;
-      height: 100%;
-      width: 100%;
-      opacity: 0;
-      transition: opacity 0.5s;
+
+  & input {
+    margin: 0 auto;
+    text-align: center;
+  }
+
+  & > .thumb {
+    & > img {
+      max-width: 160px;
+      max-height: 120px;
+    }
+    & > input {
+      width: 95px;
+      font-size: 0.6em;
     }
   }
+  & img.cheevo-thumb {
+    height: 100px;
+    width: 100px;
+    border: 0.2em solid;
+    border-radius: 20px;
+  }
+  
+  & fieldset.rank {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border: thin solid rgba(255, 255, 221, 0.5);
+    border-radius: 1em;
+  
+    & > label {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin: 10px 0;
+      font-size: 1em;
+      font-weight: bold;
+      font-style: normal;
+  
+      & > input {
+        margin: 0 1em;
+      }
+    }
+  }
+
+  & textarea {
+    display: block;
+    height: auto;
+    border-radius: 0.2em;
+    font-size: 1em;
+    font-style: italic;
+    overflow-x: hidden;  // remove extra line in Firefox
+    overflow-y: scroll;
+    resize: none;
+  }
+  
   &:hover {
-    & > td {
-      background-color: rgba(127, 127, 127, 0.435);
-    }
-    & > td:first-child, & > td:last-child {
-      background-color: transparent;
-    }
-    & > td:first-child::before, & > td:last-child::before {
+    &:before {
       opacity: 1;
     }
   }
 }
 
-table.admin td > label {
-  display: block;
-  margin: 20px auto;
-  text-align: center;
-}
-
-table.admin td input {
-  display: block;
-  margin: 0 auto;
-  text-align: center;
-}
-
-table.admin td.thumb > img {
-  max-width: 160px;
-  max-height: 120px;
-}
-
-table.admin td.thumb > input {
-  width: 95px;
-  font-size: 0.6em;
-}
-
-table.admin label.key {
-  font-size: 0.8em;
-}
-
-table.admin label.key > input {
-  font-weight: bold;
-}
-
-table.admin .paths {
+section.admin .paths {
   font-style: italic;
 }
 
-table.admin select {
+section.admin select {
   margin: 0px auto;
-}
-
-table.admin img.cheevo-thumb {
-  height: 100px;
-  width: 100px;
-  border: 0.2em solid;
-  border-radius: 20px;
-}
-
-table.admin textarea {
-  height: 50px;
-  width: 200px;
-  margin: 0 auto;
-  border-radius: 0.2em;
-  font-size: 1em;
-}
-
-table.admin + input[type="submit"] {
-  margin-top: 80px;
 }

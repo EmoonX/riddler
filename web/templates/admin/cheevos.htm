@@ -5,89 +5,94 @@
 {% endblock %}
 {% block content %}
     <main>
+      <h1>Achievements</h1>
       <form method="post">
-        <h1>Achievements</h1>
       {% for rank in cheevos|reverse %}
-        <h2>{{ rank }}-rank</h2>
-        <table class='admin'>
-          <tbody>
-          {% for cheevo in cheevos[rank] %}
-            <tr>
-              {% set index = cheevo['index'] %}
-              <td class="thumb">
-                <img id="{{ index }}-thumb" class='cheevo-thumb' src="/static/cheevos/{{ alias }}/{{ cheevo['image'] }}" style="border-color: {{ cheevo['color'] }}; box-shadow: 0 0 0.8em {{ cheevo['color'] }}">
-                <input type="file" id="{{ index }}-input" class="thumb-input" accept="image/*">
-                <input type="hidden" name="{{ index }}-image" value="{{ cheevo['image'] }}">
-                <input type="hidden" name="{{ index }}-imgdata">
-              </td>
-              <td>
-                <label class="key">
-                  Title
-                  <input type="text" name="{{ index }}-title" size="15" value="{{ cheevo['title'] }}" required>
-                </label>
-                <label>
-                  Description
-                  <textarea name="{{ index }}-description" required>{{ cheevo['description'] }}</textarea>
-                </label>
-              </td>
-              <td>
-                <label>
-                  Rank
-                  <input type="text" name="{{ index }}-rank" size="1" value="{{ cheevo['rank'] }}" required>
-                </label>
-              </td>
-              <td>
-                <label>
-                  Paths JSON
-                  <textarea name="{{ index }}-paths_json" required>{{ cheevo['paths_json'] }}</textarea>
-                </label>
-              </td>
-            </tr>
-          {% endfor %}
-            <!-- <tr>
-              {% set index = cheevos|length + 1 %}
-              <td class="cheevo-image">
-                <img id="{{ index }}-thumb" src="">
-                <input type="file" id="{{ index }}-input" class="thumb-input" name="{{ index }}-image" required>
-                <input type="hidden" name="{{ index }}-imgdata">
-              </td>
-              <td>
-                <label class="cheevo-name">
-                  cheevo name
-                  <input type="text" name="{{ index }}-name" size="2" required>
-                </label>
-                <label>
-                  Discord name
-                  <input type="text" name="{{ index }}-discord_name" size="2" required>
-                </label>
-              </td>
-              <td>
-                <label>
-                  Front page path
-                  <input type="text" class="paths" name="{{ index }}-path" size="15" required>
-                </label>
-                <label>
-                  Answer path
-                  <input type="text" class="paths" name="{{ index }}-answer" size="15" required>
-                </label>
-              </td>
-              <td>
-                <label>
-                  Rank
-                  <input type="text" name="{{ index }}-rank" size="1" required>
-                </label>
-              </td>
-              <td>
-                <label>
-                  Pages and files
-                  <select class="paths" name="{{ index }}-pages" multiple></select>
-                </label>
-              </td>
-            </tr> -->
-          </tbody>
-        </table>
+        <section class='admin'>
+          <h2>{{ rank }}-rank</h2>
+        {% for cheevo in cheevos[rank] %}
+          <div class='row'>
+            {% set index = cheevo['index'] %}
+            <div class="thumb">
+              <img id="{{ index }}-thumb" class='cheevo-thumb' src="/static/cheevos/{{ alias }}/{{ cheevo['image'] }}" style="border-color: {{ cheevo['color'] }}; box-shadow: 0 0 0.8em {{ cheevo['color'] }}">
+              <input type="file" id="{{ index }}-input" class="thumb-input" accept="image/*">
+              <input type="hidden" name="{{ index }}-image" value="{{ cheevo['image'] }}">
+              <input type="hidden" name="{{ index }}-imgdata">
+            </div>
+            <div>
+              <label class="key">
+                Title
+                <input type="text" name="{{ index }}-title" size="10" value="{{ cheevo['title'] }}" required>
+              </label>
+              <label>
+                Description
+                <textarea name="{{ index }}-description" rows="3" cols="25" required>{{ cheevo['description'] }}</textarea>
+              </label>
+            </div>
+            <div>
+              <fieldset class="rank">
+                <legend>Rank</legend>
+              {% for rank, color in cheevo_colors.items()|reverse %}
+                <label style="color: {{ color }}">
+                  <input type="radio" name="{{ index }}-rank" value="{{ rank }}" required>
+                  {{ rank }}<!--
+              --></label>
+              {% endfor %}
+              </label>
+            </div>
+            <div>
+              <label>
+                Paths JSON
+                <textarea name="{{ index }}-paths_json" rows="3" cols="25" required>{{ cheevo['paths_json'] }}</textarea>
+              </label>
+            </div>
+          </div>
+        {% endfor %}
+          <!-- <tr>
+            {% set index = cheevos|length + 1 %}
+            <div class="cheevo-image">
+              <img id="{{ index }}-thumb" src="">
+              <input type="file" id="{{ index }}-input" class="thumb-input" name="{{ index }}-image" required>
+              <input type="hidden" name="{{ index }}-imgdata">
+            </div>
+            <div>
+              <label class="cheevo-name">
+                cheevo name
+                <input type="text" name="{{ index }}-name" size="2" required>
+              </label>
+              <label>
+                Discord name
+                <input type="text" name="{{ index }}-discord_name" size="2" required>
+              </label>
+            </div>
+            <div>
+              <label>
+                Front page path
+                <input type="text" class="paths" name="{{ index }}-path" size="15" required>
+              </label>
+              <label>
+                Answer path
+                <input type="text" class="paths" name="{{ index }}-answer" size="15" required>
+              </label>
+            </div>
+            <div>
+              <label>
+                Rank
+                <input type="text" name="{{ index }}-rank" size="1" required>
+              </label>
+            </div>
+            <div>
+              <label>
+                Pages and files
+                <select class="paths" name="{{ index }}-pages" multiple></select>
+              </label>
+            </div>
+          </tr> -->
+          <button type="button">➕ Add {{ rank }}-rank achievement</button>
+        </section>
+        <hr>
       {% endfor %}
-        <input type="submit" value="Submit changes">
+        <button type="submit">📝 Submit changes</button>
         <div class="msg">{{ msg }}</div>
       </form>
     </main>

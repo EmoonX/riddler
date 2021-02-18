@@ -4,6 +4,14 @@ from flag import flag
 from ipc import web_ipc
 from util.db import database
 
+# Colors for achievements outline based on ranks
+cheevo_colors = {
+    'C': 'firebrick',
+    'B': 'lightcyan',
+    'A': 'gold',
+    'S': 'darkturquoise'
+}
+
 
 async def get_achievements(alias: str, user: dict = None):
     '''Get riddle achievements grouped by points.
@@ -19,20 +27,12 @@ async def get_achievements(alias: str, user: dict = None):
         query = 'SELECT title FROM user_achievements ' \
                 'WHERE riddle = :riddle ' \
                     'AND username = :name AND discriminator = :disc'
-        values = {'riddle': riddle['alias'],
+        values = {'riddle': alias,
                 'name': user['username'], 'disc': user['discriminator']}
     result = await database.fetch_all(query, values)
     
-    # Colors for achievements outline based on ranks
-    cheevo_colors = {
-        'F': 'lime',
-        'C': 'firebrick',
-        'B': 'whitesmoke',
-        'A': 'gold',
-        'S': 'darkorchid'
-    }
     # Create dict of pairs (rank -> list of cheevos)
-    cheevos = {'F': [], 'C': [], 'B': [], 'A': [], 'S': []}
+    cheevos = {'C': [], 'B': [], 'A': [], 'S': []}
     for row in result:
         title = row['title']
         query = 'SELECT * FROM achievements ' \
@@ -98,6 +98,7 @@ async def context_processor():
 
     # Dict for extra variables
     extra = {
+        'cheevo_colors': cheevo_colors,
         'get_achievements': get_achievements, 'get_emoji_flag': flag
     }
     # Return concatenated dict with pairs ("var" -> var_value)

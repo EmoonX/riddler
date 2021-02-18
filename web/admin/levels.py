@@ -16,7 +16,6 @@ async def levels(alias: str):
     
     # Check for right permissions
     msg, status = await auth(alias)
-    print(msg, status)
     if status != 200:
         return msg, status
     
