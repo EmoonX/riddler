@@ -12,13 +12,14 @@
           {% for cheevo in cheevos %}
             <tr>
               <td class="thumb">
-                <img id="{{ loop.index }}-thumb" src="/static/cheevos/{{ alias }}/{{ cheevo['image'] }}">
+                {% set color = cheevo_colors[cheevo['rank']] %}
+                <img id="{{ loop.index }}-thumb" class='cheevo-thumb' src="/static/cheevos/{{ alias }}/{{ cheevo['image'] }}" style="border-color: {{ color }}; box-shadow: 0 0 0.8em {{ color }}">
                 <input type="file" id="{{ loop.index }}-input" class="thumb-input" accept="image/*">
                 <input type="hidden" name="{{ loop.index }}-image" value="{{ cheevo['image'] }}">
                 <input type="hidden" name="{{ loop.index }}-imgdata">
               </td>
               <td>
-                <label>
+                <label class="key">
                   Title
                   <input type="text" name="{{ loop.index }}-title" size="15" value="{{ cheevo['title'] }}" required>
                 </label>

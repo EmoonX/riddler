@@ -18,7 +18,7 @@
                 <input type="hidden" name="{{ loop.index }}-imgdata">
               </td>
               <td>
-                <label class="level-name">
+                <label class="key">
                   Level name
                   <input type="text" name="{{ loop.index }}-name" size="2" value="{{ level['name'] }}" required>
                 </label>
@@ -57,13 +57,13 @@
           {% endfor %}
             <!-- <tr>
               {% set index = levels|length + 1 %}
-              <td class="level-image">
+              <td class="thumb">
                 <img id="{{ index }}-thumb" src="">
                 <input type="file" id="{{ index }}-input" class="thumb-input" name="{{ index }}-image" required>
                 <input type="hidden" name="{{ index }}-imgdata">
               </td>
               <td>
-                <label class="level-name">
+                <label class="key">
                   Level name
                   <input type="text" name="{{ index }}-name" size="2" required>
                 </label>

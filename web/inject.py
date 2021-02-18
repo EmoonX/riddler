@@ -74,11 +74,11 @@ async def context_processor():
 
     # Colors for achievements outline based on points value
     cheevo_colors = {
-        -100: 'lime',
-        10: 'sienna',
-        20: 'silver',
-        30: 'gold',
-        50: 'lightblue'
+        'F': 'lime',
+        'C': 'sienna',
+        'B': 'silver',
+        'A': 'gold',
+        'S': 'lightblue'
     }
     # Return dict of variables to be injected
     return locals()
