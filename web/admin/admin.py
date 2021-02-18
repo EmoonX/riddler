@@ -37,7 +37,7 @@ async def config(alias: str):
             break
     
     # Get initial level data from database
-    levels_before = await fetch_levels(alias)
+    levels_before = await _fetch_levels(alias)
     
     def r(levels: dict, msg: str):
         '''Render page and get filename cookies locally.'''
@@ -54,10 +54,9 @@ async def config(alias: str):
     for name, value in form.items():
         i = name.find('-')
         index, attr = int(name[:i]), name[(i+1):]
-        if attr != 'imgdata':
-            if index not in levels_after:
-                levels_after[index] = {}
-            levels_after[index][attr] = value
+        if index not in levels_after:
+            levels_after[index] = {}
+        levels_after[index][attr] = value
     
     # Update changed levels both on DB and guild
     for index, level in levels_before.items():
@@ -66,27 +65,35 @@ async def config(alias: str):
             if attr in levels_after[index] \
                     and value == levels_after[index][attr]:
                 levels_after[index].pop(attr)
-        if not levels_after[index]:
-            # Nothing to be done if no changes
-            continue
-
-        # Update level(s) database data
+        
         level = levels_after[index]
-        query = 'UPDATE levels SET '
-        values = {'riddle': alias, 'index': index}
-        aux = []
-        for attr, value in level.items():
-            s = '`%s` = :%s' % (attr, attr)
-            aux.append(s)
-            values[attr] = value
-        query += ', '.join(aux)
-        query += ' WHERE riddle = :riddle AND `index` = :index'
-        await database.execute(query, values)
+        if len(level) > 1 or (len(level) == 1 and 'imgdata' not in level):
+            # Update level(s) database data
+            query = 'UPDATE levels SET '
+            values = {'riddle': alias, 'index': index}
+            aux = []
+            for attr, value in level.items():
+                if attr == 'imgdata':
+                    continue
+                s = '`%s` = :%s' % (attr, attr)
+                aux.append(s)
+                values[attr] = value
+            query += ', '.join(aux)
+            query += ' WHERE riddle = :riddle AND `index` = :index'
+            await database.execute(query, values)
+        
+        # Swap image file if image was changed
+        if 'imgdata' in level and level['imgdata']:
+            if 'image' not in level:
+                level['image'] = levels_before[index]['image']
+            print(level.keys())
+            await _save_image(alias, level['image'], level['imgdata'])
         
         # Update Discord channels and roles names if discord_name changed
-        await web_ipc.request('update', guild_name=full_name,
-                old_name=levels_before[index]['discord_name'],
-                new_name=level['discord_name'])
+        if 'discord_name' in level:
+            await web_ipc.request('update', guild_name=full_name,
+                    old_name=levels_before[index]['discord_name'],
+                    new_name=level['discord_name'])
     
     return 'OK'
 
@@ -133,7 +140,7 @@ async def config(alias: str):
     return await r('Guild info updated successfully!')
 
 
-async def fetch_levels(alias: str):
+async def _fetch_levels(alias: str):
     '''Fetch guild levels and pages info from database.'''
     
     # Fetch basic level info

@@ -45,6 +45,9 @@ for blueprint in (auth, admin, players, account,
 # Define context processor for main app
 app.context_processor(context_processor)
 
+# Enable browser debug messages
+app.config['DEBUG'] = True
+
 # Disable annoying newlines on Jinja rendered HTML templates
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
