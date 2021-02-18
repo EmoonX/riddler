@@ -46,26 +46,33 @@ async def context_processor():
                 disc=account['discriminator'])
         return url
     
-    async def get_achievements(riddle: dict, user: dict):
-        '''Get achievements user has gotten in riddle, grouped by points.'''
+    async def get_achievements(alias: str, user: dict = None):
+        '''Get riddle achievements grouped by points.
+        If user is specified, return only cheevos user has gotten'''
         
-        # Get user's achievement list
-        query = 'SELECT title FROM user_achievements ' \
-                'WHERE riddle = :riddle ' \
-                    'AND username = :name AND discriminator = :disc'
-        values = {'riddle': riddle['alias'],
-                'name': user['username'], 'disc': user['discriminator']}
+        if not user:
+            # Get riddle's achievement list
+            query = 'SELECT title FROM achievements ' \
+                    'WHERE riddle = :riddle '
+            values = {'riddle': alias}
+        else:
+            # Get user's riddle achievement list
+            query = 'SELECT title FROM user_achievements ' \
+                    'WHERE riddle = :riddle ' \
+                        'AND username = :name AND discriminator = :disc'
+            values = {'riddle': riddle['alias'],
+                    'name': user['username'], 'disc': user['discriminator']}
         result = await database.fetch_all(query, values)
 
         # Create dict of pairs (points -> list of cheevos)
-        cheevos = {-100: [], 10: [], 20: [], 30: [], 50: []}
+        cheevos = {'F': [], 'C': [], 'B': [], 'A': [], 'S': []}
         for row in result:
             title = row['title']
             query = 'SELECT * FROM achievements ' \
                     'WHERE riddle = :riddle AND title = :title'
-            values = {'riddle': riddle['alias'], 'title': title}
+            values = {'riddle': alias, 'title': title}
             cheevo = await database.fetch_one(query, values)
-            cheevos[cheevo['points']].append(cheevo)
+            cheevos[cheevo['rank']].append(cheevo)
 
         return cheevos
     
@@ -75,10 +82,10 @@ async def context_processor():
     # Colors for achievements outline based on points value
     cheevo_colors = {
         'F': 'lime',
-        'C': 'sienna',
-        'B': 'silver',
+        'C': 'firebrick',
+        'B': 'whitesmoke',
         'A': 'gold',
-        'S': 'lightblue'
+        'S': 'darkorchid'
     }
     # Return dict of variables to be injected
     return locals()

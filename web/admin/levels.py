@@ -1,11 +1,5 @@
-import os
-from base64 import b64decode
-from io import BytesIO
-from pathlib import Path
-
 from quart import Blueprint, request, render_template
 from quart_discord import requires_authorization
-from PIL import Image
 
 from admin.admin import auth, save_image
 from ipc import web_ipc
@@ -77,8 +71,8 @@ async def levels(alias: str):
         if 'imgdata' in level and level['imgdata']:
             if 'image' not in level:
                 level['image'] = level_before['image']
-            await save_image(alias,
-                    level['image'], level_before['image'], level['imgdata'])
+            await save_image(alias, 'thumbs',
+                    level['image'], level['imgdata'], level_before['image'])
         
         # Update Discord channels and roles names if discord_name changed
         if 'discord_name' in level:
@@ -118,7 +112,7 @@ async def levels(alias: str):
     filename = form['%d-image' % index]
     imgdata = form['%d-imgdata' % index]
     print(imgdata)
-    await save_image(alias, filename, imgdata)
+    await save_image(alias, 'thumbs', filename, imgdata)
 
     # Update Discord guild channels and roles with new levels info.
     # This is done by sending an request to the bot's IPC server.

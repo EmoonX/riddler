@@ -7,12 +7,15 @@
     <main>
       <form method="post">
         <h1>Achievements</h1>
+        {% set cheevos = get_achievements(alias) %}
+      {% for rank in cheevos|reverse %}
+        <h2>{{ rank }}-rank</h2>
         <table class='admin'>
           <tbody>
-          {% for cheevo in cheevos %}
+          {% for cheevo in cheevos[rank] %}
             <tr>
               <td class="thumb">
-                {% set color = cheevo_colors[cheevo['rank']] %}
+                {% set color = cheevo_colors[rank] %}
                 <img id="{{ loop.index }}-thumb" class='cheevo-thumb' src="/static/cheevos/{{ alias }}/{{ cheevo['image'] }}" style="border-color: {{ color }}; box-shadow: 0 0 0.8em {{ color }}">
                 <input type="file" id="{{ loop.index }}-input" class="thumb-input" accept="image/*">
                 <input type="hidden" name="{{ loop.index }}-image" value="{{ cheevo['image'] }}">
@@ -84,6 +87,7 @@
             </tr> -->
           </tbody>
         </table>
+      {% endfor %}
         <input type="submit" value="Submit changes">
         <div class="msg">{{ msg }}</div>
       </form>

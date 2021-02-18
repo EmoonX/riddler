@@ -1,5 +1,11 @@
+import os
+from base64 import b64decode
+from io import BytesIO
+from pathlib import Path
+
 from quart import Blueprint
 from quart_discord import requires_authorization
+from PIL import Image
 
 from auth import discord
 from util.db import database
@@ -31,8 +37,8 @@ async def auth(alias: str):
     return 'OK', 200
 
 
-async def save_image(alias: str,
-        filename: str, prev_filename: str, imgdata: str):
+async def save_image(alias: str, folder: str,
+        filename: str, imgdata: str, prev_filename=''):
     '''Create a image from base64 string and 
     save it on riddle's thumbs folder.'''
     
@@ -44,7 +50,7 @@ async def save_image(alias: str,
     
     # Get correct riddle thumbs dir
     dir = Path(os.path.dirname(os.path.realpath(__file__)))
-    dir = str(dir.parent) + ('/static/thumbs/%s' % alias)
+    dir = str(dir.parent) + ('/static/%s/%s' % (folder, alias))
     
     # Erase previous file if filename was changed
     if filename != prev_filename:

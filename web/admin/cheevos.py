@@ -1,13 +1,7 @@
-import os
-from base64 import b64decode
-from io import BytesIO
-from pathlib import Path
-
 from quart import Blueprint, request, render_template
 from quart_discord import requires_authorization
-from PIL import Image
 
-from admin.admin import auth
+from admin.admin import auth, save_image
 from ipc import web_ipc
 from util.db import database
 
@@ -18,7 +12,7 @@ admin_cheevos = Blueprint('admin_cheevos', __name__)
 @admin_cheevos.route('/admin/<alias>/cheevos/', methods=['GET', 'POST'])
 @requires_authorization
 async def cheevos(alias: str):
-    '''Riddle level management.'''
+    '''Riddle cheevos management.'''
     
     # Check for right permissions
     msg, status = await auth(alias)
@@ -29,7 +23,7 @@ async def cheevos(alias: str):
     def r(cheevos: list, msg: str):
         '''Render page with correct data.'''
         return render_template('admin/cheevos.htm', 
-                alias=alias, cheevos=cheevos, msg=msg)
+                alias=alias, msg=msg)
     
     # Get initial cheevos data from database
     cheevos_before = await _fetch_cheevos(alias)
@@ -38,34 +32,32 @@ async def cheevos(alias: str):
     if request.method == 'GET':
         return await r(cheevos_before, '')
     
-    return 'OK'
-    
-    # Build dict of levels after POST
+    # Build dict of cheevos after POST
     form = await request.form
-    levels_after = {}
+    cheevos_after = {}
     for name, value in form.items():
         i = name.find('-')
         index, attr = int(name[:i]), name[(i+1):]
-        if index not in levels_after:
-            levels_after[index] = {}
-        levels_after[index][attr] = value
+        if index not in cheevos_after:
+            cheevos_after[index] = {}
+        cheevos_after[index][attr] = value
     
-    # Update changed levels both on DB and guild
-    for index, level in levels_before.items():
+    # Update changed cheevos on DB
+    for cheevo in cheevos_before:
         # Remove fields that were not modified by admin
-        for attr, value in level.items():
-            if attr in levels_after[index] \
-                    and value == levels_after[index][attr]:
-                levels_after[index].pop(attr)
+        for attr, value in cheevo.items():
+            if attr in cheevos_after[index] \
+                    and value == cheevos_after[index][attr]:
+                cheevos_after[index].pop(attr)
         
-        level_before = levels_before[index]
-        level = levels_after[index]
-        if len(level) > 1 or (len(level) == 1 and 'imgdata' not in level):
+        cheevo_before = cheevos_before[index]
+        cheevo = cheevos_after[index]
+        if len(cheevo) > 1 or (len(cheevo) == 1 and 'imgdata' not in cheevo):
             # Update level(s) database data
             query = 'UPDATE levels SET '
             values = {'riddle': alias, 'index': index}
             aux = []
-            for attr, value in level.items():
+            for attr, value in cheevo.items():
                 if attr == 'imgdata':
                     continue
                 s = '`%s` = :%s' % (attr, attr)
@@ -76,17 +68,11 @@ async def cheevos(alias: str):
             await database.execute(query, values)
         
         # Swap image file if image was changed
-        if 'imgdata' in level and level['imgdata']:
-            if 'image' not in level:
-                level['image'] = level_before['image']
-            await _save_image(alias,
-                    level['image'], level_before['image'], level['imgdata'])
-        
-        # Update Discord channels and roles names if discord_name changed
-        if 'discord_name' in level:
-            await web_ipc.request('update', guild_name=full_name,
-                    old_name=levels_before[index]['discord_name'],
-                    new_name=level['discord_name'])
+        if 'imgdata' in cheevo and cheevo['imgdata']:
+            if 'image' not in cheevo:
+                cheevo['image'] = cheevo_before['image']
+            await save_image(alias, 'cheevos',
+                    cheevo['image'], cheevo['imgdata'], cheevo_before['image'])
     
     return 'OK'
 
