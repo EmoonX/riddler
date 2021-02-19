@@ -34,7 +34,7 @@ function changeCheevoRank() {
   const index = this.name.substr(0, this.name.search('-'));
   const thumb = $('#' + index + '-thumb');
   thumb.removeClass();
-  thumb.addClass(['cheevo-thumb', rank + '-rank']);
+  thumb.addClass([rank + '-rank', 'cheevo-thumb']);
 }
 
 function addCheevoRow() {
@@ -64,7 +64,7 @@ $(_ => {
   css = '<style type="text/css">';
   $.each(cheevoRankColors, function(rank, color) {
     css += '.' + rank.toLowerCase() + '-rank { ';
-    css += 'border-color: ' + color + '; ';
+    css += 'border-color: ' + color + ' !important; ';
     css += 'box-shadow: 0 0 0.8em ' + color + '; } ';
   });
   css += '</style>';

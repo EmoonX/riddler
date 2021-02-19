@@ -82,7 +82,7 @@ async def cheevos(alias: str):
                     cheevo['image'], cheevo['imgdata'], cheevo_before['image'])
 
     # Insert new level data on database
-    query = 'INSERT INTO levels VALUES ' \
+    query = 'INSERT INTO achievements VALUES ' \
             '(:riddle, :title, :description, :image, :rank, :paths_json)'
     index = len(cheevos_before) + 1
     values = {'riddle': alias, 'title': form['%d-title' % index],
@@ -95,7 +95,7 @@ async def cheevos(alias: str):
     # Get image data and save image on thumbs folder
     filename = form['%d-image' % index]
     imgdata = form['%d-imgdata' % index]
-    await save_image('cheevos', alias, cheevo['image'], cheevo['imgdata'])
+    await save_image('cheevos', alias, filename, imgdata)
     
     # Fetch cheevos again to display page correctly on POST
     cheevos = await get_achievements(alias)
