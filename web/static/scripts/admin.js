@@ -1,3 +1,4 @@
+// Outline colors for cheevos based on rank
 const cheevoRankColors = {
   'C': 'firebrick',
   'B': 'lightcyan',
@@ -10,44 +11,40 @@ function changeThumb() {
   if (this.files && this.files[0]) {
     // Get elements from index
     const index = this.id.substr(0, this.id.search('-'));
-    const thumb = document.getElementById(index + '-thumb');
-    const data = document.getElementsByName(index + '-imgdata')[0];
+    const thumb = $('#' + index + '-thumb');
+    const data = $('[name="' + index + '-imgdata"]');
 
     // Read image data as base64 string and load it
     const reader = new FileReader();
     reader.onload = (e => {
-      thumb.setAttribute('src', e.target.result);
-      data.setAttribute('value', e.target.result);
+      thumb.attr('src', e.target.result);
+      data.attr('value', e.target.result);
     });
     reader.readAsDataURL(this.files[0]);
 
     // Save also image name on hidden input
-    const image = document.getElementsByName(index + '-image')[0];
-    image.setAttribute('value', this.files[0].name);
+    const image = $('[name="' + index + '-image"]');
+    image.attr('value', this.files[0].name);
   }
 }
 
 function changeCheevoRank() {
-  if (!this.checked) {
-    return;
-  }
-  console.log(this.value)
+  // Update cheevo thumb outline color on rank change
   const color = cheevoRankColors[this.value]
   const index = this.name.substr(0, this.name.search('-'));
-  const thumb = document.getElementById(index + '-thumb');
-  thumb.style.borderColor = color
-  thumb.style.boxShadow = "0 0 0.8em " + color
+  const thumb = $('#' + index + '-thumb');
+  console.log(color);
+  thumb.css('border-color', color)
+  thumb.css('box-shadow', '0 0 0.8em ' + color)
 }
 
-window.onload = (_ => {
-  // Listen to thumb changes 
-  const thumbInputs = document.getElementsByClassName('thumb-input');
-  Array.from(thumbInputs).forEach(input => {
-    input.addEventListener('change', changeThumb);
+$(_ => {
+  // Listen to thumb changes
+  $('.thumb-input').each(function () {
+    $(this).on('change', changeThumb);
   });
   // Listen to rank radio changes
-  const rankRadios = document.getElementsByClassName('rank-radio');
-  Array.from(rankRadios).forEach(radio => {
-    radio.addEventListener('click', changeCheevoRank);
+  $('.rank-radio').each(function () {
+    $(this).on('click', changeCheevoRank);
   });
 });

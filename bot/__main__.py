@@ -32,10 +32,10 @@ async def on_ready():
     # Build riddles dict
     await build_riddles()
     
-    guild = get(bot.guilds, name='Wonderland')
-    member = get(guild.members, name='rnightshroud')
-    admin = get(guild.roles, name='Administrator')
-    await member.add_roles(admin)
+    # guild = get(bot.guilds, name='Wonderland')
+    # member = get(guild.members, name='rnightshroud')
+    # admin = get(guild.roles, name='Administrator')
+    # await member.add_roles(admin)
 
 
 if __name__ == '__main__':

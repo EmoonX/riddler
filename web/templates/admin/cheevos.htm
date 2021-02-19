@@ -51,8 +51,7 @@
             </div>
           </div>
         {% endfor %}
-          <!-- <tr>
-            {% set index = cheevos|length + 1 %}
+          <div class="row" style="display: none">
             <div class="cheevo-image">
               <img id="{{ index }}-thumb" src="">
               <input type="file" id="{{ index }}-input" class="thumb-input" name="{{ index }}-image" required>
@@ -90,12 +89,13 @@
                 <select class="paths" name="{{ index }}-pages" multiple></select>
               </label>
             </div>
-          </tr> -->
+          </div>
         </section>
       {% endfor %}
         <hr>
         <div class='buttons'>
-          <button type="button">➕ Add achievement</button>
+          <input type="hidden" name="count" value="{{ cheevos|length + 1 }}">
+          <button type="button" name="add-cheevo">➕ Add achievement</button>
           <button type="submit" disabled>📝 Submit changes</button>
         </div>
         <div class="msg">{{ msg }}</div>
