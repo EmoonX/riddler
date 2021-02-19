@@ -14,23 +14,23 @@
           <div class='row'>
             {% set index = cheevo['index'] %}
             <div class="thumb">
-              <img id="{{ index }}-thumb" class='cheevo-thumb' src="/static/cheevos/{{ alias }}/{{ cheevo['image'] }}" width="100" height="100" style="border-color: {{ cheevo['color'] }}; box-shadow: 0 0 0.8em {{ cheevo['color'] }}">
+              <img id="{{ index }}-thumb" class='cheevo-thumb' src="/static/cheevos/{{ alias }}/{{ cheevo['image'] }}" width="100" height="100" title="Achievement image, in 1:1 square thumb format.&#10;Outline color changes according to rank." style="border-color: {{ cheevo['color'] }}; box-shadow: 0 0 0.8em {{ cheevo['color'] }}">
               <input type="file" id="{{ index }}-input" class="thumb-input" accept="image/*">
               <input type="hidden" name="{{ index }}-image" value="{{ cheevo['image'] }}">
               <input type="hidden" name="{{ index }}-imgdata">
             </div>
             <div>
-              <label class="key">
+              <label class="key" title="Short and unique achievement title.">
                 Title
                 <input type="text" name="{{ index }}-title" size="10" value="{{ cheevo['title'] }}" required>
               </label>
-              <label>
+              <label title="Flavored achievement description.&#10;May or may not contain hints about how to reach it.">
                 Description
                 <textarea name="{{ index }}-description" rows="3" cols="25" required>{{ cheevo['description'] }}</textarea>
               </label>
             </div>
             <div>
-              <fieldset class="rank">
+              <fieldset class="rank" title="Select rank according to achievement's difficulty or importance.&#10;&#10;[C] 'Dumb' and/or easy-to-reach cheevos;&#10;[B] Substancial ones that require creativity and/or out-of-the-box thinking;&#10;[A] Good challenges like secret levels or very well hidden eggs;&#10;[S] Should be reserved for the best among the best (like reaching a vital game's landmark).">
                 <legend>Rank</legend>
               {% for rank, color in cheevo_colors.items()|reverse %}
                 <label style="color: {{ color }}">
@@ -44,7 +44,7 @@
               </label>
             </div>
             <div>
-              <label>
+              <label title="[TODO] Path(s) and conditional operator for unlocking achievement, in JSON format.">
                 Paths JSON
                 <textarea name="{{ index }}-paths_json" rows="3" cols="25" required>{{ cheevo['paths_json'] }}</textarea>
               </label>
