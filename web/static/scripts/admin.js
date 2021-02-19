@@ -30,30 +30,46 @@ function changeThumb() {
 
 function changeCheevoRank() {
   // Update cheevo thumb outline color on rank change
-  const color = cheevoRankColors[this.value]
+  const rank = this.value.toLowerCase();
   const index = this.name.substr(0, this.name.search('-'));
   const thumb = $('#' + index + '-thumb');
-  console.log(color);
-  thumb.css('border-color', color)
-  thumb.css('box-shadow', '0 0 0.8em ' + color)
+  thumb.removeClass();
+  thumb.addClass(['cheevo-thumb', rank + '-rank']);
 }
 
 function addCheevoRow() {
-  // Add new cheevo row fields
-  const index = $('.row').length + 1;
-  $.get('/admin/cheevo-row/', function(html) {
-    console.log(html);
-    html = html.replaceAll('[[ index ]]', index);
-    div = $.parseHTML(html);
-    console.log(div);
-    $('.admin.new').append(div);
-  }, 'html');
+  // Add new cheevo row
 
   // Disable Add button for the time being
   $('button[name="add-cheevo"]').prop('disabled', true);
+
+  // Get new index from current number of rows
+  const index = $('.row').length + 1;
+
+  $.get('/admin/cheevo-row/', function(html) {
+    // Get HTML from rendered template and append to section
+    html = html.replaceAll('[[ index ]]', index);
+    div = $.parseHTML(html);
+    $('.admin.new').append(div);
+
+    // Add listeners to new fields
+    console.log('#' + index + '-input')
+    $('.admin.new').on('change', '#' + index + '-input', changeThumb);
+    $('.admin.new').on('click', '.rank-radio', changeCheevoRank);
+  }, 'html');
 }
 
 $(_ => {
+  // Dinamically create css classes for thumb outline colors
+  css = '<style type="text/css">';
+  $.each(cheevoRankColors, function(rank, color) {
+    css += '.' + rank.toLowerCase() + '-rank { ';
+    css += 'border-color: ' + color + '; ';
+    css += 'box-shadow: 0 0 0.8em ' + color + '; } ';
+  });
+  css += '</style>';
+  $('head').append(css);
+
   // Listen to thumb changes
   $('.thumb-input').each(function () {
     $(this).on('change', changeThumb);
@@ -62,5 +78,6 @@ $(_ => {
   $('.rank-radio').each(function () {
     $(this).on('click', changeCheevoRank);
   });
+  // Listen to Add button click
   $('button[name="add-cheevo"]').on('click', addCheevoRow);
 });
