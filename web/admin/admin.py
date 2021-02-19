@@ -53,7 +53,7 @@ async def save_image(folder: str, alias: str,
     dir = str(dir.parent) + ('/static/%s/%s' % (folder, alias))
     
     # Erase previous file if filename was changed
-    if filename != prev_filename:
+    if prev_filename and filename != prev_filename:
         prev_path = '%s/%s' % (dir, prev_filename)
         try:
             os.remove(prev_path)

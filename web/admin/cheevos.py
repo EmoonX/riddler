@@ -3,7 +3,6 @@ from quart_discord import requires_authorization
 
 from admin.admin import auth, save_image
 from inject import get_achievements
-from ipc import web_ipc
 from util.db import database
 
 # Create app blueprint
@@ -20,7 +19,7 @@ async def cheevos(alias: str):
     if status != 200:
         return msg, status
     
-    def r(cheevos: list, msg: str):
+    def r(msg: str):
         '''Render page with correct data.'''
         return render_template('admin/cheevos.htm', 
                 alias=alias, cheevos=cheevos, msg=msg)
@@ -38,7 +37,7 @@ async def cheevos(alias: str):
 
     # Render page normally on GET
     if request.method == 'GET':
-        return await r(cheevos, '')
+        return await r('')
     
     # Build dict of cheevos after POST
     form = await request.form
@@ -81,47 +80,30 @@ async def cheevos(alias: str):
                 cheevo['image'] = cheevo_before['image']
             await save_image('cheevos', alias,
                     cheevo['image'], cheevo['imgdata'], cheevo_before['image'])
-    
-    return 'OK'
 
     # Insert new level data on database
-    query = 'INSERT INTO levels ' \
-            '(riddle, level_set, `index`, `name`, path, image, answer, ' \
-                '`rank`, discord_category, discord_name) VALUES ' \
-            '(:riddle, :set, :index, :name, :path, :image, :answer, ' \
-                ':rank, :discord_category, :discord_name)'
-    index = len(levels_before) + 1
-    values = {'riddle': alias, 'set': 'Normal Levels',
-            'index': index, 'name': form['%d-name' % index],
-            'path': form['%d-path' % index],
+    query = 'INSERT INTO levels VALUES ' \
+            '(:riddle, :title, :description, :image, :rank, :paths_json)'
+    index = len(cheevos_before) + 1
+    values = {'riddle': alias, 'title': form['%d-title' % index],
+            'description': form['%d-description' % index],
             'image': form['%d-image' % index],
-            'answer': form['%d-answer' % index],
             'rank': form['%d-rank' % index],
-            'discord_category': 'Normal Levels',
-            'discord_name': form['%d-discord_name' % index]}
+            'paths_json': form['%d-paths_json' % index]}
     await database.execute(query, values)
-    # query = 'INSERT IGNORE INTO secret_levels VALUES ' \
-    #         '(:guild, :category, :level_name, :path, ' \
-    #             ':previous_level, :answer_path)'
-    # secret_levels_values = {'guild': alias, 'category': 'Secret Levels',
-    #         'level_name': form['new_secret_id'], 'path': form['new_secret_path'],
-    #         'previous_level': form['new_secret_prev'],
-    #         'answer_path': form['new_secret_answer']}
-    # if '' not in secret_levels_values.values():
-    #     await database.execute(query, secret_levels_values)
     
     # Get image data and save image on thumbs folder
     filename = form['%d-image' % index]
     imgdata = form['%d-imgdata' % index]
-    print(imgdata)
-    await _save_image(alias, filename, imgdata)
-
-    # Update Discord guild channels and roles with new levels info.
-    # This is done by sending an request to the bot's IPC server.
-    values['is_secret'] = 0
-    await web_ipc.request('build', guild_name=full_name, levels=[values])
+    await save_image('cheevos', alias, cheevo['image'], cheevo['imgdata'])
     
-    # Fetch levels again to display page correctly on POST
-    levels = await fetch_levels(alias)
+    # Fetch cheevos again to display page correctly on POST
+    cheevos = await get_achievements(alias)
 
     return await r('Guild info updated successfully!')
+
+
+@admin_cheevos.route('/admin/cheevo-row/', methods=['GET'])
+async def cheevo_row():
+    '''Çheevo row HTML code to be fetched by JS script.'''
+    return await render_template('admin/cheevo-row.htm')

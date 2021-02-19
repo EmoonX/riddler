@@ -41,9 +41,10 @@ function changeCheevoRank() {
 function addCheevoRow() {
   // Add new cheevo row fields
   const index = $('.row').length + 1;
-  $.get('/static/scripts/html/cheevo-row.htm', html => {
+  $.get('/admin/cheevo-row/', function(html) {
+    console.log(html);
     html = html.replaceAll('[[ index ]]', index);
-    div = jQuery.parseHTML(html);
+    div = $.parseHTML(html);
     console.log(div);
     $('.admin.new').append(div);
   }, 'html');
