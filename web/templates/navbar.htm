@@ -15,10 +15,10 @@
           <a href="{{ url_for('players_auth.login') }}" class="nav-button">Login</a>
         {% else %}
           <nav class="dropdown">
-            {% set user = session['user'] %}
+            {% set user = get_session_user() %}
             {% set avatar = '' %}
             <button class="nav-button profile-button">
-              <img class="avatar-small" src="{{ get_avatar_url(user) }}">{{ user['username'] }}
+              <img class="avatar-small" src="{{ get_avatar_url(user) }}">{{ user.username }}
             </button>
             <div>
               <a href="#" class="nav-button">Public info</a>

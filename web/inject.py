@@ -1,6 +1,7 @@
 from pycountry import pycountry
 from flag import flag
 
+from auth import discord
 from ipc import web_ipc
 from util.db import database
 
@@ -79,6 +80,17 @@ async def context_processor():
             accounts = await database.fetch_all(query, values)
         accounts = {account['username']: account for account in accounts}
         return accounts
+    
+    async def get_session_user():
+        '''Return current Discord OAuth2 session user.'''
+        user = await discord.fetch_user()
+        return user
+    
+    async def get_avatar_url(user):
+        '''Returns user's avatar url from a request sent to bot.'''
+        url = await web_ipc.request('get_avatar_url',
+                username=user.username, disc=user.discriminator)
+        return url
 
     def get_sorted_countries():
         '''Get sorted list of countries by name.'''
@@ -88,13 +100,6 @@ async def context_processor():
         countries = list(pycountries)
         countries.sort(key=comp_names)
         return countries
-    
-    async def get_avatar_url(account):
-        '''Returns user's avatar url from a request sent to bot.'''
-        url = await web_ipc.request('get_avatar_url',
-                username=account['username'],
-                disc=account['discriminator'])
-        return url
 
     # Dict for extra variables
     extra = {

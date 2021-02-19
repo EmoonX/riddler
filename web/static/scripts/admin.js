@@ -1,3 +1,10 @@
+const cheevoRankColors = {
+  'C': 'firebrick',
+  'B': 'lightcyan',
+  'A': 'gold',
+  'S': 'darkturquoise'
+};
+
 function changeThumb() {
   // Load image from file browser
   if (this.files && this.files[0]) {
@@ -20,9 +27,27 @@ function changeThumb() {
   }
 }
 
+function changeCheevoRank() {
+  if (!this.checked) {
+    return;
+  }
+  console.log(this.value)
+  const color = cheevoRankColors[this.value]
+  const index = this.name.substr(0, this.name.search('-'));
+  const thumb = document.getElementById(index + '-thumb');
+  thumb.style.borderColor = color
+  thumb.style.boxShadow = "0 0 0.8em " + color
+}
+
 window.onload = (_ => {
+  // Listen to thumb changes 
   const thumbInputs = document.getElementsByClassName('thumb-input');
   Array.from(thumbInputs).forEach(input => {
     input.addEventListener('change', changeThumb);
+  });
+  // Listen to rank radio changes
+  const rankRadios = document.getElementsByClassName('rank-radio');
+  Array.from(rankRadios).forEach(radio => {
+    radio.addEventListener('click', changeCheevoRank);
   });
 });

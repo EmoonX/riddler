@@ -1,5 +1,5 @@
 {% extends 'layout.htm' %}
-{% block title %}⛔ {{ alias }} | Cheevos{% endblock %}
+{% block title %}🔑 {{ alias }} | Cheevos{% endblock %}
 {% block extra %}
 <script src="/static/scripts/admin.js"></script>
 {% endblock %}
@@ -34,7 +34,10 @@
                 <legend>Rank</legend>
               {% for rank, color in cheevo_colors.items()|reverse %}
                 <label style="color: {{ color }}">
-                  <input type="radio" name="{{ index }}-rank" value="{{ rank }}" required>
+                  {% if rank == cheevo['rank'] %}
+                    {% set checked = 'checked' %}
+                  {% endif %}
+                  <input type="radio" class="rank-radio" name="{{ index }}-rank" value="{{ rank }}" {{ checked }} required>
                   {{ rank }}<!--
               --></label>
               {% endfor %}
@@ -88,11 +91,13 @@
               </label>
             </div>
           </tr> -->
-          <button type="button">➕ Add {{ rank }}-rank achievement</button>
         </section>
-        <hr>
       {% endfor %}
-        <button type="submit">📝 Submit changes</button>
+        <hr>
+        <div class='buttons'>
+          <button type="button">➕ Add achievement</button>
+          <button type="submit" disabled>📝 Submit changes</button>
+        </div>
         <div class="msg">{{ msg }}</div>
       </form>
     </main>
