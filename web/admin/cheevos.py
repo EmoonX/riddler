@@ -81,24 +81,30 @@ async def cheevos(alias: str):
             await save_image('cheevos', alias,
                     cheevo['image'], cheevo['imgdata'], cheevo_before['image'])
 
-    # Insert new level data on database
-    query = 'INSERT INTO achievements VALUES ' \
-            '(:riddle, :title, :description, :image, :rank, :paths_json)'
-    index = len(cheevos_before) + 1
-    values = {'riddle': alias, 'title': form['%d-title' % index],
-            'description': form['%d-description' % index],
-            'image': form['%d-image' % index],
-            'rank': form['%d-rank' % index],
-            'paths_json': form['%d-paths_json' % index]}
-    await database.execute(query, values)
-    
-    # Get image data and save image on thumbs folder
-    filename = form['%d-image' % index]
-    imgdata = form['%d-imgdata' % index]
-    await save_image('cheevos', alias, filename, imgdata)
+    if len(cheevos_after) > len(cheevos_before):
+        # Insert new level data on database
+        query = 'INSERT INTO achievements VALUES ' \
+                '(:riddle, :title, :description, :image, :rank, :paths_json)'
+        index = len(cheevos_before) + 1
+        values = {'riddle': alias, 'title': form['%d-title' % index],
+                'description': form['%d-description' % index],
+                'image': form['%d-image' % index],
+                'rank': form['%d-rank' % index],
+                'paths_json': form['%d-paths_json' % index]}
+        await database.execute(query, values)
+        
+        # Get image data and save image on thumbs folder
+        filename = form['%d-image' % index]
+        imgdata = form['%d-imgdata' % index]
+        await save_image('cheevos', alias, filename, imgdata)
     
     # Fetch cheevos again to display page correctly on POST
     cheevos = await get_achievements(alias)
+    k = 1
+    for cheevo_list in cheevos.values():
+        for cheevo in cheevo_list:    
+            cheevo['index'] = k
+            k += 1
 
     return await r('Guild info updated successfully!')
 

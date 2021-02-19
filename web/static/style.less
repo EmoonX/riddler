@@ -756,19 +756,22 @@ section.admin > .row {
   z-index: 100;
   display: flex;
   flex-direction: row;
+  justify-content: space-around;
   height: 13em;
   width: 100%;
+  margin: 0 -50px;
+  padding: 0 50px;
   background-image: linear-gradient(
     to right,
     transparent,
-    rgba(127, 127, 127, 0.15) 10% 90%,
+    rgba(127, 127, 127, 0.15) 15% 85%,
     transparent
   );
   border: thin solid transparent;
   border-image: linear-gradient(
     to right,
     transparent,
-    rgba(255, 255, 221, 0.5) 10% 90%,
+    rgba(255, 255, 221, 0.5) 15% 85%,
     transparent
   );
   border-image-slice: 1;
@@ -786,7 +789,7 @@ section.admin > .row {
     background-image: linear-gradient(
     to right,
     transparent,
-    rgba(127, 127, 127, 0.15) 10% 90%,
+    rgba(127, 127, 127, 0.15) 15% 85%,
     transparent
   );
     opacity: 0;
@@ -795,7 +798,6 @@ section.admin > .row {
 
   & > div {
     display: flex;
-    flex: 1;
     flex-direction: column;
     justify-content: space-evenly;
     align-items: center;
