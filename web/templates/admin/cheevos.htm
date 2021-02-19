@@ -51,52 +51,15 @@
             </div>
           </div>
         {% endfor %}
-          <div class="row" style="display: none">
-            <div class="cheevo-image">
-              <img id="{{ index }}-thumb" src="">
-              <input type="file" id="{{ index }}-input" class="thumb-input" name="{{ index }}-image" required>
-              <input type="hidden" name="{{ index }}-imgdata">
-            </div>
-            <div>
-              <label class="cheevo-name">
-                cheevo name
-                <input type="text" name="{{ index }}-name" size="2" required>
-              </label>
-              <label>
-                Discord name
-                <input type="text" name="{{ index }}-discord_name" size="2" required>
-              </label>
-            </div>
-            <div>
-              <label>
-                Front page path
-                <input type="text" class="paths" name="{{ index }}-path" size="15" required>
-              </label>
-              <label>
-                Answer path
-                <input type="text" class="paths" name="{{ index }}-answer" size="15" required>
-              </label>
-            </div>
-            <div>
-              <label>
-                Rank
-                <input type="text" name="{{ index }}-rank" size="1" required>
-              </label>
-            </div>
-            <div>
-              <label>
-                Pages and files
-                <select class="paths" name="{{ index }}-pages" multiple></select>
-              </label>
-            </div>
-          </div>
         </section>
       {% endfor %}
         <hr>
+        <section class="admin new">
+          <!-- New cheevo rows go here -->
+        </section>
         <div class='buttons'>
-          <input type="hidden" name="count" value="{{ cheevos|length + 1 }}">
           <button type="button" name="add-cheevo">➕ Add achievement</button>
-          <button type="submit" disabled>📝 Submit changes</button>
+          <button type="submit">📝 Submit changes</button>
         </div>
         <div class="msg">{{ msg }}</div>
       </form>

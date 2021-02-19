@@ -38,6 +38,20 @@ function changeCheevoRank() {
   thumb.css('box-shadow', '0 0 0.8em ' + color)
 }
 
+function addCheevoRow() {
+  // Add new cheevo row fields
+  const index = $('.row').length + 1;
+  $.get('/static/scripts/html/cheevo-row.htm', html => {
+    html = html.replaceAll('[[ index ]]', index);
+    div = jQuery.parseHTML(html);
+    console.log(div);
+    $('.admin.new').append(div);
+  }, 'html');
+
+  // Disable Add button for the time being
+  $('button[name="add-cheevo"]').prop('disabled', true);
+}
+
 $(_ => {
   // Listen to thumb changes
   $('.thumb-input').each(function () {
@@ -47,4 +61,5 @@ $(_ => {
   $('.rank-radio').each(function () {
     $(this).on('click', changeCheevoRank);
   });
+  $('button[name="add-cheevo"]').on('click', addCheevoRow);
 });
