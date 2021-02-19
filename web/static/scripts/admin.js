@@ -60,12 +60,12 @@ function addCheevoRow() {
 }
 
 $(_ => {
-  // Dinamically create css classes for thumb outline colors
+  // Dinamically create CSS classes for thumb outline colors
   css = '<style type="text/css">';
   $.each(cheevoRankColors, function(rank, color) {
     css += '.' + rank.toLowerCase() + '-rank { ';
     css += 'border-color: ' + color + ' !important; ';
-    css += 'box-shadow: 0 0 0.8em ' + color + '; } ';
+    css += 'box-shadow: 0 0 0.8em ' + color + ' !important; } ';
   });
   css += '</style>';
   $('head').append(css);

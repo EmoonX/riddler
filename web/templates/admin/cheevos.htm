@@ -1,5 +1,5 @@
 {% extends 'layout.htm' %}
-{% block title %}🔑 {{ alias }} | Cheevos{% endblock %}
+{% block title %}🔑 {{ alias }} | Achievements{% endblock %}
 {% block extra %}
 <script src="/static/scripts/admin.js"></script>
 {% endblock %}
@@ -13,8 +13,8 @@
         {% for cheevo in cheevos[rank] %}
           <div class='row'>
             {% set index = cheevo['index'] %}
-            <div class="thumb">
-              <img id="{{ index }}-thumb" class='cheevo-thumb' src="/static/cheevos/{{ alias }}/{{ cheevo['image'] }}" width="100" height="100" title="Achievement image, in 1:1 square thumb format.&#10;Outline color changes according to rank." style="border-color: {{ cheevo['color'] }}; box-shadow: 0 0 0.8em {{ cheevo['color'] }}">
+            <div>
+              <img id="{{ index }}-thumb" class="thumb cheevo" src="/static/cheevos/{{ alias }}/{{ cheevo['image'] }}" width="100" height="100" title="Achievement image, in 1:1 square thumb format.&#10;Outline color changes according to rank." style="border-color: {{ cheevo['color'] }}; box-shadow: 0 0 0.8em {{ cheevo['color'] }}">
               <input type="file" id="{{ index }}-input" class="thumb-input" accept="image/*">
               <input type="hidden" name="{{ index }}-image" value="{{ cheevo['image'] }}">
               <input type="hidden" name="{{ index }}-imgdata">
@@ -41,7 +41,7 @@
                   {{ rank }}<!--
               --></label>
               {% endfor %}
-              </label>
+              </fieldset>
             </div>
             <div>
               <label title="[TODO] Path(s) and conditional operator for unlocking achievement, in JSON format.">

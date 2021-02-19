@@ -236,7 +236,7 @@ var {
 
 hr {
   width: 50%;
-  margin: 50px 0;
+  margin: 100px 0 50px 0;
   border-image: linear-gradient(
     to right,
     transparent,
@@ -300,7 +300,7 @@ a > .avatar-small {
   min-height: 90px;
 }
 
-.cheevo {
+.cheevo:not(.thumb) {
   position: absolute;
   display: block;
   opacity: 0;
@@ -756,9 +756,8 @@ section.admin > .row {
   z-index: 100;
   display: flex;
   flex-direction: row;
-  height: 12em;
+  height: 13em;
   width: 100%;
-  margin-bottom: 0.5em;
   background-image: linear-gradient(
     to right,
     transparent,
@@ -825,21 +824,24 @@ section.admin > .row {
     text-align: center;
   }
 
-  & > .thumb {
-    & > img {
-      max-width: 160px;
+  & img.thumb {
+    &.level {
+      max-width: 120px;
       max-height: 120px;
+      border: thin solid rgba(255, 255, 221, 0.5);
+      border-radius: 5px;
+      box-shadow: 0 0 0.5em rgba(255, 255, 221, 0.5);
     }
-    & > input {
+    &.cheevo {
+      width: 100px;
+      height: 100px;
+      border: 0.2em solid;
+      border-radius: 20px;
+    }
+    & + input {
       width: 95px;
       font-size: 0.6em;
     }
-  }
-  & img.cheevo-thumb {
-    width: 100px;
-    height: 100px;
-    border: 0.2em solid;
-    border-radius: 20px;
   }
   
   & fieldset.rank {
@@ -864,7 +866,7 @@ section.admin > .row {
     }
   }
 
-  & .cheevo-thumb, & label, & fieldset {
+  & img.thumb, & label, & fieldset {
     cursor: help;
   }
 
@@ -880,6 +882,16 @@ section.admin > .row {
   }
   
   &:hover {
+    & img.thumb {
+      @keyframes breath {
+        0% { transform: scale(1) }
+        50% { transform: scale(1.05) }
+        100% { transform: scale(1) }
+      }
+      animation: breath 1s infinite;
+      animation-timing-function: ease;
+    }
+
     &:before {
       opacity: 1;
     }

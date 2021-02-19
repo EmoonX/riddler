@@ -7,97 +7,58 @@
     <main>
       <form method="post">
         <h1>Levels</h1>
-        <table class='admin'>
-          <tbody>
-          {% for level in levels %}
-            <tr>
-              <td class="thumb">
-                <img id="{{ loop.index }}-thumb" src="/static/thumbs/{{ alias }}/{{ level['image'] }}">
-                <input type="file" id="{{ loop.index }}-input" class="thumb-input" accept="image/*">
-                <input type="hidden" name="{{ loop.index }}-image" value="{{ level['image'] }}">
-                <input type="hidden" name="{{ loop.index }}-imgdata">
-              </td>
-              <td>
-                <label class="key">
-                  Level name
-                  <input type="text" name="{{ loop.index }}-name" size="2" value="{{ level['name'] }}" required>
-                </label>
-                <label>
-                  Discord name
-                  <input type="text" name="{{ loop.index }}-discord_name" size="2" value="{{ level['discord_name'] }}">
-                </label>
-              </td>
-              <td>
-                <label>
-                  Front page path
-                  <input type="text" class="paths" name="{{ loop.index }}-path" size="15" value="{{ level['path'] }}" required>
-                </label>
-                <label>
-                  Answer path
-                  <input type="text" class="paths" name="{{ loop.index }}-answer" size="15" value="{{ level['answer'] }}" required>
-                </label>
-              </td> 
-              <td>
-                <label>
-                  Rank
-                  <input type="text" name="{{ loop.index }}-rank" size="1" value="{{ level['rank'] }}" required>
-                </label>
-              </td>
-              <td>
-                <label>
-                  Pages and files
-                  <select class="paths" name="{{ loop.index }}-pages" multiple>
-                  {% for page in level['pages'] %}
-                    <option value="{{ page }}">{{ page }}</option>
-                  {% endfor %}
-                  </select>
-                </label>
-              </td>
-            </tr>
-          {% endfor %}
-            <!-- <tr>
-              {% set index = levels|length + 1 %}
-              <td class="thumb">
-                <img id="{{ index }}-thumb" src="">
-                <input type="file" id="{{ index }}-input" class="thumb-input" name="{{ index }}-image" required>
-                <input type="hidden" name="{{ index }}-imgdata">
-              </td>
-              <td>
-                <label class="key">
-                  Level name
-                  <input type="text" name="{{ index }}-name" size="2" required>
-                </label>
-                <label>
-                  Discord name
-                  <input type="text" name="{{ index }}-discord_name" size="2" required>
-                </label>
-              </td>
-              <td>
-                <label>
-                  Front page path
-                  <input type="text" class="paths" name="{{ index }}-path" size="15" required>
-                </label>
-                <label>
-                  Answer path
-                  <input type="text" class="paths" name="{{ index }}-answer" size="15" required>
-                </label>
-              </td>
-              <td>
-                <label>
-                  Rank
-                  <input type="text" name="{{ index }}-rank" size="1" required>
-                </label>
-              </td>
-              <td>
-                <label>
-                  Pages and files
-                  <select class="paths" name="{{ index }}-pages" multiple></select>
-                </label>
-              </td>
-            </tr> -->
-          </tbody>
-        </table>
-        <input type="submit" value="Submit changes">
+        <section class="admin">
+        {% for level in levels %}
+          <div class="row">
+            {% set index = loop.index %}
+            <div>
+              <img id="{{ index }}-thumb" class="thumb level" src="/static/thumbs/{{ alias }}/{{ level['image'] }}">
+              <input type="file" id="{{ index }}-input" class="thumb-input" accept="image/*">
+              <input type="hidden" name="{{ index }}-image" value="{{ level['image'] }}">
+              <input type="hidden" name="{{ index }}-imgdata">
+            </div>
+            <div>
+              <label class="key">
+                Level name
+                <input type="text" name="{{ index }}-name" size="2" value="{{ level['name'] }}" required>
+              </label>
+              <label>
+                Discord name
+                <input type="text" name="{{ index }}-discord_name" size="2" value="{{ level['discord_name'] }}">
+              </label>
+            </div>
+            <div>
+              <label>
+                Front page path
+                <input type="text" class="paths" name="{{ index }}-path" size="15" value="{{ level['path'] }}" required>
+              </label>
+              <label>
+                Answer path
+                <input type="text" class="paths" name="{{ index }}-answer" size="15" value="{{ level['answer'] }}" required>
+              </label>
+            </div> 
+            <div>
+              <fieldset class="rank" title="Select rank according to achievement's difficulty or importance.&#10;&#10;[C] 'Dumb' and/or easy-to-reach cheevos;&#10;[B] Substancial ones that require creativity and/or out-of-the-box thinking;&#10;[A] Good challenges like secret levels or very well hidden eggs;&#10;[S] Should be reserved for the best among the best (like reaching a vital game's landmark).">
+                <legend>Rank</legend>
+              {% for rank, color in cheevo_colors.items()|reverse %}
+                <label style="color: {{ color }}">
+                  <input type="radio" class="rank-radio" name="{{ index }}-rank" value="{{ rank }}" {{ checked }} required>
+                  {{ rank }}<!--
+              --></label>
+              {% endfor %}
+              </fieldset>
+            </div>
+          </div>
+        {% endfor %}
+        </section>
+        <hr>
+        <section class="admin new">
+          <!-- New level rows go here -->
+        </section>
+        <div class='buttons'>
+          <button type="button" name="add-level">➕ Add new level</button>
+          <button type="submit">📝 Submit changes</button>
+        </div>
         <div class="msg">{{ msg }}</div>
       </form>
     </main>

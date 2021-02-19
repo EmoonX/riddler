@@ -32,10 +32,13 @@ async def on_ready():
     # Build riddles dict
     await build_riddles()
     
-    # guild = get(bot.guilds, name='Wonderland')
-    # member = get(guild.members, name='rnightshroud')
-    # admin = get(guild.roles, name='Administrator')
-    # await member.add_roles(admin)
+    # guild = get(bot.guilds, name='RNS Riddle II')
+    # for channel in guild.channels:
+    #     if channel.name != 'general':
+    #         await channel.delete()
+    # for role in guild.roles:
+    #     if 'reached' in role.name:
+    #         await role.delete()
 
 
 if __name__ == '__main__':
