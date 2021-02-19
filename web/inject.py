@@ -5,12 +5,23 @@ from auth import discord
 from ipc import web_ipc
 from util.db import database
 
+
+# Dict of pairs rank -> (points, color)
+f = lambda p, c : {'points': p, 'color': c}
+level_ranks = {
+    'D': f(50, 'cornflowerblue'),
+    'C': f(100, 'lawngreen'),
+    'B': f(200, 'gold'),
+    'A': f(400, 'crimson'),
+    'S': f(1000, 'lightcyan')
+}
 # Colors for achievements outline based on ranks
-cheevo_colors = {
-    'C': 'firebrick',
-    'B': 'lightcyan',
-    'A': 'gold',
-    'S': 'darkturquoise'
+g = lambda e, c, d : {'emoji': e, 'color': c, 'description': d}
+cheevo_ranks = {
+    'C': g('🥉', 'firebrick', '"Dumb" and/or easy-to-reach cheevos.'),
+    'B': g('🥈', 'lightcyan', 'Substancial ones that require creativity and/or out-of-the-box thinking.'),
+    'A': g('🥇', 'gold', 'Good challenges like secret levels or very well hidden eggs.'),
+    'S': g('💎', 'darkturquoise', 'Should be reserved for the best among the best (like reaching a vital game\'s landmark).')
 }
 
 
@@ -42,7 +53,7 @@ async def get_achievements(alias: str, user: dict = None):
         cheevo = await database.fetch_one(query, values)
         cheevo = dict(cheevo)
         rank = cheevo['rank']
-        cheevo['color'] = cheevo_colors[rank]
+        cheevo['color'] = cheevo_ranks[rank]['color']
         cheevos[rank].append(cheevo)
     
     # Ignore ranks without cheevos
@@ -103,7 +114,7 @@ async def context_processor():
 
     # Dict for extra variables
     extra = {
-        'cheevo_colors': cheevo_colors,
+        'level_ranks': level_ranks, 'cheevo_ranks': cheevo_ranks,
         'get_achievements': get_achievements, 'get_emoji_flag': flag
     }
     # Return concatenated dict with pairs ("var" -> var_value)

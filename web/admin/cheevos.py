@@ -70,8 +70,6 @@ async def cheevos(alias: str):
                 values[attr] = value
             query += ', '.join(aux)
             query += ' WHERE riddle = :riddle AND `title` = :prev_title'
-            print(query, flush=True)
-            print(values, flush=True)
             await database.execute(query, values)
         
         # Swap image file if image was changed

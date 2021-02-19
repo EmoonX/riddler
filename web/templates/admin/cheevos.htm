@@ -7,9 +7,8 @@
     <main>
       <h1>Achievements</h1>
       <form method="post">
+        <section class="admin">
       {% for rank in cheevos|reverse %}
-        <section class='admin'>
-          <h2>{{ rank }}-rank</h2>
         {% for cheevo in cheevos[rank] %}
           <div class='row'>
             {% set index = cheevo['index'] %}
@@ -30,15 +29,15 @@
               </label>
             </div>
             <div>
-              <fieldset class="rank" title="Select rank according to achievement's difficulty or importance.&#10;&#10;[C] 'Dumb' and/or easy-to-reach cheevos;&#10;[B] Substancial ones that require creativity and/or out-of-the-box thinking;&#10;[A] Good challenges like secret levels or very well hidden eggs;&#10;[S] Should be reserved for the best among the best (like reaching a vital game's landmark).">
-                <legend>Rank</legend>
-              {% for rank, color in cheevo_colors.items()|reverse %}
-                <label style="color: {{ color }}">
+              <fieldset class="rank">
+                <legend title="Select rank according to achievement's difficulty or importance.">Rank</legend>
+              {% for rank, info in cheevo_ranks.items()|reverse %}
+                <label title="{{ info['emoji'] }}: {{ info['description'] }}" style="color: {{ info['color'] }}">
                   {% if rank == cheevo['rank'] %}
                     {% set checked = 'checked' %}
                   {% endif %}
                   <input type="radio" class="rank-radio" name="{{ index }}-rank" value="{{ rank }}" {{ checked }} required>
-                  {{ rank }}<!--
+                  {{ info['emoji'] }}<!--
               --></label>
               {% endfor %}
               </fieldset>
@@ -51,8 +50,8 @@
             </div>
           </div>
         {% endfor %}
-        </section>
       {% endfor %}
+        </section>
         <hr>
         <section class="admin new">
           <!-- New cheevo rows go here -->

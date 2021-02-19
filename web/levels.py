@@ -82,14 +82,6 @@ async def level_list(riddle: str):
         # Get dict of unlocked pages to file explorers
         await _get_user_unlocked_pages(riddle, levels)
 
-    # Dict of pairs rank -> (points, color)
-    level_ranks = {
-        'D': (50, 'cornflowerblue'),
-        'C': (100, 'lawngreen'),
-        'B': (200, 'gold'),
-        'A': (400, 'crimson'),
-        'S': (1000, 'lightcyan')
-    }
     # return render_and_count('levels.htm', locals())
     # return render_and_count('levels.htm', locals())
     s = 'cipher'
