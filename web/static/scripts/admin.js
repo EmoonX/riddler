@@ -34,7 +34,7 @@ function changeCheevoRank() {
   const index = this.name.substr(0, this.name.search('-'));
   const thumb = $('#' + index + '-thumb');
   thumb.removeClass();
-  thumb.addClass([rank + '-rank', 'cheevo-thumb']);
+  thumb.addClass([rank + '-rank', 'thumb', 'cheevo']);
 }
 
 function addCheevoRow() {
