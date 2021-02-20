@@ -1,7 +1,8 @@
 {% extends 'layout.htm' %}
 {% block title %}🔑 {{ alias }} | Levels{% endblock %}
 {% block extra %}
-<script src="/static/scripts/admin.js"></script>
+<script src="/static/scripts/admin/admin.js"></script>
+<script src="/static/scripts/admin/levels.js"></script>
 {% endblock %}
 {% block content %}
     <main>
@@ -12,20 +13,17 @@
           <div class="row">
             {% set index = loop.index %}
             <div>
+              <label class="key">
+                Level
+                <input type="text" name="{{ index }}-name" size="2" value="{{ level['name'] }}" required>
+              </label>
+              <var class="menu">☰</var>
+            </div>
+            <div>
               <img id="{{ index }}-thumb" class="thumb level" src="/static/thumbs/{{ alias }}/{{ level['image'] }}">
               <input type="file" id="{{ index }}-input" class="thumb-input" accept="image/*">
               <input type="hidden" name="{{ index }}-image" value="{{ level['image'] }}">
               <input type="hidden" name="{{ index }}-imgdata">
-            </div>
-            <div>
-              <label class="key">
-                Level name
-                <input type="text" name="{{ index }}-name" size="2" value="{{ level['name'] }}" required>
-              </label>
-              <label>
-                Discord name
-                <input type="text" name="{{ index }}-discord_name" size="2" value="{{ level['discord_name'] }}">
-              </label>
             </div>
             <div>
               <label>
@@ -51,6 +49,35 @@
               {% endfor %}
               </fieldset>
             </div>
+            <div>
+              <label>
+                Discord name
+                <input type="text" name="{{ index }}-discord_name" size="2" value="{{ level['discord_name'] }}">
+              </label>
+            </div>
+          </div>
+          <div class="page-explorer" data-files_count="{{ level['files_count'] }}" data-files_total="{{ level['files_total'] }}" data-folders="{{ level['folders'] }}">
+            {% set folder = s + '/' + level['path'].rsplit('/', 1)[0] %}
+            <nav>
+              <div class="title">Page Explorer</div>
+              <div class="content">
+                <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">/{{ folder }}/</div>
+                <div class="completion"><span class="check">✅</span><var>{{ level['files_count'][folder] }} / {{ level['files_total'][folder] }}</var> files in this folder</div>
+              </div>
+            </nav>
+            <div><!--
+            {% for page in level['folders'][folder] %}
+              {% if page[-4] == '.' %}
+                {% set name = page[-3:] %}
+              {% else %}
+                {% set name = 'folder' %}
+              {% endif %}
+            --><figure>
+                <img width="50" height="50" src="/static/icons/{{ name }}.png">
+                <figcaption>{{ page }}</figcaption>
+              </figure><!--
+            {% endfor %}
+          --></div>
           </div>
         {% endfor %}
         </section>

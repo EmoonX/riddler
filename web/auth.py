@@ -89,7 +89,6 @@ async def callback():
     values = {'name': user.name, 'disc': user.discriminator}
     result = await database.fetch_one(query, values)
     session['country'] = result['country']
-    print(session['country'])
 
     # Otherwise, redirect to post-login page
     return redirect(url_for('account.settings',

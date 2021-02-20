@@ -190,13 +190,15 @@ class _PathsHandler:
             page_level = await database.fetch_one(query, values)
 
             # Check for normal level pages
-            next_name = '%02d' % (int(current_level['name']) + 1)
+            next_name = '%02d' % (int(current_name) + 1)
+            print(next_name)
             if current_level and path == current_level['answer']:
                 # If user entered a correct and new answer, register completion
                 lh = _NormalLevelHandler(current_level, self)
                 await lh.register_completion()
             if page_level['name'] == next_name and path == page_level['path']:
                 # If it's the next level's front page, register progress
+                print('OK')
                 lh = _NormalLevelHandler(page_level, self)
                 await lh.register_finding()
             

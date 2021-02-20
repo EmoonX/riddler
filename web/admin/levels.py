@@ -21,8 +21,11 @@ async def levels(alias: str):
     
     def r(levels: list, msg: str):
         '''Render page with correct data.'''
+        s = 'cipher'
+        if alias == 'rns':
+            s = 'riddle'
         return render_template('admin/levels.htm', 
-                alias=alias, levels=levels, msg=msg)
+                alias=alias, levels=levels, s=s, msg=msg)
     
     # Get initial level data from database
     levels_before = await _fetch_levels(alias)
@@ -141,7 +144,75 @@ async def _fetch_levels(alias: str):
                 'WHERE riddle = :riddle and level_name = :name'
         values = {'riddle': alias, 'name': name}
         result = await database.fetch_all(query, values)
-        pages = tuple(page['path'] for page in result)
-        level['pages'] = pages
+        await _get_pages(alias, level)
     
     return levels
+
+
+async def _get_pages(alias: str, level: dict):
+    s = 'cipher'
+    if alias == 'rns':
+        s = 'riddle'
+    query = 'SELECT * FROM level_pages ' \
+            'WHERE riddle = :riddle and level_name = :name'
+    values = {'riddle': alias, 'name': level['name']}
+    result = await database.fetch_all(query, values)
+    paths = [(s + '/' + row['path']) for row in result]
+
+    # Build dict of pairs (folder -> list of paths)
+    level['folders'] = {}
+    folders = level['folders']
+    for path in paths:
+        folder, page = path.rsplit('/', 1)
+        if not folder in folders:
+            folders[folder] = []
+        folders[folder].append(page)
+
+    # Save number of pages/files in folder
+    level['files_count'] = {}
+    for folder in folders:
+        level['files_count'][folder] = len(folders[folder])
+
+    def _extension_cmp(page: str):
+        '''Compare pages based firstly on their extension.
+        Order is: folders first, then .htm, then the rest.'''
+        if len(page) < 4 or page[-4] != '.':
+            return 'aaa'
+        if page[-3:] == 'htm':
+            return 'aab'
+        return page[-3:]
+
+    # Add folders to directories
+    aux = {}
+    for folder in folders:
+        f = folder
+        while f.count('/'):
+            parent, name = f.rsplit('/', 1)
+            if not parent in aux:
+                aux[parent] = set()
+            aux[parent].add(name)
+            f = parent
+    for folder, names in aux.items():
+        if not folder in folders:
+            folders[folder] = []
+        folders[folder].extend(names)
+
+    # Sort pages from each folder
+    for _, pages in folders.items():
+        pages.sort(key=_extension_cmp)
+
+    # Count total number of pages in each folder
+    level['files_total'] = {}
+    query = 'SELECT path FROM level_pages WHERE ' \
+            'riddle = :riddle AND level_name = :id'
+    values = {'riddle': alias, 'id': level['name']}
+    result = await database.fetch_all(query, values)
+    paths = [row['path'] for row in result]
+    for path in paths:
+        folder = s + '/' + path.rsplit('/', 1)[0]
+        if not folder in folders:
+            # Avoid spoiling things in HTML!
+            continue
+        if not folder in level['files_total']:
+            level['files_total'][folder] = 0
+        level['files_total'][folder] += 1

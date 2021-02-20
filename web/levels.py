@@ -16,8 +16,8 @@ async def level_list(riddle: str):
     pages = None
     user = await discord.fetch_user()
     base_values = {'riddle': riddle,
-            'name': user.name, 'disc': user.disc}
-    if 'user' in session:
+            'name': user.name, 'disc': user.discriminator}
+    if user:
         # Get user's current level
         query = 'SELECT current_level FROM riddle_accounts WHERE ' \
                 'riddle = :riddle AND ' \
@@ -31,7 +31,7 @@ async def level_list(riddle: str):
     levels = {}
     for level in result:
         level = dict(level)
-        if 'user' in session:
+        if user:
             table = 'user_levelcompletion' if not level['is_secret'] \
                     else 'user_secrets'
             query = ('SELECT username, rating_given FROM %s ' % table) + \
@@ -72,7 +72,7 @@ async def level_list(riddle: str):
         levels[level['level_set']].append(level)
         
 
-    if 'user' not in session:
+    if not user:
         # First level is always visible
         levels[0]['unlocked'] = True
         levels[0]['image'] = 'enter.jpg'
