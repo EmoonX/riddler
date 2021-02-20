@@ -1,5 +1,5 @@
 $(_ => {
-  $(".menu").on('click', function () {
+  $(".menu").on('click', _ => {
     // Toggle page explorer
     $(this).toggleClass("active")
     var row = $(this).parents(".row")
@@ -45,7 +45,7 @@ $(_ => {
     toggle_check(parent)
   }
 
-  $(".page-explorer .folder-up").click(function () {
+  $(".page-explorer .folder-up").click(_ => {
     // Change current directory to one up
     var parent = $(this).parents(".page-explorer")
     var node = parent.find("nav > .content > .path")
@@ -58,14 +58,14 @@ $(_ => {
     change_dir(folder, parent, node)
   });
 
-  $(".page-explorer").on("click", "figure", function () {
+  $(".page-explorer").on("click", "figure", _ => {
     // Make clicked file/page "active" and all others inactive
-    $(".page-explorer figure").each(function () {
+    $(".page-explorer figure").each(_ => {
       $(this).removeClass("active")
     });
     $(this).addClass("active")
   });
-  $(".page-explorer").on("dblclick", "figure", function () {
+  $(".page-explorer").on("dblclick", "figure", _ => {
     // Action to be taken upon double-clicking icon
     var page = $(this).find("figcaption").text()
     var j = page.lastIndexOf(".")
@@ -83,6 +83,24 @@ $(_ => {
       var folder = node.text().substring(1) + page
       change_dir(folder, parent, node)
     }
+  });
+  $('button[name="upload-pages"]').on('click', _ => {
+    // Open (hidden) file browser when clicking upload button
+    $('input[name="pages"]').trigger('click');
+  });
+  $('input[name="pages"]').on('change', function () {
+    // Send POST request with chosen paths text file
+    const reader = new FileReader();
+    var data;
+    reader.onload = (e => {;
+      data = e.target.result;
+    });
+    const file = $(this).get(0).files[0];
+    reader.readAsDataURL(file);
+    const url = location.href.replace('/levels/', '/update-pages/');
+    $.post(url, data, _ => {
+      console.log('Pages successfully uploaded!');
+    }, 'text');
   });
 });
   

@@ -224,3 +224,10 @@ async def level_row():
     return await render_template('admin/level-row.htm',
             level=None, index=request.args['index'],
             image='/static/thumbs/locked.png')
+
+
+@admin_levels.route('/admin/<alias>/update-pages/', methods=['POST'])
+async def update_pages(alias: str):
+    '''Update pages list with data sent by admin in text format.'''
+    return 'SUCCESS!', 200
+    

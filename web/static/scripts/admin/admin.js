@@ -52,12 +52,13 @@ function addRow(event) {
     // Get HTML from rendered template and append to section
     div = $.parseHTML(html);
     $('.new').addClass('admin');
-    $('.admin.new').append(div);
+    $('.new').show();
+    $('.new').append(div);
 
     // Add listeners to new fields
-    $('.admin.new').on('change', `#${index}-input`, changeThumb);
+    $('.new').on('change', `#${index}-input`, changeThumb);
     if (type == 'cheevo') {
-      $('.admin.new').on('click', '.rank-radio', changeCheevoRank);
+      $('.new').on('click', '.rank-radio', changeCheevoRank);
     }
   }, 'html');
 }
