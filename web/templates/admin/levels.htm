@@ -28,7 +28,7 @@
             <div>
               <label>
                 Front page path
-                <input type="text" class="paths" name="{{ index }}-path" size="15" value="{{ level['path'] }}" required>
+                <input type="text" class="paths" name="{{ index }}-path" size="15" value="{{ level['path'] }}" disabled required>
               </label>
               <label>
                 Answer path
@@ -59,11 +59,8 @@
           <div class="page-explorer" data-files_count="{{ level['files_count'] }}" data-files_total="{{ level['files_total'] }}" data-folders="{{ level['folders'] }}">
             {% set folder = s + '/' + level['path'].rsplit('/', 1)[0] %}
             <nav>
-              <div class="title">Page Explorer</div>
-              <div class="content">
-                <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">/{{ folder }}/</div>
-                <div class="completion"><span class="check">✅</span><var>{{ level['files_count'][folder] }} / {{ level['files_total'][folder] }}</var> files in this folder</div>
-              </div>
+              <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">/{{ folder }}/</div>
+              <div class="completion"><var>{{ level['files_total'][folder] }}</var> files in this folder</div>
             </nav>
             <div><!--
             {% for page in level['folders'][folder] %}
