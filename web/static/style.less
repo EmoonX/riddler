@@ -552,8 +552,13 @@ figure > figcaption {
   font-size: 1.5em;
 }
 
-.active:not(.page-explorer) {
-  margin-top: 50px !important;
+.row:not(.page-explorer):not(:first-child) {
+  margin-top: 0px;
+  transition: margin-top 0.5s;
+
+  &.active {
+    margin-top: 50px !important;
+  }
 }
 .page-explorer {
   position:absolute;
@@ -579,13 +584,17 @@ figure > figcaption {
   color: black;
   text-align: left;
   opacity: 0;
-}
-.page-explorer.active {
-  position: static;
-  height: 100%;
-  margin-bottom: 50px;
-  opacity: 1;
-  transition: opacity 0.5s;
+  transition: margin-bottom 0.5s;
+  
+  &.active {
+    position: static;
+    height: 100%;
+    opacity: 1;
+
+    &:not(:last-child) {
+      margin-bottom: 50px;
+    }
+  }
 }
 
 .page-explorer > nav {

@@ -216,3 +216,11 @@ async def _get_pages(alias: str, level: dict):
         if not folder in level['files_total']:
             level['files_total'][folder] = 0
         level['files_total'][folder] += 1
+
+
+@admin_levels.route('/admin/level-row/', methods=['GET'])
+async def level_row():
+    '''Level row HTML code to be fetched by JS script.'''
+    return await render_template('admin/level-row.htm',
+            level=None, index=request.args['index'],
+            image='/static/thumbs/locked.png')

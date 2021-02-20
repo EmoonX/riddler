@@ -85,9 +85,6 @@ async def level_list(riddle: str):
 
     # return render_and_count('levels.htm', locals())
     # return render_and_count('levels.htm', locals())
-    s = 'cipher'
-    if riddle == 'rns':
-        s = 'riddle'
     url = 'http://gamemastertips.com/cipher'
     if riddle == 'rns':
         url = 'https://rnsriddle.com/riddle'

@@ -10,72 +10,9 @@
         <h1>Levels</h1>
         <section class="admin">
         {% for level in levels %}
-          <div class="row">
-            {% set index = loop.index %}
-            <div>
-              <label class="key">
-                Level
-                <input type="text" name="{{ index }}-name" size="2" value="{{ level['name'] }}" required>
-              </label>
-              <var class="menu">☰</var>
-            </div>
-            <div>
-              <img id="{{ index }}-thumb" class="thumb level" src="/static/thumbs/{{ alias }}/{{ level['image'] }}">
-              <input type="file" id="{{ index }}-input" class="thumb-input" accept="image/*">
-              <input type="hidden" name="{{ index }}-image" value="{{ level['image'] }}">
-              <input type="hidden" name="{{ index }}-imgdata">
-            </div>
-            <div>
-              <label>
-                Front page path
-                <input type="text" class="paths" name="{{ index }}-path" size="15" value="{{ level['path'] }}" disabled required>
-              </label>
-              <label>
-                Answer path
-                <input type="text" class="paths" name="{{ index }}-answer" size="15" value="{{ level['answer'] }}" required>
-              </label>
-            </div> 
-            <div>
-              <fieldset class="rank" title="Select rank according to achievement's difficulty or importance.&#10;&#10;[🥉] 'Dumb' and/or easy-to-reach cheevos;&#10;[🥈] Substancial ones that require creativity and/or out-of-the-box thinking;&#10;[🥇] Good challenges like secret levels or very well hidden eggs;&#10;[💎] Should be reserved for the best among the best (like reaching a vital game's landmark).">
-                <legend>Rank</legend>
-              {% for rank, info in level_ranks.items()|reverse %}
-                <label style="color: {{ info['color'] }}">
-                  {% if rank == level['rank'] %}
-                    {% set checked = "checked" %}
-                  {% endif %}
-                  <input type="radio" class="rank-radio" name="{{ index }}-rank" value="{{ rank }}" {{ checked }} required>
-                  {{ rank }}<!--
-              --></label>
-              {% endfor %}
-              </fieldset>
-            </div>
-            <div>
-              <label>
-                Discord name
-                <input type="text" name="{{ index }}-discord_name" size="2" value="{{ level['discord_name'] }}">
-              </label>
-            </div>
-          </div>
-          <div class="page-explorer" data-files_count="{{ level['files_count'] }}" data-files_total="{{ level['files_total'] }}" data-folders="{{ level['folders'] }}">
-            {% set folder = s + '/' + level['path'].rsplit('/', 1)[0] %}
-            <nav>
-              <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">/{{ folder }}/</div>
-              <div class="completion"><var>{{ level['files_total'][folder] }}</var> files in this folder</div>
-            </nav>
-            <div><!--
-            {% for page in level['folders'][folder] %}
-              {% if page[-4] == '.' %}
-                {% set name = page[-3:] %}
-              {% else %}
-                {% set name = 'folder' %}
-              {% endif %}
-            --><figure>
-                <img width="50" height="50" src="/static/icons/{{ name }}.png">
-                <figcaption>{{ page }}</figcaption>
-              </figure><!--
-            {% endfor %}
-          --></div>
-          </div>
+          {% set index = loop.index %}
+          {% set image = '/static/levels/' + alias + '/' + level['image'] %}
+          {% include 'admin/level-row.htm' %}
         {% endfor %}
         </section>
         <hr>

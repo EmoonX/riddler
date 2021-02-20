@@ -8,20 +8,6 @@ $(_ => {
     toggle_check(row.next(".page-explorer"))
   });
 
-  function toggle_check(parent) {
-    // Display check mark if all files found
-    var comp = parent.find("nav > .content > .completion")
-    var vars = comp.find("var")
-    var check = comp.find(".check")
-    var count = vars[0].textContent
-    var total = vars[1].textContent
-    if (count != "--" && count == total) {
-      check.toggle(true);
-    } else {
-      check.toggle(false);
-    }
-  }
-
   function change_dir(folder, parent, node) {
     // Update directory on field
     node.text("/" + folder + "/")
