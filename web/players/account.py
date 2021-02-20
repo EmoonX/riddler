@@ -1,7 +1,8 @@
 from quart import Blueprint, request, session, \
         render_template, redirect, url_for
+from quart_discord import requires_authorization
 
-from ipc import web_ipc
+from auth import discord
 from util.db import database
 
 # Create app blueprint
@@ -9,19 +10,19 @@ account = Blueprint('account', __name__)
 
 
 @account.route('/settings/', methods=['GET', 'POST'])
+@requires_authorization
 async def settings():
     '''Account update form submission.'''
+    
     def r(msg):
         '''Render page with **kwargs.'''
-        return render_template('players/settings.htm', msg=msg)
+        return render_template('players/settings.htm',
+                user=user, msg=msg)
     
     # Render page normally on GET
+    user = await discord.fetch_user()
     if request.method == 'GET':
         return await r('')
-
-    # Must not have logged out meanwhile
-    if not 'user' in session:
-        return await redirect(url_for("auth.login"))
 
     # Check if user entered required fields in form
     form = await request.form
@@ -32,11 +33,10 @@ async def settings():
     query = 'UPDATE accounts SET country = :country ' \
             'WHERE username = :name AND discriminator = :disc'
     values = {'country': form['country'],
-            'name': session['user']['username'],
-            'disc': session['user']['discriminator']}
+            'name': user.name, 'disc': user.discriminator}
     await database.execute(query, values)
 
     # Also update session data
-    session['user']['country'] = form['country']
+    session['country'] = form['country']
 
     return await r('Account details updated successfully!')

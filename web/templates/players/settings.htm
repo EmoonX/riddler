@@ -1,10 +1,9 @@
 {% extends 'layout.htm' %}
-{% block title %}{{ get_emoji_flag(session['user']['country']) }} {{ session['user']['username'] }} | Settings{% endblock %}
+{% block title %}{{ get_emoji_flag(session['country']) }} {{ user.name }} | Settings{% endblock %}
 {% block extra %}
     <script src="/static/scripts/settings.js"></script>
 {% endblock %}
 {% block content %}
-    {% set account = session['user'] %}
     <main>
       <h1>Settings</h1>
       <form method="post">
@@ -12,10 +11,10 @@
           <legend>Personal info</legend>
           <div>
             <label class="icon"> DiscordTag
-              <input type="text" name="discord_tag" value="{{ account['username'] }}#{{ account['discriminator'] }}" disabled>
+              <input type="text" name="discord_tag" value="{{ user.name }}#{{ user.discriminator }}" disabled>
             </label>
             <label>Country
-              <input type="hidden" id="selected" value="{{ account['country'] }}">
+              <input type="hidden" id="selected" value="{{ session['country'] }}">
               <select name="country" required>
                 <option disabled>-- Choose your destiny --</option>
               {% for country in get_sorted_countries() %}

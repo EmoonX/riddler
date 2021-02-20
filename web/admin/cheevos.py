@@ -110,4 +110,6 @@ async def cheevos(alias: str):
 @admin_cheevos.route('/admin/cheevo-row/', methods=['GET'])
 async def cheevo_row():
     '''Çheevo row HTML code to be fetched by JS script.'''
-    return await render_template('admin/cheevo-row.htm')
+    return await render_template('admin/cheevo-row.htm',
+            cheevo=None, index=request.args['index'],
+            image='/static/thumbs/locked.png')

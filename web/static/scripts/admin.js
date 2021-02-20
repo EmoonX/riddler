@@ -46,14 +46,13 @@ function addCheevoRow() {
   // Get new index from current number of rows
   const index = $('.row').length + 1;
 
-  $.get('/admin/cheevo-row/', function(html) {
+  const data = {'index': index}
+  $.get('/admin/cheevo-row/', data, function(html) {
     // Get HTML from rendered template and append to section
-    html = html.replaceAll('[[ index ]]', index);
     div = $.parseHTML(html);
     $('.admin.new').append(div);
 
     // Add listeners to new fields
-    console.log('#' + index + '-input')
     $('.admin.new').on('change', '#' + index + '-input', changeThumb);
     $('.admin.new').on('click', '.rank-radio', changeCheevoRank);
   }, 'html');

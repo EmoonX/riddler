@@ -226,7 +226,7 @@ a, a:visited {
 }
 
 var {
-  font: 2em calculator;
+  font: 1.5em calculator;
   font-weight: bold;
   text-shadow: 0 0 8px crimson, 0 0 16px crimson, 0 0 24px crimson;
 }
@@ -552,6 +552,23 @@ figure > figcaption {
   font-size: 1.5em;
 }
 
+.page-explorer > td {
+  position:absolute;
+  z-index: -1;
+  opacity: 0;
+  padding: 0;
+  height: 0;
+  border-width: 0;
+  background-color: white;
+  color: black;
+  text-align: left;
+}
+.page-explorer.active > td {
+  position: static;
+  opacity: 1;
+  transition: opacity 0.5s;
+}
+
 .page-explorer nav {
   display: flex;
   opacity: 0;
@@ -668,9 +685,6 @@ figure > figcaption {
 table {
   margin: 0 auto;
   border-spacing: 0;
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0 0.5em;
 }
 
 th:first-child {
@@ -683,20 +697,20 @@ thead > tr > th {
   text-shadow: 0 0 16px black;
 }
 
-// tbody:before {
-//   /* Spacing between <thead> and <tbody> */
-//   content: "\200C";
-//   line-height: 1em;
-//   display: block;
-// }
+tbody:before {
+  /* Spacing between <thead> and <tbody> */
+  content: "\200C";
+  line-height: 1em;
+  display: block;
+}
 
 tbody > tr {
   transition: background-color 0.5s;
 }
 
-/* tbody > tr:hover, tbody > tr.active {
+tbody > tr:hover, tbody > tr.active {
   background-color: rgba(127, 127, 127, 0.4);
-} */
+}
 
 /* tbody > tr > :nth-child(2) > a {
   animation: glow 1.2s linear infinite alternate;
@@ -716,9 +730,12 @@ time {
 }
 
 th, td {
-  border: 1px solid rgba(255, 255, 221, 0.5);
-  border-left-width: 0;
-  border-right-width: 0;
+  padding: 15px;
+  border: 1px solid #ffd;
+  // border-left-width: 1px;
+  // border-right-width: 1px;
+  border-radius: 5px;
+  box-shadow: inset 0 0 0.5em orange;
   color: #ffd;
 }
 

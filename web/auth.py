@@ -54,9 +54,6 @@ async def register():
     values = {'name': user.name, 'disc': user.discriminator,
             'country': form['country']}
     await database.execute(query, values)
-    
-    # Save account database info on session dict
-    session['user'] = values
 
     # Redirect to post-registration page
     return redirect(url_for('account.settings',
@@ -91,7 +88,8 @@ async def callback():
             'WHERE username = :name AND discriminator = :disc'
     values = {'name': user.name, 'disc': user.discriminator}
     result = await database.fetch_one(query, values)
-    session['user'] = dict(result)
+    session['country'] = result['country']
+    print(session['country'])
 
     # Otherwise, redirect to post-login page
     return redirect(url_for('account.settings',

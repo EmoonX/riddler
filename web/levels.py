@@ -1,6 +1,7 @@
 from quart import Blueprint, session, render_template
 from quart_discord import requires_authorization
 
+from auth import discord
 from util.db import database
 
 # Create app blueprint
@@ -13,9 +14,9 @@ async def level_list(riddle: str):
     '''Fetch list of levels, showing only desired public info.'''
     
     pages = None
+    user = await discord.fetch_user()
     base_values = {'riddle': riddle,
-            'name': session['user']['username'],
-            'disc': session['user']['discriminator']}
+            'name': user.name, 'disc': user.disc}
     if 'user' in session:
         # Get user's current level
         query = 'SELECT current_level FROM riddle_accounts WHERE ' \
@@ -80,7 +81,7 @@ async def level_list(riddle: str):
         levels[0]['files_total'] = 0
     else:
         # Get dict of unlocked pages to file explorers
-        await _get_user_unlocked_pages(riddle, levels)
+        await _get_user_unlocked_pages(riddle, user, levels)
 
     # return render_and_count('levels.htm', locals())
     # return render_and_count('levels.htm', locals())
@@ -93,7 +94,7 @@ async def level_list(riddle: str):
     return await render_template('levels.htm', **locals())
 
 
-async def _get_user_unlocked_pages(riddle: str, levels: dict):
+async def _get_user_unlocked_pages(riddle: str, user, levels: dict):
     '''Build dict of pairs (folder -> list of pages),
     containing all user accessed pages ordered by extension.'''
 
@@ -108,8 +109,7 @@ async def _get_user_unlocked_pages(riddle: str, levels: dict):
                     'AND username = :name AND discriminator = :disc ' \
                     'AND level_name = :id'
             values = {'riddle': riddle, 
-                    'name': session['user']['username'],
-                    'disc': session['user']['discriminator'],
+                    'name': user.name, 'disc': user.discriminator,
                     'id': level['name']}
             result = await database.fetch_all(query, values)
             paths = [(s + '/' + row['path']) for row in result]

@@ -41,14 +41,14 @@
               <figure>
               {% if level['beaten'] %}
                 {% set number = 'DCBAS'.find(level['rank']) + 1 %}
-                {% set points, color = level_ranks[level['rank']] %}
-                <div style="color: {{ color }}; text-shadow: 0 0 0.5em {{ color }}">
+                {% set info = level_ranks[level['rank']] %}
+                <div style="color: {{ info['color'] }}; text-shadow: 0 0 0.5em {{ info['color'] }}">
                 {% for i in range(number) %}
                   {% set delay = 0.1 * i %}
                   <span style="transition: transform 1s {{ delay }}s">★</span>
                 {% endfor %}
                 </div>
-                <figcaption style="color: {{ color }}"><span class="rank-letter">{{ level['rank'] }}</span>-rank ({{ points }} points)</figcaption>
+                <figcaption style="color: {{ info['color'] }}"><span class="rank-letter">{{ level['rank'] }}</span>-rank ({{ info['points'] }} points)</figcaption>
               {% else %}
                 <div style="color: gray; text-shadow: 0 0 0.5em gray">
                   ?
@@ -77,7 +77,7 @@
                   {% else %}
                     {% set s = 'empty' %}
                   {% endif %}
-                  <img width="40" height="40" src="/static/icons/heart-{{ s }}.png" alt="Heart {{ s }}">
+                  <img width="20" height="20" src="/static/icons/heart-{{ s }}.png" alt="Heart {{ s }}">
                 {% endfor %}
                 <var>({{ level['rating_count'] }})</var>
                 </div>

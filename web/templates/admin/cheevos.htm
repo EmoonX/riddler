@@ -10,45 +10,9 @@
         <section class="admin">
       {% for rank in cheevos|reverse %}
         {% for cheevo in cheevos[rank] %}
-          <div class='row'>
-            {% set index = cheevo['index'] %}
-            <div>
-              <img id="{{ index }}-thumb" class="thumb cheevo" src="/static/cheevos/{{ alias }}/{{ cheevo['image'] }}" width="100" height="100" title="Achievement image, in 1:1 square thumb format.&#10;Outline color changes according to rank." style="border-color: {{ cheevo['color'] }}; box-shadow: 0 0 0.8em {{ cheevo['color'] }}">
-              <input type="file" id="{{ index }}-input" class="thumb-input" accept="image/*">
-              <input type="hidden" name="{{ index }}-image" value="{{ cheevo['image'] }}">
-              <input type="hidden" name="{{ index }}-imgdata">
-            </div>
-            <div>
-              <label class="key" title="Short and unique achievement title.">
-                Title
-                <input type="text" name="{{ index }}-title" size="10" value="{{ cheevo['title'] }}" required>
-              </label>
-              <label title="Flavored achievement description.&#10;May or may not contain hints about how to reach it.">
-                Description
-                <textarea name="{{ index }}-description" rows="3" cols="25" required>{{ cheevo['description'] }}</textarea>
-              </label>
-            </div>
-            <div>
-              <fieldset class="rank">
-                <legend title="Select rank according to achievement's difficulty or importance.">Rank</legend>
-              {% for rank, info in cheevo_ranks.items()|reverse %}
-                <label title="{{ info['emoji'] }}: {{ info['description'] }}" style="color: {{ info['color'] }}">
-                  {% if rank == cheevo['rank'] %}
-                    {% set checked = 'checked' %}
-                  {% endif %}
-                  <input type="radio" class="rank-radio" name="{{ index }}-rank" value="{{ rank }}" {{ checked }} required>
-                  {{ info['emoji'] }}<!--
-              --></label>
-              {% endfor %}
-              </fieldset>
-            </div>
-            <div>
-              <label title="[TODO] Path(s) and conditional operator for unlocking achievement, in JSON format.">
-                Paths JSON
-                <textarea name="{{ index }}-paths_json" rows="3" cols="25" required>{{ cheevo['paths_json'] }}</textarea>
-              </label>
-            </div>
-          </div>
+          {% set index = cheevo['index'] %}
+          {% set image = '/static/cheevos/' + alias + '/' + cheevo['image'] %}
+          {% include 'admin/cheevo-row.htm' %}
         {% endfor %}
       {% endfor %}
         </section>
