@@ -20,13 +20,15 @@ async def levels(alias: str):
     if status != 200:
         return msg, status
     
-    def r(levels: list, msg: str):
+    async def r(levels: list, msg: str):
         '''Render page with correct data.'''
         s = 'cipher'
         if alias == 'rns':
             s = 'riddle'
-        return render_template('admin/levels.htm', 
-                alias=alias, levels=levels, s=s, msg=msg)
+        folders = await _get_pages(alias)
+        return await render_template('admin/levels.htm', 
+                alias=alias, levels=levels,
+                folders=folders, s=s, msg=msg)
     
     # Get initial level data from database
     levels_before = await _fetch_levels(alias)
@@ -129,59 +131,31 @@ async def levels(alias: str):
 
 
 async def _fetch_levels(alias: str):
-    '''Fetch guild levels and pages info from database.'''
-    
-    # Fetch basic level info
+    '''Fetch guild levels info from database.'''
     query = 'SELECT * FROM levels ' \
             'WHERE riddle = :riddle AND is_secret IS FALSE'
     values = {'riddle': alias}
     result = await database.fetch_all(query, values)
     levels = {level['index']: dict(level) for level in result}
-    
-    # Fetch level pages
-    for level in levels.values():
-        name = level['name']
-        query = 'SELECT * FROM level_pages ' \
-                'WHERE riddle = :riddle and level_name = :name'
-        values = {'riddle': alias, 'name': name}
-        result = await database.fetch_all(query, values)
-        await _get_pages(alias, level)
-    
     return levels
 
 
-async def _get_pages(alias: str, level: dict):
-    s = 'cipher'
-    if alias == 'rns':
-        s = 'riddle'
-    query = 'SELECT * FROM level_pages ' \
-            'WHERE riddle = :riddle and level_name = :name'
-    values = {'riddle': alias, 'name': level['name']}
+async def _get_pages(alias: str) -> dict:
+    '''Get a recursive dict of all riddle pages sorted in folders.'''
+    
+    query = 'SELECT * FROM level_pages WHERE riddle = :riddle'
+    values = {'riddle': alias}
     result = await database.fetch_all(query, values)
-    paths = [(s + '/' + row['path']) for row in result]
+    paths = [('/' + row['path']) for row in result]
 
     # Build dict of pairs (folder -> list of paths)
-    level['folders'] = {}
-    folders = level['folders']
+    folders = {'': {'files': []}}
     for path in paths:
         folder, page = path.rsplit('/', 1)
         if not folder in folders:
-            folders[folder] = []
-        folders[folder].append(page)
-
-    # Save number of pages/files in folder
-    level['files_count'] = {}
-    for folder in folders:
-        level['files_count'][folder] = len(folders[folder])
-
-    def _extension_cmp(page: str):
-        '''Compare pages based firstly on their extension.
-        Order is: folders first, then .htm, then the rest.'''
-        if len(page) < 4 or page[-4] != '.':
-            return 'aaa'
-        if page[-3:] == 'htm':
-            return 'aab'
-        return page[-3:]
+            folders[folder] = {}
+            folders[folder]['files'] = []
+        folders[folder]['files'].append(page)
 
     # Add folders to directories
     aux = {}
@@ -195,28 +169,28 @@ async def _get_pages(alias: str, level: dict):
             f = parent
     for folder, names in aux.items():
         if not folder in folders:
-            folders[folder] = []
-        folders[folder].extend(names)
+            folders[folder] = {}
+            folders[folder]['files'] = []
+        folders[folder]['files'].extend(names)
+    
+    def _extension_cmp(page: str):
+        '''Compare pages based firstly on their extension.
+        Order is: folders first, then .htm, then the rest.'''
+        if len(page) < 4 or page[-4] != '.':
+            return 'aaa'
+        if page[-3:] == 'htm':
+            return 'aab'
+        return page[-3:]
 
     # Sort pages from each folder
-    for _, pages in folders.items():
-        pages.sort(key=_extension_cmp)
-
-    # Count total number of pages in each folder
-    level['files_total'] = {}
-    query = 'SELECT path FROM level_pages WHERE ' \
-            'riddle = :riddle AND level_name = :id'
-    values = {'riddle': alias, 'id': level['name']}
-    result = await database.fetch_all(query, values)
-    paths = [row['path'] for row in result]
-    for path in paths:
-        folder = s + '/' + path.rsplit('/', 1)[0]
-        if not folder in folders:
-            # Avoid spoiling things in HTML!
-            continue
-        if not folder in level['files_total']:
-            level['files_total'][folder] = 0
-        level['files_total'][folder] += 1
+    for folder in folders.values():
+        folder['files'].sort(key=_extension_cmp)
+    
+    # Save number of pages/files in folder
+    for folder in folders.values():
+        folder['files_total'] = len(folder['files'])
+    
+    return folders
 
 
 @admin_levels.route('/admin/level-row/', methods=['GET'])

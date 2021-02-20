@@ -1,11 +1,10 @@
 $(_ => {
-  $(".menu").on('click', _ => {
+  $(".menu").on('click', function () {
     // Toggle page explorer
     $(this).toggleClass("active")
     var row = $(this).parents(".row")
     row.toggleClass("active")
     row.next(".page-explorer").toggleClass("active")
-    toggle_check(row.next(".page-explorer"))
   });
 
   function change_dir(folder, parent, node) {
@@ -45,7 +44,7 @@ $(_ => {
     toggle_check(parent)
   }
 
-  $(".page-explorer .folder-up").click(_ => {
+  $(".page-explorer .folder-up").on('click', function () {
     // Change current directory to one up
     var parent = $(this).parents(".page-explorer")
     var node = parent.find("nav > .content > .path")
@@ -58,14 +57,14 @@ $(_ => {
     change_dir(folder, parent, node)
   });
 
-  $(".page-explorer").on("click", "figure", _ => {
+  $(".page-explorer").on("click", "figure", function () {
     // Make clicked file/page "active" and all others inactive
-    $(".page-explorer figure").each(_ => {
+    $(".page-explorer figure").each(function () {
       $(this).removeClass("active")
     });
     $(this).addClass("active")
   });
-  $(".page-explorer").on("dblclick", "figure", _ => {
+  $(".page-explorer").on("dblclick", "figure", function () {
     // Action to be taken upon double-clicking icon
     var page = $(this).find("figcaption").text()
     var j = page.lastIndexOf(".")
@@ -84,7 +83,7 @@ $(_ => {
       change_dir(folder, parent, node)
     }
   });
-  $('button[name="upload-pages"]').on('click', _ => {
+  $('button[name="upload-pages"]').on('click', function () {
     // Open (hidden) file browser when clicking upload button
     $('input[name="pages"]').trigger('click');
   });

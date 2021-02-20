@@ -11,7 +11,7 @@
         <section class="admin">
         {% for level in levels %}
           {% set index = loop.index %}
-          {% set image = '/static/levels/' + alias + '/' + level['image'] %}
+          {% set image = '/static/thumbs/' + alias + '/' + level['image'] %}
           {% include 'admin/level-row.htm' %}
         {% endfor %}
         </section>
