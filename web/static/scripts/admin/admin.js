@@ -50,6 +50,7 @@ function addCheevoRow() {
   $.get('/admin/cheevo-row/', data, function(html) {
     // Get HTML from rendered template and append to section
     div = $.parseHTML(html);
+    $('.new').addClass('admin');
     $('.admin.new').append(div);
 
     // Add listeners to new fields

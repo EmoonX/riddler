@@ -552,6 +552,9 @@ figure > figcaption {
   font-size: 1.5em;
 }
 
+.active:not(.page-explorer) {
+  margin-top: 50px !important;
+}
 .page-explorer {
   position:absolute;
   z-index: -1;
@@ -559,7 +562,7 @@ figure > figcaption {
   height: 0;
   margin: 0 -50px;
   padding: 0 50px;
-  border-bottom: 2px solid;
+  border-bottom: thin solid;
   border-image: linear-gradient(
     to right,
     transparent,
@@ -580,6 +583,7 @@ figure > figcaption {
 .page-explorer.active {
   position: static;
   height: 100%;
+  margin-bottom: 50px;
   opacity: 1;
   transition: opacity 0.5s;
 }
@@ -589,7 +593,6 @@ figure > figcaption {
   height: 60px;
   margin: 0 -50px;
   padding: 0 100px;
-  border-bottom: 2px solid;
   border-image: linear-gradient(
     to right,
     transparent,
@@ -603,6 +606,7 @@ figure > figcaption {
     rgba(96, 0, 0, 0.5) 15% 85%,
     transparent
   );
+  box-shadow: 0 6px 6px rgba(0, 0, 0, 0.5);
   opacity: 0;
 }
 .page-explorer.active > nav {
@@ -786,8 +790,8 @@ td > code:after {
 section.admin {
   width: 100%;
   margin: 0 auto;
-  border-top: 3px solid;
-  border-bottom: 3px solid;
+  border-top: 1px solid;
+  border-bottom: 1px solid;
   border-image: linear-gradient(
     to right,
     transparent,
@@ -814,7 +818,7 @@ section.admin > .row {
     rgba(127, 127, 127, 0.15) 15% 85%,
     transparent
   );
-  border: 3px solid;
+  border: thin solid;
   border-image: linear-gradient(
     to right,
     transparent,
