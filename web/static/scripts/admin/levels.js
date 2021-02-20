@@ -91,16 +91,23 @@ $(_ => {
   $('input[name="pages"]').on('change', function () {
     // Send POST request with chosen paths text file
     const reader = new FileReader();
-    var data;
     reader.onload = (e => {;
-      data = e.target.result;
+      const data = e.target.result;
+      const url = location.href.replace('/levels/', '/update-pages/');
+      $.post(url, data, 'text')
+        .fail(_ => {
+          // Error, something went wrong on server side
+          console.log('[Upload pages] Error updating database...');
+        })
+        .done(_ => {console
+          // Success, so reload the current page to see changes
+          console.log('[Upload pages] Database successfully updated!');
+          location.reload();
+        });
+      ;
     });
     const file = $(this).get(0).files[0];
-    reader.readAsDataURL(file);
-    const url = location.href.replace('/levels/', '/update-pages/');
-    $.post(url, data, _ => {
-      console.log('Pages successfully uploaded!');
-    }, 'text');
+    reader.readAsText(file);
   });
 });
   

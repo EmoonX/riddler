@@ -1,5 +1,6 @@
 from quart import Blueprint, request, render_template
 from quart_discord import requires_authorization
+from pymysql.err import IntegrityError
 
 from admin.admin import auth, save_image
 from ipc import web_ipc
@@ -229,5 +230,22 @@ async def level_row():
 @admin_levels.route('/admin/<alias>/update-pages/', methods=['POST'])
 async def update_pages(alias: str):
     '''Update pages list with data sent by admin in text format.'''
-    return 'SUCCESS!', 200
     
+    # Decode received text data and split into list (ignore empty)
+    data = await request.data
+    data = data.decode('utf-8')
+    data = filter(None, data.replace('\r', '').split('\n'))
+
+    for page in data:
+        try:
+            query = 'INSERT INTO level_pages ' \
+                '(riddle, path) VALUES (:riddle, :path)'
+            values = {'riddle': alias, 'path': page}
+            await database.execute(query, values)
+            print(('> \033[1m[%s]\033[0m Added page \033[1m%s\033[0m ' \
+                    'to database!') % (alias, page))
+        except IntegrityError:
+            print('> \033[1m[%s]\033[0m Skipping page \033[1m%s\033[0m... ' \
+                    % (alias, page))
+            
+    return 'OK', 200
