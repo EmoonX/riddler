@@ -26,7 +26,7 @@ export function toggleExplorer() {
 function popIcons(explorer) {
   // "Icons popping in sequence" effect
   explorer.find('figure').each(function (index) {
-    const t = 80 * index;
+    const t = 50 * index;
     setTimeout(_ => {
       $(this).addClass('show');
     }, t);
@@ -57,8 +57,7 @@ export function doubleClickIcon() {
     var explorer = $(this).parents('.page-explorer');
     var node = explorer.find('.path');
     var folder = node.text() + page + '/';
-    console.log(folder);
-    change_dir(folder, explorer, node);
+    changeDir(folder, explorer, node);
   }
 }
 
@@ -72,16 +71,16 @@ export function folderUp() {
   }
   const re = /\w+\/$/g;
   const folder = node.text().replace(re, '');
-  change_dir(folder, explorer, node);
+  changeDir(folder, explorer, node);
 }
 
-function change_dir(folder, explorer, node) {
+function changeDir(folder, explorer, node) {
   // Update directory on field
   node.text(folder);
-  console.log(folder, explorer, node);
 
   // Get JS object data converted from Python dict
-  const data = explorer.data('folders').replaceAll('\'', '"');
+  var data = explorer.data('folders').replaceAll('\'', '"');
+  data = data.replaceAll('None', '"NULL"');
   const folders = JSON.parse(data);
   const files_total = explorer.data('files_total');
 
