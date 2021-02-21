@@ -1,21 +1,26 @@
 $(_ => {
-  $(".menu").on('click', function () {
+  function pop_icons(explorer) {
+    // "Icons popping in sequence" effect
+    explorer.find('figure').each(function (index) {
+      const t = 100 * index;
+      setTimeout(_ => {
+        $(this).addClass('show');
+      }, t);
+    });
+  }
+
+  $('.menu').on('click', function () {
     // Toggle page explorer
-    const row = $(this).parents(".row");
-    const explorer = row.next(".page-explorer");
-    row.toggleClass("active");
-    explorer.toggleClass("active");
+    const row = $(this).parents('.row');
+    const explorer = row.next('.page-explorer');
+    row.toggleClass('active');
+    explorer.toggleClass('active');
 
     const prev = row.prev();
     if (explorer.hasClass('active')) {
-      // "Icons popping in sequence" effect
-      console.log($(this).find('figure'));
-      explorer.find('figure').each(function (index) {
-        const t = 100 * index;
-        setTimeout(_ => {
-          $(this).addClass('show');
-        }, t);
-      });
+      // Pop initial icons
+      pop_icons(explorer);
+      
       // Scroll page to accomodate view to margin-top
       if (prev.hasClass('page-explorer') && (! prev.hasClass('active'))) {
         scroll(0, scrollY + 50);
@@ -29,80 +34,79 @@ $(_ => {
     }
   });
 
-  function change_dir(folder, parent, node) {
+  function change_dir(folder, explorer, node) {
     // Update directory on field
-    node.text("/" + folder + "/")
+    node.text(folder);
+    console.log(folder, explorer, node);
 
     // Get JS object data converted from Python dict
-    var data = parent.data("folders").replaceAll("'", "\"")
-    var folders = JSON.parse(data)
-    data = parent.data("files_count").replaceAll("'", "\"")
-    var files_count = JSON.parse(data)
-    data = parent.data("files_total").replaceAll("'", "\"")
-    var files_total = JSON.parse(data)
+    const data = explorer.data('folders').replaceAll('\'', '"');
+    const folders = JSON.parse(data);
+    const files_total = explorer.data('files_total');
 
     // Erase previous files and add new ones
-    var div = parent.find("td > div")
-    div.empty()
-    folders[folder].forEach(function (page) {
-      var name = "folder"
-      var j = page.lastIndexOf(".")
+    const files = explorer.find('.files');
+    files.empty();
+    console.log(folders);
+    folders[folder]['files'].forEach(function (row) {
+      const page = row['page'];
+      var name = 'folder';
+      const j = page.lastIndexOf('.');
       if (j != -1) {
-        name = page.substr(j + 1)
+        name = page.substr(j + 1);
       }
-      var img = '<img src="/static/icons/' + name + '.png">'
-      var fc = '<figcaption>' + page + '</figcaption>'
-      var figure = '<figure>' + img + fc + '</figure>'
-      div.append(figure)
+      const img = `<img src="/static/icons/${name}.png">`;
+      const fc = `<figcaption>${page}</figcaption>`;
+      const figure = `<figure>${img}${fc}</figure>`;
+      files.append(figure)
     });
+    // Pop icons sequentially
+    pop_icons(explorer);
 
     // Update folder's files count and total
-    var count = files_count[folder]
-    var total = files_total[folder]
-    var comp = parent.find("nav > .content > .completion")
-    var vars = comp.find("var")
-    vars[0].textContent = count ? count : "--";
-    vars[1].textContent = total ? total : "--";
-    toggle_check(parent)
+    const total = files_total[folder]
+    const comp = explorer.find('.completion')
+    const vars = comp.find('var')
+    vars[0].textContent = total ? total : '--';
   }
 
-  $(".page-explorer .folder-up").on('click', function () {
+  $('.page-explorer .folder-up').on('click', function () {
     // Change current directory to one up
-    var parent = $(this).parents(".page-explorer")
-    var node = parent.find("nav > .content > .path")
-    if (node.text() == "/cipher/" || node.text() == "/riddle/") {
+    const explorer = $(this).parents('.page-explorer')
+    const node = explorer.find('.path')
+    if (node.text() == '/') {
       // Nothing to do if already on top folder
       return
     }
-    var re = /\/\w+\/$/g
-    var folder = node.text().replace(re, "").substring(1)
-    change_dir(folder, parent, node)
+    const re = /\w+\/$/g
+    const folder = node.text().replace(re, '')
+    change_dir(folder, explorer, node)
   });
 
-  $(".page-explorer").on("click", "figure", function () {
+  $('.page-explorer').on('click', 'figure', function () {
     // Make clicked file/page "active" and all others inactive
-    $(".page-explorer figure").each(function () {
-      $(this).removeClass("active")
+    $('.page-explorer figure').each(function () {
+      $(this).removeClass('active')
     });
-    $(this).addClass("active")
+    $(this).addClass('active')
   });
-  $(".page-explorer").on("dblclick", "figure", function () {
+  $('.page-explorer').on('dblclick', 'figure', function () {
     // Action to be taken upon double-clicking icon
-    var page = $(this).find("figcaption").text()
-    var j = page.lastIndexOf(".")
+    var page = $(this).find('figcaption').text()
+    var j = page.lastIndexOf('.')
     if (j != -1) {
       // Open desired page in new tab
-      var parent = $(this).parents(".page-explorer")
-      var path = parent.find("nav > .content > .path")[0].textContent +
-          $(this).find("figcaption")[0].textContent
-      var url = "http://rnsriddle.com" + path
-      window.open(url, "_blank")
+      var explorer = $(this).parents('.page-explorer')
+      var path = explorer.find('nav > .content > .path')[0].textContent +
+          $(this).find('figcaption')[0].textContent
+      var url = 'http://rnsriddle.com' + path
+      window.open(url, '_blank')
     } else {
       // Change current directory to folder's one
-      var parent = $(this).parents(".page-explorer")
-      var node = parent.find("nav > .content > .path")
+      var explorer = $(this).parents('.page-explorer')
+      var node = explorer.find('nav > .content > .path')
       var folder = node.text().substring(1) + page
-      change_dir(folder, parent, node)
+      change_dir(folder, explorer, node)
     }
   });
 

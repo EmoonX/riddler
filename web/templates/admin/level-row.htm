@@ -45,12 +45,12 @@
 </div>
 {% set folder_path = '/' + level['path'].rsplit('/', 1)[0] + '/' %}
 {% set folder = folders[folder_path] %}
-<div class="page-explorer" data-files_total="{{ folder['files_total'] }}" data-folders="{{ folder }}">
+<div class="page-explorer" data-files_total="{{ folder['files_total'] }}" data-folders="{{ folders }}">
   <nav>
     <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">{{ folder_path }}</div>
     <div class="completion"><var>{{ folder['files_total'] }}</var> files in this folder</div>
   </nav>
-  <div>
+  <div class="files">
   {% for row in folder['files'] %}
     {# Get icon name based on extension #}
     {% set page = row['page'] %}

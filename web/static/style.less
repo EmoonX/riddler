@@ -652,7 +652,7 @@ figure > figcaption {
       }
     }
   }
-  & > div {
+  & > .files {
     opacity: 0;
     padding: 30px 20px;
   }
@@ -667,6 +667,7 @@ figure > figcaption {
     user-select: none;
     scale: 0;
     transition: opacity 0.4s, scale 0.4s;
+    cursor: pointer;
     image-rendering: optimizeQuality;
   
     & > img {
@@ -695,7 +696,7 @@ figure > figcaption {
       opacity: 1;
       transform: scaleY(1);
     }
-    & > div {
+    & > .files {
       opacity: 1;
     }
     & figure.show {
@@ -852,7 +853,6 @@ section.admin > .row {
   & > div:last-child {
     padding-right: 50px;
   }
-
   & label {
     text-align: center;
 
@@ -869,12 +869,10 @@ section.admin > .row {
       }
     }
   }
-
   & input {
     margin: 0 auto;
     text-align: center;
   }
-
   & img.thumb {
     &.level {
       max-width: 130px;
@@ -958,7 +956,6 @@ section.admin > .row {
       animation: breath 1s infinite;
       animation-timing-function: ease;
     }
-
     &:before {
       opacity: 1;
     }
