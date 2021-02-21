@@ -143,44 +143,63 @@ async def _fetch_levels(alias: str):
 async def _get_pages(alias: str) -> dict:
     '''Get a recursive dict of all riddle pages sorted in folders.'''
     
+    # Build list of paths from database data
     query = 'SELECT * FROM level_pages WHERE riddle = :riddle'
     values = {'riddle': alias}
     result = await database.fetch_all(query, values)
-    paths = [('/' + row['path']) for row in result]
+    paths = []
+    for row in result:
+        path = dict(row)
+        path['path'] = '/' + path['path']
+        path['page'] = path['path'].rsplit('/', 1)[-1]
+        paths.append(path)
 
-    # Build dict of pairs (folder -> list of paths)
-    folders = {'': {'files': []}}
-    for path in paths:
-        folder, page = path.rsplit('/', 1)
+    # Build dict of dict of list of folders and files
+    folders = {'/': {'files': []}}
+    for row in paths:
+        folder = row['path'].rsplit('/', 1)[0]
+        folder += '/'
         if not folder in folders:
             folders[folder] = {}
             folders[folder]['files'] = []
-        folders[folder]['files'].append(page)
+        folders[folder]['files'].append(row)
 
-    # Add folders to directories
+    # Add folders to directory structure
     aux = {}
-    for folder in folders:
-        f = folder
-        while f.count('/'):
-            parent, name = f.rsplit('/', 1)
+    for folder_path in folders:
+        # Build recursive dict of folders
+        f = folder_path
+        while f != '/':
+            parent, name = f[:-1].rsplit('/', 1)
+            #print(parent, name)
+            parent += '/'
             if not parent in aux:
                 aux[parent] = set()
             aux[parent].add(name)
             f = parent
     for folder, names in aux.items():
+        # Add folder to parent folder as a "no level file"
         if not folder in folders:
             folders[folder] = {}
             folders[folder]['files'] = []
-        folders[folder]['files'].extend(names)
+        for name in names:
+            path = folder + name
+            if path in paths:
+                row = paths[path]
+            else:
+                row = {'path': path, 'page': name}
+            print(folder, name)
+            folders[folder]['files'].append(row)
     
-    def _extension_cmp(page: str):
+    def _extension_cmp(row: dict):
         '''Compare pages based firstly on their extension.
         Order is: folders first, then .htm, then the rest.'''
+        page = row['page']
         if len(page) < 4 or page[-4] != '.':
-            return 'aaa'
+            return 'aaa' + page
         if page[-3:] == 'htm':
-            return 'aab'
-        return page[-3:]
+            return 'aab' + page
+        return 'zzz' + page[-3:]
 
     # Sort pages from each folder
     for folder in folders.values():

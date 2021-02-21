@@ -43,15 +43,17 @@
     </label>
   </div>
 </div>
-{% set folder_path = '/' + level['path'].rsplit('/', 1)[0] %}
+{# set folder_path = '/' + level['path'].rsplit('/', 1)[0] + '/' #}
+{% set folder_path = '/balthazar/labyrinth/' %}
 {% set folder = folders[folder_path] %}
 <div class="page-explorer" data-files_total="{{ folder['files_total'] }}" data-folders="{{ folder }}">
   <nav>
-    <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">{{ folder_path }}/</div>
+    <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">{{ folder_path }}</div>
     <div class="completion"><var>{{ folder['files_total'] }}</var> files in this folder</div>
   </nav>
   <div>
-  {% for page in folder['files'] %}
+  {% for row in folder['files'] %}
+    {% set page = row['page'] %}
     {% if page[-4] == '.' %}
       {% set name = page[-3:] %}
     {% else %}
