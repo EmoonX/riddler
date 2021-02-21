@@ -1,3 +1,9 @@
+import {
+  toggleExplorer, folderUp,
+  clickIcon, doubleClickIcon
+}
+  from './levels.js';
+
 // Outline colors for cheevos based on rank
 const cheevoRankColors = {
   'C': 'firebrick',
@@ -47,10 +53,13 @@ function addRow(event) {
   // Get new index from current number of rows
   const index = $('.row').length + 1;
 
+  const aux = location.href.split('/');
+  const alias = aux[aux.length - 3];
+  const url = `/admin/${alias}/${type}-row/`
   const data = {'index': index}
-  $.get(`/admin/${type}-row/`, data, function(html) {
+  $.get(url, data, function(html) {
     // Get HTML from rendered template and append to section
-    div = $.parseHTML(html);
+    const div = $.parseHTML(html);
     $('.new').addClass('admin');
     $('.new').show();
     $('.new').append(div);
@@ -61,11 +70,18 @@ function addRow(event) {
       $('.new').on('click', '.rank-radio', changeCheevoRank);
     }
   }, 'html');
+  
+  if (type == 'level') {
+    $('.new').on('click', '.menu', toggleExplorer);
+    $('.new').on('click', '.page-explorer .folder-up', folderUp);
+    $('.new').on('click', '.page-explorer figure', clickIcon);
+    $('.new').on('dblclick', '.page-explorer figure', doubleClickIcon);
+  }
 }
 
 $(_ => {
   // Dinamically create CSS classes for thumb outline colors
-  css = '<style type="text/css">';
+  var css = '<style type="text/css">';
   $.each(cheevoRankColors, function(rank, color) {
     css += '.' + rank.toLowerCase() + '-rank { ';
     css += `border-color: ${color} !important; `;

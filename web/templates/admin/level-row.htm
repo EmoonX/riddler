@@ -43,7 +43,10 @@
     </label>
   </div>
 </div>
-{% set folder_path = '/' + level['path'].rsplit('/', 1)[0] + '/' %}
+{% set folder_path = '/' %}
+{% if level %}
+  {% set folder_path = '/' + level['path'].rsplit('/', 1)[0] + '/' %}
+{% endif %}
 {% set folder = folders[folder_path] %}
 <div class="page-explorer" data-files_total="{{ folder['files_total'] }}" data-folders="{{ folders }}">
   <nav>

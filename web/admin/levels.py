@@ -211,11 +211,12 @@ async def _get_pages(alias: str) -> dict:
     return folders
 
 
-@admin_levels.route('/admin/level-row/', methods=['GET'])
-async def level_row():
+@admin_levels.route('/admin/<alias>/level-row/', methods=['GET'])
+async def level_row(alias: str):
     '''Level row HTML code to be fetched by JS script.'''
+    folders = await _get_pages(alias)
     return await render_template('admin/level-row.htm',
-            level=None, index=request.args['index'],
+            folders=folders, level=None, index=request.args['index'],
             image='/static/thumbs/locked.png')
 
 
