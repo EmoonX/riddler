@@ -193,9 +193,10 @@ async def _get_pages(alias: str) -> dict:
         '''Compare pages based firstly on their extension.
         Order is: folders first, then .htm, then the rest.'''
         page = row['page']
-        if len(page) < 4 or page[-4] != '.':
+        index = page.rfind('.')
+        if index == -1:
             return 'aaa' + page
-        if page[-3:] == 'htm':
+        if page[index:] in ('.htm', '.html'):
             return 'aab' + page
         return 'zzz' + page[-3:]
 

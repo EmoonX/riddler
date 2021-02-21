@@ -27,6 +27,7 @@ body {
   margin: 0 auto;
   background: url("images/wallpaper.png") black repeat;
   background-size: 800px 800px;
+  background-attachment: fixed;
   color: white;
   text-align: center;
   font-family: standard-font;
@@ -666,6 +667,7 @@ figure > figcaption {
     user-select: none;
     scale: 0;
     transition: opacity 0.4s, scale 0.4s;
+    image-rendering: optimizeQuality;
   
     & > img {
       width: 80px;

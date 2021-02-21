@@ -56,6 +56,8 @@
     {% set page = row['page'] %}
     {% if page[-4] == '.' %}
       {% set name = page[-3:] %}
+    {% elif page[-5:] == '.html' %}
+    {% set name = 'htm' %}
     {% else %}
       {% set name = 'folder' %}
     {% endif %}
