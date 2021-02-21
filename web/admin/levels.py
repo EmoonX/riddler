@@ -1,3 +1,5 @@
+import json
+
 from quart import Blueprint, request, render_template
 from quart_discord import requires_authorization
 from pymysql.err import IntegrityError
@@ -42,7 +44,10 @@ async def levels(alias: str):
     levels_after = {}
     for name, value in form.items():
         i = name.find('-')
-        index, attr = int(name[:i]), name[(i+1):]
+        try:
+            index, attr = int(name[:i]), name[(i+1):]
+        except:
+            continue
         if index not in levels_after:
             levels_after[index] = {}
         levels_after[index][attr] = value
@@ -85,49 +90,51 @@ async def levels(alias: str):
                     old_name=levels_before[index]['discord_name'],
                     new_name=level['discord_name'])
     
-    return 'OK'
-
-    # Insert new level data on database
-    query = 'INSERT INTO levels ' \
-            '(riddle, level_set, `index`, `name`, path, image, answer, ' \
-                '`rank`, discord_category, discord_name) VALUES ' \
-            '(:riddle, :set, :index, :name, :path, :image, :answer, ' \
-                ':rank, :discord_category, :discord_name)'
-    index = len(levels_before) + 1
-    values = {'riddle': alias, 'set': 'Normal Levels',
-            'index': index, 'name': form['%d-name' % index],
-            'path': form['%d-path' % index],
-            'image': form['%d-image' % index],
-            'answer': form['%d-answer' % index],
-            'rank': form['%d-rank' % index],
-            'discord_category': 'Normal Levels',
-            'discord_name': form['%d-discord_name' % index]}
-    await database.execute(query, values)
-    # query = 'INSERT IGNORE INTO secret_levels VALUES ' \
-    #         '(:guild, :category, :level_name, :path, ' \
-    #             ':previous_level, :answer_path)'
-    # secret_levels_values = {'guild': alias, 'category': 'Secret Levels',
-    #         'level_name': form['new_secret_id'], 'path': form['new_secret_path'],
-    #         'previous_level': form['new_secret_prev'],
-    #         'answer_path': form['new_secret_answer']}
-    # if '' not in secret_levels_values.values():
-    #     await database.execute(query, secret_levels_values)
+    if len(levels_after) > len(levels_before):
+        # Insert new level data on database
+        query = 'INSERT INTO levels ' \
+                '(riddle, level_set, `index`, `name`, path, image, answer, ' \
+                    '`rank`, discord_category, discord_name) VALUES ' \
+                '(:riddle, :set, :index, :name, :path, :image, :answer, ' \
+                    ':rank, :discord_category, :discord_name)'
+        index = len(levels_before) + 1
+        values = {'riddle': alias, 'set': 'Normal Levels',
+                'index': index, 'name': form['%d-name' % index],
+                'path': form['%d-path' % index],
+                'image': form['%d-image' % index],
+                'answer': form['%d-answer' % index],
+                'rank': form['%d-rank' % index],
+                'discord_category': 'Normal Levels',
+                'discord_name': form['%d-discord_name' % index]}
+        await database.execute(query, values)
+        
+        # Update page data to match current level
+        pages = json.loads(form['new-pages'])
+        for page in pages:
+            page = page[1:]
+            query = 'UPDATE level_pages SET level_name = :name ' \
+                    'WHERE riddle = :riddle AND path = :path'
+            vals = {'name': form['%d-name' % index],
+                    'riddle': alias, 'path': page}
+            await database.execute(query, vals)
     
-    # Get image data and save image on thumbs folder
-    filename = form['%d-image' % index]
-    imgdata = form['%d-imgdata' % index]
-    print(imgdata)
-    await save_image(alias, 'thumbs', filename, imgdata)
+        # Get image data and save image on thumbs folder
+        filename = form['%d-image' % index]
+        imgdata = form['%d-imgdata' % index]
+        await save_image('thumbs', alias, filename, imgdata)
 
-    # Update Discord guild channels and roles with new levels info.
-    # This is done by sending an request to the bot's IPC server.
-    values['is_secret'] = 0
-    await web_ipc.request('build', guild_name=full_name, levels=[values])
+        # Update Discord guild channels and roles with new levels info.
+        # This is done by sending an request to the bot's IPC server.
+        values['is_secret'] = 0
+        query = 'SELECT * FROM riddles WHERE alias = :alias'
+        result = await database.fetch_one(query, {'alias': alias})
+        full_name = result['full_name']
+        await web_ipc.request('build', guild_name=full_name, levels=[values])
     
     # Fetch levels again to display page correctly on POST
-    levels = await fetch_levels(alias)
+    levels = await _fetch_levels(alias)
 
-    return await r('Guild info updated successfully!')
+    return await r(levels, 'Guild info updated successfully!')
 
 
 async def _fetch_levels(alias: str):

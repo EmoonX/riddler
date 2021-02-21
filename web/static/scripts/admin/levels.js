@@ -1,5 +1,6 @@
 // Dictionary of all folders and pages/files
 var folders;
+var pages = new Set();
 
 export function toggleExplorer() {
   // Toggle page explorer
@@ -47,19 +48,22 @@ export function clickIcon() {
     var folder = explorer.find('.path').text();
     const row = folders[folder]['files'].find(
         row => (row['page'] == page));
-    if (! $(this).hasClass('current')) {
-      levelName = 'NULL';
-    } else {
+    if ($(this).hasClass('current')) {
       const frontPath = explorer.prev().find('.front-path');
       if (! frontPath.val()) {
-        frontPath.val(row['path']);
+        frontPath.val(row['path'].substr(1));
       }
+      pages.add(row['path']);
+    } else {
+      row['level_name'] = 'NULL';
+      pages.delete(row['path']);
     }
+    const json = JSON.stringify([...pages]);
+    $('input[name="new-pages"]').last().val(json);
     row['level_name'] = levelName;
     var folder = folder.split('/').slice(0, -1).join('/') + '/';
     while (folder != '/') {
       parent = folder.split('/').slice(0, -2).join('/') + '/';
-      console.log(folder, parent)
       const row = folders[parent]['files'].find(
         row => ((row['path'] + '/') == folder));
       row['level_name'] = levelName;
