@@ -1,3 +1,6 @@
+// Dictionary of all folders and pages/files
+var folders;
+
 export function toggleExplorer() {
   // Toggle page explorer
   const row = $(this).parents('.row');
@@ -34,11 +37,30 @@ function popIcons(explorer) {
 }
 
 export function clickIcon() {
-  // Make clicked file/page "active" and all others inactive
-  $('.page-explorer figure').each(function () {
-    $(this).removeClass('active');
-  });
-  $(this).addClass('active');
+  // Mark/unmark file/page as belonging to current level
+  const page = $(this).find('figcaption').text();
+  const j = page.lastIndexOf('.');
+  if (j != -1) {
+    $(this).toggleClass('current');
+    const explorer = $(this).parents('.page-explorer');
+    const levelName = explorer.prev().find('.key > input').val();
+    var folder = explorer.find('.path').text();
+    const row = folders[folder]['files'].find(
+        row => (row['page'] == page));
+    if (! $(this).hasClass('current')) {
+      levelName = 'NULL';
+    }
+    row['level_name'] = levelName;
+    var folder = folder.split('/').slice(0, -1).join('/') + '/';
+    while (folder != '/') {
+      parent = folder.split('/').slice(0, -2).join('/') + '/';
+      console.log(folder, parent)
+      const row = folders[parent]['files'].find(
+        row => ((row['path'] + '/') == folder));
+      row['level_name'] = levelName;
+      folder = parent;
+    }
+  }
 }
 
 export function doubleClickIcon() {
@@ -48,8 +70,8 @@ export function doubleClickIcon() {
   if (j != -1) {
     // Open desired page in new tab
     const explorer = $(this).parents('.page-explorer');
-    const path = explorer.find('nav > .content > .path')[0].textContent +
-        $(this).find('figcaption')[0].textContent;
+    const path = explorer.find('.path').text() +
+        $(this).find('figcaption').text();
     const url = 'http://rnsriddle.com' + path;
     window.open(url, '_blank');
   } else {
@@ -79,15 +101,19 @@ function changeDir(folder, explorer, node) {
   node.text(folder);
 
   // Get JS object data converted from Python dict
-  var data = explorer.data('folders').replaceAll('\'', '"');
-  data = data.replaceAll('None', '"NULL"');
-  const folders = JSON.parse(data);
+  if (!folders) {
+    var data = explorer.data('folders').replaceAll('\'', '"');
+    data = data.replaceAll('None', '"NULL"');
+    folders = JSON.parse(data);
+  }
   const files_total = explorer.data('files_total');
 
-  // Erase previous files and add new ones
+  // Erase previous files from <div>
   const files = explorer.find('.files');
   files.empty();
-  console.log(folders);
+
+  // And now add the current dir files
+  const levelName = explorer.prev().find('.key > input').val();
   folders[folder]['files'].forEach(function (row) {
     const page = row['page'];
     var name = 'folder';
@@ -95,10 +121,14 @@ function changeDir(folder, explorer, node) {
     if (j != -1) {
       name = page.substr(j + 1);
     }
+    var current = '';
+    if (row['level_name'] == levelName) {
+      current = 'class="current"';
+    }
     const img = `<img src="/static/icons/${name}.png">`;
     const fc = `<figcaption>${page}</figcaption>`;
-    const figure = `<figure>${img}${fc}</figure>`;
-    files.append(figure)
+    const figure = `<figure ${current}>${img}${fc}</figure>`;
+    files.append(figure);
   });
   // Pop icons sequentially
   popIcons(explorer);
