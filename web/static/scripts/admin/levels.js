@@ -6,7 +6,7 @@ $(_ => {
     row.toggleClass("active");
     explorer.toggleClass("active");
 
-    
+    const prev = row.prev();
     if (explorer.hasClass('active')) {
       // "Icons popping in sequence" effect
       console.log($(this).find('figure'));
@@ -16,12 +16,16 @@ $(_ => {
           $(this).addClass('show');
         }, t);
       });
-      // Scroll page to accomodate view to margin-top 
-      scroll(0, scrollY + 50);
+      // Scroll page to accomodate view to margin-top
+      if (prev.hasClass('page-explorer') && (! prev.hasClass('active'))) {
+        scroll(0, scrollY + 50);
+      }
     } else {
       // Undo the changes done
       explorer.find('figure').removeClass('show');
-      scroll(0, scrollY - 50);
+      if (prev.hasClass('page-explorer') && (! prev.hasClass('active'))) {
+        scroll(0, scrollY - 50);
+      }
     }
   });
 
