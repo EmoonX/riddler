@@ -2,7 +2,7 @@ $(_ => {
   function pop_icons(explorer) {
     // "Icons popping in sequence" effect
     explorer.find('figure').each(function (index) {
-      const t = 100 * index;
+      const t = 80 * index;
       setTimeout(_ => {
         $(this).addClass('show');
       }, t);
@@ -72,41 +72,43 @@ $(_ => {
 
   $('.page-explorer .folder-up').on('click', function () {
     // Change current directory to one up
-    const explorer = $(this).parents('.page-explorer')
-    const node = explorer.find('.path')
+    const explorer = $(this).parents('.page-explorer');
+    const node = explorer.find('.path');
     if (node.text() == '/') {
       // Nothing to do if already on top folder
       return
     }
-    const re = /\w+\/$/g
-    const folder = node.text().replace(re, '')
-    change_dir(folder, explorer, node)
+    const re = /\w+\/$/g;
+    const folder = node.text().replace(re, '');
+    change_dir(folder, explorer, node);
   });
 
   $('.page-explorer').on('click', 'figure', function () {
     // Make clicked file/page "active" and all others inactive
     $('.page-explorer figure').each(function () {
-      $(this).removeClass('active')
+      $(this).removeClass('active');
     });
-    $(this).addClass('active')
+    $(this).addClass('active');
   });
+
   $('.page-explorer').on('dblclick', 'figure', function () {
     // Action to be taken upon double-clicking icon
-    var page = $(this).find('figcaption').text()
-    var j = page.lastIndexOf('.')
+    const page = $(this).find('figcaption').text();
+    const j = page.lastIndexOf('.');
     if (j != -1) {
       // Open desired page in new tab
-      var explorer = $(this).parents('.page-explorer')
-      var path = explorer.find('nav > .content > .path')[0].textContent +
-          $(this).find('figcaption')[0].textContent
-      var url = 'http://rnsriddle.com' + path
-      window.open(url, '_blank')
+      const explorer = $(this).parents('.page-explorer');
+      const path = explorer.find('nav > .content > .path')[0].textContent +
+          $(this).find('figcaption')[0].textContent;
+      const url = 'http://rnsriddle.com' + path;
+      window.open(url, '_blank');
     } else {
       // Change current directory to folder's one
-      var explorer = $(this).parents('.page-explorer')
-      var node = explorer.find('nav > .content > .path')
-      var folder = node.text().substring(1) + page
-      change_dir(folder, explorer, node)
+      var explorer = $(this).parents('.page-explorer');
+      var node = explorer.find('.path');
+      var folder = node.text() + page + '/';
+      console.log(folder);
+      change_dir(folder, explorer, node);
     }
   });
 
@@ -114,6 +116,7 @@ $(_ => {
     // Open (hidden) file browser when clicking upload button
     $('input[name="pages"]').trigger('click');
   });
+
   $('input[name="pages"]').on('change', function () {
     // Send POST request with chosen paths text file
     const reader = new FileReader();
