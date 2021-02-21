@@ -49,6 +49,11 @@ export function clickIcon() {
         row => (row['page'] == page));
     if (! $(this).hasClass('current')) {
       levelName = 'NULL';
+    } else {
+      const frontPath = explorer.prev().find('.front-path');
+      if (! frontPath.val()) {
+        frontPath.val(row['path']);
+      }
     }
     row['level_name'] = levelName;
     var folder = folder.split('/').slice(0, -1).join('/') + '/';
