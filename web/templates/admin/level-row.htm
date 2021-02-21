@@ -43,8 +43,7 @@
     </label>
   </div>
 </div>
-{# set folder_path = '/' + level['path'].rsplit('/', 1)[0] + '/' #}
-{% set folder_path = '/balthazar/labyrinth/' %}
+{% set folder_path = '/' + level['path'].rsplit('/', 1)[0] + '/' %}
 {% set folder = folders[folder_path] %}
 <div class="page-explorer" data-files_total="{{ folder['files_total'] }}" data-folders="{{ folder }}">
   <nav>
@@ -53,13 +52,18 @@
   </nav>
   <div>
   {% for row in folder['files'] %}
+    {# Get icon name based on extension #}
     {% set page = row['page'] %}
     {% if page[-4] == '.' %}
       {% set name = page[-3:] %}
     {% else %}
       {% set name = 'folder' %}
     {% endif %}
-    <figure title='{{ folder_path }}/{{ page }}'>
+    {# Set figure as active if page is from this level #}
+    {% if name != 'folder' and row['level_name'] == level['name'] %}
+      {% set current = 'class="current"'|safe %}
+    {% endif %}
+    <figure {{ current }} title="{{ row['path'] }}">
       <img width="50" height="50" src="/static/icons/{{ name }}.png">
       <figcaption>{{ page }}</figcaption>
     </figure>

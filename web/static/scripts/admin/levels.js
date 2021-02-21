@@ -1,10 +1,23 @@
 $(_ => {
   $(".menu").on('click', function () {
     // Toggle page explorer
-    $(this).toggleClass("active")
-    var row = $(this).parents(".row")
-    row.toggleClass("active")
-    row.next(".page-explorer").toggleClass("active")
+    const row = $(this).parents(".row");
+    const explorer = row.next(".page-explorer");
+    row.toggleClass("active");
+    explorer.toggleClass("active");
+
+    if (explorer.hasClass('active')) {
+      console.log($(this).find('figure'));
+      explorer.find('figure').each(function (index) {
+        const t = 100 * index;
+        setTimeout(_ => {
+          console.log($(this));
+          $(this).addClass('show');
+        }, t);
+      });
+    } else {
+      explorer.find('figure').removeClass('show');
+    }
   });
 
   function change_dir(folder, parent, node) {
@@ -83,6 +96,7 @@ $(_ => {
       change_dir(folder, parent, node)
     }
   });
+
   $('button[name="upload-pages"]').on('click', function () {
     // Open (hidden) file browser when clicking upload button
     $('input[name="pages"]').trigger('click');

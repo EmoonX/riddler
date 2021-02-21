@@ -171,7 +171,6 @@ async def _get_pages(alias: str) -> dict:
         f = folder_path
         while f != '/':
             parent, name = f[:-1].rsplit('/', 1)
-            #print(parent, name)
             parent += '/'
             if not parent in aux:
                 aux[parent] = set()
@@ -188,7 +187,6 @@ async def _get_pages(alias: str) -> dict:
                 row = paths[path]
             else:
                 row = {'path': path, 'page': name}
-            print(folder, name)
             folders[folder]['files'].append(row)
     
     def _extension_cmp(row: dict):
