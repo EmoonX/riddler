@@ -2,6 +2,7 @@
 {% block title %}{{ alias }} | Levels{% endblock %}
 {% block extra %}
     <script type="module" src="/static/scripts/explorer.js"></script>
+    <script src="/static/scripts/rating.js"></script>
 {% endblock %}
 {% block content %}
     <main>
@@ -58,7 +59,7 @@
             </div>
           {% if level['beaten'] %}
             <figure class="rating">
-              <div class="data">
+              <div class="hearts">
                 <var>{% if level['rating_avg'] %}{{ "%.1f" % level['rating_avg'] }}{% else %}--{% endif %}</var>
                 {% set rating = (2 * 0)|round(1) %}
                 {% set rating = rating / 2 %}
@@ -70,7 +71,7 @@
                   {% else %}
                     {% set s = 'empty' %}
                   {% endif %}
-                  <img width="20" height="20" src="/static/icons/heart-{{ s }}.png" alt="Heart {{ s }}">
+                  <img class="heart" width="20" height="20" src="/static/icons/heart-{{ s }}.png" alt="Heart {{ s }}">
                 {% endfor %}
                 <var>({{ level['rating_count'] }})</var>
               </div>

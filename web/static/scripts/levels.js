@@ -2,82 +2,11 @@ $(document).ready(function () {
   // Build dict of (level ID -> list of image URLs)
   imgs = {}
   $("tbody > tr:not(.page-explorer)").each(function (j) {
-    console.log($(this))
-    console.log($(this).find("var"))
     var level_name = $(this).find("var")[0].textContent
     imgs[level_name] = []
     $(this).find(".level-rating > div > img").each(function (j) {
       imgs[level_name].push($(this).attr("src"))
     });
-  });
-
-  $(".level-rating > div > img").on('hover', function () {
-    // Make respective hearts appear "full" when hovering
-    var i = $(this).index() - 1
-    $(this).parent().children("img").each(function (j) {
-      if (j <= i) {
-        $(this).attr("src", "/static/icons/heart-full.png")
-      } else {
-        $(this).attr("src", "/static/icons/heart-empty.png")
-      }
-    });
-  });
-  $(".level-rating > div").on('mouseout', function () {
-    // Empty all hearts upon moving mouse away
-    var level_name = $(this).parents("tr").find("var")[0].textContent
-    $(this).children("img").each(function (j) {
-      $(this).attr("src", imgs[level_name][j])
-    });
-  });
-  $(".level-rating > div > img").on('click', function () {
-    // Get level ID and rating info
-    var level_name = $(this).parents("tr").find("var")[0].textContent
-    var rating = $(this).index()
-
-    // Send an HTTP request by Ajax
-    var url = "rate/" + level_name + "/" + rating
-    var response = $.ajax({type: "GET", url: url, async: false})
-    var aux = response.responseText.split(" ")
-    if (aux[0] == "403") {
-      // Go back to login page if trying to rate after timeout
-      window.location.replace("/login/")
-      return
-    }
-
-    // Update average and count rating fields
-    var average = Number(aux[0])
-    var count = aux[1]
-    if (average > 0) {
-      average = String(Math.round(10 * average))
-      average = average[0] + "." + average[1]
-    } else {
-      average = "--"
-    }
-    var vars = $(this).parent().children("var")
-    vars[0].textContent = average
-    vars[1].textContent = "(" + count + ")"
-
-    // Update filled-up hearts
-    average = Math.round(2 * average) / 2
-    for (var i = 0; i < 5; i++) {
-      imgs[level_name][i] = "/static/icons/"
-      if ((i+1) <= average) {
-        imgs[level_name][i] += "heart-full.png"
-      } else if ((i+1) - average == 0.5) {
-        imgs[level_name][i] += "heart-half.png"
-      } else {
-        imgs[level_name][i] += "heart-empty.png"
-      }
-      $(this).parent().children("img")[i].src = imgs[level_name][i]
-    }
-
-    // Update current user's rating
-    var rating = aux[2]
-    var text = "(rate me!)"
-    if (rating != "None") {
-      text = "(yours: <var>" + rating + "</var>)"
-    }
-    $(this).parents("figure").find("figcaption > span")[0].innerHTML = text
   });
 
   /*-------------------------------------------------------------------------*/
