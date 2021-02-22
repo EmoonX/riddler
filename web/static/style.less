@@ -720,10 +720,10 @@ section.new {
 section.list.levels > .row {
   font-size: 1.5rem;
 
-  > .name {
+  > :first-child {
     width: 150px;
 
-    > var {
+    > var.name {
       font-size: 1.6em;
     }
   }
@@ -774,14 +774,18 @@ section.list.levels > .row {
       font-size: 1.5rem;
     }
     > .rating {
-      > .hearts {
+      > .data {
         display: flex;
         flex-direction: row;
         align-items: center;
         justify-content: space-evenly;
         width: 220px;
 
-        > img.heart {
+        > .hearts {
+          display: flex;
+          flex-direction: row;
+          justify-content: space-evenly;
+          width: 100%;
           cursor: pointer;
         }
       }

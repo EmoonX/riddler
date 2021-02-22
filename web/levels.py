@@ -2,7 +2,7 @@ from quart import Blueprint, session, render_template
 from quart_discord import requires_authorization
 
 import admin.admin as admin
-from auth import discord
+from auth import discord, User
 from util.db import database
 
 # Create app blueprint
@@ -94,7 +94,7 @@ async def level_list(alias: str):
     return await render_template('levels.htm', **locals())
 
 
-async def _get_user_unlocked_pages(alias: str, user, levels: dict):
+async def _get_user_unlocked_pages(alias: str, user: User, levels: dict):
     '''Build dict of pairs (folder -> list of pages),
     containing all user accessed pages ordered by extension.'''
 
@@ -180,31 +180,37 @@ async def _get_user_unlocked_pages(alias: str, user, levels: dict):
 
 
 
-@levels.route('/cipher/levels/rate/<level_name>/<rating>')
-def rate(level_name, rating):
+@levels.route('/<alias>/levels/rate/<level_name>/<rating>')
+async def rate(alias: str, level_name: str, rating: float):
     '''Update level rating upon user giving new one.'''
 
     # Must not have logged out meanwhile
-    if not 'user' in session:
-        return '403'
+    user = await discord.fetch_user()
+    if not user:
+        return 'Unauthorized', 401
 
     # Get user's previous rating
-    cursor = get_cursor()
-    cursor.execute('SELECT rating_given FROM user_levelcompletion '
-            'WHERE username = %s AND level_name = %s',
-            (session['user']['username'], level_name))
-    aux = cursor.fetchone()
-    if not aux:
-        return 'FORBIDDEN OPERATION'
-    rating_prev = aux['rating_given']
+    query = 'SELECT * FROM user_levelcompletion ' \
+            'WHERE riddle = :riddle ' \
+                'AND username = :name AND discriminator = :disc ' \
+                'AND level_name = :level_name'
+    values = {'riddle': alias, 'name': user.name,
+            'disc': user.discriminator, 'level_name': level_name}
+    result = await database.fetch_one(query, values)
+    if not result:
+        return 'Unauthorized', 401
+    rating_prev = result['rating_given']
 
     # Get level's overall rating info
-    cursor.execute('SELECT rating_avg, rating_count FROM levels '
-            'WHERE id = %s', (level_name,))
-    level = cursor.fetchone()
+    query = 'SELECT * FROM levels ' \
+            'WHERE riddle = :riddle and name = :name'
+    values = {'riddle': alias, 'name': level_name}
+    level = await database.fetch_one(query, values)
 
     # Calculate new average and count
-    total = (level['rating_avg'] * level['rating_count'])
+    total = 0
+    if level['rating_avg']:
+        total = level['rating_avg'] * level['rating_count']
     count = level['rating_count']
     rating = int(rating)
     if not rating_prev:
@@ -219,14 +225,22 @@ def rate(level_name, rating):
         total -= rating
         count -= 1
         rating = None
-    average = (total / count) if count > 0 else 0
+    average = (total / count) if (count > 0) else 0
 
     # Update both user_levelcompletion and levels tables
-    cursor.execute('UPDATE user_levelcompletion SET rating_given = %s '
-            'WHERE username = %s AND level_name = %s',
-            (rating, session['user']['username'], level_name))
-    cursor.execute('UPDATE levels SET rating_avg = %s, rating_count = %s '
-            'WHERE id = %s', (average, count, level_name))
-    mysql.connection.commit()
+    query = 'UPDATE user_levelcompletion SET rating_given = :rating ' \
+            'WHERE riddle = :riddle ' \
+                'AND username = :name AND discriminator = :disc ' \
+                'AND level_name = :level_name'
+    values = {'rating': rating, 'riddle': alias, 'name': user.name,
+            'disc': user.discriminator, 'level_name': level_name}
+    await database.execute(query, values)
+    query = 'UPDATE levels SET rating_avg = :average, rating_count = :count ' \
+            'WHERE riddle = :riddle AND name = :name'
+    values = {'average': average, 'count': count,
+            'riddle': alias, 'name': level_name}
+    await database.execute(query, values)
 
-    return str(average) + ' ' + str(count) + ' ' + str(rating)
+    # Return new rating data
+    text = '%s %s %s' % (average, count, rating)
+    return text, 200

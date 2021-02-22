@@ -3,7 +3,7 @@ const ratings = {};
 
 function heartMouseEnter() {
   // Make respective hearts appear "full" when hovering
-  const i = $(this).index() - 1;
+  const i = $(this).index();
   $(this).parent().children('img').each(function (j) {
     if (j <= i) {
       $(this).attr('src', '/static/icons/heart-full.png');
@@ -15,7 +15,7 @@ function heartMouseEnter() {
 
 function heartsMouseLeave() {
   // Restore all hearts to original upon moving mouse away
-  const levelName = $(this).parents('tr').find('var').text();
+  const levelName = $(this).parents('.row').find('.name').text();
   const dir = '/static/icons/'
   var rating = ratings[levelName];
   $(this).children('img').each(function (j) {
@@ -31,14 +31,18 @@ function heartsMouseLeave() {
   });
 };
 
-$('.list.levels .rating img.heart').on('click', function () {
-  // Get level ID and rating info
-  const levelName = $(this).parents('tr').find('var').text();
-  const rating = $(this).index();
+function updateRating() {
+  // Update ratings on database and reflect it immediatelly on page
+
+  // Get level name and rating info
+  const levelName = $(this).parents('.row').find('.name').text();
+  const rating = $(this).index() + 1;
 
   // Send an HTTP GET request
   const url = `rate/${levelName}/${rating}`;
   const response = $.get(url);
+  console.log(response)
+  return
   const aux = response.responseText.split(' ')
   if (aux[0] == '403') {
     // Go back to login page if trying to rate after timeout
@@ -80,7 +84,7 @@ $('.list.levels .rating img.heart').on('click', function () {
   //   text = `(yours: <var>${rating}</var>)`
   // }
   // $(this).parents('figure').find('figcaption > span')[0].innerHTML = text
-});
+};
 
 $(_ => {
   // Build dictionary of level ratings
@@ -107,5 +111,6 @@ $(_ => {
 
   // Register events
   $('.list.levels .rating img.heart').on('mouseenter', heartMouseEnter);
-  $('.list.levels .rating > .hearts').on('mouseleave', heartsMouseLeave);
+  $('.list.levels .rating .hearts').on('mouseleave', heartsMouseLeave);
+  $('.list.levels .rating img.heart').on('click', updateRating);
 });

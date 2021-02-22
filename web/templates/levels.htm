@@ -16,8 +16,8 @@
       <section class="list levels">
       {% for level in set %}
         <div class="row">
-          <div class="name">
-            <var>{{ level['name'] }}</var>
+          <div>
+            <var class='name'>{{ level['name'] }}</var>
             {% if level['unlocked'] %}<div class="menu-button">☰</div>{% endif %}
           </div>
         {% if level['unlocked'] and level['image'] %}
@@ -59,10 +59,11 @@
             </div>
           {% if level['beaten'] %}
             <figure class="rating">
-              <div class="hearts">
-                <var>{% if level['rating_avg'] %}{{ "%.1f" % level['rating_avg'] }}{% else %}--{% endif %}</var>
+              <div class="data">
+                <var class='average'>{% if level['rating_avg'] %}{{ "%.1f" % level['rating_avg'] }}{% else %}--{% endif %}</var>
                 {% set rating = (2 * 0)|round(1) %}
                 {% set rating = rating / 2 %}
+                <div class='hearts'>
                 {% for i in range(5) %}
                   {% if i+1 <= rating %}
                     {% set s = 'full' %}
@@ -73,7 +74,8 @@
                   {% endif %}
                   <img class="heart" width="20" height="20" src="/static/icons/heart-{{ s }}.png" alt="Heart {{ s }}">
                 {% endfor %}
-                <var>({{ level['rating_count'] }})</var>
+                </div>
+                <var class='count'>({{ level['rating_count'] }})</var>
               </div>
               <figcaption>Fun rating <span>{% if not level['rating_given'] %}(rate me!){% else %}(yours: <var>{{ level['rating_given'] }}</var>){% endif %}</span></figcaption>
             </figure>
