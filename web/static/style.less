@@ -226,8 +226,8 @@ a, a:visited {
   font-weight: bold;
 }
 
-var {
-  font: 1.5em calculator;
+var, .menu-button {
+  font: 1.2em calculator;
   font-weight: bold;
   text-shadow: 0 0 8px crimson, 0 0 16px crimson, 0 0 24px crimson;
 }
@@ -396,16 +396,6 @@ select {
   width: 200px;
 }
 
-/* figure {
-  width: 150px;
-  height: 150px;
-}
-
-figure > img {
-  max-width: 150px;
-  max-height: 150px;
-} */
-
 input:not([name]) {
   padding: 5px 10px;
   font-size: 0.8em;
@@ -419,14 +409,6 @@ label.checkbox > * {
 input[type="checkbox"] {
   margin: 0 10px;
 }
-
-// textarea {
-//   display: block;
-//   margin: 20px;
-//   width: 800px;
-//   height: 300px;
-//   font-size: 1.4em;
-// }
 
 /* ------------------------------------------------------------------------- */
 /* -- Profile pages -- */
@@ -482,237 +464,10 @@ figcaption.rank {
   color: black;
 }
 
-/* ------------------------------------------------------------------------- */
-/* -- Level list -- */
-
-.level-id {
-  max-width: 140px;
-  word-wrap: break-word;
-}
-.level-id.unlocked {
-  cursor: pointer;
-}
-.level-id.unlocked.active {
-  background-color: #600;
-  border-bottom-width: 0;
-  transition: background-color 0.25s;
-}
-
-.level-thumb {
-  width: 200px;
-  height: 200px;
-}
-
-.level-thumb > a > img {
-  max-width: 150px;
-  max-height: 150px;
-  border-radius: 5px;
-  /* box-shadow: 0 0 0.8em #aaa; */
-}
-
 figure > figcaption {
   text-align: center;
   font-size: 0.7em;
   font-style: italic;
-}
-
-.level-rank {
-  width: 200px;
-}
-
-.level-rank > figure > div {
-  font-family: "Segoe UI Emoji";
-  font-size: 1.6em;
-  letter-spacing: -4px;
-  user-select: none;
-}
-
-.level-rank > figure > div > span {
-  display: inline-block;
-}
-
-.level-rank:hover > figure > div > span {
-  transform: rotate(360deg);
-}
-
-.level-rank > figure > figcaption {
-  margin-top: 10px;
-}
-
-.level-rank > figure > figcaption > .rank-letter {
-  font-size: 1.3em;
-  font-weight: bold;
-}
-
-.level-comp {
-  margin: auto 0;
-  font-size: 0.7em;
-}
-
-.level-comp > var {
-  font-size: 1.5em;
-}
-
-.row:not(.page-explorer):not(:first-child) {
-  margin-top: 0px;
-
-  &.active {
-    margin-top: 50px !important;
-  }
-}
-.page-explorer {
-  position: static;
-  z-index: -1;
-  width: 100%;
-  height: 0;
-  margin: 0 -50px;
-  padding: 0 50px;
-  border-bottom: thin solid;
-  border-image: linear-gradient(
-    to right,
-    transparent,
-    rgba(255, 255, 221, 0.5) 15% 85%,
-    transparent
-  );
-  border-image-slice: 1;
-  background-image: linear-gradient(
-    to right,
-    transparent,
-    rgba(127, 127, 127, 0.38) 15% 85%,
-    transparent
-  );
-  color: black;
-  text-align: left;
-  opacity: 0;
-  transition: opacity 0.45s;
-  transition-timing-function: ease;
-
-  & > nav {
-    display: flex;
-    height: 60px;
-    margin: 0 -50px;
-    padding: 0 100px;
-    border-image: linear-gradient(
-      to right,
-      transparent,
-      rgba(255, 255, 221, 0.5) 15% 85%,
-      transparent
-    );
-    border-image-slice: 1;
-    background-image: linear-gradient(
-      to right,
-      transparent,
-      rgba(96, 0, 0, 0.5) 15% 85%,
-      transparent
-    );
-    box-shadow: 0 6px 6px rgba(0, 0, 0, 0.5);
-    opacity: 0;
-    transform: scaleY(0);
-    transform-origin: top;
-    transition: transform 0.4s;
-    transition-timing-function: ease-out;
-
-    & .folder-up {
-      margin: 15px;
-      height: 32px;
-      vertical-align: middle;
-      cursor: pointer;
-      user-select: none;
-    }
-    & .path {
-      display: inline-block;
-      margin: 15px 0;
-      padding: 5px 15px;
-      min-width: 400px;
-      border-radius: 20px;
-      background-color: white;
-      line-height: 20px;
-      font-size: 0.8em;
-
-      &::selection {
-        background-color: skyblue;
-      }
-    }
-    & > .completion {
-      float: right;
-      margin: 0 15px;
-      line-height: 60px;
-      font-size: 0.7em;
-      font-style: italic;
-      color: #ffd;
-
-      & > var {
-        font-size: 1.5em;
-        font-style: italic;
-      }
-      & > .check {
-        margin: 5px;
-        font-size: 1.5em;
-        font-style: normal;
-      }
-    }
-  }
-  & > .files {
-    height: 0;
-    opacity: 0;
-    padding: 30px 20px;
-  }
-  & figure {
-    display: inline-block;
-    padding: 20px 10px;
-    width: 140px;
-    border-radius: 5%;
-    text-align: center;
-    opacity: 0;
-    user-select: none;
-    scale: 0;
-    transition: opacity 0.4s, scale 0.4s;
-    cursor: pointer;
-    image-rendering: optimizeQuality;
-  
-    & > img {
-      width: 80px;
-      height: 80px;
-    }
-    & > figcaption {
-      font-size: 0.6em;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: "(...)";
-      color: #ffd;
-    }
-    &.active {
-      background-color: rgba(96, 0, 0, 0.5);
-    }
-  }
-  &.active {
-    height: auto;
-    opacity: 1;
-
-    &:not(:last-child) {
-      margin-bottom: 50px;
-    }
-    & > nav {
-      opacity: 1;
-      transform: scaleY(1);
-    }
-    & > .files {
-      height: auto;
-      opacity: 1;
-    }
-    & figure.show {
-      opacity: 1;
-      scale: 1;
-
-      &:not(.current):not(.active) {
-        opacity: 0.3;
-    
-        &:hover {
-          opacity: 1;
-        }
-      }
-    }
-  }
 }
 
 /* ------------------------------------------------------------------------- */
@@ -797,9 +552,9 @@ td > code:after {
 }
 
 /* ------------------------------------------------------------------------- */
-/* -- Admin UI -- */
+/* -- UI for lists (levels/cheevos) -- */
 
-section.admin {
+section.list {
   width: 100%;
   margin: 0 auto;
   border-top: 1px solid;
@@ -814,16 +569,16 @@ section.admin {
   text-align: center;
 }
 
-section.admin > .row {
+section.list > .row {
   position: relative;
   z-index: 100;
   display: flex;
   flex-direction: row;
   justify-content: space-around;
-  height: 13em;
+  height: 250px;
   width: 100%;
-  margin: 0 -50px;
-  padding: 0 50px;
+  margin: 0 -80px;
+  padding: 0 80px;
   background-image: linear-gradient(
     to right,
     transparent,
@@ -842,66 +597,51 @@ section.admin > .row {
   font-size: 1.2rem;
   color: #ffd;
 
-  & > div {
+  > div {
     display: flex;
     flex-direction: column;
     justify-content: space-evenly;
     align-items: center;
   }
-  & > div:first-child {
-    padding-left: 50px;
-  }
-  & > div:last-child {
-    padding-right: 50px;
-  }
-  & label {
-    text-align: center;
 
-    &.key {
-      font-size: 0.8em;
-      
-      & > input {
-        font-weight: bold;
-      }
-      & + var.menu {
-        display: block;
-        font-size: 2.5em;
-        cursor: pointer;
-      }
-    }
-  }
-  & input {
-    margin: 0 auto;
-    text-align: center;
-  }
-  & img.thumb {
-    &.level {
-      max-width: 130px;
-      max-height: 130px;
-      border: thin solid rgba(255, 255, 221, 0.5);
-      border-radius: 5px;
-      box-shadow: 0 0 0.5em rgba(255, 255, 221, 0.5);
-    }
-    &.cheevo {
+  > .thumb {
+    width: 150px;
+
+    img.cheevo {
       width: 100px;
       height: 100px;
       border: 0.2em solid;
       border-radius: 20px;
     }
-    & + input {
+    > input {
       width: 95px;
       font-size: 0.6em;
     }
   }
-  
-  & fieldset.rank {
+
+  label {
+    text-align: center;
+
+    .key {
+      font-size: 0.8em;
+      
+      > input {
+        font-weight: bold;
+      }
+    }
+  }
+  input {
+    margin: 0 auto;
+    text-align: center;
+  }
+  fieldset.rank {
     display: flex;
     flex-direction: row;
     align-items: center;
     border: thin solid rgba(255, 255, 221, 0.5);
     border-radius: 1em;
   
-    & > label {
+    > label {
       display: flex;
       flex-direction: column;
       align-items: center;
@@ -910,17 +650,15 @@ section.admin > .row {
       font-weight: bold;
       font-style: normal;
   
-      & > input {
+      > input {
         margin: 0.5em 1em;
       }
     }
   }
-
-  & img.thumb, & label, & fieldset {
+  img.thumb, label, fieldset {
     cursor: help;
   }
-
-  & textarea {
+  textarea {
     display: block;
     height: auto;
     border-radius: 0.2em;
@@ -930,7 +668,6 @@ section.admin > .row {
     overflow-y: scroll;
     resize: none;
   }
-  
   &:before {
     content: "";
     position: absolute;
@@ -947,8 +684,8 @@ section.admin > .row {
     opacity: 0;
     transition: opacity 0.5s;
   }
-  &:hover, &.active {
-    & img.thumb {
+  &:hover, .active {
+    .thumb img {
       @keyframes breath {
         0% { transform: scale(1) }
         50% { transform: scale(1.05) }
@@ -970,9 +707,273 @@ section.new {
 .buttons {
   margin: 50px 0;
 
-  & > button {
+  > button {
     display: block;
     float: left;
     margin: 0 10px;
+  }
+}
+
+/* ------------------------------------------------------------------------- */
+/* -- Level lists -- */
+
+section.list.levels > .row {
+  font-size: 1.5rem;
+
+  > .name {
+    width: 150px;
+
+    > var {
+      font-size: 1.6em;
+    }
+    > .menu-button {
+      font-size: 1.8em;
+      cursor: pointer;
+    }
+  }
+  > .thumb {
+    width: 150px;
+
+    img.level {
+      max-width: 150px;
+      max-height: 150px;
+      border: thin solid rgba(255, 255, 221, 0.5);
+      border-radius: 5px;
+      box-shadow: 0 0 0.5em rgba(255, 255, 221, 0.5);
+    }
+  }
+  > .rank {
+    width: 200px;
+  
+    > figure {
+      > div {
+        font-family: "Segoe UI Emoji";
+        font-size: 1.6em;
+        letter-spacing: -4px;
+        user-select: none;
+  
+        > span {
+          display: inline-block;
+        }
+      }
+      > figcaption {
+        margin-top: 10px;
+
+        > .rank-letter {
+          font-size: 1.3em;
+          font-weight: bold;
+        }
+      }
+    }
+  }
+  > .info {
+    > .completion {
+      font-size: 0.7em;
+    }
+    var {
+      font-size: 1.5rem;
+    }
+    > .rating {
+      > .data {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-evenly;
+        width: 240px;
+      }
+    }
+  }
+  > .currently-in {
+    width: 200px;
+  }
+  &:hover > .rank span {
+    transform: rotate(360deg);
+  }
+}
+
+/* ------------------------------------------------------------------------- */
+/* -- Page Explorer -- */
+
+section.list.levels > .row:not(:first-child) {
+  margin-top: 0px;
+
+  &.active {
+    margin-top: 50px !important;
+  }
+}
+
+section.list.levels > .page-explorer {
+  position: static;
+  z-index: -1;
+  display: none;
+  width: 100%;
+  height: 0;
+  margin: 0 -50px;
+  padding: 0 50px;
+  border-bottom: thin solid;
+  border-image: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 221, 0.5) 15% 85%,
+    transparent
+  );
+  border-image-slice: 1;
+  background-image: linear-gradient(
+    to right,
+    transparent,
+    rgba(127, 127, 127, 0.38) 15% 85%,
+    transparent
+  );
+  color: black;
+  text-align: left;
+  opacity: 0;
+  transition: opacity 0.45s;
+  transition-timing-function: ease;
+
+  > nav {
+    display: flex;
+    height: 60px;
+    margin: 0 -50px;
+    padding: 0 100px;
+    border-image: linear-gradient(
+      to right,
+      transparent,
+      rgba(255, 255, 221, 0.5) 15% 85%,
+      transparent
+    );
+    border-image-slice: 1;
+    background-image: linear-gradient(
+      to right,
+      transparent,
+      rgba(96, 0, 0, 0.5) 15% 85%,
+      transparent
+    );
+    box-shadow: 0 6px 6px rgba(0, 0, 0, 0.5);
+    opacity: 0;
+    transform: scaleY(0);
+    transform-origin: top;
+    transition: transform 0.4s;
+    transition-timing-function: ease-out;
+
+    .folder-up {
+      margin: 15px;
+      height: 32px;
+      vertical-align: middle;
+      cursor: pointer;
+      user-select: none;
+    }
+    .path {
+      display: inline-block;
+      margin: 15px 0;
+      padding: 5px 15px;
+      min-width: 400px;
+      border-radius: 20px;
+      background-color: white;
+      line-height: 20px;
+      font-size: 0.8em;
+
+      ::selection {
+        background-color: skyblue;
+      }
+    }
+    > .completion {
+      float: right;
+      margin: 0 15px;
+      line-height: 60px;
+      font-size: 0.7em;
+      font-style: italic;
+      color: #ffd;
+
+      > var {
+        font-size: 1.5em;
+        font-style: italic;
+      }
+      > .check {
+        margin: 5px;
+        font-size: 1.5em;
+        font-style: normal;
+      }
+    }
+  }
+  > .files {
+    height: 0;
+    opacity: 0;
+    padding: 30px 20px;
+  }
+  figure {
+    display: inline-block;
+    padding: 20px 10px;
+    width: 140px;
+    border-radius: 5%;
+    text-align: center;
+    opacity: 0;
+    user-select: none;
+    scale: 0;
+    transition: opacity 0.4s, scale 0.4s;
+    cursor: pointer;
+    image-rendering: optimizeQuality;
+  
+    > img {
+      width: 80px;
+      height: 80px;
+    }
+    > figcaption {
+      font-size: 0.6em;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: "(...)";
+      color: #ffd;
+    }
+    &.active {
+      background-color: rgba(96, 0, 0, 0.5);
+    }
+  }
+  &.active {
+    display: block;
+    height: auto;
+    opacity: 1;
+
+    &:not(:last-child) {
+      margin-bottom: 50px;
+    }
+    > nav {
+      opacity: 1;
+      transform: scaleY(1);
+    }
+    > .files {
+      height: auto;
+      opacity: 1;
+    }
+    figure.show {
+      opacity: 1;
+      scale: 1;
+
+      &:not(.current):not(.active) {
+        opacity: 0.3;
+    
+        &:hover {
+          opacity: 1;
+        }
+      }
+    }
+  }
+}
+
+/* ------------------------------------------------------------------------- */
+/* -- [ADMIN] Level lists -- */
+
+section.list.levels.admin > .row {
+  font-size: 1.2rem;
+
+  > .thumb {
+    width: 150px;
+
+    img.level {
+      max-width: 130px;
+      max-height: 130px;
+      border: thin solid rgba(255, 255, 221, 0.5);
+      border-radius: 5px;
+      box-shadow: 0 0 0.5em rgba(255, 255, 221, 0.5);
+    }
   }
 }

@@ -1,13 +1,13 @@
 <div class="row">
-  <div>
+  <div class="name">
     <label class="key">
       Level
       <input type="text" name="{{ index }}-name" size="2" value="{{ level['name'] }}" required>
     </label>
-    <var class="menu">☰</var>
+    <div class="menu-button">☰</div>
   </div>
-  <div>
-    <img id="{{ index }}-thumb" class="thumb level" src="{{ image }}">
+  <div class="thumb">
+    <img id="{{ index }}-thumb" class="level" src="{{ image }}">
     <input type="file" id="{{ index }}-input" class="thumb-input" accept="image/*">
     <input type="hidden" name="{{ index }}-image" value="{{ level['image'] }}">
     <input type="hidden" name="{{ index }}-imgdata">
@@ -74,5 +74,7 @@
     </figure>
   {% endfor %}
   </div>
-  <input type="hidden" name="new-pages" value="">
+{% if not level %}
+  <input type="hidden" name="new-pages">
+{% endif %}
 </div>

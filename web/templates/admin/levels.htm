@@ -2,13 +2,13 @@
 {% block title %}🔑 {{ alias }} | Levels{% endblock %}
 {% block extra %}
 <script type="module" src="/static/scripts/admin/admin.js"></script>
-<script type="module" src="/static/scripts/admin/levels.js"></script>
+<script type="module" src="/static/scripts/explorer.js"></script>
 {% endblock %}
 {% block content %}
     <main>
       <form method="post">
         <h1>Levels</h1>
-        <section class="admin">
+        <section class="list levels admin">
         {% for level in levels %}
           {% set index = loop.index %}
           {% set image = '/static/thumbs/' + alias + '/' + level['image'] %}
@@ -16,7 +16,7 @@
         {% endfor %}
         </section>
         <hr>
-        <section class="new">
+        <section class="list levels new">
           <!-- New level rows go here -->
         </section>
         <div class='buttons'>

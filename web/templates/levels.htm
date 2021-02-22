@@ -1,7 +1,7 @@
 {% extends 'layout.htm' %}
 {% block title %}{{ riddle }} | Levels{% endblock %}
 {% block extra %}
-    <script src="/static/scripts/levels.js"></script>
+    <script type="module" src="/static/scripts/explorer.js"></script>
 {% endblock %}
 {% block content %}
     <main>
@@ -12,60 +12,53 @@
     {% if set_name %}
       <h2>{{ set_name }}</h2>
     {% endif %}
-      <table>
-        <thead>
-          <tr>
-            <th>#</th>
-            <th>Picture</th>
-            <th>Rank</th>
-            <th>Info</th>
-            <th>Currently on</th>
-          </tr>
-        </thead>
-        <tbody>
-        {% for level in set %}
-          <tr>
-            <td class="level-id{% if level['unlocked'] %} unlocked{% endif %}"><var>{{ level['name'] }}</var>{% if level['unlocked'] %}<var>☰</var>{% endif %}</td>
-          {% if level['unlocked'] and level['image'] %}
-            <td class="level-thumb">
-              <a href="{{ url }}/{{ level['path'] }}">
-                <img src="/static/thumbs/{{ riddle }}/{{ level['image'] }}">
-              </a>
-            </td>
-          {% else %}
-            <td class="level-thumb">
-              <img width="100" height="100" src="/static/images/locked.png">
-            </td>
-          {% endif %}
-            <td class="level-rank">
-              <figure>
-              {% if level['beaten'] %}
-                {% set number = 'DCBAS'.find(level['rank']) + 1 %}
-                {% set info = level_ranks[level['rank']] %}
-                <div style="color: {{ info['color'] }}; text-shadow: 0 0 0.5em {{ info['color'] }}">
-                {% for i in range(number) %}
-                  {% set delay = 0.1 * i %}
-                  <span style="transition: transform 1s {{ delay }}s">★</span>
-                {% endfor %}
-                </div>
-                <figcaption style="color: {{ info['color'] }}"><span class="rank-letter">{{ level['rank'] }}</span>-rank ({{ info['points'] }} points)</figcaption>
-              {% else %}
-                <div style="color: gray; text-shadow: 0 0 0.5em gray">
-                  ?
-                </div>
-                <figcaption style="color: gray"><span class="rank-letter">?</span>-rank (?? points)</figcaption>
-              {% endif %}
-              </figure>
-            </td>
-            <td>
-              <p class="level-comp">
-                {% set count = level['completion_count'] %}
-                {% set ratio = '%.1f%%' % (count / total * 100) %}
-                <var>{{ count }}</var> player(s) completed (<var>{{ ratio }}</var>)
-              </p>
+      <section class="list levels">
+      {% for level in set %}
+        <div class="row">
+          <div class="name">
+            <var>{{ level['name'] }}</var>
+            {% if level['unlocked'] %}<div class="menu-button">☰</div>{% endif %}
+          </div>
+        {% if level['unlocked'] and level['image'] %}
+          <div class="thumb">
+            <a href="{{ url }}/{{ level['path'] }}">
+              <img class="level" src="/static/thumbs/{{ riddle }}/{{ level['image'] }}">
+            </a>
+          </div>
+        {% else %}
+          <div class="thumb">
+            <img class="level" width="100" height="100" src="/static/images/locked.png">
+          </div>
+        {% endif %}
+          <div class="rank">
+            <figure>
             {% if level['beaten'] %}
-              <figure class="level-rating">
-                <div>
+              {% set number = 'DCBAS'.find(level['rank']) + 1 %}
+              {% set info = level_ranks[level['rank']] %}
+              <div style="color: {{ info['color'] }}; text-shadow: 0 0 0.5em {{ info['color'] }}">
+              {% for i in range(number) %}
+                {% set delay = 0.1 * i %}
+                <span style="transition: transform 1s {{ delay }}s">★</span>
+              {% endfor %}
+              </div>
+              <figcaption style="color: {{ info['color'] }}"><span class="rank-letter">{{ level['rank'] }}</span>-rank ({{ info['points'] }} points)</figcaption>
+            {% else %}
+              <div style="color: gray; text-shadow: 0 0 0.5em gray">
+                ?
+              </div>
+              <figcaption style="color: gray"><span class="rank-letter">?</span>-rank (?? points)</figcaption>
+            {% endif %}
+            </figure>
+          </div>
+          <div class="info">
+            <div class="completion">
+              {% set count = level['completion_count'] %}
+              {% set ratio = '%.1f%%' % (count / total * 100) %}
+              <var>{{ count }}</var> player(s) completed (<var>{{ ratio }}</var>)
+            </div>
+          {% if level['beaten'] %}
+            <figure class="rating">
+              <div class="data">
                 <var>{% if level['rating_avg'] %}{{ "%.1f" % level['rating_avg'] }}{% else %}--{% endif %}</var>
                 {% set rating = (2 * 0)|round(1) %}
                 {% set rating = rating / 2 %}
@@ -80,53 +73,46 @@
                   <img width="20" height="20" src="/static/icons/heart-{{ s }}.png" alt="Heart {{ s }}">
                 {% endfor %}
                 <var>({{ level['rating_count'] }})</var>
-                </div>
-                <figcaption>Fun rating <span>{% if not level['rating_given'] %}(rate me!){% else %}(yours: <var>{{ level['rating_given'] }}</var>){% endif %}</span></figcaption>
-              </figure>
-            {% endif %}
-            </td>
-            <td class="level-cur-in">
-              <div>
-              {% for user in level['users'] %}
-                {% set account = accounts[user['username']] %}
-                <a href="#">
-                  <img width="50" height="50" class="avatar-small" src="{{ get_avatar_url(account) }}" title="{{ account['username'] }}">
-                </a>
-              </div>{% if not loop.last %}<div>{% endif %}
-              {% endfor %}
               </div>
-            </td>
-          {% if level['unlocked'] %}
-            <tr class="page-explorer" data-files_count="{{ level['files_count'] }}" data-files_total="{{ level['files_total'] }}" data-folders="{{ level['folders'] }}">
-              <td colspan="5">
-                {% set folder = s + '/' + level['path'].rsplit('/', 1)[0] %}
-                <nav>
-                  <div class="title">Page Explorer</div>
-                  <div class="content">
-                    <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">/{{ folder }}/</div>
-                    <div class="completion"><span class="check">✅</span><var>{{ level['files_count'][folder] }} / {{ level['files_total'][folder] }}</var> files in this folder</div>
-                  </div>
-                </nav>
-                <div><!--
-                {% for page in level['folders'][folder] %}
-                  {% if page[-4] == '.' %}
-                    {% set name = page[-3:] %}
-                  {% else %}
-                    {% set name = 'folder' %}
-                  {% endif %}
-               --><figure>
-                    <img width="50" height="50" src="/static/icons/{{ name }}.png">
-                    <figcaption>{{ page }}</figcaption>
-                  </figure><!--
-                {% endfor %}
-             --></div>
-              </td>
-            </tr>
+              <figcaption>Fun rating <span>{% if not level['rating_given'] %}(rate me!){% else %}(yours: <var>{{ level['rating_given'] }}</var>){% endif %}</span></figcaption>
+            </figure>
           {% endif %}
-          </tr>
-        {% endfor %}
-        </tbody>
-      </table>
+          </div>
+          <div class="currently-in">
+          {% for user in level['users'] %}
+            <div>
+              {% set account = accounts[user['username']] %}
+              <a href="#">
+                <img width="50" height="50" class="avatar-small" src="{{ get_avatar_url(account) }}" title="{{ account['username'] }}">
+              </a>
+            </div>
+          {% endfor %}
+          </div>
+        </div>
+      {% if level['unlocked'] %}
+        <div class="page-explorer" data-files_count="{{ level['files_count'] }}" data-files_total="{{ level['files_total'] }}" data-folders="{{ level['folders'] }}">
+          {% set folder = s + '/' + level['path'].rsplit('/', 1)[0] %}
+          <nav>
+            <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">/{{ folder }}/</div>
+            <div class="completion"><span class="check">✅</span><var>{{ level['files_count'][folder] }} / {{ level['files_total'][folder] }}</var> files in this folder</div>
+          </nav>
+          <div class="files">
+          {% for page in level['folders'][folder] %}
+            {% if page[-4] == '.' %}
+              {% set name = page[-3:] %}
+            {% else %}
+              {% set name = 'folder' %}
+            {% endif %}
+            <figure>
+              <img width="50" height="50" src="/static/icons/{{ name }}.png">
+              <figcaption>{{ page }}</figcaption>
+            </figure>
+          {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+      {% endfor %}
+      </section>
     {% endfor %}
     </main>
 {% endblock %}

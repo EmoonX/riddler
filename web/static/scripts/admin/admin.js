@@ -2,7 +2,7 @@ import {
   toggleExplorer, folderUp,
   clickIcon, doubleClickIcon
 }
-  from './levels.js';
+  from '../explorer.js';
 
 // Outline colors for cheevos based on rank
 const cheevoRankColors = {
@@ -60,7 +60,7 @@ function addRow(event) {
   $.get(url, data, function(html) {
     // Get HTML from rendered template and append to section
     const div = $.parseHTML(html);
-    $('.new').addClass('admin');
+    $('.new').addClass('list');
     $('.new').show();
     $('.new').append(div);
 
@@ -72,7 +72,7 @@ function addRow(event) {
   }, 'html');
   
   if (type == 'level') {
-    $('.new').on('click', '.menu', toggleExplorer);
+    $('.new').on('click', '.menu-button', toggleExplorer);
     $('.new').on('click', '.page-explorer .folder-up', folderUp);
     $('.new').on('click', '.page-explorer figure', clickIcon);
     $('.new').on('dblclick', '.page-explorer figure', doubleClickIcon);

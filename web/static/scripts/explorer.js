@@ -30,7 +30,7 @@ export function toggleExplorer() {
 function popIcons(explorer) {
   // "Icons popping in sequence" effect
   explorer.find('figure').each(function (index) {
-    const t = 50 * index;
+    const t = 50 * (index + 1);
     setTimeout(_ => {
       $(this).addClass('show');
     }, t);
@@ -150,7 +150,7 @@ function changeDir(folder, explorer, node) {
 }
 
 $(_ => {
-  $('.menu').on('click', toggleExplorer);
+  $('.menu-button').on('click', toggleExplorer);
   $('.page-explorer .folder-up').on('click', folderUp);
   $('.page-explorer').on('click', 'figure', clickIcon);
   $('.page-explorer').on('dblclick', 'figure', doubleClickIcon);

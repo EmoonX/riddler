@@ -82,7 +82,7 @@ $(document).ready(function () {
 
   /*-------------------------------------------------------------------------*/
 
-  $(".menu").on('click', function () {
+  $(".menu-button").on('click', function () {
     // Toggle page explorer
     $(this).toggleClass("active")
     var row = $(this).parents(".row")

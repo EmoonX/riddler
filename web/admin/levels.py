@@ -134,7 +134,7 @@ async def levels(alias: str):
     # Fetch levels again to display page correctly on POST
     levels = await _fetch_levels(alias)
 
-    return await r(levels, 'Guild info updated successfully!')
+    return await r(levels.values(), 'Guild info updated successfully!')
 
 
 async def _fetch_levels(alias: str):
