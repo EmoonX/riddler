@@ -264,10 +264,6 @@ a > .avatar-small {
   margin: 0;
 }
 
-.current-level, .winner {
-  font-size: 1.5em;
-  cursor: help;
-}
 .winner {
   text-shadow: 0 0 8px aliceblue
 }
@@ -284,34 +280,6 @@ a > .avatar-small {
 .points {
   font-size: 1.5em;
   text-shadow: 0 0 8px green, 0 0 16px green, 0 0 24px green;
-}
-
-.cheevo-cell {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  width: 400px;
-  min-height: 90px;
-}
-
-.cheevo:not(.thumb) {
-  position: absolute;
-  display: block;
-  opacity: 0;
-  width: 40px;
-  margin: 10px;
-  border: thin solid;
-  border-radius: 20%;
-  cursor: help;
-}
-
-/* .cheevo-cell:hover > .cheevo { */
-.cheevo-cell > .cheevo {
-  position: static;
-  opacity: 1;
-  transition: opacity 0.5s 0.1s;
 }
 
 figure.flag {
@@ -715,15 +683,19 @@ section.new {
 section.list.players > .row {
   height: 120px;
 
+  figcaption {
+    font-size: 0.8em;
+  }
+
   > .rank {
     font-size: 1.5em;
   }
   > .player {
     flex-direction: row;
     justify-content: left;
-    width: 380px;
+    width: 350px;
 
-    > img.avatar {
+    img.avatar {
       width: 60px;
       margin: 0 20px;
     }
@@ -747,22 +719,34 @@ section.list.players > .row {
       }
     }
   }
-  > figure.score {
+  > figure {
     justify-content: center;
-    align-items: flex-end;
     width: 150px;
 
-    > .points {
-      margin-right: -0.15em;
-      font-size: 2em;
-      letter-spacing: 0.1em;
+    &.score {
+      align-items: flex-end;
 
-      > .zeroes {
-        opacity: 0.08;
+      > var {
+        margin-right: -0.15em;
+        font-size: 2em;
+        letter-spacing: 0.1em;
+        text-shadow: 0 0 8px green, 0 0 16px green, 0 0 24px green;
+
+        > .zeroes {
+          opacity: 0.08;
+          user-select: none;
+        }
       }
     }
-    > figcaption {
-      font-size: 0.8em;
+    &.current-level {  
+      > var {
+        font-size: 2em;
+        letter-spacing: 0.1em;
+
+        &::first-letter {
+          letter-spacing: 0.1em;
+        }
+      }
     }
   }
   > .riddles-in {
@@ -773,6 +757,19 @@ section.list.players > .row {
     }
     flex-direction: row;
     justify-content: space-evenly;
+  }
+  > .cheevos {
+    flex-direction: row;
+    width: 300px;
+    overflow-x: clip;
+
+    > img.cheevo {
+      width: 40px;
+      margin: 10px;
+      border: thin solid;
+      border-radius: 20%; 
+      cursor: help;
+    }
   }
 }
 

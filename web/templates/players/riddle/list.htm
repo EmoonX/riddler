@@ -2,53 +2,57 @@
 {% block title %}{{ riddle['full_name'] }} | Players{% endblock %}
 {% block content %}
     <main>
-      <h1>{{ riddle['full_name'] }}</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>Country</th>
-            <th>User</th>
-            <th>Current level</th>
-            <th>Points</th>
-            <th>Achievements</th>
-          </tr>
-        </thead>
-        {% set accounts = get_accounts(riddle['alias']) %}
-        <tbody>
-        {% for player in accounts.values() %}
-          <tr>
-            {% set country_name = pycountries.get(alpha_2=player['country']).name %}
-            <td>
-              <a href="{{ player['country'] }}">
-                <img src="/static/flags/{{ player['country'] }}.png" title="{{ country_name }}" class="flag_small">
-              </a>
-            </td>
-            <td class="username_cell">
-              <img class="avatar-small" src="{{ get_avatar_url(player) }}">
-              <a href="#">
-                {{ player['username'] }}
-              </a>
-            <td>
-              {% set current = player['current_level'] %}
-              {% if current == 'END' %}
-                {% set current = riddle['winner_suffix'] %}
+      <main>
+        <h1>{{ riddle['full_name'] }}</h1>
+        <section class="list players">
+          {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
+        {% for player in accounts %}
+          <div class="row">
+            <div class="rank">
+              {% if loop.index <= 3 %}
+                {% set rank = '🥇🥈🥉'[loop.index - 1] %}
+                {% set color = colors[loop.index - 1] %}
+                {% set style = 'style="text-shadow: 0 0 8px %(c)s, 0 0 16px %(c)s, 0 0 24px %(c)s"'|safe % {'c': color} %}
+              {% else %}
+                {% set rank = '#' + loop.index|string %}
               {% endif %}
-              <var>{{ current }}</var>
-            </td>
-            <td>
-              <var class="points">{{ player['score'] }}</var>
-            </td>
-            {% set cheevos = get_achievements(riddle['alias'], player) %}
-            <td class="cheevo-cell">
+              <var {{ style }}>{{ rank }}</var>
+            </div>
+            <div class="player">
+              <a href="url_for('account.profile', username=player['username'])">
+                <img class="avatar" src="{{ get_avatar_url(player['username'], player['discriminator']) }}">
+              </a>
+              <div>
+                <a class="username" href="url_for('account.profile', username=player['username'])">{{ player['username'] }}</a>
+                <a class="country" href="{{ player['country'] }}">
+                  {% set country_name = pycountries.get(alpha_2=player['country']).name %}<!--
+               --><img class="flag" src="/static/flags/{{ player['country'] }}.png" title="{{ country_name }}">
+                </a>
+              </div>
+            </div>
+            <figure class="score">
+              {% set score = player['score'] %}
+              {% set len = (6 - score|string|length) %}
+              {% set zeroes = '0' * len %}
+              <var><span class="zeroes">{{ zeroes }}</span>{{ score }}</var>
+              <figcaption>total points</figcaption>
+            </figure>
+            <figure class="current-level">
+            {% if player['current_level'] != '🏆' %}
+              <figcaption>Currently on</figcaption>
+            {% endif %}
+              <var>{{ player['current_level'] }}</var>
+            </figure>
+            <div class="cheevos">
+              {% set cheevos = get_achievements(riddle['alias'], player) %}
           {% for rank in cheevos|reverse %}
             {% for cheevo in cheevos[rank] %}
               <img class="cheevo" src="/static/cheevos/{{ riddle['alias'] }}/{{ cheevo['image'] }}" title="[ {{ cheevo['title'] }} ] ({{ cheevo['rank'] }} points)&#10;&#10;{{ cheevo['description'] }}" style="border-color: {{ cheevo['color'] }}; box-shadow: 0 0 0.8em {{ cheevo['color'] }}" alt="{{ cheevo['title'] }}">
             {% endfor %}
           {% endfor %}
-            </td>
-          </tr>
+            </div>
+          </div>
         {% endfor %}
-        <tbody>
-      </table>
-    </main>
+        </section>
+      </main>
 {% endblock %}

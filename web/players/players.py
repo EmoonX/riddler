@@ -56,7 +56,7 @@ async def riddle_list(alias: str):
 
     # Get riddles' icon URL
     url = await web_ipc.request('get_riddle_icon_url',
-                name=riddle['full_name'])
+            name=riddle['full_name'])
     riddle['icon_url'] = url
     
     # Get players data from database
@@ -74,4 +74,5 @@ async def riddle_list(alias: str):
         account['country'] = result['country']
 
     # Render page with account info
-    return await render_template('players/riddle/list.htm', riddle=riddle)
+    return await render_template('players/riddle/list.htm',
+            riddle=riddle, accounts=accounts)

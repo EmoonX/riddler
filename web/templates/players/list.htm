@@ -18,14 +18,14 @@
             <var {{ style }}>{{ rank }}</var>
           </div>
           <div class="player">
-            <img class="avatar" src="{{ get_avatar_url(player['username'], player['discriminator']) }}">
+            <a href="url_for('account.profile', username=player['username'])">
+              <img class="avatar" src="{{ get_avatar_url(player['username'], player['discriminator']) }}">
+            </a>
             <div>
-              <a class="username" href="url_for('account.profile', username=player['username'])">
-                {{ player['username'] }}
-              </a>
+              <a class="username" href="url_for('account.profile', username=player['username'])">{{ player['username'] }}</a>
               <a class="country" href="{{ player['country'] }}">
-                {% set country_name = pycountries.get(alpha_2=player['country']).name %}
-                <img class="flag" src="/static/flags/{{ player['country'] }}.png" title="{{ country_name }}">
+                {% set country_name = pycountries.get(alpha_2=player['country']).name %}<!--
+             --><img class="flag" src="/static/flags/{{ player['country'] }}.png" title="{{ country_name }}">
               </a>
             </div>
           </div>
@@ -34,7 +34,7 @@
             {% set len = (6 - score|string|length) %}
             {% set zeroes = '0' * len %}
             <var class="points"><span class="zeroes">{{ zeroes }}</span>{{ score }}</var>
-            <figcaption>total points</figcaption>
+            <figcaption>global points</figcaption>
           </figure>
           <div class="riddles-in">
           {% for riddle in player['riddles'] %}
