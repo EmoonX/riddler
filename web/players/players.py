@@ -26,7 +26,7 @@ async def global_list():
     query = 'SELECT * FROM accounts'
     result = await database.fetch_all(query)
     accounts = [dict(account) for account in result]
-
+    
     for account in accounts:
         # Build list of riddle current account plays
         account['riddles'] = []
@@ -41,7 +41,8 @@ async def global_list():
                 account['riddles'].append(riddle)
 
     # Render page with account info
-    return await render_template('players/list.htm', riddles=riddles)
+    return await render_template('players/list.htm',
+            accounts=accounts, riddles=riddles)
 
 
 @players.route("/<alias>/players/")

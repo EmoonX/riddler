@@ -3,44 +3,40 @@
 {% block content %}
     <main>
       <h1>All players</h1>
-      <table>
-        <thead>
-          <tr>
-            <th>Country</th>
-            <th>Player</th>
-            <th>Global points</th>
-            <th>Riddles played</th>
-          </tr>
-        </thead>
-        {% set accounts = get_accounts() %}
-        <tbody>
-        {% for player in accounts.values() %}
-          <tr>
-            <td>
-              <a href="{{ player['country'] }}">
+      <section class="list players">
+      {% for player in accounts %}
+        <div class="row">
+          <div class="rank">
+            {% set pos = loop.index %}
+            <var>#{{ pos }}</var>
+          </div>
+          <div class="player">
+            <img class="avatar" src="{{ get_avatar_url(player['username'], player['discriminator']) }}">
+            <div>
+              <a class="username" href="url_for('account.profile', username=player['username'])">
+                {{ player['username'] }}
+              </a>
+              <a class="country" href="{{ player['country'] }}">
                 {% set country_name = pycountries.get(alpha_2=player['country']).name %}
-                <img src="/static/flags/{{ player['country'] }}.png" title="{{ country_name }}" class="flag_small">
+                <img class="flag" src="/static/flags/{{ player['country'] }}.png" title="{{ country_name }}">
               </a>
-            </td>
-            <td class="username_cell">
-              <img class="avatar-small" src="{{ get_avatar_url(player) }}">
-              <a href="url_for('account.profile', username=player['username'])">
-                {{ player['username'] }}#{{ player['discriminator'] }}
-              </a>
-            </td>
-            <td>
+            </div>
+          </div>
+          <div class="score">
+            <figure>
               <var class="points">{{ player['global_score'] }}</var>
-            </td>
-            <td>
-            {% for riddle in player['riddles'] %}
-              <a href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}">
-                <img class="avatar-small" src="{{ riddle['icon_url'] }}" title="{{ riddle['full_name'] }}">
-              </a>
-            {% endfor %}
-            </td>
-          </tr>
-        {% endfor %}
-        <tbody>
-      </table>
+              <figcaption>total points</figcaption>
+            </figure>
+          </div>
+          <div class="riddles-in">
+          {% for riddle in player['riddles'] %}
+            <a href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}">
+              <img class="riddle-icon" src="{{ riddle['icon_url'] }}" title="{{ riddle['full_name'] }}">
+            </a>
+          {% endfor %}
+          </div>
+        </div>
+      {% endfor %}
+      </section>
     </main>
 {% endblock %}

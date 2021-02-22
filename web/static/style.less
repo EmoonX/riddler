@@ -251,12 +251,6 @@ hr {
 /* ------------------------------------------------------------------------- */
 /* -- User lists -- */
 
-.flag_small {
-  max-width: 3em;
-  max-height: 3em;
-  border-radius: 10%;
-}
-
 .username_cell {
   width: 400px;
   text-align: left;
@@ -434,9 +428,6 @@ dd {
 }
 
 img.avatar {
-  margin: 50px auto;
-  max-width: 250px;
-  max-height: 250px;
   border-radius: 50%;
 }
 
@@ -444,6 +435,10 @@ img.avatar-small {
   width: 50px;
   vertical-align: middle;
   border-radius: 50%;
+}
+
+img.riddle-icon {
+  border-radius: 20%;
 }
 
 figcaption.rank {
@@ -552,7 +547,7 @@ td > code:after {
 }
 
 /* ------------------------------------------------------------------------- */
-/* -- UI for lists (levels/cheevos) -- */
+/* -- UI for lists (players/levels/cheevos) -- */
 
 section.list {
   width: 100%;
@@ -684,7 +679,7 @@ section.list > .row {
     opacity: 0;
     transition: opacity 0.5s;
   }
-  &:hover, .active {
+  &:hover, &.active {
     .thumb img {
       @keyframes breath {
         0% { transform: scale(1) }
@@ -715,7 +710,67 @@ section.new {
 }
 
 /* ------------------------------------------------------------------------- */
-/* -- Level lists -- */
+/* -- Players lists -- */
+
+section.list.players > .row {
+  height: 120px;
+
+  > .rank {
+    font-size: 1.5em;
+  }
+  > .player {
+    flex-direction: row;
+    justify-content: left;
+    width: 400px;
+
+    > img.avatar {
+      width: 60px;
+      margin: 0 20px;
+      //box-shadow: 0 0 4em rgba(255, 255, 221, 0.5);
+    }
+    a.username {
+      font-size: 1.2em;
+      text-shadow: 0 0 1em white;
+      
+      &:not(:hover) {
+        text-decoration: none;
+      }
+    }
+    .country {
+      margin-left: 8px;
+      vertical-align: super;
+      opacity: 0.8;
+
+      > .flag {
+        max-width: 1.6em;
+        max-height: 1.2em;
+        border-radius: 10%;
+      }
+    }
+  }
+  > .score {
+    width: 100px;
+
+    .points {
+      font-size: 2em;  
+    }
+    figcaption {
+      font-size: 0.8em;
+    }
+  }
+  > .riddles-in {
+    width: 300px;
+
+    img.riddle-icon {
+      width: 60px;
+    }
+    flex-direction: row;
+    justify-content: space-evenly;
+  }
+}
+
+/* ------------------------------------------------------------------------- */
+/* -- Levels lists -- */
 
 section.list.levels > .row {
   font-size: 1.5rem;

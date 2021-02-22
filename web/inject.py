@@ -97,10 +97,10 @@ async def context_processor():
         user = await discord.fetch_user()
         return user
     
-    async def get_avatar_url(user):
+    async def get_avatar_url(username: str, disc: str):
         '''Returns user's avatar url from a request sent to bot.'''
         url = await web_ipc.request('get_avatar_url',
-                username=user.username, disc=user.discriminator)
+                username=username, disc=disc)
         return url
 
     def get_sorted_countries():
