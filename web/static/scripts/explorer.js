@@ -168,7 +168,7 @@ $(_ => {
           // Error, something went wrong on server side
           console.log('[Upload pages] Error updating database...');
         })
-        .done(_ => {console
+        .done(_ => {
           // Success, so reload the current page to see changes
           console.log('[Upload pages] Database successfully updated!');
           location.reload();

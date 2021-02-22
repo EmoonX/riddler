@@ -36,54 +36,64 @@ function updateRating() {
 
   // Get level name and rating info
   const levelName = $(this).parents('.row').find('.name').text();
-  const rating = $(this).index() + 1;
+  const prevRating = $(this).index() + 1;
 
   // Send an HTTP GET request
-  const url = `rate/${levelName}/${rating}`;
-  const response = $.get(url);
-  console.log(response)
-  return
-  const aux = response.responseText.split(' ')
-  if (aux[0] == '403') {
-    // Go back to login page if trying to rate after timeout
-    location.replace('/login/')
-    return
-  }
-
-  // Update average and count rating fields
-  var average = Number(aux[0])
-  var count = aux[1]
-  if (average > 0) {
-    average = String(Math.round(10 * average))
-    average = average[0] + '.' + average[1]
-  } else {
-    average = '--'
-  }
-  var vars = $(this).parent().children('var')
-  vars[0].textContent = average
-  vars[1].textContent = '(' + count + ')'
-
-  // Update filled-up hearts
-  average = Math.round(2 * average) / 2
-  for (var i = 0; i < 5; i++) {
-    imgs[level_name][i] = '/static/icons/'
-    if ((i+1) <= average) {
-      imgs[level_name][i] += 'heart-full.png'
-    } else if ((i+1) - average == 0.5) {
-      imgs[level_name][i] += 'heart-half.png'
+  const url = `rate/${levelName}/${prevRating}`;
+  $.get(url, text => {  
+    // Update average and count rating fields
+    const values = text.split(' ');
+    const count = values[1];
+    var average = Number(values[0]);
+    if (average > 0) {
+      average = String(Math.round(10 * average));
+      average = average[0] + '.' + average[1];
     } else {
-      imgs[level_name][i] += 'heart-empty.png'
+      average = '--';
     }
-    $(this).parent().children('img')[i].src = imgs[level_name][i]
-  }
+    $(this).parents('.rating').find('.average').text(average);
+    $(this).parents('.rating').find('.count').text('(' + count + ')');
+  
+    // Update ratings dictionary and filled-up hearts
+    average = Math.round(2 * average) / 2;
+    ratings[levelName] = 0;
+    const dir = '/static/icons/'
+    for (var i = 0; i < 5; i++) {
+      var filename = dir;
+      if ((i+1) <= average) {
+        ratings[levelName] += 1.0;
+        filename += 'heart-full.png';
+      } else if ((i+1) - average == 0.5) {
+        ratings[levelName] += 0.5;
+        filename += 'heart-full.png';
+      } else {
+        filename += 'heart-empty.png';
+      }
+      const img = $(this).parent().children('img.heart').eq(i);
+      img.attr('src', filename);
+    }
+  
+    // Update current user's rating
+    const rating = values[2];
+    var html = '(rate me!)';
+    if (rating != 'None') {
+      html = `(yours: <var>${rating}</var>)`;
+    }
+    const span = $(this).parents('.rating').find('figcaption > span');
+    span.html(html);
 
-  // Update current user's rating
-  // var rating = aux[2]
-  // var text = '(rate me!)'
-  // if (rating != 'None') {
-  //   text = `(yours: <var>${rating}</var>)`
-  // }
-  // $(this).parents('figure').find('figcaption > span')[0].innerHTML = text
+    console.log(`[Rating] Level ${levelName}`
+          + `has been given ${rating} hearts!`);
+  })
+    .fail(response => {
+      console.log('[Rating] Error updating rating for level ${levelName}...')
+      if (response.status == 401) {
+        // Go back to login page if trying to rate while not logged in
+        location.replace('/login/');
+        return;
+      }
+    }
+  );
 };
 
 $(_ => {
@@ -96,7 +106,7 @@ $(_ => {
       const filename = src.substr(src.lastIndexOf('/') + 1)
       switch (filename) {
         case 'heart-full.png':
-          ratings[levelName] += 1;
+          ratings[levelName] += 1.0;
           break;
         case 'heart-half.png':
           ratings[levelName] += 0.5;

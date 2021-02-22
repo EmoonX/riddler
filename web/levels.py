@@ -25,22 +25,24 @@ async def level_list(alias: str):
     for level in result:
         level = dict(level)
         if user:
+            # Retrieve level unlocking and completion data
+            table = 'user_levelcompletion' if not level['is_secret'] \
+                    else 'user_secrets'
+            query = ('SELECT username, rating_given FROM %s ' % table) + \
+                    'WHERE riddle = :riddle ' \
+                        'AND username = :name AND discriminator = :disc ' \
+                        'AND level_name = :level_name'
+            values = {**base_values, 'level_name': level['name']}
+            result = await database.fetch_one(query, values)
+            
             _, status = await admin.auth(alias)
             if status == 200:
                 # If admin of riddle, everything is unlocked :)
                 level['beaten'] = True
                 level['unlocked'] = True
-            
+                if result:
+                    level['rating_given'] = result['rating_given']
             else:
-                # Retrieve level unlocking and completion data
-                table = 'user_levelcompletion' if not level['is_secret'] \
-                        else 'user_secrets'
-                query = ('SELECT username, rating_given FROM %s ' % table) + \
-                        'WHERE riddle = :riddle ' \
-                        'AND username = :name AND level_name = :id ' \
-                        'AND discriminator = :disc'
-                values = {**base_values, 'id': level['name']}
-                result = await database.fetch_one(query, values)
                 level['beaten'] = (result is not None)
                 level['unlocked'] = level['beaten']
 
@@ -55,7 +57,7 @@ async def level_list(alias: str):
                     level['unlocked'] = (result is not None)
                 else:
                     level['rating_given'] = result['rating_given']
-                   
+
         else:
             level['beaten'] = False
             level['unlocked'] = False
@@ -179,8 +181,7 @@ async def _get_user_unlocked_pages(alias: str, user: User, levels: dict):
                 level['files_total'][folder] += 1
 
 
-
-@levels.route('/<alias>/levels/rate/<level_name>/<rating>')
+@levels.route('/<alias>/levels/rate/<level_name>/<rating>', methods=['GET'])
 async def rate(alias: str, level_name: str, rating: float):
     '''Update level rating upon user giving new one.'''
 

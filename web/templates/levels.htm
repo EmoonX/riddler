@@ -61,11 +61,14 @@
             <figure class="rating">
               <div class="data">
                 <var class='average'>{% if level['rating_avg'] %}{{ "%.1f" % level['rating_avg'] }}{% else %}--{% endif %}</var>
-                {% set rating = (2 * 0)|round(1) %}
-                {% set rating = rating / 2 %}
+                {% set rating = 0 %}
+                {% if level['rating_avg'] %}
+                  {% set rating = level['rating_avg'] %}
+                {% endif %}
+                {% set rating = (2 * rating)|round(1) / 2 %}
                 <div class='hearts'>
                 {% for i in range(5) %}
-                  {% if i+1 <= rating %}
+                  {% if (i+1) <= rating %}
                     {% set s = 'full' %}
                   {% elif (i+1) - rating == 0.5 %}
                     {% set s = 'half' %}
