@@ -18,15 +18,9 @@ export function toggleExplorer() {
       popIcons(explorer);
       
       // Scroll page to accomodate view to margin-top
-      if (prev.hasClass('page-explorer') && (! prev.hasClass('active'))) {
-        scroll(0, scrollY + 50);
-      }
-    } else {
-      // Undo the changes done
-      explorer.find('figure').removeClass('show');
-      if (prev.hasClass('page-explorer') && (! prev.hasClass('active'))) {
-        scroll(0, scrollY - 50);
-      }
+      $('html').animate({
+        scrollTop: row.offset().top
+      }, 500);
     }
   });
 }
