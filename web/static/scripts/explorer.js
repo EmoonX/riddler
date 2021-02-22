@@ -4,27 +4,31 @@ var pages = new Set();
 
 export function toggleExplorer() {
   // Toggle page explorer
+
   const row = $(this).parents('.row');
   const explorer = row.next('.page-explorer');
-  row.toggleClass('active');
-  explorer.toggleClass('active');
 
-  const prev = row.prev();
-  if (explorer.hasClass('active')) {
-    // Pop initial icons
-    popIcons(explorer);
-    
-    // Scroll page to accomodate view to margin-top
-    if (prev.hasClass('page-explorer') && (! prev.hasClass('active'))) {
-      scroll(0, scrollY + 50);
+  // Wait until "display: none" is toggled so to not break transition
+  row.toggleClass('active');
+  explorer.toggle(0, _ => {
+    explorer.toggleClass('active');
+    const prev = row.prev();
+    if (explorer.hasClass('active')) {
+      // Pop initial icons
+      popIcons(explorer);
+      
+      // Scroll page to accomodate view to margin-top
+      if (prev.hasClass('page-explorer') && (! prev.hasClass('active'))) {
+        scroll(0, scrollY + 50);
+      }
+    } else {
+      // Undo the changes done
+      explorer.find('figure').removeClass('show');
+      if (prev.hasClass('page-explorer') && (! prev.hasClass('active'))) {
+        scroll(0, scrollY - 50);
+      }
     }
-  } else {
-    // Undo the changes done
-    explorer.find('figure').removeClass('show');
-    if (prev.hasClass('page-explorer') && (! prev.hasClass('active'))) {
-      scroll(0, scrollY - 50);
-    }
-  }
+  });
 }
 
 function popIcons(explorer) {
