@@ -592,7 +592,7 @@ section.list > .row {
   font-size: 1.2rem;
   color: #ffd;
 
-  > div {
+  > * {
     display: flex;
     flex-direction: column;
     justify-content: space-evenly;
@@ -721,12 +721,11 @@ section.list.players > .row {
   > .player {
     flex-direction: row;
     justify-content: left;
-    width: 400px;
+    width: 380px;
 
     > img.avatar {
       width: 60px;
       margin: 0 20px;
-      //box-shadow: 0 0 4em rgba(255, 255, 221, 0.5);
     }
     a.username {
       font-size: 1.2em;
@@ -748,13 +747,21 @@ section.list.players > .row {
       }
     }
   }
-  > .score {
-    width: 100px;
+  > figure.score {
+    justify-content: center;
+    align-items: flex-end;
+    width: 150px;
 
-    .points {
-      font-size: 2em;  
+    > .points {
+      margin-right: -0.15em;
+      font-size: 2em;
+      letter-spacing: 0.1em;
+
+      > .zeroes {
+        opacity: 0.08;
+      }
     }
-    figcaption {
+    > figcaption {
       font-size: 0.8em;
     }
   }
@@ -874,8 +881,8 @@ section.list.levels > .page-explorer {
   display: none;
   width: 100%;
   height: 0;
-  margin: 0 -50px;
-  padding: 0 50px;
+  margin: 0 -100px;
+  padding: 0 100px;
   border-bottom: thin solid;
   border-image: linear-gradient(
     to right,

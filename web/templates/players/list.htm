@@ -29,12 +29,13 @@
               </a>
             </div>
           </div>
-          <div class="score">
-            <figure>
-              <var class="points">{{ player['global_score'] }}</var>
-              <figcaption>total points</figcaption>
-            </figure>
-          </div>
+          <figure class="score">
+            {% set score = player['global_score'] %}
+            {% set len = (6 - score|string|length) %}
+            {% set zeroes = '0' * len %}
+            <var class="points"><span class="zeroes">{{ zeroes }}</span>{{ score }}</var>
+            <figcaption>total points</figcaption>
+          </figure>
           <div class="riddles-in">
           {% for riddle in player['riddles'] %}
             <a href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}">
