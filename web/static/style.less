@@ -947,14 +947,16 @@ section.list.levels > .page-explorer {
     figure.show {
       opacity: 1;
       scale: 1;
+    }
+  }
+}
 
-      &:not(.current):not(.active) {
-        opacity: 0.3;
-    
-        &:hover {
-          opacity: 1;
-        }
-      }
+section.list.levels.admin > .page-explorer {
+  & > .files figure.show:not(.current):not(.active) {
+    opacity: 0.3;
+
+    &:hover {
+      opacity: 1;
     }
   }
 }

@@ -1,5 +1,5 @@
 {% extends 'layout.htm' %}
-{% block title %}{{ riddle }} | Levels{% endblock %}
+{% block title %}{{ alias }} | Levels{% endblock %}
 {% block extra %}
     <script type="module" src="/static/scripts/explorer.js"></script>
 {% endblock %}
@@ -7,7 +7,7 @@
     <main>
       <h1>Levels</h1>
       {% set total = 100 %}
-      {% set accounts = get_accounts(riddle) %}
+      {% set accounts = get_accounts(alias) %}
     {% for set_name, set in levels.items() %}
     {% if set_name %}
       <h2>{{ set_name }}</h2>
@@ -22,7 +22,7 @@
         {% if level['unlocked'] and level['image'] %}
           <div class="thumb">
             <a href="{{ url }}/{{ level['path'] }}">
-              <img class="level" src="/static/thumbs/{{ riddle }}/{{ level['image'] }}">
+              <img class="level" src="/static/thumbs/{{ alias }}/{{ level['image'] }}">
             </a>
           </div>
         {% else %}

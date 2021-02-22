@@ -1,6 +1,7 @@
 from quart import Blueprint, session, render_template
 from quart_discord import requires_authorization
 
+import admin.admin as admin
 from auth import discord
 from util.db import database
 
@@ -8,52 +9,52 @@ from util.db import database
 levels = Blueprint('levels', __name__)
 
 
-@levels.route('/<riddle>/levels/')
+@levels.route('/<alias>/levels/')
 @requires_authorization
-async def level_list(riddle: str):
+async def level_list(alias: str):
     '''Fetch list of levels, showing only desired public info.'''
     
-    pages = None
     user = await discord.fetch_user()
-    base_values = {'riddle': riddle,
+    base_values = {'riddle': alias,
             'name': user.name, 'disc': user.discriminator}
-    if user:
-        # Get user's current level
-        query = 'SELECT current_level FROM riddle_accounts WHERE ' \
-                'riddle = :riddle AND ' \
-                'username = :name AND discriminator = :disc'
-        result = await database.fetch_one(query, base_values)
-        current_level = result['current_level']
 
     # Get level dict (and mark them as unlocked and/or beaten appropriately)
     query = 'SELECT * FROM levels WHERE riddle = :riddle'
-    result = await database.fetch_all(query, {'riddle': riddle})
+    result = await database.fetch_all(query, {'riddle': alias})
     levels = {}
     for level in result:
         level = dict(level)
         if user:
-            table = 'user_levelcompletion' if not level['is_secret'] \
-                    else 'user_secrets'
-            query = ('SELECT username, rating_given FROM %s ' % table) + \
-                    'WHERE riddle = :riddle ' \
-                    'AND username = :name AND level_name = :id ' \
-                    'AND discriminator = :disc'
-            values = {**base_values, 'id': level['name']}
-            result = await database.fetch_one(query, values)
-            level['beaten'] = (result is not None)
-            level['unlocked'] = level['beaten']
-
-            if not level['beaten']:
-                # Level appears on level list iff user reached its front page
-                query = 'SELECT username FROM user_pageaccess ' \
-                        'WHERE riddle = :riddle ' \
-                        'AND username = :name AND discriminator = :disc ' \
-                        'AND path = :path'
-                values = {**base_values, 'path': level['path']}
-                result = await database.fetch_one(query, values)
-                level['unlocked'] = (result is not None)
+            _, status = await admin.auth(alias)
+            if status == 200:
+                # If admin of riddle, everything is unlocked :)
+                level['beaten'] = True
+                level['unlocked'] = True
+            
             else:
-                level['rating_given'] = result['rating_given']
+                # Retrieve level unlocking and completion data
+                table = 'user_levelcompletion' if not level['is_secret'] \
+                        else 'user_secrets'
+                query = ('SELECT username, rating_given FROM %s ' % table) + \
+                        'WHERE riddle = :riddle ' \
+                        'AND username = :name AND level_name = :id ' \
+                        'AND discriminator = :disc'
+                values = {**base_values, 'id': level['name']}
+                result = await database.fetch_one(query, values)
+                level['beaten'] = (result is not None)
+                level['unlocked'] = level['beaten']
+
+                if not level['beaten']:
+                    # Level appears on list iff user reached its front page
+                    query = 'SELECT username FROM user_pageaccess ' \
+                            'WHERE riddle = :riddle ' \
+                            'AND username = :name AND discriminator = :disc ' \
+                            'AND path = :path'
+                    values = {**base_values, 'path': level['path']}
+                    result = await database.fetch_one(query, values)
+                    level['unlocked'] = (result is not None)
+                else:
+                    level['rating_given'] = result['rating_given']
                    
         else:
             level['beaten'] = False
@@ -62,7 +63,7 @@ async def level_list(riddle: str):
         # Register list of users currently on level
         query = 'SELECT * FROM riddle_accounts ' \
                 'WHERE riddle = :riddle and current_level = :id'
-        values = {'riddle': riddle, 'id': level['name']}
+        values = {'riddle': alias, 'id': level['name']}
         result = await database.fetch_all(query, values)
         level['users'] = [dict(level) for level in result]
 
@@ -71,7 +72,6 @@ async def level_list(riddle: str):
             levels[level['level_set']] = []
         levels[level['level_set']].append(level)
         
-
     if not user:
         # First level is always visible
         levels[0]['unlocked'] = True
@@ -80,37 +80,43 @@ async def level_list(riddle: str):
         levels[0]['files_count'] = 0
         levels[0]['files_total'] = 0
     else:
-        # Get dict of unlocked pages to file explorers
-        await _get_user_unlocked_pages(riddle, user, levels)
+        # Get dict of pages to explorers
+        await _get_user_unlocked_pages(alias, user, levels)
 
     # return render_and_count('levels.htm', locals())
     # return render_and_count('levels.htm', locals())
     s = 'cipher'
-    if riddle == 'rns':
+    if alias == 'rns':
         s = 'riddle'
     url = 'http://gamemastertips.com/cipher'
-    if riddle == 'rns':
+    if alias == 'rns':
         url = 'https://rnsriddle.com/riddle'
     return await render_template('levels.htm', **locals())
 
 
-async def _get_user_unlocked_pages(riddle: str, user, levels: dict):
+async def _get_user_unlocked_pages(alias: str, user, levels: dict):
     '''Build dict of pairs (folder -> list of pages),
     containing all user accessed pages ordered by extension.'''
 
     s = 'cipher'
-    if riddle == 'rns':
+    if alias == 'rns':
         s = 'riddle'
     for level_set in levels.values():
         for level in level_set:
-            # Get all pages (paths) user accessed in respective level
-            query = 'SELECT path FROM user_pageaccess ' \
-                    'WHERE riddle = :riddle ' \
-                    'AND username = :name AND discriminator = :disc ' \
-                    'AND level_name = :id'
-            values = {'riddle': riddle, 
-                    'name': user.name, 'disc': user.discriminator,
-                    'id': level['name']}
+            _, status = await admin.auth(alias)
+            if status == 200:
+                query = 'SELECT path FROM level_pages ' \
+                        'WHERE riddle = :riddle AND level_name = :name'
+                values = {'riddle': alias, 'name': level['name']}
+            else:
+                # Get all pages (paths) user accessed in respective level
+                query = 'SELECT path FROM user_pageaccess ' \
+                        'WHERE riddle = :riddle ' \
+                        'AND username = :name AND discriminator = :disc ' \
+                        'AND level_name = :level_name'
+                values = {'riddle': alias, 
+                        'name': user.name, 'disc': user.discriminator,
+                        'level_name': level['name']}
             result = await database.fetch_all(query, values)
             paths = [(s + '/' + row['path']) for row in result]
 
@@ -160,7 +166,7 @@ async def _get_user_unlocked_pages(riddle: str, user, levels: dict):
             level['files_total'] = {}
             query = 'SELECT path FROM level_pages WHERE ' \
                     'riddle = :riddle AND level_name = :id'
-            values = {'riddle': riddle, 'id': level['name']}
+            values = {'riddle': alias, 'id': level['name']}
             result = await database.fetch_all(query, values)
             paths = [row['path'] for row in result]
             for path in paths:
