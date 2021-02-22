@@ -9,6 +9,12 @@
             </div>
           </nav>
         </div>
+      {% if riddle %}
+        <div class="nav-button riddle-banner">
+          <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
+          <div class="name">{{ riddle['full_name'] }}</div>
+        </div>
+      {% endif %}
         <div>
         {# Verify if user is logged in #}
         {% set user = get_session_user() %}

@@ -11,7 +11,7 @@
 }
 @font-face {
   font-family: calculator;
-  src: url("/static/fonts/calculator.ttf");
+  src: url("/static/fonts/digital-7-mono.ttf");
 }
 
 ::selection {
@@ -59,7 +59,8 @@ header {
 }
 
 header > nav {
-  display: block;
+  display: flex;
+  justify-content: space-between;
   margin: 0 auto;
   max-width: 1200px;
   height: 100%;
@@ -91,6 +92,23 @@ header > nav > div:last-child {
 
 .nav-button:hover {
   background-color: rgba(127, 127, 127, 0.5);
+}
+
+header > nav > .riddle-banner {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 400px;
+  text-transform: none;
+
+  > .name {
+    margin-left: 20px;
+  }
+}
+
+img.riddle-icon {
+  width: 60px;
+  border-radius: 10%;
 }
 
 .profile-button {
@@ -229,6 +247,7 @@ a, a:visited {
 var, .menu-button {
   font: 1.2em calculator;
   font-weight: bold;
+  letter-spacing: 0.15em;
   text-shadow: 0 0 8px crimson, 0 0 16px crimson, 0 0 24px crimson;
 }
 
@@ -403,10 +422,6 @@ img.avatar-small {
   width: 50px;
   vertical-align: middle;
   border-radius: 50%;
-}
-
-img.riddle-icon {
-  border-radius: 20%;
 }
 
 figcaption.rank {
@@ -708,7 +723,7 @@ section.list.players > .row {
       }
     }
     .country {
-      margin-left: 8px;
+      margin-left: 12px;
       vertical-align: super;
       opacity: 0.8;
 
@@ -729,10 +744,10 @@ section.list.players > .row {
       > var {
         margin-right: -0.15em;
         font-size: 2em;
-        letter-spacing: 0.1em;
         text-shadow: 0 0 8px green, 0 0 16px green, 0 0 24px green;
 
         > .zeroes {
+          
           opacity: 0.08;
           user-select: none;
         }
@@ -751,17 +766,13 @@ section.list.players > .row {
   }
   > .riddles-in {
     width: 300px;
-
-    img.riddle-icon {
-      width: 60px;
-    }
     flex-direction: row;
     justify-content: space-evenly;
   }
   > .cheevos {
     flex-direction: row;
     width: 300px;
-    overflow-x: clip;
+    overflow-x: hidden;
 
     > img.cheevo {
       width: 40px;

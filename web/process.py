@@ -118,6 +118,8 @@ class _PathsHandler:
                 path = path.replace('/cipher/', '')
             else:
                 path = path.replace('/riddle/', '')
+            if not path:
+                continue
 
             if path[-1] == '/':
                 # If a folder itself, add "index.htm" to path's end
@@ -198,7 +200,6 @@ class _PathsHandler:
                 await lh.register_completion()
             if page_level['name'] == next_name and path == page_level['path']:
                 # If it's the next level's front page, register progress
-                print('OK')
                 lh = _NormalLevelHandler(page_level, self)
                 await lh.register_finding()
             
