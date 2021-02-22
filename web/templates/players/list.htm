@@ -4,11 +4,18 @@
     <main>
       <h1>All players</h1>
       <section class="list players">
+        {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
       {% for player in accounts %}
         <div class="row">
           <div class="rank">
-            {% set pos = loop.index %}
-            <var>#{{ pos }}</var>
+            {% if loop.index <= 3 %}
+              {% set rank = '🥇🥈🥉'[loop.index - 1] %}
+              {% set color = colors[loop.index - 1] %}
+              {% set style = 'style="text-shadow: 0 0 8px %(c)s, 0 0 16px %(c)s, 0 0 24px %(c)s"'|safe % {'c': color} %}
+            {% else %}
+              {% set rank = '#' + loop.index|string %}
+            {% endif %}
+            <var {{ style }}>{{ rank }}</var>
           </div>
           <div class="player">
             <img class="avatar" src="{{ get_avatar_url(player['username'], player['discriminator']) }}">
