@@ -1,6 +1,9 @@
 // Dictionary of all folders and pages/files
 var pages;
 
+// Dictionary of sets of current pages for each level
+var currentPages = {};
+
 export function toggleExplorer() {
   // Toggle page explorer
 
@@ -119,30 +122,43 @@ export function clickIcon() {
     $(this).toggleClass('current');
     const explorer = $(this).parents('.page-explorer');
     const levelName = explorer.prev().find('.key > input').val();
-    var folder = explorer.find('.path').text();
-    const row = pages[folder]['children'].find(
-        row => (row['page'] == page));
+    const folderPath = explorer.find('.path').text();
+    const folder = getFolderEntry(folderPath)
+    const row = folder['children'][page];
     if ($(this).hasClass('current')) {
       const frontPath = explorer.prev().find('.front-path');
       if (! frontPath.val()) {
         frontPath.val(row['path'].substr(1));
       }
-      pages.add(row['path']);
+      if (! currentPages[levelName]) {
+        currentPages[levelName] = new Set();
+      }
+      row['level_name'] = levelName;
+      currentPages[levelName].add(row['path']);
     } else {
       row['level_name'] = 'NULL';
-      pages.delete(row['path']);
+      currentPages[levelName].delete(row['path']);
     }
-    const json = JSON.stringify([...pages]);
+    const json = JSON.stringify([...currentPages[levelName]]);
     $('input[name="new-pages"]').last().val(json);
-    row['level_name'] = levelName;
-    var folder = folder.split('/').slice(0, -1).join('/') + '/';
-    while (folder != '/') {
-      parent = folder.split('/').slice(0, -2).join('/') + '/';
-      const row = pages[parent]['children'].find(
-        row => ((row['path'] + '/') == folder));
-      row['level_name'].append(levelName);
-      folder = parent;
-    }
+
+    // Recursively mark/unmark parent folders for highlighting
+    const segments = folderPath.split('/').slice(1, -1);
+    var parent = pages['/'];
+    segments.forEach(seg => {
+      const folder = parent['children'][seg];
+      if ($(this).hasClass('current')) {
+        if (! folder['levels'][levelName]) {
+          folder['levels'][levelName] = 0;
+        }
+        folder['levels'][levelName] += 1;
+      } else {
+        folder['levels'][levelName] -= 1;
+      }
+      console.log(seg)
+      console.log(folder['levels'])
+      parent = folder;
+    });
   }
 }
 

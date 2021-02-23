@@ -167,8 +167,6 @@ async def get_pages(alias: str) -> str:
     for row in result:
         row = dict(row)
         row['page'] = row['path'].rsplit('/', 1)[-1]
-        if not row['level_name']:
-            row['level_name'] = 'NULL'
         row['folder'] = 0
         paths.append(row)
 
