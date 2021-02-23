@@ -18,6 +18,7 @@ export function toggleExplorer() {
       const node = explorer.find('.path');
       const folder = node.text();
       changeDir(explorer, folder);
+      console.log(folders)
       
       // Scroll page to accomodate view to margin-top
       $('html').animate({
@@ -51,8 +52,14 @@ function changeDir(explorer, folder) {
       name = page.substr(j + 1);
     }
     var current = '';
-    if (row['level_name'] == levelName) {
-      current = 'class="current"';
+    if (name == 'folder') {
+      if (row['level_name'][levelName]) {
+        current = 'class="current"';
+      }
+    } else {
+      if (row['level_name'] == levelName) {
+        current = 'class="current"';
+      }
     }
     const img = `<img src="/static/icons/${name}.png">`;
     const fc = `<figcaption>${page}</figcaption>`;
@@ -62,7 +69,7 @@ function changeDir(explorer, folder) {
     // (current folders -> other folders -> current files -> other files)
     if (name == 'folder') {
       const folderNode = files.children('.folder');
-      if (row['level_name'] == levelName) {
+      if (row['level_name'][levelName]) {
         folderNode.children('.first').append(figure);
       } else {
         folderNode.append(figure);
@@ -125,7 +132,7 @@ export function clickIcon() {
       parent = folder.split('/').slice(0, -2).join('/') + '/';
       const row = folders[parent]['files'].find(
         row => ((row['path'] + '/') == folder));
-      row['level_name'] = levelName;
+      row['level_name'].append(levelName);
       folder = parent;
     }
   }

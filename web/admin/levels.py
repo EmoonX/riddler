@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 
 from quart import Blueprint, request, render_template
 from quart_discord import requires_authorization
@@ -27,10 +28,19 @@ async def levels(alias: str):
         s = 'cipher'
         if alias == 'rns':
             s = 'riddle'
-        folders = await _get_pages(alias)
-        return await render_template('admin/levels.htm', 
-                alias=alias, levels=levels,
-                folders=folders, s=s, msg=msg)
+        pages = await _get_pages(alias)
+        
+        def get_folder(folder_path: str):
+            segments = folder_path.split('/')[1:-1]
+            folder = pages['/']
+            print(segments)
+            for seg in segments:
+                folder = folder['children'][seg]
+            return folder
+        
+        return await render_template('admin/levels.htm',
+                alias=alias, levels=levels, pages=pages,
+                get_folder=get_folder, s=s, msg=msg)
     
     # Get initial level data from database
     levels_before = await _fetch_levels(alias)
@@ -148,74 +158,54 @@ async def _fetch_levels(alias: str):
 
 
 async def _get_pages(alias: str) -> dict:
-    '''Get a recursive dict of all riddle pages sorted in folders.'''
+    '''Get a recursive dict of all riddle folders and pages.'''
     
     # Build list of paths from database data
     query = 'SELECT * FROM level_pages WHERE riddle = :riddle'
     values = {'riddle': alias}
-    result = await database.fetch_all(query, values)
-    paths = []
-    for row in result:
-        path = dict(row)
-        path['path'] = '/' + path['path']
-        path['page'] = path['path'].rsplit('/', 1)[-1]
-        paths.append(path)
-
-    # Build dict of dict of list of folders and files
-    folders = {'/': {'files': []}}
+    paths = await database.fetch_all(query, values)
     for row in paths:
-        folder = row['path'].rsplit('/', 1)[0]
-        folder += '/'
-        if not folder in folders:
-            folders[folder] = {}
-            folders[folder]['files'] = []
-        folders[folder]['files'].append(row)
+        row = dict(row)
+        row['page'] = row['path'].rsplit('/', 1)[-1]
+        row['folder'] = 0
 
-    # Add folders to directory structure
-    aux = {}
-    for folder_path in folders:
-        # Build recursive dict of folders
-        f = folder_path
-        while f != '/':
-            parent, name = f[:-1].rsplit('/', 1)
-            parent += '/'
-            if not parent in aux:
-                aux[parent] = set()
-            aux[parent].add(name)
-            f = parent
-    for folder, names in aux.items():
-        # Add folder to parent folder as a "no level file"
-        if not folder in folders:
-            folders[folder] = {}
-            folders[folder]['files'] = []
-        for name in names:
-            path = folder + name
-            if path in paths:
-                row = paths[path]
-            else:
-                row = {'path': path, 'page': name}
-            folders[folder]['files'].append(row)
+    # Build recursive of folders and files
+    base = {'children': {},
+            'levels': defaultdict(int), 'folder': 1}
+    pages = {'/': base}
+    for row in paths:
+        parent = pages['/']
+        segments = row['path'].split('/')[1:]
+        for seg in segments:
+            parent['levels'][row['level_name']] += 1
+            children = parent['children']
+            if seg not in children:
+                if seg != row['path']:
+                    children[seg] = base
+                else:
+                    children[seg] = row
+            parent = children[seg]
     
-    def _extension_cmp(row: dict):
-        '''Compare pages based firstly on their extension.
-        Order is: folders first, then .htm, then the rest.'''
-        page = row['page']
-        index = page.rfind('.')
-        if index == -1:
-            return 'aaa' + page
-        if page[index:] in ('.htm', '.html'):
-            return 'aab' + page
-        return 'zzz' + page[-3:]
+    # def _extension_cmp(row: dict):
+    #     '''Compare pages based firstly on their extension.
+    #     Order is: folders first, then .htm, then the rest.'''
+    #     page = row['page']
+    #     index = page.rfind('.')
+    #     if index == -1:
+    #         return 'aaa' + page
+    #     if page[index:] in ('.htm', '.html'):
+    #         return 'aab' + page
+    #     return 'zzz' + page[-3:]
 
-    # Sort pages from each folder
-    for folder in folders.values():
-        folder['files'].sort(key=_extension_cmp)
+    # # Sort pages from each folder
+    # for folder in folders.values():
+    #     folder['files'].sort(key=_extension_cmp)
     
-    # Save number of pages/files in folder
-    for folder in folders.values():
-        folder['files_total'] = len(folder['files'])
+    # # Save number of pages/files in folder
+    # for folder in folders.values():
+    #     folder['files_total'] = len(folder['files'])
     
-    return folders
+    return pages    
 
 
 @admin_levels.route('/admin/<alias>/level-row/', methods=['GET'])

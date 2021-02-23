@@ -45,34 +45,16 @@
 </div>
 {% set folder_path = '/' %}
 {% if level %}
-  {% set folder_path = '/' + level['path'].rsplit('/', 1)[0] + '/' %}
+  {% set folder_path = level['path'].rsplit('/', 1)[0] + '/' %}
 {% endif %}
-{% set folder = folders[folder_path] %}
-<div class="page-explorer" data-files_total="{{ folder['files_total'] }}">
+{% set folder = get_folder(folder_path) %}
+  <div class="page-explorer">
   <nav>
     <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">{{ folder_path }}</div>
-    <div class="completion"><var>{{ folder['files_total'] }}</var> files in this folder</div>
+    <div class="completion"><var></var> files in this folder</div>
   </nav>
   <div class="files">
-  {% for row in folder['files'] %}
-    {# Get icon name based on extension #}
-    {% set page = row['page'] %}
-    {% if page[-4] == '.' %}
-      {% set name = page[-3:] %}
-    {% elif page[-5:] == '.html' %}
-    {% set name = 'htm' %}
-    {% else %}
-      {% set name = 'folder' %}
-    {% endif %}
-    {# Set figure as active if page is from this level #}
-    {% if name != 'folder' and row['level_name'] == level['name'] %}
-      {% set current = 'class="current"'|safe %}
-    {% endif %}
-    <figure {{ current }} title="{{ row['path'] }}">
-      <img width="50" height="50" src="/static/icons/{{ name }}.png">
-      <figcaption>{{ page }}</figcaption>
-    </figure>
-  {% endfor %}
+    <!-- JS will append files here -->
   </div>
 {% if not level %}
   <input type="hidden" name="new-pages">
