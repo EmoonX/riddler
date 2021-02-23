@@ -14,8 +14,10 @@ export function toggleExplorer() {
     explorer.toggleClass('active');
     const prev = row.prev();
     if (explorer.hasClass('active')) {
-      // Pop initial icons
-      popIcons(explorer);
+      // Change to initial (front page) directory
+      const node = explorer.find('.path');
+      const folder = node.text();
+      changeDir(explorer, folder);
       
       // Scroll page to accomodate view to margin-top
       $('html').animate({
@@ -23,6 +25,65 @@ export function toggleExplorer() {
       }, 500);
     }
   });
+}
+
+function changeDir(explorer, folder) {
+  // Change current directory
+
+  // Update directory on field
+  const node = explorer.find('.path');
+  node.text(folder);
+
+  // Erase previous files from <div>
+  const files = explorer.find('.files');
+  files.empty();
+  files.append('<span class="folder"></span>');
+  files.find('.folder').append('<span class="first"></span>');
+  files.append('<span class="first"></span>');
+
+  // And now add the current dir files
+  const levelName = explorer.prev().find('.key > input').val();
+  folders[folder]['files'].forEach(function (row) {
+    const page = row['page'];
+    var name = 'folder';
+    const j = page.lastIndexOf('.');
+    if (j != -1) {
+      name = page.substr(j + 1);
+    }
+    var current = '';
+    if (row['level_name'] == levelName) {
+      current = 'class="current"';
+    }
+    const img = `<img src="/static/icons/${name}.png">`;
+    const fc = `<figcaption>${page}</figcaption>`;
+    const figure = `<figure ${current}>${img}${fc}</figure>`;
+    
+    // Append current level files in correct order
+    // (current folders -> other folders -> current files -> other files)
+    if (name == 'folder') {
+      const folderNode = files.children('.folder');
+      if (row['level_name'] == levelName) {
+        folderNode.children('.first').append(figure);
+      } else {
+        folderNode.append(figure);
+      }
+    } else {
+      if (row['level_name'] == levelName) {
+        files.children('.first').append(figure);
+      } else {
+        files.append(figure);
+      }
+    }
+  });
+  // Pop icons sequentially
+  popIcons(explorer);
+
+  // Update folder's files count and total
+  const files_total = explorer.data('files_total');
+  const total = files_total[folder];
+  const comp = explorer.find('.completion');
+  const vars = comp.find('var');
+  vars[0].textContent = total ? total : '--';
 }
 
 function popIcons(explorer) {
@@ -83,10 +144,10 @@ export function doubleClickIcon() {
     window.open(url, '_blank');
   } else {
     // Change current directory to folder's one
-    var explorer = $(this).parents('.page-explorer');
-    var node = explorer.find('.path');
-    var folder = node.text() + page + '/';
-    changeDir(folder, explorer, node);
+    const explorer = $(this).parents('.page-explorer');
+    const node = explorer.find('.path');
+    const folder = node.text() + page + '/';
+    changeDir(explorer, folder);
   }
 }
 
@@ -100,54 +161,16 @@ export function folderUp() {
   }
   const re = /\w+\/$/g;
   const folder = node.text().replace(re, '');
-  changeDir(folder, explorer, node);
-}
-
-function changeDir(folder, explorer, node) {
-  // Update directory on field
-  node.text(folder);
-
-  // Get JS object data converted from Python dict
-  if (!folders) {
-    var data = explorer.data('folders').replaceAll('\'', '"');
-    data = data.replaceAll('None', '"NULL"');
-    folders = JSON.parse(data);
-  }
-  const files_total = explorer.data('files_total');
-
-  // Erase previous files from <div>
-  const files = explorer.find('.files');
-  files.empty();
-
-  // And now add the current dir files
-  const levelName = explorer.prev().find('.key > input').val();
-  folders[folder]['files'].forEach(function (row) {
-    const page = row['page'];
-    var name = 'folder';
-    const j = page.lastIndexOf('.');
-    if (j != -1) {
-      name = page.substr(j + 1);
-    }
-    var current = '';
-    if (row['level_name'] == levelName) {
-      current = 'class="current"';
-    }
-    const img = `<img src="/static/icons/${name}.png">`;
-    const fc = `<figcaption>${page}</figcaption>`;
-    const figure = `<figure ${current}>${img}${fc}</figure>`;
-    files.append(figure);
-  });
-  // Pop icons sequentially
-  popIcons(explorer);
-
-  // Update folder's files count and total
-  const total = files_total[folder]
-  const comp = explorer.find('.completion')
-  const vars = comp.find('var')
-  vars[0].textContent = total ? total : '--';
+  changeDir(explorer, folder);
 }
 
 $(_ => {
+  // Get JS object data converted from Python dict
+  var data = $('form').data('folders').replaceAll('\'', '"');
+  data = data.replaceAll('None', '"NULL"');
+  folders = JSON.parse(data);
+
+  // Event handlers
   $('.menu-button').on('click', toggleExplorer);
   $('.page-explorer .folder-up').on('click', folderUp);
   $('.page-explorer').on('click', 'figure', clickIcon);

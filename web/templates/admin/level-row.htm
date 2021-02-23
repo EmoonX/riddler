@@ -48,7 +48,7 @@
   {% set folder_path = '/' + level['path'].rsplit('/', 1)[0] + '/' %}
 {% endif %}
 {% set folder = folders[folder_path] %}
-<div class="page-explorer" data-files_total="{{ folder['files_total'] }}" data-folders="{{ folders }}">
+<div class="page-explorer" data-files_total="{{ folder['files_total'] }}">
   <nav>
     <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">{{ folder_path }}</div>
     <div class="completion"><var>{{ folder['files_total'] }}</var> files in this folder</div>
