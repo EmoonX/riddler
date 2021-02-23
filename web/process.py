@@ -146,10 +146,17 @@ class _PathsHandler:
         result = await database.fetch_one(query, values)
 
         if not result:
-            # If not, create a brand new one
+            # If not, create a brand new one (current level as first one)
+            query = 'SELECT * FROM levels ' \
+                    'WHERE riddle = :riddle AND `index` = 1'
+            values = {'riddle': self.riddle_alias}
+            result = await database.fetch_one(query, values)
+            first_level = result['name']
             query = 'INSERT INTO riddle_accounts ' \
-                    '(riddle, username, discriminator) ' \
-                    'VALUES (:riddle, :name, :disc)'
+                    '(riddle, username, discriminator, current_level) ' \
+                    'VALUES (:riddle, :name, :disc, :first_level)'
+            values = {'riddle': self.riddle_alias, 'name': self.username,
+                    'disc': self.disc, 'first_level': first_level}
             await database.execute(query, values)
         
         # Build dict from query result
