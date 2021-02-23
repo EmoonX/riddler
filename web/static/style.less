@@ -212,7 +212,7 @@ h1 {
   align-items: center;
   justify-content: center;
   margin: 100px 0;
-  font-size: 4em;
+  font-size: 3em;
   text-shadow: 0 0 0.6em white;
 }
 h1::before, h1::after {
@@ -738,22 +738,46 @@ section.list.players > .row {
     justify-content: center;
     width: 150px;
 
+    > figcaption {
+      line-height: 100%;
+    }
     &.score {
       align-items: flex-end;
 
-      > var {
-        margin-right: -0.15em;
-        font-size: 2em;
+      var {
+        margin: 0;
         text-shadow: 0 0 8px green, 0 0 16px green, 0 0 24px green;
 
-        > .zeroes {
+        &.points {
+          position: relative;
+          display: flex;
+          justify-content: right;
+          align-items: center;
+          width: 100%;
           
-          opacity: 0.08;
+          font-size: 2em;
+        }
+        > var.zeroes {
+          position: absolute;
+          right: 0;
+          letter-spacing: inherit;
+          font-size: inherit;
+          opacity: 0.1;
           user-select: none;
         }
+        > figcaption {
+          margin-right: 0.5em;
+        }
+      }
+      > figcaption {
+        margin-top: 15px;
       }
     }
-    &.current-level {  
+    &.current-level {
+      > figcaption {
+        margin-bottom: 15px;
+      }
+
       > var {
         font-size: 2em;
         letter-spacing: 0.1em;

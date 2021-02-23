@@ -1,9 +1,9 @@
 {% extends 'layout.htm' %}
-{% block title %}{{ riddle['full_name'] }} | Players{% endblock %}
+{% block title %}{{ riddle['full_name'] }} | Ranking{% endblock %}
 {% block content %}
     <main>
       <main>
-        <h1>{{ riddle['full_name'] }}</h1>
+        <h1>Ranking</h1>
         <section class="list players">
           {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
         {% for player in accounts %}
@@ -30,10 +30,9 @@
             </div>
             <figure class="score">
               {% set score = player['score'] %}
-              {% set len = (6 - score|string|length) %}
-              {% set zeroes = '0' * len %}
-              <var><span class="zeroes">{{ zeroes }}</span>{{ score }}</var>
-              <figcaption>total points</figcaption>
+              {% set zeroes = '0' * 6 %}
+              <var class="points"><var class="zeroes">{{ zeroes }}</var>{{ score }}</var>
+              <figcaption>points</figcaption>
             </figure>
             <figure class="current-level">
             {% if player['current_level'] != '🏆' %}

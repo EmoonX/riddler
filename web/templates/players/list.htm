@@ -1,8 +1,8 @@
 {% extends 'layout.htm' %}
-{% block title %}Riddler | All players{% endblock %}
+{% block title %}Riddler | Global ranking{% endblock %}
 {% block content %}
     <main>
-      <h1>All players</h1>
+      <h1>Global ranking</h1>
       <section class="list players">
         {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
       {% for player in accounts %}
@@ -29,10 +29,9 @@
           </div>
           <figure class="score">
             {% set score = player['global_score'] %}
-            {% set len = (6 - score|string|length) %}
-            {% set zeroes = '0' * len %}
-            <var class="points"><span class="zeroes">{{ zeroes }}</span>{{ score }}</var>
-            <figcaption>global points</figcaption>
+            {% set zeroes = '0' * 6 %}
+            <var class="points"><var class="zeroes">{{ zeroes }}</var>{{ score }}</var>
+            <figcaption>total points</figcaption>
           </figure>
           <div class="riddles-in">
           {% for riddle in player['riddles'] %}
