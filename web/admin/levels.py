@@ -13,7 +13,7 @@ from util.db import database
 admin_levels = Blueprint('admin_levels', __name__)
 
 
-@admin_levels.route('/admin/<alias>/levels/', methods=['GET', 'POST'])
+@admin_levels.route('/admin/<alias>/levels', methods=['GET', 'POST'])
 @requires_authorization
 async def levels(alias: str):
     '''Riddle level management.'''
@@ -69,13 +69,13 @@ async def levels(alias: str):
         
         level_before = levels_before[index]
         level = levels_after[index]
-        if len(level) > 1 or (len(level) == 1 and 'imgdata' not in level):
+        if not set(level.keys()).issubset({'imgdata', 'pages'}):
             # Update level(s) database data
             query = 'UPDATE levels SET '
             values = {'riddle': alias, 'index': index}
             aux = []
             for attr, value in level.items():
-                if attr == 'imgdata':
+                if attr in ('imgdata', 'pages'):
                     continue
                 s = '`%s` = :%s' % (attr, attr)
                 aux.append(s)
@@ -114,16 +114,6 @@ async def levels(alias: str):
                 'discord_category': 'Normal Levels',
                 'discord_name': form['%d-discord_name' % index]}
         await database.execute(query, values)
-        
-        # Update page data to match current level
-        pages = json.loads(form['new-pages'])
-        for page in pages:
-            page = page[1:]
-            query = 'UPDATE level_pages SET level_name = :name ' \
-                    'WHERE riddle = :riddle AND path = :path'
-            vals = {'name': form['%d-name' % index],
-                    'riddle': alias, 'path': page}
-            await database.execute(query, vals)
     
         # Get image data and save image on thumbs folder
         filename = form['%d-image' % index]
@@ -137,6 +127,19 @@ async def levels(alias: str):
         result = await database.fetch_one(query, {'alias': alias})
         full_name = result['full_name']
         await web_ipc.request('build', guild_name=full_name, levels=[values])
+    
+    # Update pages data to changed or new levels
+    for index in range(1, len(levels_after) + 1):
+        aux = form['%d-pages' % index]
+        if not aux:
+            continue
+        pages = json.loads(aux)
+        for page in pages:
+            query = 'UPDATE level_pages SET level_name = :name ' \
+                    'WHERE riddle = :riddle AND path = :path'
+            vals = {'name': form['%d-name' % index],
+                    'riddle': alias, 'path': page}
+            await database.execute(query, vals)
     
     # Fetch levels again to display page correctly on POST
     levels = await _fetch_levels(alias)
@@ -154,7 +157,7 @@ async def _fetch_levels(alias: str):
     return levels
 
 
-@admin_levels.route('/admin/<alias>/get-pages/', methods=['GET'])
+@admin_levels.route('/admin/<alias>/get-pages', methods=['GET'])
 @requires_authorization
 async def get_pages(alias: str) -> str:
     '''Return a recursive JSON of all riddle folders and pages.'''
@@ -212,15 +215,15 @@ async def get_pages(alias: str) -> str:
     return json.dumps(pages)
 
 
-@admin_levels.route('/admin/<alias>/level-row/', methods=['GET'])
-async def level_row(alias: str):
+@admin_levels.route('/admin/level-row', methods=['GET'])
+async def level_row():
     '''Level row HTML code to be fetched by JS script.'''
     return await render_template('admin/level-row.htm',
             level=None, index=request.args['index'],
             image='/static/thumbs/locked.png')
 
 
-@admin_levels.route('/admin/<alias>/update-pages/', methods=['POST'])
+@admin_levels.route('/admin/<alias>/update-pages', methods=['POST'])
 async def update_pages(alias: str):
     '''Update pages list with data sent by admin in text format.'''
     

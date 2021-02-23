@@ -52,10 +52,7 @@ function addRow(event) {
 
   // Get new index from current number of rows
   const index = $('.row').length + 1;
-
-  const aux = location.href.split('/');
-  const alias = aux[aux.length - 3];
-  const url = `/admin/${alias}/${type}-row/`
+  const url = `/admin/${type}-row`
   const data = {'index': index}
   $.get(url, data, function(html) {
     // Get HTML from rendered template and append to section

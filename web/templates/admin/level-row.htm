@@ -43,17 +43,19 @@
     </label>
   </div>
 </div>
-<div class="page-explorer">
+<div class="page-explorer" id="{{ index }}">
   <nav>
-    {% set aux = level['path'].split('/') %}
-    {% set folder = '/'.join(aux[:-1]) + '/' %}
+    {% if level %}
+      {% set aux = level['path'].split('/') %}
+      {% set folder = '/'.join(aux[:-1]) + '/' %}
+    {% else %}
+      {% set folder = '/' %}
+    {% endif %}
     <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">{{ folder }}</div>
     <div class="completion"><var></var> files in this folder</div>
   </nav> 
   <div class="files">
     <!-- JS will append files here -->
   </div>
-{% if not level %}
-  <input type="hidden" name="new-pages">
-{% endif %}
+  <input type="hidden" name="{{ index }}-pages">
 </div>

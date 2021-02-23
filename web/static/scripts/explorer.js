@@ -55,7 +55,6 @@ function changeDir(explorer, folderPath) {
   // And now add the current dir files
   const levelName = explorer.prev().find('.key > input').val();
   const folder = getFolderEntry(folderPath);
-  console.log(folder)
   $.each(folder['children'], (page, row) => {
     var name = 'folder';
     const j = page.lastIndexOf('.');
@@ -128,7 +127,7 @@ export function clickIcon() {
     if ($(this).hasClass('current')) {
       const frontPath = explorer.prev().find('.front-path');
       if (! frontPath.val()) {
-        frontPath.val(row['path'].substr(1));
+        frontPath.val(row['path']);
       }
       if (! currentPages[levelName]) {
         currentPages[levelName] = new Set();
@@ -139,8 +138,9 @@ export function clickIcon() {
       row['level_name'] = 'NULL';
       currentPages[levelName].delete(row['path']);
     }
+    const index = explorer.attr('id');
     const json = JSON.stringify([...currentPages[levelName]]);
-    $('input[name="new-pages"]').last().val(json);
+    $(`input[name="${index}-pages"]`).last().val(json);
 
     // Recursively mark/unmark parent folders for highlighting
     const segments = folderPath.split('/').slice(1, -1);
@@ -197,9 +197,9 @@ export function folderUp() {
 
 $(_ => {
   // Get JS object data converted from Python dict
-  const aux = location.href.split('/').slice(0, -2);
+  const aux = location.href.split('/').slice(0, -1);
   aux.push('get-pages');
-  const url = aux.join('/') + '/';
+  const url = aux.join('/');
   $.get(url, data => {
     pages = JSON.parse(data);
     $('.menu-button').on('click', toggleExplorer);
@@ -219,7 +219,7 @@ $(_ => {
     const reader = new FileReader();
     reader.onload = (e => {;
       const data = e.target.result;
-      const url = location.href.replace('/levels/', '/update-pages/');
+      const url = location.href.replace('/levels', '/update-pages');
       $.post(url, data, 'text')
         .fail(_ => {
           // Error, something went wrong on server side
