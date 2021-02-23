@@ -1,6 +1,5 @@
 // Dictionary of all folders and pages/files
-var folders;
-var pages = new Set();
+var pages;
 
 export function toggleExplorer() {
   // Toggle page explorer
@@ -12,13 +11,11 @@ export function toggleExplorer() {
   row.toggleClass('active');
   explorer.toggle(0, _ => {
     explorer.toggleClass('active');
-    const prev = row.prev();
     if (explorer.hasClass('active')) {
       // Change to initial (front page) directory
       const node = explorer.find('.path');
       const folder = node.text();
       changeDir(explorer, folder);
-      console.log(folders)
       
       // Scroll page to accomodate view to margin-top
       $('html').animate({
@@ -28,12 +25,22 @@ export function toggleExplorer() {
   });
 }
 
-function changeDir(explorer, folder) {
+function getFolderEntry(path) {
+  // Get pages dictionary entry corresponding to bottom folder in path
+  const segments = path.split('/').slice(1, -1);
+  var folder = pages['/'];
+  segments.forEach(seg => {
+    folder = folder['children'][seg];
+  });
+  return folder;
+}
+
+function changeDir(explorer, folderPath) {
   // Change current directory
 
   // Update directory on field
   const node = explorer.find('.path');
-  node.text(folder);
+  node.text(folderPath);
 
   // Erase previous files from <div>
   const files = explorer.find('.files');
@@ -44,8 +51,9 @@ function changeDir(explorer, folder) {
 
   // And now add the current dir files
   const levelName = explorer.prev().find('.key > input').val();
-  folders[folder]['files'].forEach(function (row) {
-    const page = row['page'];
+  const folder = getFolderEntry(folderPath);
+  console.log(folder)
+  $.each(folder['children'], (page, row) => {
     var name = 'folder';
     const j = page.lastIndexOf('.');
     if (j != -1) {
@@ -53,7 +61,7 @@ function changeDir(explorer, folder) {
     }
     var current = '';
     if (name == 'folder') {
-      if (row['level_name'][levelName]) {
+      if (row['levels'][levelName]) {
         current = 'class="current"';
       }
     } else {
@@ -69,7 +77,7 @@ function changeDir(explorer, folder) {
     // (current folders -> other folders -> current files -> other files)
     if (name == 'folder') {
       const folderNode = files.children('.folder');
-      if (row['level_name'][levelName]) {
+      if (row['levels'][levelName]) {
         folderNode.children('.first').append(figure);
       } else {
         folderNode.append(figure);
@@ -86,11 +94,11 @@ function changeDir(explorer, folder) {
   popIcons(explorer);
 
   // Update folder's files count and total
-  const files_total = explorer.data('files_total');
-  const total = files_total[folder];
-  const comp = explorer.find('.completion');
-  const vars = comp.find('var');
-  vars[0].textContent = total ? total : '--';
+  // const files_total = explorer.data('files_total');
+  // const total = files_total[folder];
+  // const comp = explorer.find('.completion');
+  // const vars = comp.find('var');
+  // vars[0].textContent = total ? total : '--';
 }
 
 function popIcons(explorer) {
@@ -112,7 +120,7 @@ export function clickIcon() {
     const explorer = $(this).parents('.page-explorer');
     const levelName = explorer.prev().find('.key > input').val();
     var folder = explorer.find('.path').text();
-    const row = folders[folder]['files'].find(
+    const row = pages[folder]['children'].find(
         row => (row['page'] == page));
     if ($(this).hasClass('current')) {
       const frontPath = explorer.prev().find('.front-path');
@@ -130,7 +138,7 @@ export function clickIcon() {
     var folder = folder.split('/').slice(0, -1).join('/') + '/';
     while (folder != '/') {
       parent = folder.split('/').slice(0, -2).join('/') + '/';
-      const row = folders[parent]['files'].find(
+      const row = pages[parent]['children'].find(
         row => ((row['path'] + '/') == folder));
       row['level_name'].append(levelName);
       folder = parent;
@@ -173,12 +181,15 @@ export function folderUp() {
 
 $(_ => {
   // Get JS object data converted from Python dict
-  var data = $('form').data('folders').replaceAll('\'', '"');
-  data = data.replaceAll('None', '"NULL"');
-  folders = JSON.parse(data);
+  const aux = location.href.split('/').slice(0, -2);
+  aux.push('get-pages');
+  const url = aux.join('/') + '/';
+  $.get(url, data => {
+    pages = JSON.parse(data);
+    $('.menu-button').on('click', toggleExplorer);
+  });
 
   // Event handlers
-  $('.menu-button').on('click', toggleExplorer);
   $('.page-explorer .folder-up').on('click', folderUp);
   $('.page-explorer').on('click', 'figure', clickIcon);
   $('.page-explorer').on('dblclick', 'figure', doubleClickIcon);

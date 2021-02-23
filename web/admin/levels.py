@@ -1,5 +1,5 @@
 import json
-from collections import defaultdict
+from copy import deepcopy
 
 from quart import Blueprint, request, render_template
 from quart_discord import requires_authorization
@@ -28,19 +28,16 @@ async def levels(alias: str):
         s = 'cipher'
         if alias == 'rns':
             s = 'riddle'
-        pages = await _get_pages(alias)
         
-        def get_folder(folder_path: str):
-            segments = folder_path.split('/')[1:-1]
-            folder = pages['/']
-            print(segments)
-            for seg in segments:
-                folder = folder['children'][seg]
-            return folder
-        
+        # def get_folder(folder_path: str):
+        #     segments = folder_path.split('/')[1:-1]
+        #     folder = pages['/']
+        #     for seg in segments:
+        #         folder = folder['children'][seg]
+        #     return folder
+
         return await render_template('admin/levels.htm',
-                alias=alias, levels=levels, pages=pages,
-                get_folder=get_folder, s=s, msg=msg)
+                alias=alias, levels=levels, s=s, msg=msg)
     
     # Get initial level data from database
     levels_before = await _fetch_levels(alias)
@@ -157,31 +154,39 @@ async def _fetch_levels(alias: str):
     return levels
 
 
-async def _get_pages(alias: str) -> dict:
-    '''Get a recursive dict of all riddle folders and pages.'''
+@admin_levels.route('/admin/<alias>/get-pages/', methods=['GET'])
+@requires_authorization
+async def get_pages(alias: str) -> str:
+    '''Return a recursive JSON of all riddle folders and pages.'''
     
     # Build list of paths from database data
     query = 'SELECT * FROM level_pages WHERE riddle = :riddle'
     values = {'riddle': alias}
-    paths = await database.fetch_all(query, values)
-    for row in paths:
+    result = await database.fetch_all(query, values)
+    paths = []
+    for row in result:
         row = dict(row)
         row['page'] = row['path'].rsplit('/', 1)[-1]
+        if not row['level_name']:
+            row['level_name'] = 'NULL'
         row['folder'] = 0
+        paths.append(row)
 
     # Build recursive of folders and files
-    base = {'children': {},
-            'levels': defaultdict(int), 'folder': 1}
-    pages = {'/': base}
+    base = {'children': {}, 'levels': {}, 'folder': 1}
+    pages = {'/': deepcopy(base)}
     for row in paths:
         parent = pages['/']
         segments = row['path'].split('/')[1:]
         for seg in segments:
-            parent['levels'][row['level_name']] += 1
+            levels = parent['levels']
+            if not row['level_name'] in levels:
+                levels[row['level_name']] = 0
+            levels[row['level_name']] += 1
             children = parent['children']
             if seg not in children:
-                if seg != row['path']:
-                    children[seg] = base
+                if seg != row['page']:
+                    children[seg] = deepcopy(base)
                 else:
                     children[seg] = row
             parent = children[seg]
@@ -205,15 +210,15 @@ async def _get_pages(alias: str) -> dict:
     # for folder in folders.values():
     #     folder['files_total'] = len(folder['files'])
     
-    return pages    
+    # Return JSON dump
+    return json.dumps(pages)
 
 
 @admin_levels.route('/admin/<alias>/level-row/', methods=['GET'])
 async def level_row(alias: str):
     '''Level row HTML code to be fetched by JS script.'''
-    folders = await _get_pages(alias)
     return await render_template('admin/level-row.htm',
-            folders=folders, level=None, index=request.args['index'],
+            level=None, index=request.args['index'],
             image='/static/thumbs/locked.png')
 
 
