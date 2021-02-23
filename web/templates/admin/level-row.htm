@@ -45,7 +45,9 @@
 </div>
 <div class="page-explorer">
   <nav>
-    <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path"></div>
+    {% set aux = level['path'].split('/') %}
+    {% set folder = '/'.join(aux[:-1]) + '/' %}
+    <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">{{ folder }}</div>
     <div class="completion"><var></var> files in this folder</div>
   </nav> 
   <div class="files">
