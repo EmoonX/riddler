@@ -202,13 +202,12 @@ $(_ => {
   const url = aux.join('/');
   $.get(url, data => {
     pages = JSON.parse(data);
-    $('.menu-button').on('click', toggleExplorer);
   });
-
-  // Event handlers
-  $('.page-explorer .folder-up').on('click', folderUp);
-  $('.page-explorer').on('click', 'figure', clickIcon);
-  $('.page-explorer').on('dblclick', 'figure', doubleClickIcon);
+  // Dinamically register events for (current or new) explorer actions
+  $('.levels').on('click', '.row .menu-button', toggleExplorer);
+  $('.levels').on('click', '.row .page-explorer .folder-up', folderUp);
+  $('.levels').on('click', '.row .page-explorer figure', clickIcon);
+  $('.levels').on('dblclick', '.row .page-explorer figure', doubleClickIcon);
 
   $('button[name="upload-pages"]').on('click', function () {
     // Open (hidden) file browser when clicking upload button

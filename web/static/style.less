@@ -84,6 +84,7 @@ header > nav > div:last-child {
   text-transform: uppercase;
   text-decoration: none;
   text-shadow: 0 0 0.4em white;
+  cursor: pointer;
 }
 
 .nav-button::first-letter {
@@ -99,8 +100,15 @@ header > nav > .riddle-banner {
   justify-content: center;
   align-items: center;
   width: 400px;
+  border: medium solid rgba(127, 127, 127, 0.5);
+  border-width: 0 medium;
+  background-color: rgba(127, 127, 127, 0.2); 
+  font-size: 1.5em;
   text-transform: none;
 
+  > img {
+    margin-left: -20px;;
+  }
   > .name {
     margin-left: 20px;
   }
@@ -130,12 +138,6 @@ img.riddle-icon {
   background-color: transparent;
   font-family: standard-font;
   color: white;
-}
-
-.dropdown > button:not(.profile-button)::after {
-  content: "▼";
-  margin-left: 10px;
-  font-size: 1.6em;
 }
 
 .dropdown > div {

@@ -43,15 +43,39 @@ function changeCheevoRank() {
   thumb.addClass([rank + '-rank', 'thumb', 'cheevo']);
 }
 
+function validateRows() {
+  // Enable/disable Add button whether or not
+  // all new row fields have been entered
+
+  // Check text and image input fields
+  const fields = $(this).parents('.row').find('input');
+  var ok = true;
+  fields.each(function () {
+    if ((! $(this).val()) && $(this).attr('type') != 'hidden') {
+      ok = false;
+      return;
+    }
+  });
+  // Also check if a radio button has been checked
+  const radios = fields.filter(':radio');
+  if (! radios.is(':checked')) {
+    ok = false;
+  }
+  // Enable/disable Add button accordingly
+  $('button.add').prop('disabled', !ok);
+}
+
 function addRow(event) {
   // Add new level or cheevo row
 
   // Disable Add button for the time being
   const type = event.data.type;
-  $(`button[name="add-${type}"]`).prop('disabled', true);
+  $(`button.add`).prop('disabled', true);
 
   // Get new index from current number of rows
-  const index = $('.row').length + 1;
+  const index = $('.row').length + 1
+  
+  // Send GET request for a new row
   const url = `/admin/${type}-row`
   const data = {'index': index}
   $.get(url, data, function(html) {
@@ -67,13 +91,6 @@ function addRow(event) {
       $('.new').on('click', '.rank-radio', changeCheevoRank);
     }
   }, 'html');
-  
-  if (type == 'level') {
-    $('.new').on('click', '.menu-button', toggleExplorer);
-    $('.new').on('click', '.page-explorer .folder-up', folderUp);
-    $('.new').on('click', '.page-explorer figure', clickIcon);
-    $('.new').on('dblclick', '.page-explorer figure', doubleClickIcon);
-  }
 }
 
 $(_ => {
@@ -95,7 +112,10 @@ $(_ => {
   $('.rank-radio').each(function () {
     $(this).on('click', changeCheevoRank);
   });
-  // Listen to Add level OR Add button click
+  // Listen to Add level OR Add cheevo click
   $('button[name="add-level"]').on('click', {type: 'level'}, addRow);
   $('button[name="add-cheevo"]').on('click', {type: 'cheevo'}, addRow);
+
+  // Enable added row validation
+  $('.new').on('change', '.row input', validateRows);
 });
