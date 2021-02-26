@@ -7,13 +7,11 @@ from commands.unlock import update_nickname
 
 
 @bot.ipc.route()
-async def build(data):
+async def insert(data):
     '''Build guild channels and roles from level data.'''
 
-    # Get guild and riddle objects from guild id
-    guild = get(bot.guilds, name=data.guild_name)
-
     # Add level channels and roles to the guild
+    guild = get(bot.guilds, name=data.guild_name)
     for level in data.levels:
         text = '**[%s]** Processing level **%s**...' \
                  % (guild.name, level['name'])

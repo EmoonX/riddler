@@ -98,35 +98,39 @@ async def levels(alias: str):
                     new_name=level['discord_name'])
     
     if len(levels_after) > len(levels_before):
-        # Insert new level data on database
-        query = 'INSERT INTO levels ' \
-                '(riddle, level_set, `index`, `name`, path, image, answer, ' \
-                    '`rank`, discord_category, discord_name) VALUES ' \
-                '(:riddle, :set, :index, :name, :path, :image, :answer, ' \
-                    ':rank, :discord_category, :discord_name)'
-        index = len(levels_before) + 1
-        values = {'riddle': alias, 'set': 'Normal Levels',
-                'index': index, 'name': form['%d-name' % index],
-                'path': form['%d-path' % index],
-                'image': form['%d-image' % index],
-                'answer': form['%d-answer' % index],
-                'rank': form['%d-rank' % index],
-                'discord_category': 'Normal Levels',
-                'discord_name': form['%d-discord_name' % index]}
-        await database.execute(query, values)
-    
-        # Get image data and save image on thumbs folder
-        filename = form['%d-image' % index]
-        imgdata = form['%d-imgdata' % index]
-        await save_image('thumbs', alias, filename, imgdata)
+        levels = []
+        for index in range(len(levels_before) + 1, len(levels_after) + 1):
+            # Insert new level data on database
+            query = 'INSERT INTO levels ' \
+                    '(riddle, level_set, `index`, `name`, ' \
+                        'path, image, answer, `rank`, ' \
+                        'discord_category, discord_name) VALUES ' \
+                    '(:riddle, :set, :index, :name, :path, :image, :answer, ' \
+                        ':rank, :discord_category, :discord_name)'
+            values = {'riddle': alias, 'set': 'Normal Levels',
+                    'index': index, 'name': form['%d-name' % index],
+                    'path': form['%d-path' % index],
+                    'image': form['%d-image' % index],
+                    'answer': form['%d-answer' % index],
+                    'rank': form['%d-rank' % index],
+                    'discord_category': 'Normal Levels',
+                    'discord_name': form['%d-discord_name' % index]}
+            await database.execute(query, values)
+        
+            # Get image data and save image on thumbs folder
+            filename = form['%d-image' % index]
+            imgdata = form['%d-imgdata' % index]
+            await save_image('thumbs', alias, filename, imgdata)
+            
+            # Append values to new levels list for Discord IPC
+            values['is_secret'] = 0
+            levels.append(values)
 
-        # Update Discord guild channels and roles with new levels info.
-        # This is done by sending an request to the bot's IPC server.
-        values['is_secret'] = 0
+        # Update Discord guild channels and roles with new levels info
         query = 'SELECT * FROM riddles WHERE alias = :alias'
         result = await database.fetch_one(query, {'alias': alias})
         full_name = result['full_name']
-        await web_ipc.request('build', guild_name=full_name, levels=[values])
+        await web_ipc.request('build', guild_name=full_name, levels=levels)
     
     # Update pages data to changed or new levels
     for index in range(1, len(levels_after) + 1):

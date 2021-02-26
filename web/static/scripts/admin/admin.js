@@ -90,6 +90,8 @@ function addRow(event) {
     if (type == 'cheevo') {
       $('.new').on('click', '.rank-radio', changeCheevoRank);
     }
+    // Enable added row validation
+    $('.new').on('change', '.row:last input', validateRows);
   }, 'html');
 }
 
@@ -115,7 +117,4 @@ $(_ => {
   // Listen to Add level OR Add cheevo click
   $('button[name="add-level"]').on('click', {type: 'level'}, addRow);
   $('button[name="add-cheevo"]').on('click', {type: 'cheevo'}, addRow);
-
-  // Enable added row validation
-  $('.new').on('change', '.row input', validateRows);
 });

@@ -205,9 +205,9 @@ $(_ => {
   });
   // Dinamically register events for (current or new) explorer actions
   $('.levels').on('click', '.row .menu-button', toggleExplorer);
-  $('.levels').on('click', '.row .page-explorer .folder-up', folderUp);
-  $('.levels').on('click', '.row .page-explorer figure', clickIcon);
-  $('.levels').on('dblclick', '.row .page-explorer figure', doubleClickIcon);
+  $('.levels').on('click', '.page-explorer .folder-up', folderUp);
+  $('.levels').on('click', '.page-explorer figure', clickIcon);
+  $('.levels').on('dblclick', '.page-explorer figure', doubleClickIcon);
 
   $('button[name="upload-pages"]').on('click', function () {
     // Open (hidden) file browser when clicking upload button
