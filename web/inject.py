@@ -16,12 +16,13 @@ level_ranks = {
     'S': f(1000, 'lightcyan')
 }
 # Colors for achievements outline based on ranks
-g = lambda e, c, d : {'emoji': e, 'color': c, 'description': d}
+g = lambda e, p, s, c, d : \
+        {'emoji': e, 'points': p, 'size': s, 'color': c, 'description': d}
 cheevo_ranks = {
-    'C': g('🥉', 'firebrick', '"Dumb" and/or easy-to-reach cheevos.'),
-    'B': g('🥈', 'lightcyan', 'Substancial ones that require creativity and/or out-of-the-box thinking.'),
-    'A': g('🥇', 'gold', 'Good challenges like secret levels or very well hidden eggs.'),
-    'S': g('💎', 'darkturquoise', 'Should be reserved for the best among the best (like reaching a vital game\'s landmark).')
+    'C': g('🥉', 50, 40, 'firebrick', '"Dumb" and/or easy-to-reach cheevos.'),
+    'B': g('🥈', 100, 50, 'lightcyan', 'Substancial ones that require creativity and/or out-of-the-box thinking.'),
+    'A': g('🥇', 200, 60, 'gold', 'Good challenges like secret levels or very well hidden eggs.'),
+    'S': g('💎', 500, 80, 'darkturquoise', 'Should be reserved for the best among the best (like reaching a vital game\'s landmark).')
 }
 
 

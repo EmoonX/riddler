@@ -833,26 +833,43 @@ section.list.players > .row {
       }
     }
     > .thumbs {
-      display: none;
+      display: flex;
       position: absolute;
       top: 120px;
       z-index: 1000;
       flex-direction: column;
       justify-content: center;
-      border: thin solid white;
+      align-items: center;
+      width: 350px;
+      padding: 20px 0;
+      border: thin solid #ffd;
       border-radius: 0 0 10% 10%;
       background-color: rgba(127, 127, 127, 0.8);
+      transform: scaleY(0);
+      transform-origin: top;
+      opacity: 0;
+      transition: transform 0.2s, opacity 0.2s;
 
-      img.cheevo {
-        width: 40px;
-        margin: 10px;
-        border: thin solid;
-        border-radius: 20%; 
-        cursor: help;
+      > .rank {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+
+        img.cheevo {
+          margin: 5px;
+          border: thin solid;
+          border-radius: 20%; 
+          cursor: help;
+        }
+      }
+      hr {
+        margin: 20px auto;
       }
     }
     &:hover > .thumbs, > .thumbs:hover {
-      display: flex;
+      transform: scaleY(1);
+      opacity: 1;
     }
   }
   &:hover {
