@@ -753,7 +753,7 @@ section.list.players > .row {
         &.points {
           position: relative;
           display: flex;
-          justify-content: right;
+          justify-content: flex-end;
           align-items: center;
           width: 100%;
           
@@ -794,16 +794,39 @@ section.list.players > .row {
     justify-content: space-evenly;
   }
   > .cheevos {
-    flex-direction: row;
     width: 300px;
-    overflow-x: hidden;
+    justify-content: space-evenly;
 
-    > img.cheevo {
-      width: 40px;
-      margin: 10px;
-      border: thin solid;
-      border-radius: 20%; 
-      cursor: help;
+    > .ranks {
+      display: flex;
+      justify-content: center;
+
+      > var.count {
+        display: flex;
+        width: 60px;
+        align-items: baseline;
+        justify-content: center;
+        // border: thin solid white;
+        // border-radius: 50%;
+        font-size: 2em;
+
+        > .emoji {
+          font-family: standard-font;
+          font-size: 0.5em;
+        }
+        &.disabled {
+          opacity: 0.1;
+        }
+      }
+    }
+    > .rank {
+      > img.cheevo {
+        width: 40px;
+        margin: 10px;
+        border: thin solid;
+        border-radius: 20%; 
+        cursor: help;
+      }
     }
   }
 }

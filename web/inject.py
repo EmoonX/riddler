@@ -56,13 +56,13 @@ async def get_achievements(alias: str, user: dict = None):
         cheevo['color'] = cheevo_ranks[rank]['color']
         cheevos[rank].append(cheevo)
     
-    # Ignore ranks without cheevos
-    erasable = []
-    for key, value in cheevos.items():
-        if not value:
-            erasable.append(key)
-    for key in erasable:
-        cheevos.pop(key)
+    # # Ignore ranks without cheevos
+    # erasable = []
+    # for key, value in cheevos.items():
+    #     if not value:
+    #         erasable.append(key)
+    # for key in erasable:
+    #     cheevos.pop(key)
 
     return cheevos
     

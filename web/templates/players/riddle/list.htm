@@ -1,9 +1,9 @@
 {% extends 'layout.htm' %}
-{% block title %}{{ riddle['full_name'] }} | Ranking{% endblock %}
+{% block title %}{{ riddle['full_name'] }} | Leaderboard{% endblock %}
 {% block content %}
     <main>
       <main>
-        <h1>Ranking</h1>
+        <h1>Leaderboard</h1>
         <section class="list players">
           {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
         {% for player in accounts %}
@@ -40,14 +40,25 @@
             {% endif %}
               <var>{{ player['current_level'] }}</var>
             </figure>
-            <div class="cheevos">
-              {% set cheevos = get_achievements(riddle['alias'], player) %}
-          {% for rank in cheevos|reverse %}
-            {% for cheevo in cheevos[rank] %}
-              <img class="cheevo" src="/static/cheevos/{{ riddle['alias'] }}/{{ cheevo['image'] }}" title="[ {{ cheevo['title'] }} ] ({{ cheevo['rank'] }} points)&#10;&#10;{{ cheevo['description'] }}" style="border-color: {{ cheevo['color'] }}; box-shadow: 0 0 0.8em {{ cheevo['color'] }}" alt="{{ cheevo['title'] }}">
-            {% endfor %}
+            {% set cheevos = get_achievements(riddle['alias'], player) %}
+            <figure class="cheevos">
+              <figcaption>Achievements</figcaption>
+              <div class="ranks">
+              {% for rank in cheevos|reverse %}
+                {% if not cheevos[rank]|length %}
+                  {% set disabled = "disabled" %}
+                {% endif %}
+                {% set color = cheevo_ranks[rank]['color'] %}
+                {% set emoji = cheevo_ranks[rank]['emoji'] %}
+                <var class="count {{ disabled }}" style="color: {{ color }}; text-shadow: 0 0 0.8em {{ color }}">
+                  {{ cheevos[rank]|length }}<span class="emoji">{{ emoji }}</span>
+                </var>
+              {#{% for cheevo in cheevos[rank] %}
+                <img class="cheevo" src="/static/cheevos/{{ riddle['alias'] }}/{{ cheevo['image'] }}" title="[ {{ cheevo['title'] }} ] ({{ cheevo['rank'] }} points)&#10;&#10;{{ cheevo['description'] }}" style="border-color: {{ cheevo['color'] }}; box-shadow: 0 0 0.8em {{ cheevo['color'] }}" alt="{{ cheevo['title'] }}">
+              {% endfor %}#}
           {% endfor %}
-            </div>
+              </div>
+            </figure>
           </div>
         {% endfor %}
         </section>
