@@ -41,24 +41,31 @@
               <var>{{ player['current_level'] }}</var>
             </figure>
             {% set cheevos = get_achievements(riddle['alias'], player) %}
-            <figure class="cheevos">
-              <figcaption>Achievements</figcaption>
-              <div class="ranks">
+            <div class="cheevos">
+              <figure>
+                <figcaption>Achievements</figcaption>
+                <div class="ranks">
+                {% for rank in cheevos|reverse %}
+                  {% if not cheevos[rank]|length %}
+                    {% set disabled = "disabled" %}
+                  {% endif %}
+                  {% set color = cheevo_ranks[rank]['color'] %}
+                  {% set emoji = cheevo_ranks[rank]['emoji'] %}
+                  <var class="count {{ disabled }}" style="color: {{ color }}; text-shadow: 0 0 0.8em {{ color }}">
+                    {{ cheevos[rank]|length }}<span class="emoji">{{ emoji }}</span>
+                  </var>
+                {% endfor %}
+              </figure>
+              <div class="thumbs">
               {% for rank in cheevos|reverse %}
-                {% if not cheevos[rank]|length %}
-                  {% set disabled = "disabled" %}
-                {% endif %}
-                {% set color = cheevo_ranks[rank]['color'] %}
-                {% set emoji = cheevo_ranks[rank]['emoji'] %}
-                <var class="count {{ disabled }}" style="color: {{ color }}; text-shadow: 0 0 0.8em {{ color }}">
-                  {{ cheevos[rank]|length }}<span class="emoji">{{ emoji }}</span>
-                </var>
-              {#{% for cheevo in cheevos[rank] %}
-                <img class="cheevo" src="/static/cheevos/{{ riddle['alias'] }}/{{ cheevo['image'] }}" title="[ {{ cheevo['title'] }} ] ({{ cheevo['rank'] }} points)&#10;&#10;{{ cheevo['description'] }}" style="border-color: {{ cheevo['color'] }}; box-shadow: 0 0 0.8em {{ cheevo['color'] }}" alt="{{ cheevo['title'] }}">
-              {% endfor %}#}
-          {% endfor %}
+                <div class="rank">
+                {% for cheevo in cheevos[rank] %}
+                  <img class="cheevo" src="/static/cheevos/{{ riddle['alias'] }}/{{ cheevo['image'] }}" title="[ {{ cheevo['title'] }} ] ({{ cheevo['rank'] }} points)&#10;&#10;{{ cheevo['description'] }}" style="border-color: {{ cheevo['color'] }}; box-shadow: 0 0 0.8em {{ cheevo['color'] }}" alt="{{ cheevo['title'] }}">
+                {% endfor %}
+                </div>
+              {% endfor %}
               </div>
-            </figure>
+            </div>
           </div>
         {% endfor %}
         </section>
