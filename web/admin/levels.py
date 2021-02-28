@@ -18,7 +18,7 @@ admin_levels = Blueprint('admin_levels', __name__)
 async def levels(alias: str):
     '''Riddle level management.'''
     
-    # Check for right permissions
+    # Check for admin permissions
     msg, status = await auth(alias)
     if status != 200:
         return msg, status
@@ -166,6 +166,11 @@ async def _fetch_levels(alias: str):
 async def get_pages(alias: str) -> str:
     '''Return a recursive JSON of all riddle folders and pages.'''
     
+    # Check for right permissions
+    msg, status = await auth(alias)
+    if status != 200:
+        return msg, status
+    
     # Build list of paths from database data
     query = 'SELECT * FROM level_pages WHERE riddle = :riddle'
     values = {'riddle': alias}
@@ -177,7 +182,7 @@ async def get_pages(alias: str) -> str:
         row['folder'] = 0
         paths.append(row)
 
-    # Build recursive of folders and files
+    # Build recursive dict of folders and files
     base = {'children': {}, 'levels': {}, 'folder': 1}
     pages = {'/': deepcopy(base)}
     for row in paths:

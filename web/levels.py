@@ -1,15 +1,18 @@
-from quart import Blueprint, session, render_template
+import json
+from copy import deepcopy
+
+from quart import Blueprint, render_template
 from quart_discord import requires_authorization
 
 import admin.admin as admin
-from auth import discord, User
+from auth import User, discord
 from util.db import database
 
 # Create app blueprint
 levels = Blueprint('levels', __name__)
 
 
-@levels.route('/<alias>/levels/')
+@levels.route('/<alias>/levels')
 @requires_authorization
 async def level_list(alias: str):
     '''Fetch list of levels, showing only desired public info.'''
@@ -73,17 +76,6 @@ async def level_list(alias: str):
         if not level['level_set'] in levels:
             levels[level['level_set']] = []
         levels[level['level_set']].append(level)
-        
-    if not user:
-        # First level is always visible
-        levels[0]['unlocked'] = True
-        levels[0]['image'] = 'enter.jpg'
-        levels[0]['folders'] = None
-        levels[0]['files_count'] = 0
-        levels[0]['files_total'] = 0
-    else:
-        # Get dict of pages to explorers
-        await _get_user_unlocked_pages(alias, user, levels)
 
     # return render_and_count('levels.htm', locals())
     # return render_and_count('levels.htm', locals())
@@ -96,89 +88,67 @@ async def level_list(alias: str):
     return await render_template('levels.htm', **locals())
 
 
-async def _get_user_unlocked_pages(alias: str, user: User, levels: dict):
-    '''Build dict of pairs (folder -> list of pages),
-    containing all user accessed pages ordered by extension.'''
+@levels.route('/<alias>/levels/get-pages', methods=['GET'])
+@requires_authorization
+async def get_pages(alias: str) -> str:
+    '''Return a recursive JSON of all riddle folders and pages.'''
+    
+    # Build dict of (level -> paths) from user database data
+    user = await discord.fetch_user()
+    query = 'SELECT level_name, path FROM user_pageaccess ' \
+            'WHERE riddle = :riddle ' \
+                'AND username = :name AND discriminator = :disc'
+    values = {'riddle': alias,
+            'name': user.name, 'disc': user.discriminator}
+    result = await database.fetch_all(query, values)
+    paths = {}
+    for row in result:
+        row = dict(row)
+        row['page'] = row['path'].rsplit('/', 1)[-1]
+        row['folder'] = 0
+        level = row['level_name']
+        if not level in paths:
+            paths[level] = []
+        paths[level].append(row)
 
-    s = 'cipher'
-    if alias == 'rns':
-        s = 'riddle'
-    for level_set in levels.values():
-        for level in level_set:
-            _, status = await admin.auth(alias)
-            if status == 200:
-                query = 'SELECT path FROM level_pages ' \
-                        'WHERE riddle = :riddle AND level_name = :name'
-                values = {'riddle': alias, 'name': level['name']}
-            else:
-                # Get all pages (paths) user accessed in respective level
-                query = 'SELECT path FROM user_pageaccess ' \
-                        'WHERE riddle = :riddle ' \
-                        'AND username = :name AND discriminator = :disc ' \
-                        'AND level_name = :level_name'
-                values = {'riddle': alias, 
-                        'name': user.name, 'disc': user.discriminator,
-                        'level_name': level['name']}
-            result = await database.fetch_all(query, values)
-            paths = [(s + '/' + row['path']) for row in result]
+    # Build recursive dict of folders and files
+    base = {'children': {}, 'folder': 1}
+    pages = {}
+    for level, level_paths in paths.items():
+        pages[level] = {'/': deepcopy(base)}
+        for row in level_paths:
+            parent = pages[level]['/']
+            segments = row['path'].split('/')[1:]
+            for seg in segments:
+                children = parent['children']
+                if seg not in children:
+                    if seg != row['page']:
+                        children[seg] = deepcopy(base)
+                    else:
+                        children[seg] = row
+                parent = children[seg]
+    
+    # def _extension_cmp(row: dict):
+    #     '''Compare pages based firstly on their extension.
+    #     Order is: folders first, then .htm, then the rest.'''
+    #     page = row['page']
+    #     index = page.rfind('.')
+    #     if index == -1:
+    #         return 'aaa' + page
+    #     if page[index:] in ('.htm', '.html'):
+    #         return 'aab' + page
+    #     return 'zzz' + page[-3:]
 
-            # Build dict of pairs (folder -> list of paths)
-            level['folders'] = {}
-            folders = level['folders']
-            for path in paths:
-                folder, page = path.rsplit('/', 1)
-                if not folder in folders:
-                    folders[folder] = []
-                folders[folder].append(page)
-
-            # Save number of pages/files in folder
-            level['files_count'] = {}
-            for folder in folders:
-                level['files_count'][folder] = len(folders[folder])
-
-            def extension_cmp(page: str):
-                '''Compare pages based firstly on their extension.
-                Order is: folders first, then .htm, then the rest.'''
-                if len(page) < 4 or page[-4] != '.':
-                    return 'aaa'
-                if page[-3:] == 'htm':
-                    return 'aab'
-                return page[-3:]
-
-            # Add folders to directories
-            aux = {}
-            for folder in folders:
-                f = folder
-                while f.count('/'):
-                    parent, name = f.rsplit('/', 1)
-                    if not parent in aux:
-                        aux[parent] = set()
-                    aux[parent].add(name)
-                    f = parent
-            for folder, names in aux.items():
-                if not folder in folders:
-                    folders[folder] = []
-                folders[folder].extend(names)
-
-            # Sort pages from each folder
-            for _, pages in folders.items():
-                pages.sort(key=extension_cmp)
-
-            # Count total number of pages (unlocked or not) in each folder
-            level['files_total'] = {}
-            query = 'SELECT path FROM level_pages WHERE ' \
-                    'riddle = :riddle AND level_name = :id'
-            values = {'riddle': alias, 'id': level['name']}
-            result = await database.fetch_all(query, values)
-            paths = [row['path'] for row in result]
-            for path in paths:
-                folder = s + '/' + path.rsplit('/', 1)[0]
-                if not folder in folders:
-                    # Avoid spoiling things in HTML!
-                    continue
-                if not folder in level['files_total']:
-                    level['files_total'][folder] = 0
-                level['files_total'][folder] += 1
+    # # Sort pages from each folder
+    # for folder in folders.values():
+    #     folder['files'].sort(key=_extension_cmp)
+    
+    # # Save number of pages/files in folder
+    # for folder in folders.values():
+    #     folder['files_total'] = len(folder['files'])
+    
+    # Return JSON dump
+    return json.dumps(pages)
 
 
 @levels.route('/<alias>/levels/rate/<level_name>/<rating>', methods=['GET'])

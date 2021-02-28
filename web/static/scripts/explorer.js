@@ -197,12 +197,12 @@ export function folderUp() {
 
 $(_ => {
   // Get JS object data converted from Python dict
-  const aux = location.href.split('/').slice(0, -1);
-  aux.push('get-pages');
-  const url = aux.join('/');
-  $.get(url, data => {
-    pages = JSON.parse(data);
-  });
+  // const aux = location.href.split('/').slice(0, -1);
+  // aux.push('get-pages');
+  // const url = aux.join('/');
+  // $.get(url, data => {
+  //   pages = JSON.parse(data);
+  // });
   // Dinamically register events for (current or new) explorer actions
   $('.levels').on('click', '.row .menu-button', toggleExplorer);
   $('.levels').on('click', '.page-explorer .folder-up', folderUp);
@@ -218,7 +218,8 @@ $(_ => {
     const reader = new FileReader();
     reader.onload = (e => {;
       const data = e.target.result;
-      const url = location.href.replace('/levels', '/update-pages');
+      var url = location.href;
+      url = url.replace('/admin', '').replace('/levels', '/update-pages');
       $.post(url, data, 'text')
         .fail(_ => {
           // Error, something went wrong on server side

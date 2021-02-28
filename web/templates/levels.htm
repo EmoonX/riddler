@@ -1,6 +1,7 @@
 {% extends 'layout.htm' %}
 {% block title %}{{ alias }} | Levels{% endblock %}
 {% block extra %}
+    <script src="/static/scripts/levels.js"></script>
     <script type="module" src="/static/scripts/explorer.js"></script>
     <script src="/static/scripts/rating.js"></script>
 {% endblock %}
@@ -89,31 +90,21 @@
             <div>
               {% set account = accounts[user['username']] %}
               <a href="#">
-                <img width="50" height="50" class="avatar-small" src="{{ get_avatar_url(account) }}" title="{{ account['username'] }}">
+                <img width="50" height="50" class="avatar-small" src="{{ get_avatar_url(user['username'], user['discriminator']) }}" title="{{ account['username'] }}">
               </a>
             </div>
           {% endfor %}
           </div>
         </div>
       {% if level['unlocked'] %}
-        <div class="page-explorer" data-files_count="{{ level['files_count'] }}" data-files_total="{{ level['files_total'] }}" data-folders="{{ level['folders'] }}">
+        <div class="page-explorer">
           {% set folder = s + '/' + level['path'].rsplit('/', 1)[0] %}
           <nav>
-            <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">/{{ folder }}/</div>
-            <div class="completion"><span class="check">✅</span><var>{{ level['files_count'][folder] }} / {{ level['files_total'][folder] }}</var> files in this folder</div>
+            <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path"></div>
+            <div class="completion"><span class="check">✅</span><var></var> files in this folder</div>
           </nav>
           <div class="files">
-          {% for page in level['folders'][folder] %}
-            {% if page[-4] == '.' %}
-              {% set name = page[-3:] %}
-            {% else %}
-              {% set name = 'folder' %}
-            {% endif %}
-            <figure>
-              <img width="50" height="50" src="/static/icons/{{ name }}.png">
-              <figcaption>{{ page }}</figcaption>
-            </figure>
-          {% endfor %}
+            <!-- JS will append files here -->
           </div>
         </div>
       {% endif %}

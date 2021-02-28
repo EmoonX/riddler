@@ -11,6 +11,10 @@
 }
 @font-face {
   font-family: calculator;
+  src: url("/static/fonts/calculator.ttf");
+}
+@font-face {
+  font-family: digital-mono;
   src: url("/static/fonts/digital-7-mono.ttf");
 }
 
@@ -763,13 +767,14 @@ section.list.players > .row {
           justify-content: flex-end;
           align-items: center;
           width: 100%;
-          
+          font-family: digital-mono;
           font-size: 2em;
         }
         > var.zeroes {
           position: absolute;
           right: 0;
           letter-spacing: inherit;
+          font-family: inherit;
           font-size: inherit;
           opacity: 0.1;
           user-select: none;
@@ -844,7 +849,7 @@ section.list.players > .row {
       padding: 20px 0;
       border: thin solid #ffd;
       border-radius: 0 0 10% 10%;
-      background-color: rgba(127, 127, 127, 0.8);
+      background-color: rgba(48, 48, 48, 0.9);
       transform: scaleY(0);
       transform-origin: top;
       opacity: 0;
