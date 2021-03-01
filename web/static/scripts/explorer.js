@@ -44,7 +44,7 @@ export function getFolderEntry(path, level='*') {
   return folder;
 }
 
-export function changeDir(explorer, folderPath) {
+export function changeDir(explorer, folderPath, admin=false) {
   // Change current directory
 
   // Update directory on field
@@ -62,6 +62,7 @@ export function changeDir(explorer, folderPath) {
   // const levelName = explorer.prev().find('.key > input').val();
   const levelName = explorer.prev().find('.name').text()
   const folder = getFolderEntry(folderPath, levelName);
+  console.log(folder);
   $.each(folder['children'], (page, row) => {
     var name = 'folder';
     const j = page.lastIndexOf('.');
@@ -69,13 +70,15 @@ export function changeDir(explorer, folderPath) {
       name = page.substr(j + 1);
     }
     var current = '';
-    if (name == 'folder') {
-      if (row['levels'][levelName]) {
-        current = 'class="current"';
-      }
-    } else {
-      if (row['level_name'] == levelName) {
-        current = 'class="current"';
+    if (admin) {
+      if (name == 'folder') {
+        if (row['levels'][levelName]) {
+          current = 'class="current"';
+        }
+      } else {
+        if (row['level_name'] == levelName) {
+          current = 'class="current"';
+        }
       }
     }
     const img = `<img src="/static/icons/${name}.png">`;
@@ -86,13 +89,13 @@ export function changeDir(explorer, folderPath) {
     // (current folders -> other folders -> current files -> other files)
     if (name == 'folder') {
       const folderNode = files.children('.folder');
-      if (row['levels'][levelName]) {
+      if (admin && row['levels'][levelName]) {
         folderNode.children('.first').append(figure);
       } else {
         folderNode.append(figure);
       }
     } else {
-      if (row['level_name'] == levelName) {
+      if (admin && row['level_name'] == levelName) {
         files.children('.first').append(figure);
       } else {
         files.append(figure);
