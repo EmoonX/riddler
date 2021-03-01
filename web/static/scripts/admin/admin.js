@@ -1,6 +1,5 @@
 import {
-  toggleExplorer, folderUp,
-  clickIcon, doubleClickIcon
+  toggleExplorer, folderUp
 }
   from '../explorer.js';
 
@@ -41,6 +40,75 @@ function changeCheevoRank() {
   const thumb = $(`#${index}-thumb`);
   thumb.removeClass();
   thumb.addClass([rank + '-rank', 'thumb', 'cheevo']);
+}
+
+function clickIcon() {
+  // Mark/unmark file/page as belonging to current level
+  const page = $(this).find('figcaption').text();
+  const j = page.lastIndexOf('.');
+  if (j != -1) {
+    $(this).toggleClass('current');
+    const explorer = $(this).parents('.page-explorer');
+    const levelName = explorer.prev().find('.key > input').val();
+    const folderPath = explorer.find('.path').text();
+    const folder = getFolderEntry(folderPath)
+    const row = folder['children'][page];
+    if ($(this).hasClass('current')) {
+      const frontPath = explorer.prev().find('.front-path');
+      if (! frontPath.val()) {
+        frontPath.val(row['path']);
+      }
+      if (! currentPages[levelName]) {
+        currentPages[levelName] = new Set();
+      }
+      row['level_name'] = levelName;
+      currentPages[levelName].add(row['path']);
+    } else {
+      row['level_name'] = 'NULL';
+      currentPages[levelName].delete(row['path']);
+    }
+    const index = explorer.attr('id');
+    const json = JSON.stringify([...currentPages[levelName]]);
+    $(`input[name="${index}-pages"]`).last().val(json);
+
+    // Recursively mark/unmark parent folders for highlighting
+    const segments = folderPath.split('/').slice(1, -1);
+    var parent = pages['/'];
+    segments.forEach(seg => {
+      const folder = parent['children'][seg];
+      if ($(this).hasClass('current')) {
+        if (! folder['levels'][levelName]) {
+          folder['levels'][levelName] = 0;
+        }
+        folder['levels'][levelName] += 1;
+      } else {
+        folder['levels'][levelName] -= 1;
+      }
+      console.log(seg)
+      console.log(folder['levels'])
+      parent = folder;
+    });
+  }
+}
+
+function doubleClickIcon() {
+  // Action to be taken upon double-clicking icon
+  const page = $(this).find('figcaption').text();
+  const j = page.lastIndexOf('.');
+  if (j != -1) {
+    // Open desired page in new tab
+    const explorer = $(this).parents('.page-explorer');
+    const path = explorer.find('.path').text() +
+        $(this).find('figcaption').text();
+    const url = 'http://rnsriddle.com' + path;
+    window.open(url, '_blank');
+  } else {
+    // Change current directory to folder's one
+    const explorer = $(this).parents('.page-explorer');
+    const node = explorer.find('.path');
+    const folder = node.text() + page + '/';
+    changeDir(explorer, folder);
+  }
 }
 
 function validateRows() {
@@ -114,6 +182,10 @@ $(_ => {
   $('.rank-radio').each(function () {
     $(this).on('click', changeCheevoRank);
   });
+  // Listen to page explorer clicks
+  $('.levels').on('click', '.page-explorer figure', clickIcon);
+  $('.levels').on('dblclick', '.page-explorer figure', doubleClickIcon);
+
   // Listen to Add level OR Add cheevo click
   $('button[name="add-level"]').on('click', {type: 'level'}, addRow);
   $('button[name="add-cheevo"]').on('click', {type: 'cheevo'}, addRow);

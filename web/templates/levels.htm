@@ -1,7 +1,7 @@
 {% extends 'layout.htm' %}
 {% block title %}{{ alias }} | Levels{% endblock %}
 {% block extra %}
-    <script src="/static/scripts/levels.js"></script>
+    <script type="module" src="/static/scripts/levels.js"></script>
     <script type="module" src="/static/scripts/explorer.js"></script>
     <script src="/static/scripts/rating.js"></script>
 {% endblock %}
@@ -98,9 +98,10 @@
         </div>
       {% if level['unlocked'] %}
         <div class="page-explorer">
-          {% set folder = s + '/' + level['path'].rsplit('/', 1)[0] %}
+          {% set aux = level['path'].split('/') %}
+          {% set folder = '/'.join(aux[:-1]) + '/' %}
           <nav>
-            <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path"></div>
+            <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">{{ folder }}</div>
             <div class="completion"><span class="check">✅</span><var></var> files in this folder</div>
           </nav>
           <div class="files">

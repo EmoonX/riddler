@@ -1,8 +1,13 @@
 // Dictionary of all folders and pages/files
-var pages;
+var pages = {};
 
 // Dictionary of sets of current pages for each level
 var currentPages = {};
+
+export function setPages(json) {
+  // Set pages dict(s) from JSON data
+  pages = JSON.parse(json);
+}
 
 export function toggleExplorer() {
   // Toggle page explorer
@@ -28,17 +33,18 @@ export function toggleExplorer() {
   });
 }
 
-function getFolderEntry(path) {
+export function getFolderEntry(path, level='*') {
   // Get pages dictionary entry corresponding to bottom folder in path
   const segments = path.split('/').slice(1, -1);
-  var folder = pages['/'];
+  var folder = pages[level]['/'];
+  console.log(segments);
   segments.forEach(seg => {
     folder = folder['children'][seg];
   });
   return folder;
 }
 
-function changeDir(explorer, folderPath) {
+export function changeDir(explorer, folderPath) {
   // Change current directory
 
   // Update directory on field
@@ -53,8 +59,9 @@ function changeDir(explorer, folderPath) {
   files.append('<span class="first"></span>');
 
   // And now add the current dir files
-  const levelName = explorer.prev().find('.key > input').val();
-  const folder = getFolderEntry(folderPath);
+  // const levelName = explorer.prev().find('.key > input').val();
+  const levelName = explorer.prev().find('.name').text()
+  const folder = getFolderEntry(folderPath, levelName);
   $.each(folder['children'], (page, row) => {
     var name = 'folder';
     const j = page.lastIndexOf('.');
@@ -113,75 +120,6 @@ function popIcons(explorer) {
   });
 }
 
-export function clickIcon() {
-  // Mark/unmark file/page as belonging to current level
-  const page = $(this).find('figcaption').text();
-  const j = page.lastIndexOf('.');
-  if (j != -1) {
-    $(this).toggleClass('current');
-    const explorer = $(this).parents('.page-explorer');
-    const levelName = explorer.prev().find('.key > input').val();
-    const folderPath = explorer.find('.path').text();
-    const folder = getFolderEntry(folderPath)
-    const row = folder['children'][page];
-    if ($(this).hasClass('current')) {
-      const frontPath = explorer.prev().find('.front-path');
-      if (! frontPath.val()) {
-        frontPath.val(row['path']);
-      }
-      if (! currentPages[levelName]) {
-        currentPages[levelName] = new Set();
-      }
-      row['level_name'] = levelName;
-      currentPages[levelName].add(row['path']);
-    } else {
-      row['level_name'] = 'NULL';
-      currentPages[levelName].delete(row['path']);
-    }
-    const index = explorer.attr('id');
-    const json = JSON.stringify([...currentPages[levelName]]);
-    $(`input[name="${index}-pages"]`).last().val(json);
-
-    // Recursively mark/unmark parent folders for highlighting
-    const segments = folderPath.split('/').slice(1, -1);
-    var parent = pages['/'];
-    segments.forEach(seg => {
-      const folder = parent['children'][seg];
-      if ($(this).hasClass('current')) {
-        if (! folder['levels'][levelName]) {
-          folder['levels'][levelName] = 0;
-        }
-        folder['levels'][levelName] += 1;
-      } else {
-        folder['levels'][levelName] -= 1;
-      }
-      console.log(seg)
-      console.log(folder['levels'])
-      parent = folder;
-    });
-  }
-}
-
-export function doubleClickIcon() {
-  // Action to be taken upon double-clicking icon
-  const page = $(this).find('figcaption').text();
-  const j = page.lastIndexOf('.');
-  if (j != -1) {
-    // Open desired page in new tab
-    const explorer = $(this).parents('.page-explorer');
-    const path = explorer.find('.path').text() +
-        $(this).find('figcaption').text();
-    const url = 'http://rnsriddle.com' + path;
-    window.open(url, '_blank');
-  } else {
-    // Change current directory to folder's one
-    const explorer = $(this).parents('.page-explorer');
-    const node = explorer.find('.path');
-    const folder = node.text() + page + '/';
-    changeDir(explorer, folder);
-  }
-}
-
 export function folderUp() {
   // Change current directory to one up
   const explorer = $(this).parents('.page-explorer');
@@ -206,8 +144,6 @@ $(_ => {
   // Dinamically register events for (current or new) explorer actions
   $('.levels').on('click', '.row .menu-button', toggleExplorer);
   $('.levels').on('click', '.page-explorer .folder-up', folderUp);
-  $('.levels').on('click', '.page-explorer figure', clickIcon);
-  $('.levels').on('dblclick', '.page-explorer figure', doubleClickIcon);
 
   $('button[name="upload-pages"]').on('click', function () {
     // Open (hidden) file browser when clicking upload button
