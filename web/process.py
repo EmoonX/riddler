@@ -200,7 +200,6 @@ class _PathsHandler:
 
             # Check for normal level pages
             next_name = '%02d' % (int(current_name) + 1)
-            print(next_name)
             if current_level and path == current_level['answer']:
                 # If user entered a correct and new answer, register completion
                 lh = _NormalLevelHandler(current_level, self)
@@ -236,13 +235,15 @@ class _PathsHandler:
         #     abort(403)
 
         # Register into database new page access (if applicable)
-        tnow = datetime.utcnow()
-        query = 'INSERT IGNORE INTO user_pageaccess ' \
-                'VALUES (:riddle, :username, :disc, :level_name, :path, :time)'
-        values = {'riddle': self.riddle_alias,
-                'username': self.username, 'disc': self.disc,
-                'level_name': page['level_name'], 'path': path, 'time': tnow}
-        await database.execute(query, values)
+        current_name = self.riddle_account['current_level']
+        if int(current_name) <= int(page['level_name']):
+            tnow = datetime.utcnow()
+            query = 'INSERT IGNORE INTO user_pageaccess ' \
+                    'VALUES (:riddle, :username, :disc, :level_name, :path, :time)'
+            values = {'riddle': self.riddle_alias,
+                    'username': self.username, 'disc': self.disc,
+                    'level_name': page['level_name'], 'path': path, 'time': tnow}
+            await database.execute(query, values)
 
         # Check and possibly grant an achivement
         await self._process_cheevo(path)
@@ -278,7 +279,6 @@ class _PathsHandler:
             return
         
         paths_json = json.loads(cheevo['paths_json'])
-        print(paths_json)
         if 'operator' in paths_json and paths_json['operator'] == 'AND':
             # If an 'AND' operator, all cheevo pages must have been found
             ok = True
@@ -489,6 +489,7 @@ class _NormalLevelHandler(_LevelHandler):
                     'username = :name AND discriminator = :disc'
         values = {'name_next': name_next, 'riddle': self.riddle_alias,
                 'name': self.username, 'disc': self.disc}
+        self.riddle_account['current_level'] = name_next
         await database.execute(query, values)
 
         # Update countries table too
