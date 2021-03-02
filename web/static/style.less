@@ -58,7 +58,6 @@ figure {
 /* -- Header and navbar -- */
 
 header {
-  height: 100px;
   background-color: rgba(255, 255, 255, 0.2);
 }
 
@@ -67,67 +66,57 @@ header > nav {
   justify-content: space-between;
   margin: 0 auto;
   max-width: 1200px;
-  height: 100%;
-}
 
-header > nav > div:first-child {
-  float: left;
-}
+  .nav-button {
+    display: block;
+    width: inherit;
+    height: 100px;
+    line-height: 100px;
+    font-size: 1.2em;
+    font-weight: bold;
+    text-align: center;
+    text-transform: uppercase;
+    text-decoration: none;
+    text-shadow: 0 0 0.4em white;
+    cursor: pointer;
 
-header > nav > div:last-child {
-  float: right;
-}
-
-.nav-button {
-  display: inline-block;
-  width: 170px;
-  line-height: 100px;
-  font-size: 1.2em;
-  font-weight: bold;
-  text-align: center;
-  text-transform: uppercase;
-  text-decoration: none;
-  text-shadow: 0 0 0.4em white;
-  cursor: pointer;
-}
-
-.nav-button::first-letter {
-  font-size: 1.6em;
-}
-
-.nav-button:hover {
-  background-color: rgba(127, 127, 127, 0.5);
-}
-
-header > nav > .riddle-banner {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 400px;
-  border: medium solid rgba(127, 127, 127, 0.5);
-  border-width: 0 medium;
-  background-color: rgba(127, 127, 127, 0.2); 
-  font-size: 1.5em;
-  text-transform: none;
-
-  > img {
-    margin-left: -20px;;
+    &.menu {
+      width: 180px;
+      font-size: 3em;
+    }
+    &.profile {
+      width: 100%;
+      padding-right: 30px;
+      text-align: right;
+      text-transform: none;
+    }
+    &:not(.menu)::first-letter {
+      font-size: 1.6em;
+    }
+    &:hover {
+      background-color: rgba(127, 127, 127, 0.5);
+    }
   }
-  > .name {
-    margin-left: 20px;
+  .riddle-banner {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 400px;
+    border: medium solid rgba(127, 127, 127, 0.5);
+    border-width: 0 medium;
+    background-color: rgba(127, 127, 127, 0.2); 
+    font-size: 1.5em;
+    text-transform: none;
+  
+    > img.riddle-icon {
+      margin-left: -20px;
+      width: 60px;
+      border-radius: 10%;
+    }
+    > .name {
+      margin-left: 20px;
+    }
   }
-}
-
-img.riddle-icon {
-  width: 60px;
-  border-radius: 10%;
-}
-
-.profile-button {
-  width: 100%;
-  padding-right: 30px;
-  text-align: right;
-  text-transform: none;
 }
 
 /* -- Dropdown menus -- */

@@ -1,14 +1,12 @@
     <header>
       <nav>
-        <div>
-          <nav class="dropdown">
-            <button class="nav-button">≡</button>
-            <div>
-              <a href="{{ url_for('players.global_list') }}" class="nav-button">Players</a>
-              <a href="#" class="nav-button">Countries</a>
-            </div>
-          </nav>
-        </div>
+        <nav class="dropdown">
+          <button class="nav-button menu">≡</button>
+          <div>
+            <a href="{{ url_for('players.global_list') }}" class="nav-button">Players</a>
+            <a href="#" class="nav-button">Countries</a>
+          </div>
+        </nav>
       {% if riddle %}
         <div class="nav-button riddle-banner">
           <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
@@ -23,7 +21,7 @@
         {% else %}
           <nav class="dropdown">
             {% set avatar = '' %}
-            <button class="nav-button profile-button">
+            <button class="nav-button profile">
               <img class="avatar-small" src="{{ get_avatar_url(user.username, user.discriminator) }}">{{ user.username }}
             </button>
             <div>
