@@ -141,6 +141,5 @@ web/static/cheevos/*
 # Less CSS: Use .less files that work like CSS (but better)
 style.css
 
-# NPM things
-node_modules
-package-lock.json
+# Firefox extensions
+*.xpi

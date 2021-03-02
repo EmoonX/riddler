@@ -19,12 +19,12 @@
               <var {{ style }}>{{ rank }}</var>
             </div>
             <div class="player">
-              <a href="url_for('account.profile', username=player['username'])">
+              <a href="#">
                 <img class="avatar" src="{{ get_avatar_url(player['username'], player['discriminator']) }}">
               </a>
               <div>
                 {% set country_name = pycountries.get(alpha_2=player['country']).name %}
-                <a class="username" href="url_for('account.profile', username=player['username'])">{{ player['username'] }}</a><!--
+                <a class="username" href="#">{{ player['username'] }}</a><!--
              --><a class="country" href="{{ player['country'] }}"><img class="flag" src="/static/flags/{{ player['country'] }}.png" title="{{ country_name }}"></a>
               </div>
             </div>
@@ -35,7 +35,7 @@
               <figcaption>points</figcaption>
             </figure>
             <figure class="current-level">
-            {% if player['current_level'] != '🏆' %}
+            {% if player['current_level'] != '🏅' %}
               <figcaption>Currently on</figcaption>
             {% endif %}
               <var>{{ player['current_level'] }}</var>

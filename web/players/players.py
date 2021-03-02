@@ -63,10 +63,10 @@ async def riddle_list(alias: str):
     # Get players data from database
     query = 'SELECT * FROM (' \
                 '(SELECT *, 1 as filter FROM riddle_accounts ' \
-                    'WHERE riddle = :riddle AND current_level = "🏆" ' \
+                    'WHERE riddle = :riddle AND current_level = "🏅" ' \
                     'ORDER BY score DESC LIMIT 1000) ' \
                 'UNION ALL (SELECT *, 2 as filter FROM riddle_accounts ' \
-                    'WHERE riddle = :riddle AND current_level != "🏆" ' \
+                    'WHERE riddle = :riddle AND current_level != "🏅" ' \
                     'ORDER BY current_level DESC, score DESC LIMIT 1000) ' \
             ') AS result ' \
             'ORDER BY filter'

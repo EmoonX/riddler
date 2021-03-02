@@ -23,13 +23,13 @@ function sendToServer(url_list) {
       body: url_list
     };
     // Send request to server containing URL text
-    const url_to = SERVER_URL + '/process/';
+    const url_to = SERVER_URL + '/process';
     fetch(url_to, params)
       .then(res => {
         console.log(res);
         if (res.status == 401) {
           // Unauthorized, so open Discord auth page on new tab
-          const url_login = SERVER_URL + '/login/';
+          const url_login = SERVER_URL + '/login';
           window.open(url_login,'_blank');
         }
       })

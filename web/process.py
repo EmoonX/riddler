@@ -25,7 +25,7 @@ for rank, pair in level_ranks.items():
     level_ranks[rank] = {'points': pair[0], 'color': pair[1]}
 
 
-@process.route('/process/', methods=['POST', 'OPTIONS'])
+@process.route('/process', methods=['POST', 'OPTIONS'])
 async def process_url():
     '''Process an URL sent by browser extension.'''
 
@@ -109,7 +109,7 @@ class _PathsHandler:
         for url in url_list:
             # Parse path from url (ignore external pages)
             parsed = urlparse(url)
-            path = parsed.path
+            path = '/' + parsed.path
             if parsed.netloc != domain or not path:
                 continue
 

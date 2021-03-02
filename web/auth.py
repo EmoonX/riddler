@@ -57,7 +57,7 @@ async def register():
     await database.execute(query, values)
 
     # Redirect to post-registration page
-    return redirect(url_for('account.settings',
+    return redirect(url_for('players.global_list',
             msg='Registration successful!'))
 
 

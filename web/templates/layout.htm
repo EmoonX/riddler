@@ -14,7 +14,9 @@
     {% block extra %}{% endblock %}
   </head>
   <body>
-{% include 'navbar.htm' %}
-{% block content %}{% endblock %}
+  {% if not no_navbar %}
+    {% include 'navbar.htm' %}
+  {% endif %}
+    {% block content %}{% endblock %}
   </body>
 </html>
