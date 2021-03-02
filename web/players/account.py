@@ -9,7 +9,7 @@ from util.db import database
 account = Blueprint('account', __name__)
 
 
-@account.route('/settings/', methods=['GET', 'POST'])
+@account.route('/settings', methods=['GET', 'POST'])
 @requires_authorization
 async def settings():
     '''Account update form submission.'''

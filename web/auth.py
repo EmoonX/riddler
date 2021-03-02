@@ -25,7 +25,7 @@ def discord_session_init(app: Quart):
     app.config['DISCORD_CLIENT_ID'] = 803127673165053993
     app.config['DISCORD_CLIENT_SECRET'] = os.getenv('DISCORD_CLIENT_SECRET')
     app.config['DISCORD_REDIRECT_URI'] = \
-            'https://riddler.emoon.dev/callback/'
+            'https://riddler.emoon.dev/callback'
     app.config['DISCORD_BOT_TOKEN'] = os.getenv('DISCORD_TOKEN')
 
     # Create session object
@@ -38,7 +38,7 @@ def discord_session_init(app: Quart):
             SecureCookieSessionInterface().get_signing_serializer(app)
 
 
-@auth.route('/register/', methods=['GET', 'POST'])
+@auth.route('/register', methods=['GET', 'POST'])
 async def register():
     '''Register new account on database based on Discord auth.'''
     
@@ -61,14 +61,14 @@ async def register():
             msg='Registration successful!'))
 
 
-@auth.route('/login/', methods=['GET'])
+@auth.route('/login', methods=['GET'])
 async def login():
     '''Create Discord session and redirect to callback URL.'''
     scope = ['identify', 'guilds']
     return await discord.create_session(scope=scope)
 
 
-@auth.route('/callback/')
+@auth.route('/callback')
 async def callback():
     '''Callback for OAuth2 authentication.'''
 
@@ -96,7 +96,7 @@ async def callback():
             msg='Successful login!'))
 
 
-@auth.route('/logout/')
+@auth.route('/logout')
 async def logout():
     '''Revoke credentials and logs user out of application.'''
 

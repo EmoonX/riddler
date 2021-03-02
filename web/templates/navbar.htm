@@ -3,34 +3,38 @@
         <nav class="dropdown">
           <button class="nav-button menu">≡</button>
           <div>
-            <a href="{{ url_for('players.global_list') }}" class="nav-button">Players</a>
-            <a href="#" class="nav-button">Countries</a>
+            <a href="{{ url_for('players.global_list') }}" class="nav-button">All players</a>
+            <!--<a href="#" class="nav-button">Countries</a>-->
           </div>
         </nav>
       {% if riddle %}
-        <div class="nav-button riddle-banner">
-          <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
-          <div class="name">{{ riddle['full_name'] }}</div>
-        </div>
+        <nav class="dropdown">
+          <button class="nav-button riddle-banner">
+            <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
+            <div class="name">{{ riddle['full_name'] }}</div>
+          </button>
+          <div>
+            <a href="{{ url_for('levels.level_list', alias=riddle['alias']) }}" class="nav-button">Level explorer</a>
+            <a href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" class="nav-button">Leaderboard</a>
+          </div>
+        </nav>
       {% endif %}
-        <div>
-        {# Verify if user is logged in #}
-        {% set user = get_session_user() %}
-        {% if not user %}
-          <a href="{{ url_for('players_auth.login') }}" class="nav-button">Login</a>
-        {% else %}
-          <nav class="dropdown">
-            {% set avatar = '' %}
-            <button class="nav-button profile">
-              <img class="avatar-small" src="{{ get_avatar_url(user.username, user.discriminator) }}">{{ user.username }}
-            </button>
-            <div>
-              <a href="#" class="nav-button">Public info</a>
-              <a href="#" class="nav-button">Settings</a>
-              <a href="{{ url_for('players_auth.logout') }}" class="nav-button">Logout</a>
-            </div>
-          </nav>
-        {% endif %}
-        </div>
+      {# Verify if user is logged in #}
+      {% set user = get_session_user() %}
+      {% if not user %}
+        <a href="{{ url_for('players_auth.login') }}" class="nav-button">Login</a>
+      {% else %}
+        <nav class="dropdown">
+          {% set avatar = '' %}
+          <button class="nav-button profile">
+            <img class="avatar-small" src="{{ get_avatar_url(user.username, user.discriminator) }}">{{ user.username }}
+          </button>
+          <div>
+            <!--<a href="#" class="nav-button">Public info</a>-->
+            <a href="{{ url_for('account.settings') }}" class="nav-button">Settings</a>
+            <a href="{{ url_for('players_auth.logout') }}" class="nav-button">Logout</a>
+          </div>
+        </nav>
+      {% endif %}
       </nav>
     </header>
