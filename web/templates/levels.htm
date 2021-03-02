@@ -56,7 +56,7 @@
             <div class="completion">
               {% set count = level['completion_count'] %}
               {% set ratio = '%.1f%%' % (count / total * 100) %}
-              <var>{{ count }}</var> player(s) completed (<var>{{ ratio }}</var>)
+              <var>{{ count }}</var> player(s) completed <!--(<var>{{ ratio }}</var>)-->
             </div>
           {% if level['beaten'] %}
             <figure class="rating">
@@ -102,7 +102,7 @@
           {% set folder = '/'.join(aux[:-1]) + '/' %}
           <nav>
             <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">{{ folder }}</div>
-            <div class="completion"><span class="check">✅</span><var></var> files in this folder</div>
+            <div class="completion" style="display: none"><span class="check">✅</span><var></var> files in this folder</div>
           </nav>
           <div class="files">
             <!-- JS will append files here -->

@@ -39,7 +39,7 @@ function updateRating() {
   const prevRating = $(this).index() + 1;
 
   // Send an HTTP GET request
-  const url = `rate/${levelName}/${prevRating}`;
+  const url = `levels/rate/${levelName}/${prevRating}`;
   $.get(url, text => {  
     // Update average and count rating fields
     const values = text.split(' ');

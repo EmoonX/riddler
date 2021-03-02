@@ -39,7 +39,7 @@ async def unlock(data):
     elif data.method in ('beat', 'secret_solve'):
         args = (data.level, data.points)
     elif data.method == 'cheevo_found':
-        args = (data.cheevo,)
+        args = (data.cheevo, data.points)
 
     # Call unlocking method by name with correct number of args
     method = getattr(uh, data.method)

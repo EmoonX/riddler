@@ -3,11 +3,12 @@ from urllib.parse import urlparse
 from datetime import datetime
 from pymysql.err import IntegrityError
 
-from quart import Blueprint, request, session, jsonify
+from quart import Blueprint, request, jsonify
 from quart_discord.models import User
 
 from auth import discord
 from ipc import web_ipc
+from inject import cheevo_ranks
 from util.db import database
 
 # Create app blueprint
@@ -136,28 +137,28 @@ class _PathsHandler:
     async def build_player_riddle_data(self):
         '''Build player riddle data from database,
         creating one if not present yet.'''
-
-        # Check if player's riddle acount already exists
-        query = 'SELECT * FROM riddle_accounts ' \
+        
+        async def _get_data():
+            '''Get player riddle data.'''
+            query = 'SELECT * FROM riddle_accounts ' \
                 'WHERE riddle = :riddle AND ' \
                     'username = :name AND discriminator = :disc'
-        values = {'riddle': self.riddle_alias,
-                'name': self.username, 'disc': self.disc}
-        result = await database.fetch_one(query, values)
-
-        if not result:
-            # If not, create a brand new one (current level as first one)
-            query = 'SELECT * FROM levels ' \
-                    'WHERE riddle = :riddle AND `index` = 1'
-            values = {'riddle': self.riddle_alias}
+            values = {'riddle': self.riddle_alias,
+                    'name': self.username, 'disc': self.disc}
             result = await database.fetch_one(query, values)
-            first_level = result['name']
+            return result
+
+        # Check if player's riddle acount already exists
+        result = await _get_data()
+        if not result:
+            # If not, create a brand new one
             query = 'INSERT INTO riddle_accounts ' \
-                    '(riddle, username, discriminator, current_level) ' \
-                    'VALUES (:riddle, :name, :disc, :first_level)'
-            values = {'riddle': self.riddle_alias, 'name': self.username,
-                    'disc': self.disc, 'first_level': first_level}
+                    '(riddle, username, discriminator) ' \
+                    'VALUES (:riddle, :name, :disc)'
+            values = {'riddle': self.riddle_alias,
+                    'name': self.username, 'disc': self.disc}
             await database.execute(query, values)
+            result = await _get_data()
         
         # Build dict from query result
         self.riddle_account = dict(result)
@@ -197,15 +198,28 @@ class _PathsHandler:
                     'WHERE riddle = :riddle AND name = :name'
             values = {'riddle': self.riddle_alias, 'name': page['level_name']}
             page_level = await database.fetch_one(query, values)
+            if not page_level:
+                # Page still isn't pointed to a level (yet?)
+                return
 
+            # Get next level name (or first)
+            next_name = ''
+            if current_name:
+                next_name = '%02d' % (int(current_name) + 1)
+            else:
+                query = 'SELECT * FROM levels ' \
+                        'WHERE riddle = :riddle AND `index` = 1'
+                values = {'riddle': self.riddle_alias}
+                result = await database.fetch_one(query, values)
+                next_name = result['name']
+            
             # Check for normal level pages
-            next_name = '%02d' % (int(current_name) + 1)
             if current_level and path == current_level['answer']:
                 # If user entered a correct and new answer, register completion
                 lh = _NormalLevelHandler(current_level, self)
                 await lh.register_completion()
             if page_level['name'] == next_name and path == page_level['path']:
-                # If it's the next level's front page, register progress
+                # If it's the new level's front page, register progress
                 lh = _NormalLevelHandler(page_level, self)
                 await lh.register_finding()
             
@@ -236,7 +250,7 @@ class _PathsHandler:
 
         # Register into database new page access (if applicable)
         current_name = self.riddle_account['current_level']
-        if int(current_name) <= int(page['level_name']):
+        if current_name and int(current_name) <= int(page['level_name']):
             tnow = datetime.utcnow()
             query = 'INSERT IGNORE INTO user_pageaccess ' \
                     'VALUES (:riddle, :username, :disc, :level_name, :path, :time)'
@@ -313,12 +327,12 @@ class _PathsHandler:
             return
 
         # Also Update user, country and global scores
+        points = cheevo_ranks[cheevo['rank']]['points']
         query = 'UPDATE riddle_accounts ' \
                 'SET score = score + :points ' \
                 'WHERE riddle = :riddle ' \
                     'AND username = :name AND discriminator = :disc'
-        values = {'points': cheevo['points'],
-                'riddle': self.riddle_alias,
+        values = {'points': points, 'riddle': self.riddle_alias,
                 'name': self.username, 'disc': self.disc}
         await database.execute(query, values)
         # cursor.execute("UPDATE countries "
@@ -334,7 +348,7 @@ class _PathsHandler:
         # Send request to bot to congratulate member
         await web_ipc.request('unlock', method='cheevo_found',
                 alias=self.riddle_alias, name=self.username, disc=self.disc,
-                cheevo=dict(cheevo))
+                cheevo=dict(cheevo), points=points)
 
 
 class _LevelHandler:
@@ -440,7 +454,19 @@ class _NormalLevelHandler(_LevelHandler):
         super().__init__(level, ph, 'user_levelcompletion')
     
     async def register_finding(self):
-        '''Increment player level upon reaching level's front page.'''        
+        '''Increment player level upon reaching level's front page.'''
+        
+        # Update player's current_level and reset their page count
+        query = 'UPDATE riddle_accounts ' \
+                'SET current_level = :name_next, cur_hit_counter = 0 ' \
+                'WHERE riddle = :riddle AND ' \
+                    'username = :name AND discriminator = :disc'
+        values = {'name_next': self.level['name'], 'riddle': self.riddle_alias,
+                'name': self.username, 'disc': self.disc}
+        self.riddle_account['current_level'] = self.level['name']
+        await database.execute(query, values)
+        
+        # Send request to bot for unlocking channel    
         await super().register_finding('advance')
 
     async def register_completion(self):
@@ -481,16 +507,6 @@ class _NormalLevelHandler(_LevelHandler):
             await web_ipc.request('unlock', method='game_completed',
                     alias=self.riddle_alias,
                     name=self.username, disc=self.disc)
-
-        # Update player's current_level and reset their page count
-        query = 'UPDATE riddle_accounts ' \
-                'SET current_level = :name_next, cur_hit_counter = 0 ' \
-                'WHERE riddle = :riddle AND ' \
-                    'username = :name AND discriminator = :disc'
-        values = {'name_next': name_next, 'riddle': self.riddle_alias,
-                'name': self.username, 'disc': self.disc}
-        self.riddle_account['current_level'] = name_next
-        await database.execute(query, values)
 
         # Update countries table too
         # cursor.execute("UPDATE countries "
