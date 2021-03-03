@@ -121,7 +121,16 @@ async def get_pages(alias: str) -> str:
     base = {'children': {}, 'folder': 1}
     pages = {}
     for level, level_paths in paths.items():
-        pages[level] = {'/': deepcopy(base)}
+        query = 'SELECT riddle, level_name, COUNT(*) as total ' \
+                    'FROM level_pages ' \
+                'WHERE riddle = :riddle AND level_name = :level ' \
+                'GROUP BY riddle, level_name'
+        values = {'riddle': alias, 'level': level}
+        result = await database.fetch_one(query, values)
+        print(result)
+        pages[level] = {'/': deepcopy(base),
+                'files_found': len(level_paths),
+                'files_total': result['total']}
         for row in level_paths:
             parent = pages[level]['/']
             segments = row['path'].split('/')[1:]

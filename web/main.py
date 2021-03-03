@@ -47,12 +47,20 @@ for blueprint in (auth, admin, admin_levels, admin_cheevos,
 # Define context processor for main app
 app.context_processor(context_processor)
 
-# Enable browser debug messages
-app.config['DEBUG'] = True
+# Set MySQL-related options to avoid timeouts
+SQLALCHEMY_ENGINE_OPTIONS = {
+    'pool_size': 10,
+    'pool_recycle': 120,
+    'pool_pre_ping': True
+}
+app.config['SQLALCHEMY_ENGINE_OPTIONS'] = SQLALCHEMY_ENGINE_OPTIONS
 
 # Disable annoying newlines on Jinja rendered HTML templates
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
+
+# Enable browser debug messages
+app.config['DEBUG'] = True
 
 
 @app.before_first_request

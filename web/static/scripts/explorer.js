@@ -106,11 +106,10 @@ export function changeDir(explorer, folderPath, admin=false) {
   popIcons(explorer);
 
   // Update folder's files count and total
-  // const files_total = explorer.data('files_total');
-  // const total = files_total[folder];
-  // const comp = explorer.find('.completion');
-  // const vars = comp.find('var');
-  // vars[0].textContent = total ? total : '--';
+  const count = pages[levelName]['files_count'];
+  const total = pages[levelName]['files_total'];
+  explorer.find('.completion .count').text(count);
+  explorer.find('.completion .total').text(total);
 }
 
 function popIcons(explorer) {

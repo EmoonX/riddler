@@ -28,11 +28,16 @@ async def auth(alias: str):
     
     # Check if user is indeed an admin of given guild
     guilds = await discord.fetch_guilds()
+    ok = False
     for guild in guilds:
         if guild.name == full_name:
-            if not guild.permissions.administrator:
-                return 'Unauthorized', 401
+            if guild.permissions.administrator:
+               ok = True 
             break
+    
+    # Not part or not part of the guild
+    if not ok:
+        return 'Unauthorized', 401
     
     return 'OK', 200
 
