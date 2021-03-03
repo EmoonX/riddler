@@ -92,8 +92,7 @@ async def callback():
     session['country'] = result['country']
 
     # Otherwise, redirect to post-login page
-    return redirect(url_for('account.settings',
-            msg='Successful login!'))
+    return redirect(url_for('players.global_list'))
 
 
 @auth.route('/logout')

@@ -250,7 +250,7 @@ class _PathsHandler:
 
         # Register into database new page access (if applicable)
         current_name = self.riddle_account['current_level']
-        if current_name and int(current_name) <= int(page['level_name']):
+        if current_name and int(page['level_name']) <= int(current_name):
             tnow = datetime.utcnow()
             query = 'INSERT IGNORE INTO user_pageaccess ' \
                     'VALUES (:riddle, :username, :disc, :level_name, :path, :time)'
