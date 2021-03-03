@@ -142,4 +142,4 @@ web/static/cheevos/*
 style.css
 
 # Firefox extensions
-*.xpi
+#*.xpi

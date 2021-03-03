@@ -106,10 +106,23 @@ export function changeDir(explorer, folderPath, admin=false) {
   popIcons(explorer);
 
   // Update folder's files count and total
-  const count = pages[levelName]['files_count'];
+  const found = pages[levelName]['files_found'];
   const total = pages[levelName]['files_total'];
-  explorer.find('.completion .count').text(count);
+  explorer.find('.completion .found').text(found);
   explorer.find('.completion .total').text(total);
+  toggleCheck(explorer);
+}
+
+function toggleCheck(explorer) {
+  // Display check mark if all files found
+  const check = explorer.find('.check')
+  const found = explorer.find('.completion .found').text()
+  const total = explorer.find('.completion .total').text()
+  if (found != "--" && found == total) {
+    check.show();
+  } else {
+    check.hide();
+  }
 }
 
 function popIcons(explorer) {
