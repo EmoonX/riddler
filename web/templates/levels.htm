@@ -23,7 +23,7 @@
           </div>
         {% if level['unlocked'] and level['image'] %}
           <div class="thumb">
-            <a href="{{ url }}{{ level['path'] }}">
+            <a href="{{ url }}{{ level['path'] }}" target="_blank">
               <img class="level" src="/static/thumbs/{{ alias }}/{{ level['image'] }}">
             </a>
           </div>
@@ -87,12 +87,10 @@
           </div>
           <div class="currently-in">
           {% for user in level['users'] %}
-            <div>
-              {% set account = accounts[user['username']] %}
-              <a href="#">
-                <img width="50" height="50" class="avatar-small" src="{{ get_avatar_url(user['username'], user['discriminator']) }}" title="{{ account['username'] }}">
-              </a>
-            </div>
+            {% set account = accounts[user['username']] %}
+            <a href="#">
+              <img width="50" height="50" class="avatar-small" src="{{ get_avatar_url(user['username'], user['discriminator']) }}" title="{{ account['username'] }}">
+            </a>
           {% endfor %}
           </div>
         </div>
@@ -102,7 +100,9 @@
           {% set folder = '/'.join(aux[:-1]) + '/' %}
           <nav>
             <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">{{ folder }}</div>
+          {% if level['beaten'] %}
             <div class="completion"><span class="check">✅</span><var class='found'></var><var>/</var><var class='total'></var> files found in this level</div>
+          {% endif %}
           </nav>
           <div class="files">
             <!-- JS will append files here -->

@@ -119,11 +119,12 @@ class UnlockHandler:
                 break
 
         # Add flashy "winners" role
-        winners = get(self.guild.roles, name='winners')
+        # winners = get(self.guild.roles, name='winners')
+        winners = get(self.guild.roles, name='reached-level-0')
         await self.member.add_roles(winners)
 
         # Update nickname with winner's badge
-        await update_nickname(self.member, '🏅')
+        await update_nickname(self.member, '💎')
 
         # Player has completed the game (for now?)
         print(('> \033[1m[%s]\033[0m \033[1m%s#%s\033[0m ' \

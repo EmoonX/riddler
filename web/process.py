@@ -499,9 +499,16 @@ class _NormalLevelHandler(_LevelHandler):
                 level=self.level, points=self.points,
                 name=self.username, disc=self.disc)
         
-        if name_next == '66':
+        if (self.riddle_alias == 'cipher' and name_next == '66') \
+                or (self.riddle_alias == 'rns' and name_next == '41'):
             # Player has just completed the game :)
-            name_next = '🏅'
+            query = 'UPDATE riddle_accounts ' \
+                'SET current_level = "🏅" ' \
+                'WHERE riddle = :riddle AND ' \
+                    'username = :name AND discriminator = :disc'
+            values = {'riddle': self.riddle_alias,
+                    'name': self.username, 'disc': self.disc}
+            await database.execute(query, values)
             
             # Bot game finish procedures
             await web_ipc.request('unlock', method='game_completed',

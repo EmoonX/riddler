@@ -33,10 +33,11 @@ async def on_ready():
     await build_riddles()
     
     # guild = get(bot.guilds, name='RNS Riddle')
-    # one = get(guild.channels, name='01')
-    # for role in guild.roles:
-    #     print(role)
-    #     one.set_permissions(role, read_messages=True)
+    # emoon = get(guild.members, name='Emoon');
+    # winners = get(guild.roles, name='winners')
+    # reached = get(guild.roles, name='reached-level-0')
+    # await emoon.remove_roles(winners)
+    # await emoon.add_roles(reached)
 
 
 if __name__ == '__main__':
