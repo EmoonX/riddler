@@ -1,5 +1,5 @@
 import {
-  setPages
+  pages, setPages, getFolderEntry, changeDir
 }
   from '../explorer.js';
 
@@ -10,6 +10,9 @@ const cheevoRankColors = {
   'A': 'gold',
   'S': 'darkturquoise'
 };
+
+// Dictionary of sets of current highlighted pages for each level
+var currentPages = {};
 
 function changeThumb() {
   // Load image from file browser
@@ -51,7 +54,7 @@ function clickIcon() {
     const explorer = $(this).parents('.page-explorer');
     const levelName = explorer.prev().find('.key > input').val();
     const folderPath = explorer.find('.path').text();
-    const folder = getFolderEntry(folderPath)
+    const folder = getFolderEntry(folderPath, '', true)
     const row = folder['children'][page];
     if ($(this).hasClass('current')) {
       const frontPath = explorer.prev().find('.front-path');
@@ -84,8 +87,6 @@ function clickIcon() {
       } else {
         folder['levels'][levelName] -= 1;
       }
-      console.log(seg)
-      console.log(folder['levels'])
       parent = folder;
     });
   }
@@ -107,7 +108,7 @@ function doubleClickIcon() {
     const explorer = $(this).parents('.page-explorer');
     const node = explorer.find('.path');
     const folder = node.text() + page + '/';
-    changeDir(explorer, folder);
+    changeDir(explorer, folder, true);
   }
 }
 
@@ -187,7 +188,6 @@ $(_ => {
   aux.push('get-pages');
   const url = aux.join('/');
   $.get(url, data => {
-    console.log(data)
     setPages(data);    
   });
 

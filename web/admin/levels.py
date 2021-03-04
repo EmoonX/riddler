@@ -23,7 +23,7 @@ async def levels(alias: str):
     if status != 200:
         return msg, status
     
-    async def r(levels: list, msg: str):
+    async def r(levels: list, secret_levels: list, msg: str):
         '''Render page with correct data.'''
         s = 'cipher'
         if alias == 'rns':
@@ -37,27 +37,33 @@ async def levels(alias: str):
         #     return folder
 
         return await render_template('admin/levels.htm',
-                alias=alias, levels=levels, s=s, msg=msg)
+                alias=alias, levels=levels, secret_levels=secret_levels,
+                s=s, msg=msg)
     
     # Get initial level data from database
     levels_before = await _fetch_levels(alias)
+    secrets_before = await _fetch_levels(alias, secret=True)
 
     # Render page normally on GET
     if request.method == 'GET':
-        return await r(levels_before.values(), '')
+        return await r(levels_before.values(),
+                secrets_before.values(), '')
     
-    # Build dict of levels after POST
+    # Build dicts of levels after POST
     form = await request.form
     levels_after = {}
+    secrets_after = {}
     for name, value in form.items():
         i = name.find('-')
-        try:
-            index, attr = int(name[:i]), name[(i+1):]
-        except:
-            continue
-        if index not in levels_after:
-            levels_after[index] = {}
-        levels_after[index][attr] = value
+        index, attr = name[:i], name[(i+1):]
+        if 's' not in index:
+            if index not in levels_after:
+                levels_after[index] = {}
+            levels_after[index][attr] = value
+        else:
+            if index not in levels_after:
+                secrets_after[index] = {}
+            secrets_after[index][attr] = value
     
     # Update changed levels both on DB and guild
     for index, level in levels_before.items():
@@ -151,11 +157,11 @@ async def levels(alias: str):
     return await r(levels.values(), 'Guild info updated successfully!')
 
 
-async def _fetch_levels(alias: str):
+async def _fetch_levels(alias: str, secret=False):
     '''Fetch guild levels info from database.'''
     query = 'SELECT * FROM levels ' \
-            'WHERE riddle = :riddle AND is_secret IS FALSE'
-    values = {'riddle': alias}
+            'WHERE riddle = :riddle AND is_secret = :is_secret'
+    values = {'riddle': alias, 'is_secret': secret}
     result = await database.fetch_all(query, values)
     levels = {level['index']: dict(level) for level in result}
     return levels

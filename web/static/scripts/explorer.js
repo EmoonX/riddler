@@ -1,8 +1,5 @@
 // Dictionary of all folders and pages/files
-var pages = {};
-
-// Dictionary of sets of current pages for each level
-var currentPages = {};
+export var pages = {};
 
 export function setPages(json) {
   // Set pages dict(s) from JSON data

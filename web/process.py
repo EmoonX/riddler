@@ -257,8 +257,8 @@ class _PathsHandler:
                     'level_name': page['level_name'], 'path': path, 'time': tnow}
             await database.execute(query, values)
 
-        # Check and possibly grant an achivement
-        await self._process_cheevo(path)
+            # Check and possibly grant an achievement
+            await self._process_cheevo(path)
     
     async def _update_counters(self):
         '''Update player and riddle hit counters.'''
