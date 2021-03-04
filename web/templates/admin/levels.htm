@@ -6,8 +6,9 @@
 {% endblock %}
 {% block content %}
     <main>
+      <h1>Levels</h1>
       <form method="post">
-        <h1>Levels</h1>
+        <h2>Normal Levels</h2>
         <section class="list levels admin">
         {% for level in levels %}
           {% set index = loop.index %}
@@ -19,10 +20,23 @@
         <section class="list levels admin new">
           <!-- New level rows go here -->
         </section>
+        <hr>
+        <h2>Secret Levels</h2>
+        <section class="list levels secret admin">
+        {% for level in secret_levels %}
+          {% set index = 's' + loop.index|string %}
+          {% set image = '/static/thumbs/' + alias + '/' + level['image'] %}
+          {% include 'admin/level-row.htm' %}
+        {% endfor %}
+        </section>
+        <hr>
+        <section class="list levels secret admin new">
+          <!-- New secret level rows go here -->
+        </section>
         <div class='buttons'>
           <input type="file" name="pages" accept="text/plain" style="display:none">
           <button type="button" name="upload-pages">📁 Upload pages</button>
-          <button type="button" class="add" name="add-level">➕ Add new level</button>
+          <button type="button" class="add" name="add-secret-level">➕ Add secret level</button>
           <button type="submit">📝 Submit changes</button>
         </div>
         <div class="msg">{{ msg }}</div>

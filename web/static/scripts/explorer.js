@@ -81,7 +81,6 @@ export function changeDir(explorer, folderPath, admin) {
     }
     var current = '';
     if (admin) {
-      console.log(levelName)
       if (name == 'folder') {
         if (row['levels'][levelName]) {
           current = 'class="current"';

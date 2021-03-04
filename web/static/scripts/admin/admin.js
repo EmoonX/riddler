@@ -141,25 +141,33 @@ function addRow(event) {
   $(`button.add`).prop('disabled', true);
 
   // Get new index from current number of rows
-  const index = $('.row').length + 1
+  const index = 's' + String($('.secret .row').length + 1);
   
   // Send GET request for a new row
-  const url = `/admin/${type}-row`
-  const data = {'index': index}
+  var url;
+  if (type != 'secret-level') {
+    url = `/admin/${type}-row`;
+  } else {
+    url = '/admin/level-row';
+  }
+  const data = {'index': index};
   $.get(url, data, function(html) {
     // Get HTML from rendered template and append to section
     const div = $.parseHTML(html);
-    $('.new').addClass('list');
-    $('.new').show();
-    $('.new').append(div);
+    var list = $('.new');
+    if (type == 'secret-level') {
+      list = $('.secret.new');
+    }
+    list.show();
+    list.append(div);
 
     // Add listeners to new fields
-    $('.new').on('change', `#${index}-input`, changeThumb);
+    list.on('change', `#${index}-input`, changeThumb);
     if (type == 'cheevo') {
-      $('.new').on('click', '.rank-radio', changeCheevoRank);
+      list.on('click', '.rank-radio', changeCheevoRank);
     }
     // Enable added row validation
-    $('.new').on('change', '.row:last input', validateRows);
+    list.on('change', '.row:last input', validateRows);
   }, 'html');
 }
 
@@ -197,5 +205,6 @@ $(_ => {
 
   // Listen to Add level OR Add cheevo click
   $('button[name="add-level"]').on('click', {type: 'level'}, addRow);
+  $('button[name="add-secret-level"]').on('click', {type: 'secret-level'}, addRow);
   $('button[name="add-cheevo"]').on('click', {type: 'cheevo'}, addRow);
 });
