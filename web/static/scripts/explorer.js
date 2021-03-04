@@ -23,7 +23,8 @@ export function toggleExplorer() {
       // Change to initial (front page) directory
       const node = explorer.find('.path');
       const folder = node.text();
-      changeDir(explorer, folder);
+      const admin = row.parents('.list').hasClass('admin');
+      changeDir(explorer, folder, admin);
       
       // Scroll page to accomodate view to margin-top
       $('html').animate({
@@ -33,17 +34,23 @@ export function toggleExplorer() {
   });
 }
 
-export function getFolderEntry(path, level='*') {
+export function getFolderEntry(path, level, admin) {
   // Get pages dictionary entry corresponding to bottom folder in path
   const segments = path.split('/').slice(1, -1);
-  var folder = pages[level]['/'];
+  var folder;
+  if (!admin) {
+    folder = pages[level]['/'];
+  } else {
+    // Admin
+    folder = pages['/'];
+  }
   segments.forEach(seg => {
     folder = folder['children'][seg];
   });
   return folder;
 }
 
-export function changeDir(explorer, folderPath, admin=false) {
+export function changeDir(explorer, folderPath, admin) {
   // Change current directory
 
   // Update directory on field
@@ -59,8 +66,13 @@ export function changeDir(explorer, folderPath, admin=false) {
 
   // And now add the current dir files
   // const levelName = explorer.prev().find('.key > input').val();
-  const levelName = explorer.prev().find('.name').text()
-  const folder = getFolderEntry(folderPath, levelName);
+  var levelName;
+  if (!admin) {
+    levelName = explorer.prev().find('.name').text();
+  } else {
+    levelName = explorer.prev().find('.name input').val();
+  }
+  const folder = getFolderEntry(folderPath, levelName, admin);
   $.each(folder['children'], (page, row) => {
     var name = 'folder';
     const j = page.lastIndexOf('.');
@@ -69,6 +81,7 @@ export function changeDir(explorer, folderPath, admin=false) {
     }
     var current = '';
     if (admin) {
+      console.log(levelName)
       if (name == 'folder') {
         if (row['levels'][levelName]) {
           current = 'class="current"';
@@ -143,17 +156,11 @@ export function folderUp() {
   }
   const re = /\w+\/$/g;
   const folder = node.text().replace(re, '');
-  changeDir(explorer, folder);
+  const admin = explorer.parents('.list').hasClass('admin');
+  changeDir(explorer, folder, admin);
 }
 
 $(_ => {
-  // Get JS object data converted from Python dict
-  // const aux = location.href.split('/').slice(0, -1);
-  // aux.push('get-pages');
-  // const url = aux.join('/');
-  // $.get(url, data => {
-  //   pages = JSON.parse(data);
-  // });
   // Dinamically register events for (current or new) explorer actions
   $('.levels').on('click', '.row .menu-button', toggleExplorer);
   $('.levels').on('click', '.page-explorer .folder-up', folderUp);

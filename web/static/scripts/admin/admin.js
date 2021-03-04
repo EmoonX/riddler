@@ -1,5 +1,5 @@
 import {
-  toggleExplorer, folderUp
+  setPages
 }
   from '../explorer.js';
 
@@ -173,6 +173,15 @@ $(_ => {
   });
   css += '</style>';
   $('head').append(css);
+
+  // Get JS object data converted from Python dict
+  const aux = location.href.split('/');
+  aux.push('get-pages');
+  const url = aux.join('/');
+  $.get(url, data => {
+    console.log(data)
+    setPages(data);    
+  });
 
   // Listen to thumb changes
   $('.thumb-input').each(function () {

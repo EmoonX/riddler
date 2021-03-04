@@ -28,17 +28,17 @@
              --><a class="country" href="{{ player['country'] }}"><img class="flag" src="/static/flags/{{ player['country'] }}.png" title="{{ country_name }}"></a>
               </div>
             </div>
-            <figure class="score">
-              {% set score = player['score'] %}
-              {% set zeroes = '0' * 6 %}
-              <var class="points"><var class="zeroes">{{ zeroes }}</var>{{ score }}</var>
-              <figcaption>points</figcaption>
-            </figure>
             <figure class="current-level">
             {% if player['current_level'] != '🏅' %}
               <figcaption>Currently on</figcaption>
             {% endif %}
               <var>{{ player['current_level'] }}</var>
+            </figure>
+            <figure class="score">
+              {% set score = player['score'] %}
+              {% set zeroes = '0' * 6 %}
+              <var class="points"><var class="zeroes">{{ zeroes }}</var>{{ score }}</var>
+              <figcaption>points</figcaption>
             </figure>
             {% set cheevos = get_achievements(riddle['alias'], player) %}
             <div class="cheevos">

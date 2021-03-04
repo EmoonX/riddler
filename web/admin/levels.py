@@ -161,7 +161,7 @@ async def _fetch_levels(alias: str):
     return levels
 
 
-@admin_levels.route('/admin/<alias>/get-pages', methods=['GET'])
+@admin_levels.route('/admin/<alias>/levels/get-pages', methods=['GET'])
 @requires_authorization
 async def get_pages(alias: str) -> str:
     '''Return a recursive JSON of all riddle folders and pages.'''
