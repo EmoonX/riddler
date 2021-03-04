@@ -69,6 +69,11 @@
               {% endfor %}
               </div>
             </div>
+            <figure class="page-count">
+              {% set count = player['page_count'] %}
+              <var class="count">{{ count }}</var>
+              <figcaption>pages found</figcaption>
+            </figure>
           </div>
         {% endfor %}
         </section>

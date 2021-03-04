@@ -32,7 +32,7 @@ function doubleClickIcon() {
     if (alias == 'cipher') {
       url = 'http://gamemastertips.com/cipher' + path;
     } else {
-      url = 'http://rnsriddle.com/riddle' + path;
+      url = 'https://rnsriddle.com/riddle' + path;
     }
     window.open(url, '_blank');
   } else {

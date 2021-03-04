@@ -181,7 +181,7 @@ class _PathsHandler:
                 'WHERE riddle = :riddle AND path = :path'
         values = {'riddle': self.riddle_alias, 'path': path}
         page = await database.fetch_one(query, values)
-        if not page:
+        if not page or not page['level_name']:
             # Page not found!
             return
 
@@ -198,9 +198,6 @@ class _PathsHandler:
                     'WHERE riddle = :riddle AND name = :name'
             values = {'riddle': self.riddle_alias, 'name': page['level_name']}
             page_level = await database.fetch_one(query, values)
-            if not page_level:
-                # Page still isn't pointed to a level (yet?)
-                return
 
             # Get next level name (or first)
             next_name = ''
@@ -250,7 +247,7 @@ class _PathsHandler:
 
         # Register into database new page access (if applicable)
         current_name = self.riddle_account['current_level']
-        if current_name and (current_level == '🏅' \
+        if current_name and (current_name == '🏅' \
                 or int(page['level_name']) <= int(current_name)):
             tnow = datetime.utcnow()
             query = 'INSERT IGNORE INTO user_pageaccess ' \

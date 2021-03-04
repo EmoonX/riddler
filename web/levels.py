@@ -154,8 +154,6 @@ async def get_pages(alias: str) -> str:
                 break                
             parent = parent['children'][seg]
     
-    print(pages)
-    
     # def _extension_cmp(row: dict):
     #     '''Compare pages based firstly on their extension.
     #     Order is: folders first, then .htm, then the rest.'''

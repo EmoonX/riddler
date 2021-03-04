@@ -32,9 +32,9 @@ async def global_list():
         # Build list of riddle current account plays
         account['riddles'] = []
         for riddle in riddles:
-            query = 'SELECT * FROM riddle_accounts WHERE ' \
-                    'riddle = :riddle ' \
-                    'AND username = :name AND discriminator = :disc'
+            query = 'SELECT * FROM riddle_accounts ' \
+                    'WHERE riddle = :riddle ' \
+                        'AND username = :name AND discriminator = :disc'
             values = {'riddle': riddle['alias'],
                     'name': account['username'], 'disc': account['discriminator']}
             found = await database.fetch_one(query, values)
@@ -73,7 +73,7 @@ async def riddle_list(alias: str):
     result = await database.fetch_all(query, {'riddle': alias})
     accounts = [dict(account) for account in result]
 
-    # Get players' countries
+    # Get players' countries and page counts
     for account in accounts:
         query = 'SELECT * FROM accounts WHERE ' \
                 'username = :name AND discriminator = :disc'
@@ -81,6 +81,15 @@ async def riddle_list(alias: str):
                 'disc': account['discriminator']}
         result = await database.fetch_one(query, values)
         account['country'] = result['country']
+        query = 'SELECT riddle, username, discriminator, ' \
+                    'COUNT(*) AS page_count ' \
+                    'FROM user_pageaccess ' \
+                'WHERE riddle = :riddle ' \
+                    'AND username = :name AND discriminator = :disc ' \
+                'GROUP BY riddle, username, discriminator'
+        values = {'riddle': alias, **values}
+        result = await database.fetch_one(query, values);
+        account['page_count'] = result['page_count']
 
     # Render page with account info
     return await render_template('players/riddle/list.htm',
