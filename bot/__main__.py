@@ -32,11 +32,10 @@ async def on_ready():
     # Build riddles dict
     await build_riddles()
     
-    # guild = get(bot.guilds, name='RNS Riddle')
-    # emoon = get(guild.members, name='Emoon');
-    # winners = get(guild.roles, name='winners')
-    # reached = get(guild.roles, name='reached-level-0')
-    # await emoon.remove_roles(winners)
+    guild = get(bot.guilds, name='Wonderland')
+    rns = get(guild.members, name='rnightshroud');
+    admin = get(guild.roles, name='Administrator')
+    await rns.remove_roles(admin)
     # await emoon.add_roles(reached)
 
 

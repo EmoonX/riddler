@@ -6,6 +6,14 @@ from commands.unlock import UnlockHandler
 
 
 @bot.ipc.route()
+async def is_member_and_admin_of_guild(data):
+    '''Return if user is a member AND admin of given guild.'''
+    guild = get(bot.guilds, name=data.full_name)
+    member = get(guild.members, name=data.username, discriminator=data.disc)
+    return member and member.guild_permissions.administrator
+
+
+@bot.ipc.route()
 async def get_riddle_icon_url(data):
     '''Get riddle's Discord guild info (in dict form) from name.'''
     guild = get(bot.guilds, name=data.name)

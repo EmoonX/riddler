@@ -64,7 +64,7 @@ async def register():
 @auth.route('/login', methods=['GET'])
 async def login():
     '''Create Discord session and redirect to callback URL.'''
-    scope = ['identify', 'guilds']
+    scope = ['identify']
     return await discord.create_session(scope=scope)
 
 

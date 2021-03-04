@@ -8,6 +8,7 @@ from quart_discord import requires_authorization
 from PIL import Image
 
 from auth import discord
+from ipc import web_ipc
 from util.db import database
 
 # Create app blueprint
@@ -24,18 +25,12 @@ async def auth(alias: str):
     if not result:
         # Invalid alias...
         return 'Riddle not found!', 404
-    full_name = result['full_name']
     
     # Check if user is indeed an admin of given guild
-    guilds = await discord.fetch_guilds()
-    ok = False
-    for guild in guilds:
-        if guild.name == full_name:
-            if guild.permissions.administrator:
-               ok = True 
-            break
-    
-    # Not part or not part of the guild
+    user = await discord.fetch_user()
+    ok = await web_ipc.request('is_member_and_admin_of_guild',
+            full_name=result['full_name'],
+            username=user.name, disc=user.discriminator)
     if not ok:
         return 'Unauthorized', 401
     
