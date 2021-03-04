@@ -119,18 +119,11 @@ async def get_pages(alias: str) -> str:
         paths[level].append(row)
 
     # Build recursive dict of folders and files
-    base = {'children': {}, 'folder': 1}
+    base = {'children': {}, 'folder': 1,
+            'files_found': 0, 'files_total': 0}
     pages = {}
     for level, level_paths in paths.items():
-        query = 'SELECT riddle, level_name, COUNT(*) as total ' \
-                    'FROM level_pages ' \
-                'WHERE riddle = :riddle AND level_name = :level ' \
-                'GROUP BY riddle, level_name'
-        values = {'riddle': alias, 'level': level}
-        result = await database.fetch_one(query, values)
-        pages[level] = {'/': deepcopy(base),
-                'files_found': len(level_paths),
-                'files_total': result['total']}
+        pages[level] = {'/': deepcopy(base)}
         for row in level_paths:
             parent = pages[level]['/']
             segments = row['path'].split('/')[1:]
@@ -141,7 +134,27 @@ async def get_pages(alias: str) -> str:
                         children[seg] = deepcopy(base)
                     else:
                         children[seg] = row
+                parent['files_found'] += 1
                 parent = children[seg]
+    
+    # Get recursively total file count for each folder
+    query = 'SELECT * FROM level_pages ' \
+            'WHERE riddle = :riddle '
+    result = await database.fetch_all(query, {'riddle': alias})
+    for row in result:
+        if not row['level_name']:
+            continue
+        level = row['level_name']
+        parent = pages[level]['/']
+        segments = row['path'].split('/')[1:]
+        for seg in segments:
+            parent['files_total'] += 1
+            if not seg in parent['children']:
+                # Avoid registering locked folders/pages
+                break                
+            parent = parent['children'][seg]
+    
+    print(pages)
     
     # def _extension_cmp(row: dict):
     #     '''Compare pages based firstly on their extension.

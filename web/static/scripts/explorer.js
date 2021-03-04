@@ -37,7 +37,6 @@ export function getFolderEntry(path, level='*') {
   // Get pages dictionary entry corresponding to bottom folder in path
   const segments = path.split('/').slice(1, -1);
   var folder = pages[level]['/'];
-  console.log(segments);
   segments.forEach(seg => {
     folder = folder['children'][seg];
   });
@@ -62,7 +61,6 @@ export function changeDir(explorer, folderPath, admin=false) {
   // const levelName = explorer.prev().find('.key > input').val();
   const levelName = explorer.prev().find('.name').text()
   const folder = getFolderEntry(folderPath, levelName);
-  console.log(folder);
   $.each(folder['children'], (page, row) => {
     var name = 'folder';
     const j = page.lastIndexOf('.');
@@ -106,8 +104,8 @@ export function changeDir(explorer, folderPath, admin=false) {
   popIcons(explorer);
 
   // Update folder's files count and total
-  const found = pages[levelName]['files_found'];
-  const total = pages[levelName]['files_total'];
+  const found = folder['files_found'];
+  const total = folder['files_total'];
   explorer.find('.completion .found').text(found);
   explorer.find('.completion .total').text(total);
   toggleCheck(explorer);
