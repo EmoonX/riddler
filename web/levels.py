@@ -68,12 +68,21 @@ async def level_list(alias: str):
             level['beaten'] = False
             level['unlocked'] = False
 
-        # Register list of users currently on level
-        query = 'SELECT * FROM riddle_accounts ' \
-                'WHERE riddle = :riddle and current_level = :id'
-        values = {'riddle': alias, 'id': level['name']}
-        result = await database.fetch_all(query, values)
-        level['users'] = [dict(level) for level in result]
+        if not level['is_secret']:
+            # Register list of users currently on level
+            query = 'SELECT * FROM riddle_accounts ' \
+                    'WHERE riddle = :riddle and current_level = :name'
+            values = {'riddle': alias, 'name': level['name']}
+            result = await database.fetch_all(query, values)
+            level['users'] = [dict(level) for level in result]
+        else:
+            # Register list of users currently working on secret level
+            query = 'SELECT * FROM user_secrets ' \
+                    'WHERE riddle = :riddle and level_name = :name ' \
+                        'AND completion_time IS NULL'
+            values = {'riddle': alias, 'name': level['name']}
+            result = await database.fetch_all(query, values)
+            level['users'] = [dict(level) for level in result]
 
         # Append level to its set subdict
         if not level['level_set'] in levels:
