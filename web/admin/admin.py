@@ -93,7 +93,7 @@ async def update_scores(alias: str):
         
         # Update player's global score
         query = 'UPDATE accounts ' \
-                'SET global_score = (global_score - :cur + :new ' \
+                'SET global_score = (global_score - :cur + :new) ' \
                 'WHERE username = :name and discriminator = :disc'
         new_values = {'cur': cur_score, 'new': new_score,
                 'name': row['username'], 'disc': row['discriminator']}

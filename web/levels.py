@@ -40,7 +40,8 @@ async def level_list(alias: str):
             result = await database.fetch_one(query, values)
             
             _, status = await admin.auth(alias)
-            if status == 200:
+            # if status == 200:
+            if False:
                 # If admin of riddle, everything is unlocked :)
                 level['beaten'] = True
                 level['unlocked'] = True
@@ -142,9 +143,9 @@ async def get_pages(alias: str) -> str:
             'WHERE riddle = :riddle '
     result = await database.fetch_all(query, {'riddle': alias})
     for row in result:
-        if not row['level_name']:
-            continue
         level = row['level_name']
+        if not level or level not in pages:
+            continue
         parent = pages[level]['/']
         segments = row['path'].split('/')[1:]
         for seg in segments:
@@ -187,14 +188,21 @@ async def rate(alias: str, level_name: str, rating: float):
         return 'Unauthorized', 401
 
     # Get user's previous rating
-    query = 'SELECT * FROM user_levelcompletion ' \
+    query = 'SELECT * FROM (' \
+                'SELECT riddle, username, discriminator, ' \
+                    'level_name, completion_time, rating_given ' \
+                    'FROM user_levelcompletion ' \
+                'UNION ALL ' \
+                'SELECT riddle, username, discriminator, ' \
+                    'level_name, completion_time, rating_given ' \
+                    'FROM user_secrets) AS t ' \
             'WHERE riddle = :riddle ' \
                 'AND username = :name AND discriminator = :disc ' \
                 'AND level_name = :level_name'
     values = {'riddle': alias, 'name': user.name,
             'disc': user.discriminator, 'level_name': level_name}
     result = await database.fetch_one(query, values)
-    if not result:
+    if not result or not result['completion_time']:
         return 'Unauthorized', 401
     rating_prev = result['rating_given']
 
@@ -224,13 +232,16 @@ async def rate(alias: str, level_name: str, rating: float):
         rating = None
     average = (total / count) if (count > 0) else 0
 
-    # Update both user_levelcompletion and levels tables
-    query = 'UPDATE user_levelcompletion SET rating_given = :rating ' \
-            'WHERE riddle = :riddle ' \
+    # Update necessary tables
+    table = 'user_levelcompletion' if not level['is_secret'] \
+            else 'user_secrets'
+    query = ('UPDATE %s SET rating_given = :rating ' % table) + \
+            ('WHERE riddle = :riddle ' \
                 'AND username = :name AND discriminator = :disc ' \
-                'AND level_name = :level_name'
-    values = {'rating': rating, 'riddle': alias, 'name': user.name,
-            'disc': user.discriminator, 'level_name': level_name}
+                'AND level_name = :level_name')
+    values = {'rating': rating, 'riddle': alias,
+            'name': user.name, 'disc': user.discriminator,
+            'level_name': level_name}
     await database.execute(query, values)
     query = 'UPDATE levels SET rating_avg = :average, rating_count = :count ' \
             'WHERE riddle = :riddle AND name = :name'

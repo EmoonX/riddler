@@ -28,26 +28,19 @@ async def levels(alias: str):
         s = 'cipher'
         if alias == 'rns':
             s = 'riddle'
-        
-        # def get_folder(folder_path: str):
-        #     segments = folder_path.split('/')[1:-1]
-        #     folder = pages['/']
-        #     for seg in segments:
-        #         folder = folder['children'][seg]
-        #     return folder
 
         return await render_template('admin/levels.htm',
                 alias=alias, levels=levels, secret_levels=secret_levels,
                 s=s, msg=msg)
     
     # Get initial level data from database
-    levels_before = await _fetch_levels(alias)
-    secrets_before = await _fetch_levels(alias, secret=True)
+    # levels_before = await _fetch_levels(alias)
+    levels_before = await _fetch_levels(alias, secret=True)
+    # secrets_before = await _fetch_levels(alias, secret=True)
 
     # Render page normally on GET
     if request.method == 'GET':
-        return await r(levels_before.values(),
-                secrets_before.values(), '')
+        return await r([], levels_before.values(), '')
     
     # Build dicts of levels after POST
     form = await request.form
@@ -56,7 +49,7 @@ async def levels(alias: str):
     for name, value in form.items():
         i = name.find('-')
         index, attr = name[:i], name[(i+1):]
-        if 's' not in index:
+        if 's' in index:
             if index not in levels_after:
                 levels_after[index] = {}
             levels_after[index][attr] = value
@@ -65,8 +58,14 @@ async def levels(alias: str):
                 secrets_after[index] = {}
             secrets_after[index][attr] = value
     
+    # Get full name of guild
+    query = 'SELECT * FROM riddles WHERE alias = :alias'
+    result = await database.fetch_one(query, {'alias': alias})
+    full_name = result['full_name']
+    
     # Update changed levels both on DB and guild
-    for index, level in levels_before.items():
+    if False:
+    # for index, level in levels_before.items():
         # Remove fields that were not modified by admin
         for attr, value in level.items():
             if attr in levels_after[index] \
@@ -105,56 +104,56 @@ async def levels(alias: str):
     
     if len(levels_after) > len(levels_before):
         levels = []
-        for index in range(len(levels_before) + 1, len(levels_after) + 1):
+        for i in range(len(levels_before) + 1, len(levels_after) + 1):
+            index = 's%d' % i
             # Insert new level data on database
             query = 'INSERT INTO levels ' \
-                    '(riddle, level_set, `index`, `name`, ' \
+                    '(riddle, is_secret, level_set, `index`, `name`, ' \
                         'path, image, answer, `rank`, ' \
                         'discord_category, discord_name) VALUES ' \
-                    '(:riddle, :set, :index, :name, :path, :image, :answer, ' \
-                        ':rank, :discord_category, :discord_name)'
-            values = {'riddle': alias, 'set': 'Normal Levels',
-                    'index': index, 'name': form['%d-name' % index],
-                    'path': form['%d-path' % index],
-                    'image': form['%d-image' % index],
-                    'answer': form['%d-answer' % index],
-                    'rank': form['%d-rank' % index],
-                    'discord_category': 'Normal Levels',
-                    'discord_name': form['%d-discord_name' % index]}
+                    '(:riddle, 1, :set, :index, :name, :path, :image, ' \
+                        ':answer, :rank, :discord_category, :discord_name)'
+            values = {'riddle': alias, 'set': 'Secret Levels',
+                    'index': i, 'name': form['%s-name' % index],
+                    'path': form['%s-path' % index],
+                    'image': form['%s-image' % index],
+                    'answer': form['%s-answer' % index],
+                    'rank': form['%s-rank' % index],
+                    'discord_category': 'Secret Levels',
+                    'discord_name': form['%s-discord_name' % index]}
             await database.execute(query, values)
         
             # Get image data and save image on thumbs folder
-            filename = form['%d-image' % index]
-            imgdata = form['%d-imgdata' % index]
+            filename = form['%s-image' % index]
+            imgdata = form['%s-imgdata' % index]
             await save_image('thumbs', alias, filename, imgdata)
             
             # Append values to new levels list for Discord IPC
-            values['is_secret'] = 0
+            values['is_secret'] = 1
             levels.append(values)
 
         # Update Discord guild channels and roles with new levels info
-        query = 'SELECT * FROM riddles WHERE alias = :alias'
-        result = await database.fetch_one(query, {'alias': alias})
-        full_name = result['full_name']
-        await web_ipc.request('build', guild_name=full_name, levels=levels)
+        await web_ipc.request('insert', guild_name=full_name, levels=levels)
     
     # Update pages data to changed or new levels
-    for index in range(1, len(levels_after) + 1):
-        aux = form['%d-pages' % index]
+    for i in range(1, len(levels_after) + 1):
+        index = 's%d' % i
+        aux = form['%s-pages' % index]
         if not aux:
             continue
         pages = json.loads(aux)
         for page in pages:
             query = 'UPDATE level_pages SET level_name = :name ' \
                     'WHERE riddle = :riddle AND path = :path'
-            vals = {'name': form['%d-name' % index],
+            vals = {'name': form['%s-name' % index],
                     'riddle': alias, 'path': page}
             await database.execute(query, vals)
     
     # Fetch levels again to display page correctly on POST
-    levels = await _fetch_levels(alias)
+    # levels = await _fetch_levels(alias)
+    levels = await _fetch_levels(alias, True)
 
-    return await r(levels.values(), 'Guild info updated successfully!')
+    return await r([], levels.values(), 'Guild info updated successfully!')
 
 
 async def _fetch_levels(alias: str, secret=False):

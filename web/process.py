@@ -220,26 +220,26 @@ class _PathsHandler:
                 lh = _NormalLevelHandler(page_level, self)
                 await lh.register_finding()
             
-            # Check for normal level pages
+        # Check for secret level pages
+        query = 'SELECT * FROM levels ' \
+                'WHERE riddle = :riddle AND is_secret IS TRUE ' \
+                'AND path = :path'
+        values = {'riddle': self.riddle_alias, 'path': path}
+        secret = await database.fetch_one(query, values)
+        if secret:
+            # "A secret has been found"
+            sh = _SecretLevelHandler(secret, self)
+            await sh.register_finding()
+        else:
+            # Otherwise, check if a secret level was beaten
             query = 'SELECT * FROM levels ' \
                     'WHERE riddle = :riddle AND is_secret IS TRUE ' \
-                    'AND path = :path'
-            values = {'riddle': self.riddle_alias, 'path': path}
+                    'AND answer = :answer'
+            values = {'riddle': self.riddle_alias, 'answer': path}
             secret = await database.fetch_one(query, values)
             if secret:
-                # "A secret has been found"
                 sh = _SecretLevelHandler(secret, self)
-                await sh.register_finding()
-            else:
-                # Otherwise, check if a secret level was beaten
-                query = 'SELECT * FROM levels ' \
-                        'WHERE riddle = :riddle AND is_secret IS TRUE ' \
-                        'AND answer = :answer'
-                values = {'riddle': self.riddle_alias, 'answer': path}
-                secret = await database.fetch_one(query, values)
-                if secret:
-                    sh = _SecretLevelHandler(secret, self)
-                    await sh.register_completion()
+                await sh.register_completion()
 
         # if not has_access():
         #     # Forbid user from accessing any level further than permitted
@@ -248,6 +248,7 @@ class _PathsHandler:
         # Register into database new page access (if applicable)
         current_name = self.riddle_account['current_level']
         if current_name and (current_name == '🏅' \
+                or page['level_name'].isalpha() \
                 or int(page['level_name']) <= int(current_name)):
             tnow = datetime.utcnow()
             query = 'INSERT IGNORE INTO user_pageaccess ' \
@@ -536,17 +537,22 @@ class _SecretLevelHandler(_LevelHandler):
 
         # Register on  if not yet been found
         row = await self._get_user_level_row()
-        if not row:
-            time = datetime.utcnow()
-            query = 'INSERT INTO user_secrets ' \
-                    '(riddle, username, discriminator, ' \
-                        'level_name, find_time) ' \
-                    'VALUES (:riddle, :name, :disc, ' \
-                        ':level_name, :time)'
-            values = {'riddle': self.riddle_alias,
-                    'name': self.username, 'disc': self.disc,
-                    'level_name': self.level['name'], 'time': time}
-            await database.execute(query, values)
+        if row:
+            return
+        
+        time = datetime.utcnow()
+        query = 'INSERT INTO user_secrets ' \
+                '(riddle, username, discriminator, ' \
+                    'level_name, find_time) ' \
+                'VALUES (:riddle, :name, :disc, ' \
+                    ':level_name, :time)'
+        values = {'riddle': self.riddle_alias,
+                'name': self.username, 'disc': self.disc,
+                'level_name': self.level['name'], 'time': time}
+        await database.execute(query, values)
+        
+        # Send request to bot for unlocking channel    
+        await super().register_finding('secret_found')
         
     async def register_completion(self):
         '''Register normal level completion and update all needed tables.'''
@@ -567,3 +573,9 @@ class _SecretLevelHandler(_LevelHandler):
                 'name': self.username, 'disc': self.disc,
                 'level_name': self.level['name']}
         await database.execute(query, values)
+        
+        # Bot secret solve procedures
+        await web_ipc.request('unlock', method='secret_solve',
+                alias=self.riddle_alias,
+                level=self.level, points=self.points,
+                name=self.username, disc=self.disc)

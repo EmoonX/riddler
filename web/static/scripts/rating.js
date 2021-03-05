@@ -82,14 +82,14 @@ function updateRating() {
     const span = $(this).parents('.rating').find('figcaption > span');
     span.html(html);
 
-    console.log(`[Rating] Level ${levelName}`
+    console.log(`[Rating] Level ${levelName} `
           + `has been given ${rating} hearts!`);
   })
     .fail(response => {
       console.log('[Rating] Error updating rating for level ${levelName}...')
       if (response.status == 401) {
         // Go back to login page if trying to rate while not logged in
-        location.replace('/login/');
+        location.replace('/login');
         return;
       }
     }
