@@ -32,7 +32,8 @@ async def level_list(alias: str):
             # Retrieve level unlocking and completion data
             table = 'user_levelcompletion' if not level['is_secret'] \
                     else 'user_secrets'
-            query = ('SELECT username, rating_given FROM %s ' % table) + \
+            query = ('SELECT username, rating_given, completion_time ' \
+                        'FROM %s ' % table) + \
                     'WHERE riddle = :riddle ' \
                         'AND username = :name AND discriminator = :disc ' \
                         'AND level_name = :level_name'
@@ -48,7 +49,7 @@ async def level_list(alias: str):
                 if result:
                     level['rating_given'] = result['rating_given']
             else:
-                level['beaten'] = (result is not None)
+                level['beaten'] = (result and result['completion_time'])
                 level['unlocked'] = level['beaten']
 
                 if not level['beaten']:
