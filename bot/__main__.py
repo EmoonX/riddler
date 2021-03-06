@@ -32,11 +32,14 @@ async def on_ready():
     # Build riddles dict
     await build_riddles()
     
-    # guild = get(bot.guilds, name='Wonderland')
-    # rns = get(guild.members, name='rnightshroud');
-    # admin = get(guild.roles, name='Administrator')
-    # await rns.remove_roles(admin)
-    # await emoon.add_roles(reached)
+    # guild = get(bot.guilds, name='RNS Riddle')
+    # bobot = get(guild.roles, name='Riddler')
+    # for channel in guild.channels:
+    #     try:
+    #         await channel.set_permissions(bobot, read_messages=True)
+    #         print(channel)
+    #     except:
+    #         pass
 
 
 if __name__ == '__main__':

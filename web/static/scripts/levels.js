@@ -27,7 +27,7 @@ function doubleClickIcon() {
     const path = explorer.find('.path').text() +
         $(this).find('figcaption').text();
     const aux = location.href.split('/');
-    const alias = aux.slice(-2);
+    const alias = aux.slice(-2)[0];
     var url = '';
     if (alias == 'cipher') {
       url = 'http://gamemastertips.com/cipher' + path;

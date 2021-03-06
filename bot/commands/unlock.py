@@ -103,8 +103,8 @@ class UnlockHandler:
         text = ''
         if first_to_solve:
             text = '**🏅 FIRST TO SOLVE 🏅**\n'
-        text += ('**<@!%d>** has completed secret level **%s**!' \
-                'Congratulations!**') % (self.member.id, level['name'])
+        text += ('**<@!%d>** has completed secret level **%s**! ' \
+                'Congratulations!') % (self.member.id, level['name'])
         await channel.send(text)
         if first_to_solve:
             cheevos = get(self.guild.channels, name='achievements')
