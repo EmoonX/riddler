@@ -115,13 +115,6 @@ async def levels(alias: str):
             for i in range(len(levels_before) + 1, len(levels_after) + 1):
                 index = str(i) if not is_secret else 's%d' % i
                 
-                if not is_secret:
-                    # Point previous level to new one as next in progression
-                    query = 'UPDATE levels ' \
-                            'SET `next_level` = :name ' \
-                            'WHERE `index` = :index - 1'
-                    await database.execute(query, {'index': index})
-                
                 # Insert new level data on database
                 query = 'INSERT INTO levels ' \
                         '(riddle, is_secret, level_set, `index`, `name`, ' \
@@ -164,9 +157,9 @@ async def levels(alias: str):
             for page in pages:
                 query = 'UPDATE level_pages SET level_name = :name ' \
                         'WHERE riddle = :riddle AND path = :path'
-                vals = {'name': form['%s-name' % index],
+                values = {'name': form['%s-name' % index],
                     'riddle': alias, 'path': page}
-            await database.execute(query, vals)
+                await database.execute(query, values)
     
     # Update both normal and secret levels
     await _update_levels(levels_before, levels_after)

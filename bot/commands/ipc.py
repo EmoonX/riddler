@@ -45,7 +45,7 @@ async def unlock(data):
     if data.method in ('advance', 'secret_found'):
         args = (data.level,)
     elif data.method in ('beat', 'secret_solve'):
-        args = (data.level, data.points)
+        args = (data.level, data.points, data.first_to_solve)
     elif data.method == 'cheevo_found':
         args = (data.cheevo, data.points)
 

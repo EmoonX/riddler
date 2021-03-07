@@ -185,40 +185,37 @@ class _PathsHandler:
             # Page not found!
             return
 
+        # Get current level info from DB
         current_name = self.riddle_account['current_level']
-        if current_name != '🏅':
-            # Get current level info from DB
-            query = 'SELECT * FROM levels ' \
-                    'WHERE riddle = :riddle AND name = :name'
-            values = {'riddle': self.riddle_alias, 'name': current_name}
-            current_level = await database.fetch_one(query, values)
+        query = 'SELECT * FROM levels ' \
+                'WHERE riddle = :riddle AND name = :name'
+        values = {'riddle': self.riddle_alias, 'name': current_name}
+        current_level = await database.fetch_one(query, values)
 
-            # Get requested page's level info from DB
-            query = 'SELECT * FROM levels ' \
-                    'WHERE riddle = :riddle AND name = :name'
-            values = {'riddle': self.riddle_alias, 'name': page['level_name']}
-            page_level = await database.fetch_one(query, values)
+        # Get requested page's level info from DB
+        query = 'SELECT * FROM levels ' \
+                'WHERE riddle = :riddle AND name = :name'
+        values = {'riddle': self.riddle_alias, 'name': page['level_name']}
+        page_level = await database.fetch_one(query, values)
 
-            # Get next level name (or first)
-            next_name = ''
-            if current_name:
-                next_name = '%02d' % (int(current_name) + 1)
-            else:
-                query = 'SELECT * FROM levels ' \
-                        'WHERE riddle = :riddle AND `index` = 1'
-                values = {'riddle': self.riddle_alias}
-                result = await database.fetch_one(query, values)
-                next_name = result['name']
+        if current_level and path == current_level['answer']:
+            # If user entered a correct and new answer, register completion
+            lh = _NormalLevelHandler(current_level, self)
+            await lh.register_completion()
             
-            # Check for normal level pages
-            if current_level and path == current_level['answer']:
-                # If user entered a correct and new answer, register completion
-                lh = _NormalLevelHandler(current_level, self)
-                await lh.register_completion()
-            if page_level['name'] == next_name and path == page_level['path']:
-                # If it's the new level's front page, register progress
-                lh = _NormalLevelHandler(page_level, self)
-                await lh.register_finding()
+        # Get next normal level name (or first)
+        index = current_level['index'] + 1 if current_name else 1
+        query = 'SELECT * FROM levels ' \
+                'WHERE riddle = :riddle ' \
+                    'AND is_secret IS FALSE AND `index` = :index'
+        values = {'riddle': self.riddle_alias, 'index': index}
+        result = await database.fetch_one(query, values)
+        next_name = result['name'] if result else ''
+        
+        if page_level['name'] == next_name and path == page_level['path']:
+            # If it's the new level's front page, register progress
+            lh = _NormalLevelHandler(page_level, self)
+            await lh.register_finding()
             
         # Check for secret level pages
         query = 'SELECT * FROM levels ' \
@@ -244,18 +241,26 @@ class _PathsHandler:
         # if not has_access():
         #     # Forbid user from accessing any level further than permitted
         #     abort(403)
+        
+        # Get new current level info from DB
+        current_name = self.riddle_account['current_level']
+        query = 'SELECT * FROM levels ' \
+                'WHERE riddle = :riddle AND name = :name'
+        values = {'riddle': self.riddle_alias, 'name': current_name}
+        current_level = await database.fetch_one(query, values)
 
         # Register into database new page access (if applicable)
-        current_name = self.riddle_account['current_level']
         if current_name and (current_name == '🏅' \
-                or not any(c.isdigit() for c in page['level_name']) \
-                or int(page['level_name']) <= int(current_name)):
+                or current_level['index'] <= page_level['index'] \
+                or page_level['is_secret']):
             tnow = datetime.utcnow()
             query = 'INSERT IGNORE INTO user_pageaccess ' \
-                    'VALUES (:riddle, :username, :disc, :level_name, :path, :time)'
+                    'VALUES (:riddle, :username, :disc, ' \
+                        ':level_name, :path, :time)'
             values = {'riddle': self.riddle_alias,
                     'username': self.username, 'disc': self.disc,
-                    'level_name': page['level_name'], 'path': path, 'time': tnow}
+                    'level_name': page['level_name'],
+                    'path': path, 'time': tnow}
             await database.execute(query, values)
 
             # Check and possibly grant an achievement
@@ -476,6 +481,14 @@ class _NormalLevelHandler(_LevelHandler):
         if completed:
             return
         
+        # Check if player was first to solve level
+        query = 'SELECT * FROM user_levelcompletion ' \
+                'WHERE riddle = :riddle AND level_name = :level_name'
+        values = {'riddle': self.riddle_alias,
+                'level_name': self.level['name']}
+        result = await database.fetch_one(query, values)
+        first_to_solve = (result is None)
+        
         # Register level completion in designated table
         time = datetime.utcnow()
         count = self.riddle_account['cur_hit_counter']
@@ -488,18 +501,22 @@ class _NormalLevelHandler(_LevelHandler):
                 'level_name': self.level['name'],
                 'time': time, 'count': count}
         await database.execute(query, values)
-        
-        # Get next level name (if any)
-        name_next = '%02d' % (int(self.level['name']) + 1)
     
         # Bot level beat procedures
         await web_ipc.request('unlock', method='beat',
                 alias=self.riddle_alias,
                 level=self.level, points=self.points,
-                name=self.username, disc=self.disc)
+                name=self.username, disc=self.disc,
+                first_to_solve=first_to_solve)
+    
+        # Get next level (if any)
+        index = self.level['index'] + 1
+        query = 'SELECT * FROM levels ' \
+                'WHERE riddle = :riddle AND `index` = :index'
+        values = {'riddle': self.riddle_alias, 'index': index}
+        next_level = await database.fetch_one(query, values)
         
-        if (self.riddle_alias == 'cipher' and name_next == '66') \
-                or (self.riddle_alias == 'rns' and name_next == '41'):
+        if not next_level:
             # Player has just completed the game :)
             query = 'UPDATE riddle_accounts ' \
                 'SET current_level = "🏅" ' \
@@ -562,6 +579,15 @@ class _SecretLevelHandler(_LevelHandler):
         if completed:
             return
         
+        # Check if player was first to solve level
+        query = 'SELECT * FROM user_secrets ' \
+                'WHERE riddle = :riddle ' \
+                    'AND username = :name AND discriminator = :disc'
+        values = {'riddle': self.riddle_alias,
+                'name': self.username, 'disc': self.disc}
+        result = await database.fetch_one(query, values)
+        first_to_solve = (result is None)
+        
         # Register level completion in designated table
         time = datetime.utcnow()
         query = 'UPDATE user_secrets ' \
@@ -578,4 +604,5 @@ class _SecretLevelHandler(_LevelHandler):
         await web_ipc.request('unlock', method='secret_solve',
                 alias=self.riddle_alias,
                 level=self.level, points=self.points,
-                name=self.username, disc=self.disc)
+                name=self.username, disc=self.disc,
+                first_to_solve=first_to_solve)

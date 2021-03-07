@@ -142,9 +142,9 @@ function addRow(event) {
   $(`button.add`).prop('disabled', true);
 
   // Get new index from current number of rows
-  var index = String($('.secret .row').length + 1);
+  var index = String($('.list:not(.secret) .row').length + 1);
   if (type == 'secret-level') {
-    index = 's' + index;
+    index = 's' + String($('.list.secret .row').length + 1);
   }  
   // Send GET request for a new row
   var url;
@@ -157,7 +157,7 @@ function addRow(event) {
   $.get(url, data, function(html) {
     // Get HTML from rendered template and append to section
     const div = $.parseHTML(html);
-    var list = $('.new');
+    var list = $('.new:not(.secret)');
     if (type == 'secret-level') {
       list = $('.secret.new');
     }
@@ -165,6 +165,7 @@ function addRow(event) {
     list.append(div);
 
     // Add listeners to new fields
+    console.log(index)
     list.on('change', `#${index}-input`, changeThumb);
     if (type == 'cheevo') {
       list.on('click', '.rank-radio', changeCheevoRank);

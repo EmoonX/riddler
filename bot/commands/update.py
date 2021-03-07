@@ -73,9 +73,9 @@ async def add(guild: discord.Guild, level: dict, is_secret=False):
 
         # Swap "winners" role for just created "reached" level role
         for member in guild.members:
-            if winners in member.roles:
-                await member.remove_roles(winners)
-                await member.add_roles(reached)
+            if '💎' in member.name:
+                # await member.remove_roles(winners)
+                # await member.add_roles(reached)
                 await update_nickname(member, '[%s]' % name)
     
     else:

@@ -21,8 +21,10 @@ class UnlockHandler:
         self.levels = levels
         self.member = member
 
-    async def beat(self, level: dict, points: int):
-        '''Send congratulations message upon level completion.'''
+    async def beat(self, level: dict, points: int, first_to_solve: bool):
+        '''Procedures upon player having beaten a level.'''
+        
+        # Send congratulations message upon level completion.
         print(('> \033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
                 'has beaten level \033[1m%s\033[0m') \
                 % (self.guild.name, self.member.name,
@@ -30,6 +32,17 @@ class UnlockHandler:
         text = '**[%s]** You solved level **%s** and won **%d** points!\n' \
                 % (self.guild.name, level['name'], points)
         await self.member.send(text)
+        
+        # Send congratulatory message to channels if first to solve level
+        if first_to_solve:
+            text = '**🏅 FIRST TO SOLVE 🏅**\n'
+            text += ('**<@!%d>** has completed level **%s**! ' \
+                    'Congratulations!') % (self.member.id, level['name'])
+            channel = get(self.guild.channels, name=level['discord_name'])
+            await channel.send(text)
+            cheevos = get(self.guild.channels, name='achievements')
+            await cheevos.send(text)
+            
 
     async def advance(self, level: dict):
         '''Advance to further level when player arrives at a level front page.
@@ -73,7 +86,8 @@ class UnlockHandler:
                 % (self.guild.name, level['name'])
         await self.member.send(text)
 
-    async def secret_solve(self, level: dict, points: int):
+    async def secret_solve(self, level: dict, points: int,
+            first_to_solve=False):
         '''Solve secret level and grant special colored role.'''
         
         # Get roles from guild
@@ -99,7 +113,6 @@ class UnlockHandler:
         
         # Send congratulations message to channel (and cheevos one) :)
         channel = get(self.guild.channels, name=name)
-        first_to_solve = (len(solved.members) == 1)
         text = ''
         if first_to_solve:
             text = '**🏅 FIRST TO SOLVE 🏅**\n'
@@ -133,8 +146,8 @@ class UnlockHandler:
 
         # Add flashy "winners" role
         # winners = get(self.guild.roles, name='winners')
-        winners = get(self.guild.roles, name='reached-level-0')
-        await self.member.add_roles(winners)
+        # winners = get(self.guild.roles, name='reached-level-0')
+        # await self.member.add_roles(winners)
 
         # Update nickname with winner's badge
         await update_nickname(self.member, '💎')
