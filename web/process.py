@@ -248,7 +248,7 @@ class _PathsHandler:
         # Register into database new page access (if applicable)
         current_name = self.riddle_account['current_level']
         if current_name and (current_name == '🏅' \
-                or page['level_name'].isalpha() \
+                or not any(c.isdigit() for c in page['level_name']) \
                 or int(page['level_name']) <= int(current_name)):
             tnow = datetime.utcnow()
             query = 'INSERT IGNORE INTO user_pageaccess ' \
