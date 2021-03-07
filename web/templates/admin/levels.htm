@@ -16,10 +16,10 @@
           {% include 'admin/level-row.htm' %}
         {% endfor %}
         </section>
-        <hr>
         <section class="list levels admin new">
           <!-- New level rows go here -->
         </section>
+        <button type="button" class="add" name="add-level">➕ Add level</button>
         <hr>
         <h2>Secret Levels</h2>
         <section class="list levels secret admin">
@@ -29,14 +29,13 @@
           {% include 'admin/level-row.htm' %}
         {% endfor %}
         </section>
-        <hr>
         <section class="list levels secret admin new">
           <!-- New secret level rows go here -->
         </section>
+        <button type="button" class="add" name="add-secret-level">➕ Add secret level</button>
         <div class='buttons'>
           <input type="file" name="pages" accept="text/plain" style="display:none">
           <button type="button" name="upload-pages">📁 Upload pages</button>
-          <button type="button" class="add" name="add-secret-level">➕ Add secret level</button>
           <button type="submit">📝 Submit changes</button>
         </div>
         <div class="msg">{{ msg }}</div>

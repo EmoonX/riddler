@@ -35,7 +35,7 @@ async def levels(alias: str):
     
     # Get initial level data from database
     levels_before = await _fetch_levels(alias)
-    secrets_before = await _fetch_levels(alias, secret=True)
+    secrets_before = await _fetch_levels(alias, is_secret=True)
 
     # Render page normally on GET
     if request.method == 'GET':
@@ -48,13 +48,17 @@ async def levels(alias: str):
     secrets_after = {}
     for name, value in form.items():
         i = name.find('-')
+        if i == -1:
+            continue
         index, attr = name[:i], name[(i+1):]
-        if 's' in index:
+        if 's' not in index:
+            index = int(index)
             if index not in levels_after:
                 levels_after[index] = {}
             levels_after[index][attr] = value
         else:
-            if index not in levels_after:
+            index = int(index[1:])
+            if index not in secrets_after:
                 secrets_after[index] = {}
             secrets_after[index][attr] = value
     
@@ -63,7 +67,8 @@ async def levels(alias: str):
     result = await database.fetch_one(query, {'alias': alias})
     full_name = result['full_name']
     
-    async def _update_levels(levels_before: dict, levels_after: dict):
+    async def _update_levels(levels_before: dict,
+            levels_after: dict, is_secret=False):
         '''Update new/changed levels both on DB and guild.'''
         
         # Check and update existing levels
@@ -108,7 +113,15 @@ async def levels(alias: str):
         if len(levels_after) > len(levels_before):
             levels = []
             for i in range(len(levels_before) + 1, len(levels_after) + 1):
-                index = 's%d' % i
+                index = str(i) if not is_secret else 's%d' % i
+                
+                if not is_secret:
+                    # Point previous level to new one as next in progression
+                    query = 'UPDATE levels ' \
+                            'SET `next_level` = :name ' \
+                            'WHERE `index` = :index - 1'
+                    await database.execute(query, {'index': index})
+                
                 # Insert new level data on database
                 query = 'INSERT INTO levels ' \
                         '(riddle, is_secret, level_set, `index`, `name`, ' \
@@ -117,13 +130,15 @@ async def levels(alias: str):
                         '(:riddle, :is_secret, :set, :index, ' \
                             ':name, :path, :image, :answer, :rank, ' \
                             ':discord_category, :discord_name)'
-                values = {'riddle': alias, 'set': 'Normal Levels',
+                values = {'riddle': alias, 'is_secret': is_secret,
+                        'set': form['%s-discord_category' % index],
                         'index': i, 'name': form['%s-name' % index],
                         'path': form['%s-path' % index],
                         'image': form['%s-image' % index],
                         'answer': form['%s-answer' % index],
                         'rank': form['%s-rank' % index],
-                        'discord_category': 'Normal Levels',
+                        'discord_category': \
+                            form['%s-discord_category' % index],
                         'discord_name': form['%s-discord_name' % index]}
                 await database.execute(query, values)
             
@@ -133,7 +148,7 @@ async def levels(alias: str):
                 await save_image('thumbs', alias, filename, imgdata)
                 
                 # Append values to new levels list for Discord IPC
-                values['is_secret'] = 0
+                values['is_secret'] = is_secret
                 levels.append(values)
 
             # Update Discord guild channels and roles with new levels info
@@ -141,7 +156,7 @@ async def levels(alias: str):
         
         # Update pages data to changed or new levels
         for i in range(1, len(levels_after) + 1):
-            index = 's%d' % i
+            index = str(i) if not is_secret else 's%d' % i
             aux = form['%s-pages' % index]
             if not aux:
                 continue
@@ -154,21 +169,22 @@ async def levels(alias: str):
             await database.execute(query, vals)
     
     # Update both normal and secret levels
-    _update_levels(levels_before, levels_after)
-    _update_levels(secrets_before, secrets_after)
+    await _update_levels(levels_before, levels_after)
+    await _update_levels(secrets_before, secrets_after, is_secret=True)
     
     # Fetch levels again to display page correctly on POST
     levels = await _fetch_levels(alias)
-    secret_levels = await _fetch_levels(alias, secret=True)
+    secret_levels = await _fetch_levels(alias, is_secret=True)
 
-    return await r([], levels.values(), 'Guild info updated successfully!')
+    return await r(levels.values(),
+            secret_levels.values(), 'Guild info updated successfully!')
 
 
-async def _fetch_levels(alias: str, secret=False):
+async def _fetch_levels(alias: str, is_secret=False):
     '''Fetch guild levels info from database.'''
     query = 'SELECT * FROM levels ' \
             'WHERE riddle = :riddle AND is_secret = :is_secret'
-    values = {'riddle': alias, 'is_secret': secret}
+    values = {'riddle': alias, 'is_secret': is_secret}
     result = await database.fetch_all(query, values)
     levels = {level['index']: dict(level) for level in result}
     return levels

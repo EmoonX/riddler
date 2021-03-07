@@ -142,8 +142,10 @@ function addRow(event) {
   $(`button.add`).prop('disabled', true);
 
   // Get new index from current number of rows
-  const index = 's' + String($('.secret .row').length + 1);
-  
+  var index = String($('.secret .row').length + 1);
+  if (type == 'secret-level') {
+    index = 's' + index;
+  }  
   // Send GET request for a new row
   var url;
   if (type != 'secret-level') {
