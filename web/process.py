@@ -251,7 +251,7 @@ class _PathsHandler:
 
         # Register into database new page access (if applicable)
         if current_name and (current_name == '🏅' \
-                or current_level['index'] <= page_level['index'] \
+                or page_level['index'] <= current_level['index'] \
                 or page_level['is_secret']):
             tnow = datetime.utcnow()
             query = 'INSERT IGNORE INTO user_pageaccess ' \
