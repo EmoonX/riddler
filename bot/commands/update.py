@@ -31,7 +31,7 @@ async def insert(data):
             await member.send(text)
 
 
-async def add(guild: discord.Guild, level: dict, is_secret=False):
+async def add(guild: discord.Guild, level: dict):
     '''Add guild channels and roles.'''
     
     # Create channel which defaults to no read permission
@@ -55,7 +55,7 @@ async def add(guild: discord.Guild, level: dict, is_secret=False):
         reached = await guild.create_role(name=role_name, color=color)  
 
     riddle = get(riddles.values(), guild=guild)
-    winners = get(guild.roles, name='winners')
+    winners = get(guild.roles, name='riddler-winners')
     if not level['is_secret']:
         # Set read permission to current roles for 
         # this channel and every other level channel before it
@@ -74,8 +74,8 @@ async def add(guild: discord.Guild, level: dict, is_secret=False):
         # Swap "winners" role for just created "reached" level role
         for member in guild.members:
             if '💎' in member.name:
-                # await member.remove_roles(winners)
-                # await member.add_roles(reached)
+                await member.remove_roles(winners)
+                await member.add_roles(reached)
                 await update_nickname(member, '[%s]' % name)
     
     else:

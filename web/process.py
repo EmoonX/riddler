@@ -204,7 +204,7 @@ class _PathsHandler:
         page_level = await database.fetch_one(query, values)
             
         # Get next normal level name (or first)
-        index = current_level['index'] + 1 if current_name else 1
+        index = current_level['index'] + 1 if current_level else 1
         query = 'SELECT * FROM levels ' \
                 'WHERE riddle = :riddle ' \
                     'AND is_secret IS FALSE AND `index` = :index'

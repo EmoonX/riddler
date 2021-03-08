@@ -1,3 +1,5 @@
+import logging
+
 from discord import Guild, Member
 from discord.utils import get
 
@@ -54,8 +56,9 @@ class UnlockHandler:
             name = level['name']
         for role in self.member.roles:
             if 'reached-' in role.name:
-                old_level = role.name.replace('reached-', '')
-                if old_level in self.levels:
+                old_name = role.name.replace('reached-', '')
+                old_level = get(self.levels.values(), discord_name=old_name)
+                if old_level:
                     await self.member.remove_roles(role)
                     break
 
@@ -139,15 +142,16 @@ class UnlockHandler:
 
         # Remove last level's "reached" role
         for role in self.member.roles:
-            name = role.name.replace('reached-', '')
-            if name in self.levels:
+            old_name = role.name.replace('reached-', '')
+            old_level = get(self.levels.values(), discord_name=old_name)
+            if old_level:
                 await self.member.remove_roles(role)
                 break
 
         # Add flashy "winners" role
-        # winners = get(self.guild.roles, name='winners')
+        winners = get(self.guild.roles, name='riddler-winners')
         # winners = get(self.guild.roles, name='reached-level-0')
-        # await self.member.add_roles(winners)
+        await self.member.add_roles(winners)
 
         # Update nickname with winner's badge
         await update_nickname(self.member, '💎')
