@@ -61,15 +61,12 @@ async def riddle_list(alias: str):
     riddle['icon_url'] = url
     
     # Get players data from database
-    query = 'SELECT * FROM (' \
-                '(SELECT *, 1 as filter FROM riddle_accounts ' \
-                    'WHERE riddle = :riddle AND current_level = "🏅" ' \
-                    'ORDER BY score DESC LIMIT 1000) ' \
-                'UNION ALL (SELECT *, 2 as filter FROM riddle_accounts ' \
-                    'WHERE riddle = :riddle AND current_level != "🏅" ' \
-                    'ORDER BY current_level DESC, score DESC LIMIT 1000) ' \
-            ') AS result ' \
-            'ORDER BY filter'
+    query = 'SELECT * FROM riddle_accounts ' \
+            'INNER JOIN levels ' \
+                'ON current_level = levels.name ' \
+            'WHERE riddle_accounts.riddle = :riddle ' \
+                'AND levels.riddle = :riddle ' \
+            'ORDER BY `index` DESC, score DESC LIMIT 1000 '
     result = await database.fetch_all(query, {'riddle': alias})
     accounts = [dict(account) for account in result]
 
@@ -83,7 +80,7 @@ async def riddle_list(alias: str):
         account['country'] = result['country']
         query = 'SELECT riddle, username, discriminator, ' \
                     'COUNT(*) AS page_count ' \
-                    'FROM user_pageaccess ' \
+                'FROM user_pageaccess ' \
                 'WHERE riddle = :riddle ' \
                     'AND username = :name AND discriminator = :disc ' \
                 'GROUP BY riddle, username, discriminator'
