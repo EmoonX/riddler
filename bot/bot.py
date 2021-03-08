@@ -1,8 +1,7 @@
-from typing import DefaultDict
-
 from discord import Intents
 from discord.ext import commands
 from discord.ext.ipc import Server
+from discord_slash import SlashCommand
 
 
 class Bot(commands.Bot):
@@ -10,6 +9,9 @@ class Bot(commands.Bot):
 
     ipc: Server
     '''Bot server for inter-process communication with Quart'''
+    
+    slash: SlashCommand
+    '''Slash Commands object for dealing with special "/" commands'''
 
     def __init__(self):
         '''Build default bot with "!" prefix and member intents.'''
@@ -17,7 +19,13 @@ class Bot(commands.Bot):
         # Bot building
         intents = Intents.default()
         intents.members = True
-        super().__init__(command_prefix='!', intents=intents)
+        super().__init__(command_prefix='/', intents=intents)
+        
+        # Init Slash Commands object
+        self.slash = SlashCommand(self, override_type=True)
+        
+        # Load commands extensions
+        # self.load_extension('decipher')
         
         # Start IPC server
         self.ipc = Server(self, secret_key='RASPUTIN')

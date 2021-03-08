@@ -1,4 +1,5 @@
 from discord.ext import commands
+from discord_slash import cog_ext, SlashContext
 
 
 class Extra(commands.Cog):
@@ -7,10 +8,13 @@ class Extra(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
    
-    @commands.command()
-    async def ping(self, ctx):
-        '''Ping-pong.'''
-        await ctx.send('pong')
+    @cog_ext.cog_slash(name='ping')
+    async def ping(self, ctx: SlashContext):
+        '''Ping-pong with measurable latency.'''
+        latency = 1000 * self.bot.latency
+        await ctx.respond()
+        await ctx.send('Pong! (%dms)' % latency)
+
 
     @commands.command()
     async def balthify(self, ctx):
