@@ -57,7 +57,11 @@ class UnlockHandler:
         for role in self.member.roles:
             if 'reached-' in role.name:
                 old_name = role.name.replace('reached-', '')
-                old_level = get(self.levels.values(), discord_name=old_name)
+                old_level = None
+                for level in self.levels.values():
+                    if level['discord_name'] == old_name:
+                        old_level = level
+                        break
                 if old_level:
                     await self.member.remove_roles(role)
                     break
@@ -142,8 +146,14 @@ class UnlockHandler:
 
         # Remove last level's "reached" role
         for role in self.member.roles:
+            if not 'reached-' in role.name:
+                continue
             old_name = role.name.replace('reached-', '')
-            old_level = get(self.levels.values(), discord_name=old_name)
+            old_level = None
+            for level in self.levels.values():
+                if level['discord_name'] == old_name:
+                    old_level = level
+                    break
             if old_level:
                 await self.member.remove_roles(role)
                 break
