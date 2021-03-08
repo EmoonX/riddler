@@ -61,11 +61,19 @@ async def riddle_list(alias: str):
     riddle['icon_url'] = url
     
     # Get players data from database
-    query = 'SELECT * FROM riddle_accounts ' \
-            'INNER JOIN levels ' \
+    query = 'SELECT * FROM (' \
+            '(SELECT *, "dummy" AS `index`, ' \
+                    '2 AS filter FROM riddle_accounts ' \
+                'WHERE riddle_accounts.riddle = :riddle ' \
+                    'AND current_level = "🏅") ' \
+            'UNION ALL ' \
+            '(SELECT riddle_accounts.*, levels.`index`, ' \
+                    '1 AS filter FROM riddle_accounts ' \
+                'INNER JOIN levels ' \
                 'ON current_level = levels.name ' \
-            'WHERE riddle_accounts.riddle = :riddle ' \
-                'AND levels.riddle = :riddle ' \
+                'WHERE riddle_accounts.riddle = :riddle ' \
+                    'AND levels.riddle = :riddle )' \
+            ') AS result ' \
             'ORDER BY `index` DESC, score DESC LIMIT 1000 '
     result = await database.fetch_all(query, {'riddle': alias})
     accounts = [dict(account) for account in result]
