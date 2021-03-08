@@ -16,8 +16,6 @@ async def insert(data):
         text = '**[%s]** Processing level **%s**...' \
                  % (guild.name, level['name'])
         for member in guild.members:
-            if member.name == 'NinthLyfe':
-                continue
             if member.guild_permissions.administrator and not member.bot:
                 await member.send(text)
         await add(guild, level)
@@ -25,8 +23,6 @@ async def insert(data):
     # Send success message to guild admins
     text = '**[%s]** Channel and roles building complete :)' % guild.name
     for member in guild.members:
-        if member.name == 'NinthLyfe':
-            continue
         if member.guild_permissions.administrator and not member.bot:
             await member.send(text)
 
@@ -56,27 +52,28 @@ async def add(guild: discord.Guild, level: dict):
 
     riddle = get(riddles.values(), guild=guild)
     winners = get(guild.roles, name='riddler-winners')
+    riddler = get(guild.roles, name='Riddler')
     if not level['is_secret']:
         # Set read permission to current roles for 
         # this channel and every other level channel before it
         for channel in guild.channels:
-            role_name = 'reached-%s' % channel.name
-            level_role = get(guild.roles, name=role_name)
-            if level_role:
+            other_level = get(riddle.levels.values(), discord_name=channel.name)
+            if other_level and other_level['index'] <= level['index']:
                 await channel.set_permissions(reached, read_messages=True)
         
-        # Set read permission for @winners too
+        # Set read permission for @winners and @Riddler roles too
         await channel.set_permissions(winners, read_messages=True)
+        await channel.set_permissions(riddler, read_messages=True)
 
         # Add new level immediately to riddle's level list
         riddle.levels[name] = level
 
         # Swap "winners" role for just created "reached" level role
         for member in guild.members:
-            if '💎' in member.name:
+            if member.nick and '💎' in member.nick:
                 await member.remove_roles(winners)
                 await member.add_roles(reached)
-                await update_nickname(member, '[%s]' % name)
+                await update_nickname(member, '[%s]' % level['name'])
     
     else:
         # Create "solved" secret level role

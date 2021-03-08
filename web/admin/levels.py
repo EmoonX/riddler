@@ -111,6 +111,15 @@ async def levels(alias: str):
         
         # Add new levels, if any
         if len(levels_after) > len(levels_before):
+            if not is_secret:
+                # Swap winners current level (medal) for last old level
+                index = len(levels_before)
+                query = 'UPDATE riddle_accounts ' \
+                        'SET current_level = :level ' \
+                        'WHERE riddle = :riddle AND current_level = "🏅"'
+                values = {'riddle': alias, 'level': form['%s-name' % index]}
+                await database.execute(query, values)
+            
             levels = []
             for i in range(len(levels_before) + 1, len(levels_after) + 1):
                 index = str(i) if not is_secret else 's%d' % i

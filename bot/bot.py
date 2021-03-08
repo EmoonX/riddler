@@ -22,7 +22,7 @@ class Bot(commands.Bot):
         super().__init__(command_prefix='/', intents=intents)
         
         # Init Slash Commands object
-        self.slash = SlashCommand(self, override_type=True,)
+        self.slash = SlashCommand(self, override_type=True)
         
         # Load commands extensions
         # self.load_extension('decipher')
