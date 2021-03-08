@@ -68,12 +68,16 @@ async def add(guild: discord.Guild, level: dict):
         # Add new level immediately to riddle's level list
         riddle.levels[name] = level
 
-        # Swap "winners" role for just created "reached" level role
+        # Swap "winners" role for last "reached" level role
+        last_index = level['index'] - 1
+        last_level = get(riddle.levels.values(), index=last_index)
+        last_name = 'reached-' + last_level['discord_name']
+        last_reached = get(guild.roles, name=last_name)
         for member in guild.members:
             if member.nick and '💎' in member.nick:
                 await member.remove_roles(winners)
-                await member.add_roles(reached)
-                await update_nickname(member, '[%s]' % level['name'])
+                await member.add_roles(last_reached)
+                await update_nickname(member, '[%s]' % last_level['name'])
     
     else:
         # Create "solved" secret level role

@@ -512,7 +512,8 @@ class _NormalLevelHandler(_LevelHandler):
         # Get next level (if any)
         index = self.level['index'] + 1
         query = 'SELECT * FROM levels ' \
-                'WHERE riddle = :riddle AND `index` = :index'
+                'WHERE riddle = :riddle ' \
+                    'AND is_secret IS FALSE AND `index` = :index'
         values = {'riddle': self.riddle_alias, 'index': index}
         next_level = await database.fetch_one(query, values)
         

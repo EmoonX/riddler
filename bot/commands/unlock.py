@@ -150,7 +150,6 @@ class UnlockHandler:
 
         # Add flashy "winners" role
         winners = get(self.guild.roles, name='riddler-winners')
-        # winners = get(self.guild.roles, name='reached-level-0')
         await self.member.add_roles(winners)
 
         # Update nickname with winner's badge

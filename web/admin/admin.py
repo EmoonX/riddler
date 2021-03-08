@@ -100,6 +100,45 @@ async def update_scores(alias: str):
         await database.execute(query, new_values)
     
     return 'SUCCESS :)', 200
+
+
+@admin.route('/admin/<alias>/update-ratings', methods=['GET'])
+@requires_authorization
+async def update_ratings(alias: str):
+    '''Úpdates riddle level ratings upon admin request.'''    
+    
+    # Check for admin permissions
+    msg, status = await auth(alias)
+    if status != 200:
+        return msg, status
+    
+    # Iterate over levels
+    query = 'SELECT * FROM levels ' \
+            'WHERE riddle = :riddle'
+    levels = await database.fetch_all(query, {'riddle': alias})
+    for level in levels:
+        # Get total number of votes and their average from DB
+        count, average = 0, None
+        table = 'user_levelcompletion' if not level['is_secret'] \
+                else 'user_secrets'
+        query = ('SELECT COUNT(rating_given) AS count, ' \
+                    'AVG(rating_given) AS average ') + \
+                    ('FROM %s ' % table) + \
+                ('WHERE riddle = :riddle AND level_name = :name ' \
+                'GROUP BY riddle, level_name')
+        values = {'riddle': alias, 'name': level['name']}
+        result = await database.fetch_one(query, values)
+        if result:
+            count, average = result['count'], result['average']
+        
+        # Update count and average on levels table
+        query = 'UPDATE levels ' \
+                'SET rating_count = :count, rating_avg = :average ' \
+                'WHERE riddle = :riddle AND name = :name'
+        values = {'count': count, 'average': average, **values}
+        await database.execute(query, values)
+    
+    return 'SUCCESS :)', 200
     
     
 async def save_image(folder: str, alias: str,
