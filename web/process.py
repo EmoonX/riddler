@@ -176,6 +176,18 @@ class _PathsHandler:
         if is_page:
             await self._update_counters()
 
+        # Get current level info from DB
+        current_name = self.riddle_account['current_level']
+        query = 'SELECT * FROM levels ' \
+                'WHERE riddle = :riddle AND name = :name'
+        values = {'riddle': self.riddle_alias, 'name': current_name}
+        current_level = await database.fetch_one(query, values)
+
+        if current_level and path == current_level['answer']:
+            # If user entered a correct and new answer, register completion
+            lh = _NormalLevelHandler(current_level, self)
+            await lh.register_completion()
+        
         # Check if path corresponds to a valid page (non 404)
         query = 'SELECT * FROM level_pages ' \
                 'WHERE riddle = :riddle AND path = :path'
@@ -184,24 +196,12 @@ class _PathsHandler:
         if not page or not page['level_name']:
             # Page not found!
             return
-
-        # Get current level info from DB
-        current_name = self.riddle_account['current_level']
-        query = 'SELECT * FROM levels ' \
-                'WHERE riddle = :riddle AND name = :name'
-        values = {'riddle': self.riddle_alias, 'name': current_name}
-        current_level = await database.fetch_one(query, values)
-
+        
         # Get requested page's level info from DB
         query = 'SELECT * FROM levels ' \
                 'WHERE riddle = :riddle AND name = :name'
         values = {'riddle': self.riddle_alias, 'name': page['level_name']}
         page_level = await database.fetch_one(query, values)
-
-        if current_level and path == current_level['answer']:
-            # If user entered a correct and new answer, register completion
-            lh = _NormalLevelHandler(current_level, self)
-            await lh.register_completion()
             
         # Get next normal level name (or first)
         index = current_level['index'] + 1 if current_name else 1
