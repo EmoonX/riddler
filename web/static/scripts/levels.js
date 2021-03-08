@@ -1,5 +1,5 @@
 import {
-  setPages, toggleExplorer, changeDir, folderUp
+  changeDir
 }
   from './explorer.js';
 
@@ -45,13 +45,6 @@ function doubleClickIcon() {
 }
 
 $(_ => {
-  // Get JS object data converted from Python dict
-  const aux = location.href.split('/');
-  aux.push('get-pages');
-  const url = aux.join('/');
-  $.get(url, data => {
-    setPages(data);    
-  });
   // Listen to page explorer clicks
   $('.levels').on('click', '.page-explorer figure', clickIcon);
   $('.levels').on('dblclick', '.page-explorer figure', doubleClickIcon);

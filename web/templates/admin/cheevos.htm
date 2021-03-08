@@ -1,13 +1,13 @@
 {% extends 'layout.htm' %}
 {% block title %}🔑 {{ alias }} | Achievements{% endblock %}
 {% block extra %}
-<script src="/static/scripts/admin.js"></script>
+<script type="module" src="/static/scripts/admin/admin.js"></script>
 {% endblock %}
 {% block content %}
     <main>
       <h1>Achievements</h1>
       <form method="post">
-        <section class="admin">
+        <section class="list cheevos admin">
       {% for rank in cheevos|reverse %}
         {% for cheevo in cheevos[rank] %}
           {% set index = cheevo['index'] %}
@@ -17,7 +17,7 @@
       {% endfor %}
         </section>
         <hr>
-        <section class="admin new">
+        <section class="list cheevos admin new">
           <!-- New cheevo rows go here -->
         </section>
         <div class='buttons'>

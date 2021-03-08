@@ -9,7 +9,7 @@ from util.db import database
 admin_cheevos = Blueprint('admin_cheevos', __name__)
 
 
-@admin_cheevos.route('/admin/<alias>/cheevos/', methods=['GET', 'POST'])
+@admin_cheevos.route('/admin/<alias>/cheevos', methods=['GET', 'POST'])
 @requires_authorization
 async def cheevos(alias: str):
     '''Riddle cheevos management.'''
@@ -107,7 +107,7 @@ async def cheevos(alias: str):
     return await r('Guild info updated successfully!')
 
 
-@admin_cheevos.route('/admin/cheevo-row/', methods=['GET'])
+@admin_cheevos.route('/admin/cheevo-row', methods=['GET'])
 async def cheevo_row():
     '''Çheevo row HTML code to be fetched by JS script.'''
     return await render_template('admin/cheevo-row.htm',

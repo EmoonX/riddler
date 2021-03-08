@@ -8,6 +8,12 @@ class Decipher(commands.Cog):
     
     def __init__(self, bot):
         self.bot = bot
+        
+    @cog_ext.cog_slash(name='bintoascii')
+    async def bintoascii(self, ctx: SlashContext):
+        '''Convert binary string(s) to ASCII character representation.'''
+        pass
+
 
 
 def setup(bot: commands.Bot):

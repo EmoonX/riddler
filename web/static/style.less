@@ -1118,16 +1118,6 @@ section.list.levels > .page-explorer {
   }
 }
 
-section.list.levels.admin > .page-explorer {
-  & > .files figure.show:not(.current):not(.active) {
-    opacity: 0.3;
-
-    &:hover {
-      opacity: 1;
-    }
-  }
-}
-
 /* ------------------------------------------------------------------------- */
 /* -- [ADMIN] Level lists -- */
 
@@ -1143,6 +1133,16 @@ section.list.levels.admin > .row {
       border: thin solid rgba(255, 255, 221, 0.5);
       border-radius: 5px;
       box-shadow: 0 0 0.5em rgba(255, 255, 221, 0.5);
+    }
+  }
+}
+
+section.list.levels.admin > .page-explorer {
+  & > .files figure.show:not(.current):not(.active) {
+    opacity: 0.3;
+
+    &:hover {
+      opacity: 1;
     }
   }
 }

@@ -158,6 +158,14 @@ export function folderUp() {
 }
 
 $(_ => {
+  // Get JS object data converted from Python dict
+  const aux = location.href.split('/');
+  aux.push('get-pages');
+  const url = aux.join('/');
+  $.get(url, data => {
+    setPages(data);    
+  });
+
   // Dinamically register events for (current or new) explorer actions
   $('.levels').on('click', '.row .menu-button', toggleExplorer);
   $('.levels').on('click', '.page-explorer .folder-up', folderUp);
