@@ -58,9 +58,9 @@ class UnlockHandler:
             if 'reached-' in role.name:
                 old_name = role.name.replace('reached-', '')
                 old_level = None
-                for level in self.levels.values():
-                    if level['discord_name'] == old_name:
-                        old_level = level
+                for other in self.levels.values():
+                    if other['discord_name'] == old_name:
+                        old_level = other
                         break
                 if old_level:
                     await self.member.remove_roles(role)

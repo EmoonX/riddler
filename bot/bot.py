@@ -24,17 +24,9 @@ class Bot(commands.Bot):
         # Init Slash Commands object
         self.slash = SlashCommand(self, override_type=True)
         
-        # Load commands extensions
-        # self.load_extension('decipher')
-        
         # Start IPC server
         self.ipc = Server(self, secret_key='RASPUTIN')
         self.ipc.start()
-
-    async def on_ipc_error(self, endpoint: str, error):
-        '''Called upon error being raised within an IPC route.'''
-        print('[ERROR]', endpoint, 'raised', error)
-
 
 # Global bot object to be used on other modules
 bot: commands.Bot = Bot()

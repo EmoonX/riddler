@@ -1,3 +1,6 @@
+import traceback
+import logging
+
 from discord.utils import get
 
 from bot import bot
@@ -50,8 +53,13 @@ async def unlock(data):
         args = (data.cheevo, data.points)
 
     # Call unlocking method by name with correct number of args
-    method = getattr(uh, data.method)
-    await method(*args)
+    try:
+        method = getattr(uh, data.method)
+        await method(*args)
+    except:
+        # Print glorious (and much needed) traceback info
+        tb = traceback.format_exc()
+        logging.error(tb)
 
 
 def setup(_):

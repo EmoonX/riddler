@@ -62,7 +62,7 @@ async def riddle_list(alias: str):
     
     # Get players data from database
     query = 'SELECT * FROM (' \
-            '(SELECT *, "dummy" AS `index`, ' \
+            '(SELECT *, 999999 AS `index`, ' \
                     '2 AS filter FROM riddle_accounts ' \
                 'WHERE riddle_accounts.riddle = :riddle ' \
                     'AND current_level = "🏅") ' \
@@ -72,7 +72,7 @@ async def riddle_list(alias: str):
                 'INNER JOIN levels ' \
                 'ON current_level = levels.name ' \
                 'WHERE riddle_accounts.riddle = :riddle ' \
-                    'AND levels.riddle = :riddle )' \
+                    'AND levels.riddle = :riddle) ' \
             ') AS result ' \
             'ORDER BY `index` DESC, score DESC LIMIT 1000 '
     result = await database.fetch_all(query, {'riddle': alias})
