@@ -16,7 +16,7 @@ load_dotenv(verbose=True)
 logging.basicConfig(level=logging.INFO)
 
 from bot import bot
-from riddle import build_riddles
+from riddle import build_riddles, riddles
 
 
 @bot.event
@@ -33,14 +33,11 @@ async def on_ready():
     await build_riddles()
     
     # guild = get(bot.guilds, name='RNS Riddle')
-    # bobot = get(guild.roles, name='Riddler')
-    # for channel in guild.channels:
-    #     try:
-    #         await channel.set_permissions(bobot, read_messages=True)
-    #         print(channel)
-    #     except:
-    #         pass
-
+    # winners = get(guild.roles, name='riddler-winners')
+    # for level in riddles['rns'].levels.values():
+    #     channel = get(guild.channels, name=level['discord_name'])
+    #     logging.warning(channel.name)
+    #     await channel.set_permissions(winners, read_messages=True)
 
 if __name__ == '__main__':
     # Start bot with secret token

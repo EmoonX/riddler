@@ -204,18 +204,19 @@ class _PathsHandler:
         page_level = await database.fetch_one(query, values)
             
         # Get next normal level name (or first)
-        index = current_level['index'] + 1 if current_level else 1
-        query = 'SELECT * FROM levels ' \
-                'WHERE riddle = :riddle ' \
-                    'AND is_secret IS FALSE AND `index` = :index'
-        values = {'riddle': self.riddle_alias, 'index': index}
-        result = await database.fetch_one(query, values)
-        next_name = result['name'] if result else ''
+        if current_name != '🏅':
+            index = current_level['index'] + 1 if current_level else 1
+            query = 'SELECT * FROM levels ' \
+                    'WHERE riddle = :riddle ' \
+                        'AND is_secret IS FALSE AND `index` = :index'
+            values = {'riddle': self.riddle_alias, 'index': index}
+            result = await database.fetch_one(query, values)
+            next_name = result['name'] if result else ''
         
-        if page_level['name'] == next_name and path == page_level['path']:
-            # If it's the new level's front page, register progress
-            lh = _NormalLevelHandler(page_level, self)
-            await lh.register_finding()
+            if page_level['name'] == next_name and path == page_level['path']:
+                # If it's the new level's front page, register progress
+                lh = _NormalLevelHandler(page_level, self)
+                await lh.register_finding()
             
         # Check for secret level pages
         query = 'SELECT * FROM levels ' \
