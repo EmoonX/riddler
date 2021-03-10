@@ -1,20 +1,9 @@
 {
   "manifest_version": 2,
   "name": "Riddler",
-  "version": "0.1.1",
+  "version": "0.1.2",
 
   "description": "Browser extension for the Riddler system.",
-
-  "content_scripts": [
-    {
-      "matches": [
-        "*://*.gamemastertips.com/*",
-        "*://*.rnsriddle.com/*"
-      ],
-      "js": ["content.js"],
-      "run_at": "document_end"
-    }
-  ],
 
   "background": {
     "scripts": ["background.js"]
@@ -25,7 +14,10 @@
   },
 
   "permissions": [
+    "webRequest",
     "cookies",
-    "*://riddler.emoon.dev/*"
+    "*://riddler.emoon.dev/*",
+    "*://*.rnsriddle.com/*",
+    "*://*.gamemastertips.com/*"
   ]
 }

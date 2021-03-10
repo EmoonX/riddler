@@ -1,21 +1,50 @@
-chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
-    if (request.action == "getCookies") {
-      // Return cookie from given URL and name
-      const details = {
-        url: request.url,
-        name: request.cookieName
-      };
-      // Get cookie from browser storage
-      chrome.cookies.get(details, cookie => {
-        // Send response back to content
-        sendResponse({
-          name: request.cookieName,
-          value: cookie && cookie.value
-        });
-      });
-      // Obligatory return for async event handler
-      return true;
-    }
-  }
-);
+function sendToServer(url) {
+  // URL to where request will be sent to
+  const SERVER_URL = 'https://riddler.emoon.dev';
+
+  // Get session cookie from browser storage
+  const details = {
+    url: SERVER_URL,
+    name: 'session'
+  };
+  chrome.cookies.get(details, cookie => {
+    // Request parameters
+    const params = {
+      method: 'POST',
+      mode: 'cors',
+      credentials: 'include',
+      headers: {
+        'Content-Type': 'text/uri-list',
+        'Cookie': cookie.name + '=' + cookie.value
+      },
+      body: url
+    };
+    // Send request to server containing URL text
+    const url_to = SERVER_URL + '/process';
+    fetch(url_to, params)
+      .then(res => {
+        console.log(res);
+        if (res.status == 401) {
+          // Unauthorized, so open Discord auth page on new tab
+          const url_login = SERVER_URL + '/login';
+          window.open(url_login,'_blank');
+        }
+      })
+      .then(error => {console.log(error)})
+    ;
+  });
+}
+
+const filter = {
+  urls: [
+    '*://*.rnsriddle.com/*',
+    '*://*.gamemastertips.com/*'
+  ]
+};
+
+chrome.webRequest.onHeadersReceived.addListener(function (details) {
+  console.log(details.url, details.statusCode);
+  if (details.statusCode == 200) { 
+    sendToServer(details.url);
+  }  
+}, filter);

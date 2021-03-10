@@ -58,23 +58,21 @@ async def add(guild: discord.Guild, level: dict):
     if not level['is_secret']:
         # Set read permission to current roles for 
         # this channel and every other level channel before it
-        # for channel in guild.channels:
-        #     other_level = get(riddle.levels.values(), discord_name=channel.name)
-        #     logging.warning(other_level)
-        #     if other_level and other_level['index'] <= level['index']:
-        #         await channel.set_permissions(reached, read_messages=True)
+        for channel in guild.channels:
+            other_level = None
+            for other in riddle.levels.values():
+                if other['discord_name'] == channel.name:
+                    other_level = other
+                    break
+            if other_level and other_level['index'] <= level['index']:
+                await channel.set_permissions(reached, read_messages=True)
         
         # Set read permission for @winners and @Riddler roles too
-        logging.warning('1')
         await channel.set_permissions(winners, read_messages=True)
-        logging.warning('2')
         await channel.set_permissions(riddler, read_messages=True)
-        logging.warning('3')
-
+        
         # Add new level immediately to riddle's level list
-        logging.warning('4')
         riddle.levels[level['name']] = level
-        logging.warning('5')
 
         # Swap "winners" role for last "reached" level role
         last_index = level['index'] - 1
@@ -85,9 +83,7 @@ async def add(guild: discord.Guild, level: dict):
                 break
         last_name = 'reached-' + last_level['discord_name']
         last_reached = get(guild.roles, name=last_name)
-        logging.warning('6')
         for member in guild.members:
-            logging.warning(member.nick)
             if member.nick and '💎' in member.nick:
                 if winners in member.roles:
                     await member.remove_roles(winners)
