@@ -205,3 +205,18 @@ async def save_image(folder: str, alias: str,
     img.save(path)
     print('[%s] Image %s successfully saved'
             % (alias, filename))
+
+
+@admin.route('/admin/<alias>/update-all', methods=['GET'])
+@requires_authorization
+async def update_all(alias: str):
+    '''Wildcard route for running all update ones above.'''
+    
+    update_methods = \
+        (update_scores, update_completion_count, update_ratings)
+    for update in update_methods:
+        result = await update(alias)
+        if result[1] != 200:
+            return result
+        
+    return 'SUCCESS :)', 200
