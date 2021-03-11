@@ -188,14 +188,18 @@ async def get_pages(alias: str) -> str:
     return json.dumps(pages)
 
 
-@levels.route('/<alias>/levels/rate/<level_name>/<rating>', methods=['GET'])
-async def rate(alias: str, level_name: str, rating: float):
+@levels.route('/<alias>/levels/rate/<level_name>/<int:rating>', methods=['GET'])
+async def rate(alias: str, level_name: str, rating: int):
     '''Update level rating upon user giving new one.'''
 
     # Must not have logged out meanwhile
     user = await discord.fetch_user()
     if not user:
         return 'Unauthorized', 401
+    
+    # Disallow phony ratings :)
+    if not (1 <= rating <= 5):
+        return 'Funny guy, eh? :)', 403
 
     # Get user's previous rating
     query = 'SELECT * FROM (' \

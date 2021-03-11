@@ -35,6 +35,7 @@ function sendToServer(url) {
   });
 }
 
+// URL wildcards from where to list to requests
 const filter = {
   urls: [
     '*://*.rnsriddle.com/riddle/*',
