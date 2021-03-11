@@ -82,7 +82,7 @@ async def level_list(alias: str):
                                 'discriminator, level_name'
                     values = {**base_values, 'level': level['name']}
                     result = await database.fetch_one(query, values)
-                    level['pages_found'] = result['count']
+                    level['pages_found'] = result['count'] if result else 0
         else:
             level['beaten'] = False
             level['unlocked'] = False

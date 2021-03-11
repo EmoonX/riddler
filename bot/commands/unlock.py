@@ -36,6 +36,7 @@ class UnlockHandler:
         text = ('**[%s]** You solved level **%s** (%s) ' \
                     'and won **%d** points!\n') \
                 % (self.guild.name, level['name'], stars, points)
+        await self.member.send(text)
         
         # Send also to channels if first to solve level
         if first_to_solve:

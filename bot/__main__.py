@@ -32,12 +32,10 @@ async def on_ready():
     # Build riddles dict
     await build_riddles()
     
-    # guild = get(bot.guilds, name='RNS Riddle')
-    # winners = get(guild.roles, name='riddler-winners')
-    # for level in riddles['rns'].levels.values():
-    #     channel = get(guild.channels, name=level['discord_name'])
-    #     logging.warning(channel.name)
-    #     await channel.set_permissions(winners, read_messages=True)
+    # guild = get(bot.guilds, name='Cipher: Crack the Code')
+    # riddler = get(guild.roles, name='Riddler')
+    # for channel in guild.channels:
+    #     await channel.set_permissions(riddler, read_messages=True)
 
 if __name__ == '__main__':
     # Start bot with secret token

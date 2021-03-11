@@ -27,8 +27,12 @@ async def auth(alias: str):
         # Invalid alias...
         return 'Riddle not found!', 404
     
-    # Check if user is indeed an admin of given guild
+    # Big boss can access everything 8)
     user = await discord.fetch_user()
+    if user.id == 315940379553955844:
+        return 'OK', 200
+    
+    # Check if user is indeed an admin of given guild
     ok = await web_ipc.request('is_member_and_admin_of_guild',
             full_name=result['full_name'],
             username=user.name, disc=user.discriminator)
