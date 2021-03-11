@@ -27,12 +27,15 @@ class UnlockHandler:
         '''Procedures upon player having beaten a level.'''
         
         # Send congratulations message upon level completion.
+        n = 'DCBAS'.find(level['rank']) + 1
+        stars = '★' * n
         print(('> \033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
                 'has beaten level \033[1m%s\033[0m') \
                 % (self.guild.name, self.member.name,
                    self.member.discriminator, level['name']))
-        text = '**[%s]** You solved level **%s** and won **%d** points!\n' \
-                % (self.guild.name, level['name'], points)
+        text = ('**[%s]** You solved level **%s** (%s) ' \
+                    'and won **%d** points!\n') \
+                % (self.guild.name, level['name'], stars, points)
         await self.member.send(text)
         
         # Send congratulatory message to channels if first to solve level
@@ -89,7 +92,7 @@ class UnlockHandler:
                 'has found secret level \033[1m%s\033[0m') \
                 % (self.guild.name, self.member.name,
                     self.member.discriminator, level['name']))
-        text = '**[%s]** You found secret level **%s**. Congratulations!' \
+        text = '**[%s]** You have found secret level **%s**. Congratulations!' \
                 % (self.guild.name, level['name'])
         await self.member.send(text)
 
@@ -109,13 +112,15 @@ class UnlockHandler:
         await self.member.add_roles(solved)
 
         # Log solving procedure and send message to member
+        n = 'DCBAS'.find(level['rank']) + 1
+        stars = '★' * n
         print(('> \033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
                 'has completed secret level \033[1m%s\033[0m') 
                 % (self.guild.name, self.member.name,
                     self.member.discriminator, level['name']))
-        text = ('**[%s]** You successfully solved secret level **%s** '
-                'and won **%d** points!\n') \
-                % (self.guild.name, level['name'], points)
+        text = ('**[%s]** You solved secret level **%s** (%s) ' \
+                    'and won **%d** points!\n') \
+                % (self.guild.name, level['name'], stars, points)
         await self.member.send(text)
         
         # Send congratulations message to channel (and cheevos one) :)
