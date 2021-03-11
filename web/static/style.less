@@ -897,10 +897,8 @@ section.list.levels > .row {
       box-shadow: 0 0 0.5em rgba(255, 255, 221, 0.5);
     }
   }
-  > .rank {
-    width: 200px;
-  
-    > figure {
+  > .info {
+    > .rank {
       > div {
         font-family: "Segoe UI Emoji";
         font-size: 1.6em;
@@ -920,8 +918,13 @@ section.list.levels > .row {
         }
       }
     }
-  }
-  > .info {
+    > .page-count {
+      font-size: 0.8em;
+
+      > var {
+        font-size: 1.2em;
+      }
+    }
     > .completion {
       font-size: 0.7em;
     }
@@ -961,6 +964,11 @@ section.list.levels > .row {
   &:hover > .rank span {
     transform: rotate(360deg);
   }
+}
+
+.check {
+  margin: 5px;
+  font-style: normal;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1056,11 +1064,6 @@ section.list.levels > .page-explorer {
       > var {
         font-size: 1.5em;
         font-style: italic;
-      }
-      > .check {
-        margin: 5px;
-        font-size: 1.5em;
-        font-style: normal;
       }
     }
   }

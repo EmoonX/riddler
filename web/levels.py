@@ -55,15 +55,31 @@ async def level_list(alias: str):
                 if not level['beaten']:
                     # Level appears on list iff user reached its front page
                     query = 'SELECT username FROM user_pageaccess ' \
-                            'WHERE riddle = :riddle ' \
-                            'AND username = :name AND discriminator = :disc ' \
-                            'AND path = :path'
+                            'WHERE riddle = :riddle AND username = :name ' \
+                                'AND discriminator = :disc AND path = :path'
                     values = {**base_values, 'path': level['path']}
                     result = await database.fetch_one(query, values)
                     level['unlocked'] = (result is not None)
                 else:
+                    # Get level rating:
                     level['rating_given'] = result['rating_given']
-
+                    
+                    # Get player's current and total file count for level
+                    query = 'SELECT COUNT(*) AS count FROM user_pageaccess ' \
+                            'WHERE riddle = :riddle AND username = :name ' \
+                                'AND discriminator = :disc ' \
+                                'AND level_name = :level ' \
+                            'GROUP BY riddle, username, ' \
+                                'discriminator, level_name'
+                    values = {**base_values, 'level': level['name']}
+                    result = await database.fetch_one(query, values)
+                    level['pages_found'] = result['count']
+                    query = 'SELECT COUNT(*) AS count FROM level_pages ' \
+                            'WHERE riddle = :riddle AND level_name = :level ' \
+                            'GROUP BY riddle, level_name'
+                    values = {'riddle': alias, 'level': level['name']}
+                    result = await database.fetch_one(query, values)
+                    level['pages_total'] = result['count']
         else:
             level['beaten'] = False
             level['unlocked'] = False

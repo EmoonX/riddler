@@ -32,8 +32,8 @@
             <img class="level" width="100" height="100" src="/static/images/locked.png">
           </div>
         {% endif %}
-          <div class="rank">
-            <figure>
+          <div class="info">
+            <figure class="rank">
             {% if level['beaten'] %}
               {% set number = 'DCBAS'.find(level['rank']) + 1 %}
               {% set info = level_ranks[level['rank']] %}
@@ -50,6 +50,13 @@
               </div>
               <figcaption style="color: gray"><span class="rank-letter">?</span>-rank (?? points)</figcaption>
             {% endif %}
+            </figure>
+            <figure class="page-count">
+              {% if level['pages_found'] and level['pages_found'] == level['pages_total'] %}
+                {% set check = '<span class="check">✅</span>'|safe %}
+              {% endif %}
+              <var>{{ level['pages_found'] }}</var><var>/</var><var>{{ level['pages_total'] }}</var>
+              <figcaption>pages found {{ check }}</figcaption>
             </figure>
           </div>
           <div class="info">
