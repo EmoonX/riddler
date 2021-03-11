@@ -926,6 +926,10 @@ section.list.levels > .row {
       > var {
         font-size: 1.2em;
         letter-spacing: 0.1em;
+
+        &.total {
+          font-size: 1em;
+        }
       }
     }
     > .completion {
@@ -964,7 +968,7 @@ section.list.levels > .row {
       margin: 10px;
     }
   }
-  &:hover > .rank span {
+  &:hover .rank span {
     transform: rotate(360deg);
   }
 }

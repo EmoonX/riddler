@@ -60,7 +60,7 @@
               {% if level['beaten'] %}
                 {% set pages_total = level['pages_total'] %}
               {% endif %}
-              <var>{{ level['pages_found'] }}</var><var>/</var><var>{{ pages_total }}</var>
+              <var>{{ level['pages_found'] }}</var><var>/</var><var class="total">{{ pages_total }}</var>
               <figcaption>pages found {{ check }}</figcaption>
             </figure>
           {% endif %}

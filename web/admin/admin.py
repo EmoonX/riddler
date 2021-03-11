@@ -102,6 +102,39 @@ async def update_scores(alias: str):
     return 'SUCCESS :)', 200
 
 
+@admin.route('/admin/<alias>/update-completion', methods=['GET'])
+@requires_authorization
+async def update_completion_count(alias: str):
+    '''Úpdates riddle levelś' completion count.'''    
+    
+    # Check for admin permissions
+    msg, status = await auth(alias)
+    if status != 200:
+        return msg, status
+    
+    # Get list of levels and completion counts
+    query = 'SELECT level_name, COUNT(*) AS count ' \
+                'FROM user_levelcompletion ' \
+            'WHERE riddle = :riddle ' \
+            'GROUP BY riddle, level_name'
+    levels = await database.fetch_all(query, {'riddle': alias})
+    query = 'SELECT level_name, COUNT(*) AS count ' \
+                'FROM user_secrets ' \
+            'WHERE riddle = :riddle AND completion_time IS NOT NULL ' \
+            'GROUP BY riddle, level_name'
+    secrets = await database.fetch_all(query, {'riddle': alias})
+    levels = levels + secrets
+    
+    for level in levels:
+        query = 'UPDATE levels ' \
+                'SET completion_count = :count ' \
+                'WHERE name = :level'
+        values = {'count': level['count'], 'level': level['level_name']}
+        await database.execute(query, values)
+    
+    return 'SUCCESS :)', 200
+
+
 @admin.route('/admin/<alias>/update-ratings', methods=['GET'])
 @requires_authorization
 async def update_ratings(alias: str):
