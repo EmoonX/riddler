@@ -108,20 +108,6 @@ async def level_list(alias: str):
             levels[level['level_set']] = []
         levels[level['level_set']].append(level)
 
-    query = 'SELECT * FROM riddles WHERE alias = :alias'
-    riddle = dict(await database.fetch_one(query, {'alias': alias}))
-    url = await web_ipc.request('get_riddle_icon_url',
-            name=riddle['full_name'])
-    riddle['icon_url'] = url
-
-    # return render_and_count('levels.htm', locals())
-    # return render_and_count('levels.htm', locals())
-    s = 'cipher'
-    if alias == 'rns':
-        s = 'riddle'
-    url = 'http://gamemastertips.com/cipher'
-    if alias == 'rns':
-        url = 'https://rnsriddle.com/riddle'
     return await render_template('levels.htm', **locals())
 
 

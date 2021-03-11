@@ -25,13 +25,10 @@ async def levels(alias: str):
     
     async def r(levels: list, secret_levels: list, msg: str):
         '''Render page with correct data.'''
-        s = 'cipher'
-        if alias == 'rns':
-            s = 'riddle'
 
         return await render_template('admin/levels.htm',
                 alias=alias, levels=levels,
-                secret_levels=secret_levels, s=s, msg=msg)
+                secret_levels=secret_levels, msg=msg)
     
     # Get initial level data from database
     levels_before = await _fetch_levels(alias)

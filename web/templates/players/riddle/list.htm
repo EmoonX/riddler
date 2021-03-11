@@ -1,4 +1,5 @@
 {% extends 'layout.htm' %}
+{% set riddle = get_riddle(alias) %}
 {% block title %}{{ riddle['full_name'] }} | Leaderboard{% endblock %}
 {% block content %}
     <main>

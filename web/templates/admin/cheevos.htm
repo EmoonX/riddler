@@ -1,5 +1,6 @@
 {% extends 'layout.htm' %}
-{% block title %}🔑 {{ alias }} | Achievements{% endblock %}
+{% set riddle = get_riddle(alias) %}
+{% block title %}🔑 {{ riddle['full_name'] }} | Achievements{% endblock %}
 {% block extra %}
 <script type="module" src="/static/scripts/admin/admin.js"></script>
 {% endblock %}

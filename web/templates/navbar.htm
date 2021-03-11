@@ -7,6 +7,8 @@
             <!--<a href="#" class="nav-button">Countries</a>-->
           </div>
         </nav>
+    {% if alias %}
+      {% set riddle = get_riddle(alias) %}
       {% if riddle %}
         <nav class="dropdown">
           <button class="nav-button riddle-banner">
@@ -19,6 +21,7 @@
           </div>
         </nav>
       {% endif %}
+    {% endif %}
       {# Verify if user is logged in #}
       {% set user = get_session_user() %}
       {% if not user %}

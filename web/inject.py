@@ -73,6 +73,22 @@ async def context_processor():
 
     # List of pycountry country objects
     pycountries = pycountry.countries
+    
+    async def get_riddle(alias):
+        '''Return riddle info + icon from a given alias.'''
+        
+        # Get DB row data
+        query = 'SELECT * FROM riddles WHERE alias = :alias'
+        riddle = await database.fetch_one(query, {'alias': alias})
+        
+        if riddle:
+            # Get icon URL by bot IPC
+            url = await web_ipc.request('get_riddle_icon_url',
+                    name=riddle['full_name'])
+            riddle = dict(riddle)
+            riddle['icon_url'] = url
+        
+        return riddle
 
     async def get_accounts(alias=''):
         '''Get players data from database.

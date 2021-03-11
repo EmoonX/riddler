@@ -99,4 +99,4 @@ async def riddle_list(alias: str):
 
     # Render page with account info
     return await render_template('players/riddle/list.htm',
-            riddle=riddle, accounts=accounts)
+            alias=alias, accounts=accounts)
