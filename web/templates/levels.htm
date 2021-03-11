@@ -51,13 +51,19 @@
               <figcaption style="color: gray"><span class="rank-letter">?</span>-rank (?? points)</figcaption>
             {% endif %}
             </figure>
+          {% if level['unlocked'] %}
             <figure class="page-count">
               {% if level['pages_found'] and level['pages_found'] == level['pages_total'] %}
                 {% set check = '<span class="check">✅</span>'|safe %}
               {% endif %}
-              <var>{{ level['pages_found'] }}</var><var>/</var><var>{{ level['pages_total'] }}</var>
+              {% set pages_total = '??' %}
+              {% if level['beaten'] %}
+                {% set pages_total = level['pages_total'] %}
+              {% endif %}
+              <var>{{ level['pages_found'] }}</var><var>/</var><var>{{ pages_total }}</var>
               <figcaption>pages found {{ check }}</figcaption>
             </figure>
+          {% endif %}
           </div>
           <div class="info">
             <div class="completion">

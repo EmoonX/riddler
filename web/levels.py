@@ -64,7 +64,16 @@ async def level_list(alias: str):
                     # Get level rating:
                     level['rating_given'] = result['rating_given']
                     
-                    # Get player's current and total file count for level
+                    # Get total file count for level
+                    query = 'SELECT COUNT(*) AS count FROM level_pages ' \
+                            'WHERE riddle = :riddle AND level_name = :level ' \
+                            'GROUP BY riddle, level_name'
+                    values = {'riddle': alias, 'level': level['name']}
+                    result = await database.fetch_one(query, values)
+                    level['pages_total'] = result['count']
+                
+                if level['unlocked']:
+                    # Get playe's current found files count for level
                     query = 'SELECT COUNT(*) AS count FROM user_pageaccess ' \
                             'WHERE riddle = :riddle AND username = :name ' \
                                 'AND discriminator = :disc ' \
@@ -74,12 +83,6 @@ async def level_list(alias: str):
                     values = {**base_values, 'level': level['name']}
                     result = await database.fetch_one(query, values)
                     level['pages_found'] = result['count']
-                    query = 'SELECT COUNT(*) AS count FROM level_pages ' \
-                            'WHERE riddle = :riddle AND level_name = :level ' \
-                            'GROUP BY riddle, level_name'
-                    values = {'riddle': alias, 'level': level['name']}
-                    result = await database.fetch_one(query, values)
-                    level['pages_total'] = result['count']
         else:
             level['beaten'] = False
             level['unlocked'] = False
