@@ -7,6 +7,7 @@ from util.db import database
 players = Blueprint('players', __name__)
 
 
+@players.route("/")
 @players.route("/players")
 async def global_list():
     """Global player list."""
