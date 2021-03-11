@@ -1,3 +1,6 @@
+import traceback
+import logging
+
 import discord
 from discord.utils import get
 
@@ -18,7 +21,12 @@ async def insert(data):
         for member in guild.members:
             if member.guild_permissions.administrator and not member.bot:
                 await member.send(text)
-        await add(guild, level)
+        try:
+            await add(guild, level)
+        except:
+            # Print glorious (and much needed) traceback info
+            tb = traceback.format_exc()
+            logging.error(tb)   
 
     # Send success message to guild admins
     text = '**[%s]** Channel and roles building complete :)' % guild.name

@@ -17,7 +17,7 @@
     "webRequest",
     "cookies",
     "*://riddler.emoon.dev/*",
-    "*://*.rnsriddle.com/*",
-    "*://*.gamemastertips.com/*"
+    "*://*.rnsriddle.com/riddle/*",
+    "*://*.gamemastertips.com/cipher/*"
   ]
 }

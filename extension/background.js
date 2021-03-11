@@ -37,12 +37,13 @@ function sendToServer(url) {
 
 const filter = {
   urls: [
-    '*://*.rnsriddle.com/*',
-    '*://*.gamemastertips.com/*'
+    '*://*.rnsriddle.com/riddle/*',
+    '*://*.gamemastertips.com/cipher/*'
   ]
 };
 
 chrome.webRequest.onHeadersReceived.addListener(function (details) {
+  // Send a process request to server whenever response is received
   console.log(details.url, details.statusCode);
   if (details.statusCode == 200) { 
     sendToServer(details.url);
