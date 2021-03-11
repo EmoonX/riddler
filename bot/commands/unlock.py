@@ -1,6 +1,6 @@
 import logging
 
-from discord import Guild, Member
+from discord import Guild, Member, File
 from discord.utils import get
 
 
@@ -26,19 +26,18 @@ class UnlockHandler:
     async def beat(self, level: dict, points: int, first_to_solve: bool):
         '''Procedures upon player having beaten a level.'''
         
-        # Send congratulations message upon level completion.
+        # Send congratulatory message
         n = 'DCBAS'.find(level['rank']) + 1
         stars = '★' * n
         print(('> \033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
                 'has beaten level \033[1m%s\033[0m') \
                 % (self.guild.name, self.member.name,
-                   self.member.discriminator, level['name']))
+                self.member.discriminator, level['name']))
         text = ('**[%s]** You solved level **%s** (%s) ' \
                     'and won **%d** points!\n') \
                 % (self.guild.name, level['name'], stars, points)
-        await self.member.send(text)
         
-        # Send congratulatory message to channels if first to solve level
+        # Send also to channels if first to solve level
         if first_to_solve:
             text = '**🏅 FIRST TO SOLVE 🏅**\n'
             text += ('**<@!%d>** has completed level **%s**! ' \
@@ -137,14 +136,27 @@ class UnlockHandler:
 
     async def cheevo_found(self, cheevo: dict, points: int):
         '''Congratulations upon achievement being found.'''
+        
+        # Log and send congratulatory message
         print(('> \033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
-                    'got cheevo \033[1m%s\033[0m!') %
-                    (self.guild.name, self.member.name,
-                        self.member.discriminator, cheevo['title']))
-        text = ('**[%s]** You\'ve found achievement **_%s_** '
+                'got cheevo \033[1m%s\033[0m!') %
+                (self.guild.name, self.member.name,
+                    self.member.discriminator, cheevo['title']))
+        text = ('**[%s]** You have found achievement **_%s_** '
                 'and won **%d** points!\n') \
                 % (self.guild.name, cheevo['title'], points)
         await self.member.send(text)
+        
+        # Get cheevo thumb image from path
+        image_path = '../web/static/cheevos/%s/%s' \
+                % (cheevo['riddle'], cheevo['image'])
+        with open(image_path, 'rb') as fp:
+            # Create image object
+            image = File(fp, cheevo['image'])
+            
+            # send flavor message with description and image
+            description = '_"%s"_' % cheevo['description']
+            await self.member.send(description, file=image)
 
     async def game_completed(self):
         '''Do the honors upon user completing game.'''
