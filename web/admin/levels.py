@@ -88,6 +88,10 @@ async def levels(alias: str):
                         continue
                     s = '`%s` = :%s' % (attr, attr)
                     aux.append(s)
+                    if attr == 'discord_category':
+                        other = 'level_set'
+                        t = '`%s` = :%s' % (other, other)
+                        aux.append(t)
                     values[attr] = value
                 query += ', '.join(aux)
                 query += ' WHERE riddle = :riddle AND `index` = :index'

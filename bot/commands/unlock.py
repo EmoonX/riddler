@@ -54,9 +54,8 @@ class UnlockHandler:
         if milestone:
             role = get(self.guild.roles, name=milestone)
             await self.member.add_roles(role)
-            text = '**🗿 MILESTONE REACHED 🗿**\n'
-            text += '**[%s]** You have unlocked special role **@%s**!' \
-                    % (self.guild.name, milestone)
+            text = '**[%s] 🗿 MILESTONE REACHED 🗿**\n' % self.guild.name
+            text += 'You have unlocked special role **@%s**!' % milestone
             await self.member.send(text)
             
 
