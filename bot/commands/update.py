@@ -81,8 +81,6 @@ async def add(guild: discord.Guild, level: dict, winners_role: str):
                     other_level = other
                     break
             if other_level and other_level['index'] <= level['index']:
-                logging.warning(channel)
-                logging.warning(reached)
                 await channel.set_permissions(reached, read_messages=True)
 
         # Swap "winners" role for last "reached" level role

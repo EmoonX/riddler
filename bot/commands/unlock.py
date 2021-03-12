@@ -197,6 +197,8 @@ class UnlockHandler:
 async def update_nickname(member: Member, s: str):
     '''Update user's nickname to reflect current level.
     In case it exceeds 32 characters, shorten the member's name to fit.'''
+    if member == member.guild.owner:
+        return
     name = member.name
     total = len(name) + 1 + len(s)
     if total > 32:
