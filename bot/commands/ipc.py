@@ -49,6 +49,8 @@ async def unlock(data):
         args = (data.level, data.points, data.first_to_solve)
     elif data.method == 'cheevo_found':
         args = (data.cheevo, data.points)
+    elif data.method == 'game_completed':
+        args = (data.winners_role,)
 
     # Call unlocking method by name with correct number of args
     try:

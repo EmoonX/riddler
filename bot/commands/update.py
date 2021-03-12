@@ -22,7 +22,7 @@ async def insert(data):
             if member.guild_permissions.administrator and not member.bot:
                 await member.send(text)
         try:
-            await add(guild, level)
+            await add(guild, level, data.winners_role)
         except:
             # Print glorious (and much needed) traceback info
             tb = traceback.format_exc()
@@ -35,7 +35,7 @@ async def insert(data):
             await member.send(text)
 
 
-async def add(guild: discord.Guild, level: dict):
+async def add(guild: discord.Guild, level: dict, winners_role: str):
     '''Add guild channels and roles.'''
     
     import logging
@@ -50,6 +50,13 @@ async def add(guild: discord.Guild, level: dict):
             category = await guild.create_category(name=level['discord_category'])
         channel = await category.create_text_channel(name)
     if channel:
+        # Set read permission for @winners and @Riddler roles
+        winners = get(guild.roles, name=winners_role)
+        riddler = get(guild.roles, name='Riddler')
+        await channel.set_permissions(winners, read_messages=True)
+        await channel.set_permissions(riddler, read_messages=True)
+        
+        # Unset read permission for @everyone
         everyone = guild.default_role
         await channel.set_permissions(everyone, read_messages=False)
 
@@ -61,14 +68,13 @@ async def add(guild: discord.Guild, level: dict):
         reached = await guild.create_role(name=role_name, color=color)  
 
     riddle = get(riddles.values(), guild=guild)
-    winners = get(guild.roles, name='riddler-winners')
-    riddler = get(guild.roles, name='Riddler')
     if not level['is_secret']:
+        # Add new level immediately to riddle's level list
+        riddle.levels[level['name']] = level
+        
         # Set read permission to current roles for 
         # this channel and every other level channel before it
         for channel in guild.channels:
-            if not riddle.levels:
-                break
             other_level = None
             for other in riddle.levels.values():
                 if other['discord_name'] == channel.name:
@@ -78,13 +84,6 @@ async def add(guild: discord.Guild, level: dict):
                 logging.warning(channel)
                 logging.warning(reached)
                 await channel.set_permissions(reached, read_messages=True)
-        
-        # Set read permission for @winners and @Riddler roles too
-        await channel.set_permissions(winners, read_messages=True)
-        await channel.set_permissions(riddler, read_messages=True)
-        
-        # Add new level immediately to riddle's level list
-        riddle.levels[level['name']] = level
 
         # Swap "winners" role for last "reached" level role
         last_index = level['index'] - 1
@@ -103,6 +102,9 @@ async def add(guild: discord.Guild, level: dict):
                 await update_nickname(member, '[%s]' % last_level['name'])
     
     else:
+        # Add new level immediately to riddle's level list
+        riddle.secret_levels[name] = level
+        
         # Create "solved" secret level role
         role_name = 'solved-' + name
         solved = get(guild.roles, name=role_name)
@@ -118,9 +120,6 @@ async def add(guild: discord.Guild, level: dict):
         # Set "reached" and "solved" read permission to the new channel
         await channel.set_permissions(reached, read_messages=True)
         await channel.set_permissions(solved, read_messages=True)
-
-        # Add new level immediately to riddle's level list
-        riddle.secret_levels[id] = level
 
 
 @bot.ipc.route()

@@ -20,7 +20,7 @@ class Riddle:
     secret_levels: OrderedDict[str, dict]
     '''Ordered dict of secret levels'''
 
-    winner_suffix: str
+    winners_suffix: str
     '''Suffix to be appended to winners' nicknames'''
 
     def __init__(self, riddle: dict, levels: dict, secret_levels: dict):
@@ -28,7 +28,7 @@ class Riddle:
 
         # Get info from guild's database data
         self.guild = get(bot.guilds, name=riddle['full_name'])
-        self.winner_suffix = riddle['winner_suffix']
+        self.winners_suffix = riddle['winners_suffix']
 
         # Get riddle's level info from database query
         self.levels = OrderedDict()

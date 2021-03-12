@@ -119,8 +119,10 @@ class _PathsHandler:
             # Remove base folder from path, if any
             if self.riddle_alias == 'cipher':
                 path = path.replace('/cipher/', '')
-            else:
+            elif self.riddle_alias == 'rns':
                 path = path.replace('/riddle/', '')
+            else:
+                path = path.replace('//', '/')
             if not path:
                 continue
 
@@ -531,9 +533,14 @@ class _NormalLevelHandler(_LevelHandler):
             await database.execute(query, values)
             
             # Bot game finish procedures
+            query = 'SELECT * FROM riddles WHERE alias = :alias'
+            values = {'alias': self.riddle_alias}
+            result = await database.fetch_one(query, values)
+            winners_role = result['winners_role']
             await web_ipc.request('unlock', method='game_completed',
                     alias=self.riddle_alias,
-                    name=self.username, disc=self.disc)
+                    name=self.username, disc=self.disc,
+                    winners_role=winners_role)
 
         # Update countries table too
         # cursor.execute("UPDATE countries "

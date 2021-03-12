@@ -45,8 +45,9 @@ class UnlockHandler:
                     'Congratulations!') % (self.member.id, level['name'])
             channel = get(self.guild.channels, name=level['discord_name'])
             await channel.send(text)
-            cheevos = get(self.guild.channels, name='achievements')
-            await cheevos.send(text)
+            achievements = get(self.guild.channels, name='achievements')
+            if achievements:
+                await achievements.send(text)
             
 
     async def advance(self, level: dict):
@@ -159,7 +160,7 @@ class UnlockHandler:
             description = '_"%s"_' % cheevo['description']
             await self.member.send(description, file=image)
 
-    async def game_completed(self):
+    async def game_completed(self, winners_role: str):
         '''Do the honors upon user completing game.'''
 
         # Remove last level's "reached" role
@@ -177,7 +178,7 @@ class UnlockHandler:
                 break
 
         # Add flashy "winners" role
-        winners = get(self.guild.roles, name='riddler-winners')
+        winners = get(self.guild.roles, name=winners_role)
         await self.member.add_roles(winners)
 
         # Update nickname with winner's badge
