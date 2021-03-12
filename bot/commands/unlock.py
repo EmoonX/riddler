@@ -33,7 +33,7 @@ class UnlockHandler:
                 'has beaten level \033[1m%s\033[0m') \
                 % (self.guild.name, self.member.name,
                 self.member.discriminator, level['name']))
-        text = ('**[%s]** You solved level **%s** (%s) ' \
+        text = ('**[%s]** You have solved level **%s** (%s) ' \
                     'and won **%d** points!\n') \
                 % (self.guild.name, level['name'], stars, points)
         await self.member.send(text)
@@ -118,7 +118,7 @@ class UnlockHandler:
                 'has completed secret level \033[1m%s\033[0m') 
                 % (self.guild.name, self.member.name,
                     self.member.discriminator, level['name']))
-        text = ('**[%s]** You solved secret level **%s** (%s) ' \
+        text = ('**[%s]** You have solved secret level **%s** (%s) ' \
                     'and won **%d** points!\n') \
                 % (self.guild.name, level['name'], stars, points)
         await self.member.send(text)
