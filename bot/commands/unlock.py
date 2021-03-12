@@ -23,7 +23,8 @@ class UnlockHandler:
         self.levels = levels
         self.member = member
 
-    async def beat(self, level: dict, points: int, first_to_solve: bool):
+    async def beat(self, level: dict, points: int,
+            first_to_solve: bool, milestone: str):
         '''Procedures upon player having beaten a level.'''
         
         # Send congratulatory message
@@ -48,6 +49,15 @@ class UnlockHandler:
             achievements = get(self.guild.channels, name='achievements')
             if achievements:
                 await achievements.send(text)
+        
+        # Add special milestone role if one was reached
+        if milestone:
+            role = get(self.guild.roles, name=milestone)
+            await self.member.add_roles(role)
+            text = '**🗿 MILESTONE REACHED 🗿**\n'
+            text += '**[%s]** You have unlocked special role **@%s**!' \
+                    % (self.guild.name, milestone)
+            await self.member.send(text)
             
 
     async def advance(self, level: dict):
