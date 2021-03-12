@@ -65,7 +65,7 @@ function updateRating() {
         filename += 'heart-full.png';
       } else if ((i+1) - average == 0.5) {
         ratings[levelName] += 0.5;
-        filename += 'heart-full.png';
+        filename += 'heart-half.png';
       } else {
         filename += 'heart-empty.png';
       }
