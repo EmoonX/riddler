@@ -24,7 +24,7 @@
           </div>
         {% if level['unlocked'] and level['image'] %}
           <div class="thumb">
-            <a href="{{ url }}{{ level['path'] }}" target="_blank">
+            <a href="{{ riddle['root_path'] }}{{ level['path'] }}" target="_blank">
               <img class="level" src="/static/thumbs/{{ alias }}/{{ level['image'] }}">
             </a>
           </div>
