@@ -111,9 +111,9 @@ async def add(guild: discord.Guild, level: dict, winners_role: str):
             solved = await guild.create_role(name=role_name, color=color)
 
             # Place role just after "winners" on role list (to show color)
-            pos = winners.position - 1
-            positions = {solved: pos}
-            await guild.edit_role_positions(positions)
+            # pos = winners.position - 1
+            # positions = {solved: pos}
+            # await guild.edit_role_positions(positions)
 
         # Set "reached" and "solved" read permission to the new channel
         await channel.set_permissions(reached, read_messages=True)

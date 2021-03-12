@@ -9,12 +9,19 @@ from commands.unlock import UnlockHandler
 
 
 @bot.ipc.route()
-async def is_member_and_admin_of_guild(data):
-    '''Return if user is a member AND admin of given guild.'''
+async def is_member_and_has_permissions(data):
+    '''Return if user is a member AND has enough permissions in given guild.'''
     guild = get(bot.guilds, name=data.full_name)
-    member = get(guild.members, name=data.username, discriminator=data.disc)
-    return member and member.guild_permissions.administrator
-
+    member = get(guild.members,
+            name=data.username, discriminator=data.disc)
+    if not member:
+        return False
+    permissions = ('manage_roles', 'manage_channels', 'manage_nicknames')
+    for s in permissions:
+        permission = getattr(member.guild_permissions, s)
+        if not permission:
+            return False
+    return True
 
 @bot.ipc.route()
 async def get_riddle_icon_url(data):

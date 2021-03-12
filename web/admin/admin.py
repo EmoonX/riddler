@@ -33,7 +33,7 @@ async def auth(alias: str):
         return 'OK', 200
     
     # Check if user is indeed an admin of given guild
-    ok = await web_ipc.request('is_member_and_admin_of_guild',
+    ok = await web_ipc.request('is_member_and_has_permissions',
             full_name=result['full_name'],
             username=user.name, disc=user.discriminator)
     if not ok:
@@ -129,11 +129,17 @@ async def update_completion_count(alias: str):
     secrets = await database.fetch_all(query, {'riddle': alias})
     levels = levels + secrets
     
+    # Update completion count for all riddle levels
+    query = 'UPDATE levels ' \
+            'SET completion_count = 0 ' \
+            'WHERE riddle = :riddle'
+    await database.execute(query, {'riddle': alias})
     for level in levels:
         query = 'UPDATE levels ' \
                 'SET completion_count = :count ' \
-                'WHERE name = :level'
-        values = {'count': level['count'], 'level': level['level_name']}
+                'WHERE riddle = :riddle AND name = :level'
+        values = {'count': level['count'],
+                'riddle': alias, 'level': level['level_name']}
         await database.execute(query, values)
     
     return 'SUCCESS :)', 200

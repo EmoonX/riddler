@@ -75,18 +75,33 @@
           {% if level['beaten'] %}
             <figure class="rating">
               <div class="data">
-                <var class='average'>{% if level['rating_avg'] %}{{ "%.1f" % level['rating_avg'] }}{% else %}--{% endif %}</var>
-                {% set rating = 0 %}
-                {% if level['rating_avg'] %}
-                  {% set rating = level['rating_avg'] %}
+                {% if not level['rating_given'] %}
+                  {% set average = '??' %}
+                  {% set unrated = 'unrated' %}
+                {% else %}
+                  {% if not level['rating_avg'] %}
+                    {% set average = '--' %}
+                  {% else %}
+                    {% set average = "%.1f" % level['rating_avg'] %}
+                  {% endif %}
                 {% endif %}
-                {% set rating = (2 * rating)|round(1) / 2 %}
-                <div class='hearts'>
+                <var class='average'>{{ average }}</var>
+                {% if not level['rating_avg'] %}
+                  {% set rating = 0 %}
+                {% else %}
+                  {% set rating = level['rating_avg'] %}
+                  {% set rating = (2 * rating)|round(1) / 2 %}
+                {% endif %}
+                <div class='hearts {{ unrated }}'>
                 {% for i in range(5) %}
-                  {% if (i+1) <= rating %}
-                    {% set s = 'full' %}
-                  {% elif (i+1) - rating == 0.5 %}
-                    {% set s = 'half' %}
+                  {% if level ['rating_given'] %}
+                    {% if (i+1) <= rating %}
+                      {% set s = 'full' %}
+                    {% elif (i+1) - rating == 0.5 %}
+                      {% set s = 'half' %}
+                    {% else %}
+                      {% set s = 'empty' %}
+                    {% endif %}
                   {% else %}
                     {% set s = 'empty' %}
                   {% endif %}
