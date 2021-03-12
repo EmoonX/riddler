@@ -67,12 +67,16 @@ async def add(guild: discord.Guild, level: dict):
         # Set read permission to current roles for 
         # this channel and every other level channel before it
         for channel in guild.channels:
+            if not riddle.levels:
+                break
             other_level = None
             for other in riddle.levels.values():
                 if other['discord_name'] == channel.name:
                     other_level = other
                     break
             if other_level and other_level['index'] <= level['index']:
+                logging.warning(channel)
+                logging.warning(reached)
                 await channel.set_permissions(reached, read_messages=True)
         
         # Set read permission for @winners and @Riddler roles too

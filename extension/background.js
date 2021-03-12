@@ -39,7 +39,8 @@ function sendToServer(url) {
 const filter = {
   urls: [
     '*://*.rnsriddle.com/riddle/*',
-    '*://*.gamemastertips.com/cipher/*'
+    '*://*.gamemastertips.com/cipher/*',
+    '*://*.thestringharmony.com/*'
   ]
 };
 

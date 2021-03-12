@@ -180,7 +180,7 @@ $(_ => {
     reader.onload = (e => {;
       const data = e.target.result;
       var url = location.href;
-      url = url.replace('/admin', '').replace('/levels', '/update-pages');
+      url = url.replace('/levels', '/update-pages');
       $.post(url, data, 'text')
         .fail(_ => {
           // Error, something went wrong on server side

@@ -101,6 +101,8 @@ class _PathsHandler:
         self.riddle_alias = 'cipher'
         if 'rnsriddle.com' in domain:
             self.riddle_alias = 'rns'
+        elif 'thestringharmony.com' in domain:
+            self.riddle_alias = 'string'
         
         # Save basic user info
         self.username = user.username

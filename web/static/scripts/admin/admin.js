@@ -98,11 +98,11 @@ function doubleClickIcon() {
   const j = page.lastIndexOf('.');
   if (j != -1) {
     // Open desired page in new tab
-    const explorer = $(this).parents('.page-explorer');
-    const path = explorer.find('.path').text() +
-        $(this).find('figcaption').text();
-    const url = 'http://rnsriddle.com' + path;
-    window.open(url, '_blank');
+    // const explorer = $(this).parents('.page-explorer');
+    // const path = explorer.find('.path').text() +
+    //     $(this).find('figcaption').text();
+    // const url = 'http://rnsriddle.com' + path;
+    // window.open(url, '_blank');
   } else {
     // Change current directory to folder's one
     const explorer = $(this).parents('.page-explorer');

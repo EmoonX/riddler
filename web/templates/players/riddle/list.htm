@@ -1,6 +1,6 @@
 {% extends 'layout.htm' %}
 {% set riddle = get_riddle(alias) %}
-{% block title %}{{ riddle['full_name'] }} | Leaderboard{% endblock %}
+{% block title %}Leaderboard | {{ riddle['full_name'] }}{% endblock %}
 {% block content %}
     <main>
       <main>
