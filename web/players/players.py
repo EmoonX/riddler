@@ -25,6 +25,7 @@ async def global_list():
     
     # Get players data from database
     query = 'SELECT * FROM accounts ' \
+            'WHERE global_score > 0 ' \
             'ORDER BY global_score DESC'
     result = await database.fetch_all(query)
     accounts = [dict(account) for account in result]
