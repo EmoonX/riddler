@@ -62,10 +62,10 @@ async def update_scores(alias: str):
     
         # Add beaten level points to new score
         new_score = 0
-        query = 'SELECT * FROM user_levelcompletion ' \
+        query = 'SELECT * FROM user_levels ' \
                 'INNER JOIN levels ' \
-                    'ON user_levelcompletion.riddle = levels.riddle ' \
-                    'AND user_levelcompletion.level_name = levels.name ' \
+                    'ON user_levels.riddle = levels.riddle ' \
+                    'AND user_levels.level_name = levels.name ' \
                 'WHERE levels.riddle = :riddle ' \
                     'AND username = :name and discriminator = :disc'
         values = {'riddle': alias,
@@ -118,16 +118,10 @@ async def update_completion_count(alias: str):
     
     # Get list of levels and completion counts
     query = 'SELECT level_name, COUNT(*) AS count ' \
-                'FROM user_levelcompletion ' \
+                'FROM user_levels ' \
             'WHERE riddle = :riddle ' \
             'GROUP BY riddle, level_name'
     levels = await database.fetch_all(query, {'riddle': alias})
-    query = 'SELECT level_name, COUNT(*) AS count ' \
-                'FROM user_secrets ' \
-            'WHERE riddle = :riddle AND completion_time IS NOT NULL ' \
-            'GROUP BY riddle, level_name'
-    secrets = await database.fetch_all(query, {'riddle': alias})
-    levels = levels + secrets
     
     # Update completion count for all riddle levels
     query = 'UPDATE levels ' \
@@ -162,13 +156,11 @@ async def update_ratings(alias: str):
     for level in levels:
         # Get total number of votes and their average from DB
         count, average = 0, None
-        table = 'user_levelcompletion' if not level['is_secret'] \
-                else 'user_secrets'
-        query = ('SELECT COUNT(rating_given) AS count, ' \
-                    'AVG(rating_given) AS average ') + \
-                    ('FROM %s ' % table) + \
-                ('WHERE riddle = :riddle AND level_name = :name ' \
-                'GROUP BY riddle, level_name')
+        query = 'SELECT COUNT(rating_given) AS count, ' \
+                    'AVG(rating_given) AS average ' + \
+                    'FROM user_levels ' \
+                'WHERE riddle = :riddle AND level_name = :name ' \
+                'GROUP BY riddle, level_name'
         values = {'riddle': alias, 'name': level['name']}
         result = await database.fetch_one(query, values)
         if result:

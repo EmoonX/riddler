@@ -259,7 +259,7 @@ class _PathsHandler:
                 or page_level['index'] <= current_level['index'] + 1 \
                 or page_level['is_secret']):
             tnow = datetime.utcnow()
-            query = 'INSERT IGNORE INTO user_pageaccess ' \
+            query = 'INSERT IGNORE INTO user_pages ' \
                     'VALUES (:riddle, :username, :disc, ' \
                         ':level_name, :path, :time)'
             values = {'riddle': self.riddle_alias,
@@ -306,7 +306,7 @@ class _PathsHandler:
             # If an 'AND' operator, all cheevo pages must have been found
             ok = True
             for path in paths_json['paths']:
-                query = 'SELECT * FROM user_pageaccess ' \
+                query = 'SELECT * FROM user_pages ' \
                         'WHERE riddle = :riddle AND username = :name ' \
                         'AND discriminator = :disc AND path = :path'
                 values = {'riddle': self.riddle_alias, 'name': self.username,
@@ -368,11 +368,8 @@ class _LevelHandler:
     
     # Points awarded upon level completion
     points: int
-
-    # User table to be accessed on DB
-    table: str
     
-    def __init__(self, level: dict, ph: _PathsHandler, table: str):
+    def __init__(self, level: dict, ph: _PathsHandler):
         '''Register level DB data and points,
         as well as parent attributes from PH.
         
@@ -380,7 +377,6 @@ class _LevelHandler:
         @param ph: The parent's paths handler'''
 
         self.level = dict(level)
-        self.table = table
         rank = level['rank']
         self.points = level_ranks[rank]['points']
         
@@ -392,7 +388,7 @@ class _LevelHandler:
     async def _get_user_level_row(self):
         ''':return: User/level registry from DB.'''
 
-        query = ('SELECT * FROM %s ' % self.table) + \
+        query = 'SELECT * FROM %s user_levels ' \
                 'WHERE riddle = :riddle AND username = :name ' \
                 'AND discriminator = :disc AND level_name = :level_name'
         values = {'riddle': self.riddle_alias, 
@@ -401,15 +397,36 @@ class _LevelHandler:
         row = await database.fetch_one(query, values)
         return row
     
-    async def register_finding(self, method: str):
-        '''Bot level finding procedures.
+    async def register_finding(self, method: str) -> bool:
+        '''Base level finding procedures.
         
         :param method: IPC method name; "advance" or "secret_found",
-            whether it's a normal or secret level'''
-            
+            whether it's a normal or secret level
+        :return: If a new level was indeed been found'''
+        
+        # Check if level was not yet been found
+        row = await self._get_user_level_row()
+        if row:
+            return False
+        
+        # Register it on user table with current find time
+        time = datetime.utcnow()
+        query = 'INSERT INTO user_levels ' \
+                '(riddle, username, discriminator, ' \
+                    'level_name, find_time) ' \
+                'VALUES (:riddle, :name, :disc, ' \
+                    ':level_name, :time)'
+        values = {'riddle': self.riddle_alias,
+                'name': self.username, 'disc': self.disc,
+                'level_name': self.level['name'], 'time': time}
+        await database.execute(query, values)
+        
+        # Call bot unlocking procedure
         await web_ipc.request('unlock', method=method,
                 alias=self.riddle_alias, level=self.level,
                 name=self.username, disc=self.disc)
+        
+        return True
     
     async def register_completion(self) -> bool:
         '''Register level completion and update all needed tables.
@@ -460,10 +477,15 @@ class _NormalLevelHandler(_LevelHandler):
     '''Handler for normal (non secret) levels.'''
 
     def __init__(self, level: dict, ph: _PathsHandler):
-        super().__init__(level, ph, 'user_levelcompletion')
+        super().__init__(level, ph)
     
     async def register_finding(self):
         '''Increment player level upon reaching level's front page.'''
+        
+        # Send request to bot for unlocking channel    
+        ok = await super().register_finding('advance')
+        if not ok:
+            return
         
         # Update player's current_level and reset their page count
         query = 'UPDATE riddle_accounts ' \
@@ -474,9 +496,6 @@ class _NormalLevelHandler(_LevelHandler):
                 'name': self.username, 'disc': self.disc}
         self.riddle_account['current_level'] = self.level['name']
         await database.execute(query, values)
-        
-        # Send request to bot for unlocking channel    
-        await super().register_finding('advance')
 
     async def register_completion(self):
         '''Register normal level completion and update all needed tables.'''
@@ -487,7 +506,7 @@ class _NormalLevelHandler(_LevelHandler):
             return
         
         # Check if player was first to solve level
-        query = 'SELECT * FROM user_levelcompletion ' \
+        query = 'SELECT * FROM user_levels ' \
                 'WHERE riddle = :riddle AND level_name = :level_name'
         values = {'riddle': self.riddle_alias,
                 'level_name': self.level['name']}
@@ -503,7 +522,7 @@ class _NormalLevelHandler(_LevelHandler):
         # Register level completion in designated table
         time = datetime.utcnow()
         count = self.riddle_account['cur_hit_counter']
-        query = 'INSERT INTO user_levelcompletion ' \
+        query = 'INSERT INTO user_levels ' \
                 '(riddle, username, discriminator, ' \
                     'level_name, completion_time, page_count) ' \
                 'VALUES (:riddle, :name, :disc, :level_name, :time, :count)'
@@ -564,28 +583,10 @@ class _SecretLevelHandler(_LevelHandler):
     '''Handler for secret levels.'''
 
     def __init__(self, level: dict, ph: _PathsHandler):
-        super().__init__(level, ph, 'user_secrets')
+        super().__init__(level, ph)
 
     async def register_finding(self):
         '''Register new secret if not yet been found.'''
-
-        # Register on  if not yet been found
-        row = await self._get_user_level_row()
-        if row:
-            return
-        
-        time = datetime.utcnow()
-        query = 'INSERT INTO user_secrets ' \
-                '(riddle, username, discriminator, ' \
-                    'level_name, find_time) ' \
-                'VALUES (:riddle, :name, :disc, ' \
-                    ':level_name, :time)'
-        values = {'riddle': self.riddle_alias,
-                'name': self.username, 'disc': self.disc,
-                'level_name': self.level['name'], 'time': time}
-        await database.execute(query, values)
-        
-        # Send request to bot for unlocking channel    
         await super().register_finding('secret_found')
         
     async def register_completion(self):
@@ -597,7 +598,7 @@ class _SecretLevelHandler(_LevelHandler):
             return
         
         # Check if player was first to solve level
-        query = 'SELECT * FROM user_secrets ' \
+        query = 'SELECT * FROM user_levels ' \
                 'WHERE riddle = :riddle ' \
                     'AND username = :name AND discriminator = :disc'
         values = {'riddle': self.riddle_alias,
@@ -607,7 +608,7 @@ class _SecretLevelHandler(_LevelHandler):
         
         # Register level completion in designated table
         time = datetime.utcnow()
-        query = 'UPDATE user_secrets ' \
+        query = 'UPDATE user_levels ' \
                 'SET completion_time = :time ' \
                 'WHERE riddle = :riddle ' \
                     'AND username = :name AND discriminator = :disc ' \

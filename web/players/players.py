@@ -89,7 +89,7 @@ async def riddle_list(alias: str):
         account['country'] = result['country']
         query = 'SELECT riddle, username, discriminator, ' \
                     'COUNT(*) AS page_count ' \
-                'FROM user_pageaccess ' \
+                'FROM user_pages ' \
                 'WHERE riddle = :riddle ' \
                     'AND username = :name AND discriminator = :disc ' \
                 'GROUP BY riddle, username, discriminator'

@@ -30,10 +30,8 @@ async def level_list(alias: str):
         level = dict(level)
         if user:
             # Retrieve level unlocking and completion data
-            table = 'user_levelcompletion' if not level['is_secret'] \
-                    else 'user_secrets'
-            query = ('SELECT username, rating_given, completion_time ' \
-                        'FROM %s ' % table) + \
+            query = 'SELECT username, rating_given, completion_time ' \
+                        'FROM user_levels ' \
                     'WHERE riddle = :riddle ' \
                         'AND username = :name AND discriminator = :disc ' \
                         'AND level_name = :level_name'
@@ -54,7 +52,7 @@ async def level_list(alias: str):
 
                 if not level['beaten']:
                     # Level appears on list iff user reached its front page
-                    query = 'SELECT username FROM user_pageaccess ' \
+                    query = 'SELECT username FROM user_pages ' \
                             'WHERE riddle = :riddle AND username = :name ' \
                                 'AND discriminator = :disc AND path = :path'
                     values = {**base_values, 'path': level['path']}
@@ -74,7 +72,7 @@ async def level_list(alias: str):
                 
                 if level['unlocked']:
                     # Get playe's current found files count for level
-                    query = 'SELECT COUNT(*) AS count FROM user_pageaccess ' \
+                    query = 'SELECT COUNT(*) AS count FROM user_pages ' \
                             'WHERE riddle = :riddle AND username = :name ' \
                                 'AND discriminator = :disc ' \
                                 'AND level_name = :level ' \
@@ -87,21 +85,13 @@ async def level_list(alias: str):
             level['beaten'] = False
             level['unlocked'] = False
 
-        if not level['is_secret']:
-            # Register list of users currently on level
-            query = 'SELECT * FROM riddle_accounts ' \
-                    'WHERE riddle = :riddle and current_level = :name'
-            values = {'riddle': alias, 'name': level['name']}
-            result = await database.fetch_all(query, values)
-            level['users'] = [dict(level) for level in result]
-        else:
-            # Register list of users currently working on secret level
-            query = 'SELECT * FROM user_secrets ' \
-                    'WHERE riddle = :riddle and level_name = :name ' \
-                        'AND completion_time IS NULL'
-            values = {'riddle': alias, 'name': level['name']}
-            result = await database.fetch_all(query, values)
-            level['users'] = [dict(level) for level in result]
+        # Register list of users currently working on level
+        query = 'SELECT * FROM user_levels ' \
+                'WHERE riddle = :riddle and level_name = :name ' \
+                    'AND completion_time IS NULL'
+        values = {'riddle': alias, 'name': level['name']}
+        result = await database.fetch_all(query, values)
+        level['users'] = [dict(level) for level in result]
 
         # Append level to its set subdict
         if not level['level_set'] in levels:
@@ -118,7 +108,7 @@ async def get_pages(alias: str) -> str:
     
     # Build dict of (level -> paths) from user database data
     user = await discord.fetch_user()
-    query = 'SELECT level_name, path FROM user_pageaccess ' \
+    query = 'SELECT level_name, path FROM user_pages ' \
             'WHERE riddle = :riddle ' \
                 'AND username = :name AND discriminator = :disc'
     values = {'riddle': alias,
@@ -207,14 +197,7 @@ async def rate(alias: str, level_name: str, rating: int):
         return 'Funny guy, eh? :)', 403
 
     # Get user's previous rating
-    query = 'SELECT * FROM (' \
-                'SELECT riddle, username, discriminator, ' \
-                    'level_name, completion_time, rating_given ' \
-                    'FROM user_levelcompletion ' \
-                'UNION ALL ' \
-                'SELECT riddle, username, discriminator, ' \
-                    'level_name, completion_time, rating_given ' \
-                    'FROM user_secrets) AS t ' \
+    query = 'SELECT * FROM user_levels ' \
             'WHERE riddle = :riddle ' \
                 'AND username = :name AND discriminator = :disc ' \
                 'AND level_name = :level_name'
@@ -251,13 +234,12 @@ async def rate(alias: str, level_name: str, rating: int):
         rating = None
     average = (total / count) if (count > 0) else 0
 
-    # Update necessary tables
-    table = 'user_levelcompletion' if not level['is_secret'] \
-            else 'user_secrets'
-    query = ('UPDATE %s SET rating_given = :rating ' % table) + \
-            ('WHERE riddle = :riddle ' \
+    # Update needed tables
+    query = 'UPDATE user_levels ' \
+            'SET rating_given = :rating ' \
+            'WHERE riddle = :riddle ' \
                 'AND username = :name AND discriminator = :disc ' \
-                'AND level_name = :level_name')
+                'AND level_name = :level_name'
     values = {'rating': rating, 'riddle': alias,
             'name': user.name, 'disc': user.discriminator,
             'level_name': level_name}
