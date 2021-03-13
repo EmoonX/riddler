@@ -183,6 +183,15 @@ async def get_pages(alias: str) -> str:
     return json.dumps(pages)
 
 
+@levels.route('/<alias>/levels/get-root-path', methods=['GET'])
+async def get_root_path(alias: str):
+    '''Get riddles's root URL path from DB.'''
+    query = 'SELECT * FROM riddles ' \
+            'WHERE alias = :alias'
+    result = await database.fetch_one(query, {'alias': alias})
+    return result['root_path']
+
+
 @levels.route('/<alias>/levels/rate/<level_name>/<int:rating>', methods=['GET'])
 async def rate(alias: str, level_name: str, rating: int):
     '''Update level rating upon user giving new one.'''

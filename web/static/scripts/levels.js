@@ -26,15 +26,11 @@ function doubleClickIcon() {
     const explorer = $(this).parents('.page-explorer');
     const path = explorer.find('.path').text() +
         $(this).find('figcaption').text();
-    const aux = location.href.split('/');
-    const alias = aux.slice(-2)[0];
-    var url = '';
-    if (alias == 'cipher') {
-      url = 'http://gamemastertips.com/cipher' + path;
-    } else {
-      url = 'https://rnsriddle.com/riddle' + path;
-    }
-    window.open(url, '_blank');
+    const endpoint = location.href + '/get-root-path';
+    $.get(endpoint, rootPath => {
+      const url = rootPath + path;
+      window.open(url, '_blank');
+    });    
   } else {
     // Change current directory to folder's one
     const explorer = $(this).parents('.page-explorer');

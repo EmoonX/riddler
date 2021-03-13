@@ -205,7 +205,7 @@ async def update_all_riddles():
     # Only root can do it!
     ok = await root_auth()
     if not ok:
-        return
+        return 'Unauthorized', 401
     
     # Get all riddle aliases from DB
     query = 'SELECT * FROM riddles'
