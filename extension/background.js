@@ -26,8 +26,8 @@ function sendToServer(url) {
         console.log(res);
         if (res.status == 401) {
           // Unauthorized, so open Discord auth page on new tab
-          const url_login = SERVER_URL + '/login';
-          window.open(url_login,'_blank');
+          const login = SERVER_URL + '/login';
+          chrome.tabs.create({url: login});
         }
       })
       .then(error => {console.log(error)})

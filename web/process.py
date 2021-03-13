@@ -284,10 +284,10 @@ class _PathsHandler:
         await database.execute(query, values)
 
         # Also update riddle global hit counter
-        query = 'UPDATE general_info ' \
+        query = 'UPDATE riddles ' \
                 'SET hit_counter = hit_counter + 1 ' \
-                'WHERE riddle = :riddle '
-        await database.execute(query, {'riddle': self.riddle_alias})
+                'WHERE alias = :alias '
+        await database.execute(query, {'alias': self.riddle_alias})
     
     async def _process_cheevo(self, path: str):
         '''Grant cheevo and awards if page is an achievement one.'''
