@@ -13,7 +13,7 @@ class Send(commands.Cog):
         member = get(guild.members, name=ctx.author.name)
         role = None
         if member:
-            role = get(member.roles, name='Administrator')
+            role = get(member.roles, name='Admin')
         if not member or not role:
             # You are not an admin of given guild
             text = '> `!send` - Access denied'

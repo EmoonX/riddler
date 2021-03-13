@@ -523,14 +523,14 @@ class _NormalLevelHandler(_LevelHandler):
         # Register level completion in designated table
         time = datetime.utcnow()
         count = self.riddle_account['cur_hit_counter']
-        query = 'INSERT INTO user_levels ' \
-                '(riddle, username, discriminator, ' \
-                    'level_name, completion_time, page_count) ' \
-                'VALUES (:riddle, :name, :disc, :level_name, :time, :count)'
+        query = 'UPDATE user_levels ' \
+                'SET completion_time = :time, page_count = :count ' \
+                'WHERE riddle = :riddle ' \
+                    'AND username = :name AND discriminator = :disc ' \
+                    'AND level_name = :level'
         values = {'riddle': self.riddle_alias,
                 'name': self.username, 'disc': self.disc,
-                'level_name': self.level['name'],
-                'time': time, 'count': count}
+                'level': self.level['name'], 'time': time, 'count': count}
         await database.execute(query, values)
     
         # Bot level beat procedures
