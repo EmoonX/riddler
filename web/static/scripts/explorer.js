@@ -89,7 +89,7 @@ export function changeDir(explorer, folderPath, admin) {
       }
     }
     const path = row['path'];
-    const img = `<img src="/static/icons/${name}.png">`;
+    const img = `<img src="/static/icons/extensions/${name}.png">`;
     const fc = `<figcaption>${page}</figcaption>`;
     const figure = `<figure ${current} title="${path}">${img}${fc}</figure>`;
     
