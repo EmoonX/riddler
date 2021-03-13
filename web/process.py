@@ -431,16 +431,17 @@ class _LevelHandler:
     async def register_completion(self) -> bool:
         '''Register level completion and update all needed tables.
         
-        :return: If level has been already completed.'''
+        :return: If level is unlocked AND yet to be completed.'''
 
-        # Check if level has been completed
+        # Check if level is unlocked AND unbeaten
         row = await self._get_user_level_row()
-        if row and row['completion_time']:
-            return True
+        if not row or row['completion_time']:
+            return False
 
         # Update level-related tables
         await self._update_info()
-        return False
+        
+        return True
 
     async def _update_info(self):
         '''Update level-related tables.'''
@@ -483,8 +484,8 @@ class _NormalLevelHandler(_LevelHandler):
         '''Increment player level upon reaching level's front page.'''
         
         # Send request to bot for unlocking channel    
-        ok = await super().register_finding('advance')
-        if not ok:
+        is_new = await super().register_finding('advance')
+        if not is_new:
             return
         
         # Update player's current_level and reset their page count
@@ -501,8 +502,8 @@ class _NormalLevelHandler(_LevelHandler):
         '''Register normal level completion and update all needed tables.'''
 
         # Do base completion procedures first
-        completed = await super().register_completion()
-        if completed:
+        ok = await super().register_completion()
+        if not ok:
             return
         
         # Check if player was first to solve level
@@ -593,8 +594,8 @@ class _SecretLevelHandler(_LevelHandler):
         '''Register normal level completion and update all needed tables.'''
 
         # Do base completion procedures first
-        completed = await super().register_completion()
-        if completed:
+        ok = await super().register_completion()
+        if not ok:
             return
         
         # Check if player was first to solve level
