@@ -50,10 +50,8 @@ async def add(guild: discord.Guild, level: dict, winners_role: str):
             category = await guild.create_category(name=level['discord_category'])
         channel = await category.create_text_channel(name)
     if channel:
-        # Set read permission for @winners and @Riddler roles
-        winners = get(guild.roles, name=winners_role)
+        # Set read permission for Riddler role
         riddler = get(guild.roles, name='Riddler')
-        await channel.set_permissions(winners, read_messages=True)
         await channel.set_permissions(riddler, read_messages=True)
         
         # Unset read permission for @everyone
@@ -71,6 +69,10 @@ async def add(guild: discord.Guild, level: dict, winners_role: str):
     if not level['is_secret']:
         # Add new level immediately to riddle's level list
         riddle.levels[level['name']] = level
+        
+        # Set read permissions to winners role
+        winners = get(guild.roles, name=winners_role)
+        await channel.set_permissions(winners, read_messages=True)
         
         # Set read permission to current roles for 
         # this channel and every other level channel before it

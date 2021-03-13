@@ -142,8 +142,9 @@ class UnlockHandler:
                 'Congratulations!') % (self.member.id, level['name'])
         await channel.send(text)
         if first_to_solve:
-            cheevos = get(self.guild.channels, name='achievements')
-            await cheevos.send(text)
+            achievements = get(self.guild.channels, name='achievements')
+            if achievements:
+                await achievements.send(text)
 
     async def cheevo_found(self, cheevo: dict, points: int):
         '''Congratulations upon achievement being found.'''
