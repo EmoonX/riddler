@@ -81,7 +81,8 @@ async def levels(alias: str):
             if not set(level.keys()).issubset({'imgdata', 'pages'}):
                 # Update level(s) database data
                 query = 'UPDATE levels SET '
-                values = {'riddle': alias, 'index': index}
+                values = {'riddle': alias,
+                        'is_secret': is_secret, 'index': index}
                 aux = []
                 for attr, value in level.items():
                     if attr in ('imgdata', 'pages'):
@@ -94,7 +95,8 @@ async def levels(alias: str):
                         aux.append(t)
                     values[attr] = value
                 query += ', '.join(aux)
-                query += ' WHERE riddle = :riddle AND `index` = :index'
+                query += ' WHERE riddle = :riddle ' \
+                        'AND is_secret = :is_secret AND `index` = :index'
                 await database.execute(query, values)
             
             # Swap image file if image was changed
