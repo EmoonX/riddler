@@ -63,7 +63,7 @@
                 {% for cheevo in cheevos[rank] %}
                   {% set points = cheevo_ranks[rank]['points'] %}
                   {% set size = cheevo_ranks[rank]['size'] %}
-                  <img class="cheevo" src="/static/cheevos/{{ riddle['alias'] }}/{{ cheevo['image'] }}" title="[ {{ cheevo['title'] }} ] ({{ points }} points)&#10;&#10;{{ cheevo['description'] }}" style="width: {{ size }}px; height: {{ size }}px; border-color: {{ cheevo['color'] }}; box-shadow: 0 0 0.8em {{ cheevo['color'] }}" alt="{{ cheevo['title'] }}">
+                  <img class="cheevo" src="/static/cheevos/{{ riddle['alias'] }}/{{ cheevo['image'] }}" title="[ {{ cheevo['title'] }} ] ({{ points }} points)&#10;&#10;&quot;{{ cheevo['description'] }}&quot;" style="width: {{ size }}px; height: {{ size }}px; border-color: {{ cheevo['color'] }}; box-shadow: 0 0 0.8em {{ cheevo['color'] }}" alt="{{ cheevo['title'] }}">
                 {% endfor %}
                 </div>
                 {% if not loop.last and cheevos[rank] %}<hr>{% endif %}

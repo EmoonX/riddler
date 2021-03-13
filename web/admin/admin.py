@@ -17,6 +17,13 @@ admin = Blueprint('admin', __name__)
 
 
 @requires_authorization
+async def root_auth() -> bool:
+    '''Check if you are... Emoon.'''
+    user = await discord.fetch_user()
+    return (user.id == 315940379553955844)
+
+
+@requires_authorization
 async def auth(alias: str):
     '''Check if alias is valid and user is admin of guild.'''
     
@@ -67,7 +74,8 @@ async def update_scores(alias: str):
                     'ON user_levels.riddle = levels.riddle ' \
                     'AND user_levels.level_name = levels.name ' \
                 'WHERE levels.riddle = :riddle ' \
-                    'AND username = :name and discriminator = :disc'
+                    'AND username = :name and discriminator = :disc ' \
+                    'AND completion_time IS NOT NULL '
         values = {'riddle': alias,
                 'name': row['username'], 'disc': row['discriminator']}
         result = await database.fetch_all(query, values)
@@ -174,7 +182,44 @@ async def update_ratings(alias: str):
         await database.execute(query, values)
     
     return 'SUCCESS :)', 200
+
+
+@admin.route('/admin/<alias>/update-all', methods=['GET'])
+@requires_authorization
+async def update_all(alias: str):
+    '''Wildcard route for running all update ones above.'''
+    update_methods = \
+        (update_scores, update_completion_count, update_ratings)
+    for update in update_methods:
+        response = await update(alias)
+        if response[1] != 200:
+            return response      
+    return 'SUCCESS :)', 200
+
+
+@admin.route('/admin/update-all-riddles', methods=['GET'])
+@requires_authorization
+async def update_all_riddles():
+    '''Update everything on every single riddle.'''
     
+    # Only root can do it!
+    ok = await root_auth()
+    if not ok:
+        return
+    
+    # Get all riddle aliases from DB
+    query = 'SELECT * FROM riddles'
+    result = await database.fetch_all(query)
+    
+    # Run update_all on every riddle
+    for row in result:
+        alias = row['alias']
+        response = await update_all(alias)
+        if response[1] != 200:
+            return response
+    
+    return 'SUCCESS :)', 200
+
     
 async def save_image(folder: str, alias: str,
         filename: str, imgdata: str, prev_filename=''):
@@ -207,18 +252,4 @@ async def save_image(folder: str, alias: str,
     img.save(path)
     print('[%s] Image %s successfully saved'
             % (alias, filename))
-
-
-@admin.route('/admin/<alias>/update-all', methods=['GET'])
-@requires_authorization
-async def update_all(alias: str):
-    '''Wildcard route for running all update ones above.'''
-    
-    update_methods = \
-        (update_scores, update_completion_count, update_ratings)
-    for update in update_methods:
-        result = await update(alias)
-        if result[1] != 200:
-            return result
         
-    return 'SUCCESS :)', 200

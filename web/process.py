@@ -388,7 +388,7 @@ class _LevelHandler:
     async def _get_user_level_row(self):
         ''':return: User/level registry from DB.'''
 
-        query = 'SELECT * FROM %s user_levels ' \
+        query = 'SELECT * FROM user_levels ' \
                 'WHERE riddle = :riddle AND username = :name ' \
                 'AND discriminator = :disc AND level_name = :level_name'
         values = {'riddle': self.riddle_alias, 
