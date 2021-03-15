@@ -278,7 +278,7 @@ class _PathsHandler:
         query = 'UPDATE riddle_accounts ' \
                 'SET cur_hit_counter = cur_hit_counter + 1 ' \
                 'WHERE riddle = :riddle ' \
-                'AND username = :name AND discriminator = :disc'
+                    'AND username = :name AND discriminator = :disc'
         values = {'riddle': self.riddle_alias,
                 'name': self.username, 'disc': self.disc}
         await database.execute(query, values)
@@ -295,7 +295,7 @@ class _PathsHandler:
         # Check if it's an achievement page
         query = 'SELECT * FROM achievements ' \
                 'WHERE riddle = :riddle ' \
-                'AND JSON_CONTAINS(paths_json, :path, "$.paths")'
+                    'AND JSON_CONTAINS(paths_json, :path, "$.paths")'
         values = {'riddle': self.riddle_alias, 'path': ('\"%s\"' % path)}
         cheevo = await database.fetch_one(query, values)
         if not cheevo:
@@ -356,7 +356,8 @@ class _PathsHandler:
 
         # Send request to bot to congratulate member
         await bot_request('unlock', method='cheevo_found',
-                alias=self.riddle_alias, name=self.username, disc=self.disc,
+                alias=self.riddle_alias,
+                username=self.username, disc=self.disc,
                 cheevo=dict(cheevo), points=points)
 
 
@@ -424,7 +425,7 @@ class _LevelHandler:
         # Call bot unlocking procedure
         await bot_request('unlock', method=method,
                 alias=self.riddle_alias, level=self.level,
-                name=self.username, disc=self.disc)
+                username=self.username, disc=self.disc)
         
         return True
     
@@ -537,7 +538,7 @@ class _NormalLevelHandler(_LevelHandler):
         await bot_request('unlock', method='beat',
                 alias=self.riddle_alias,
                 level=self.level, points=self.points,
-                name=self.username, disc=self.disc,
+                username=self.username, disc=self.disc,
                 first_to_solve=first_to_solve, milestone=milestone)
     
         # Get next level (if any)
@@ -565,7 +566,7 @@ class _NormalLevelHandler(_LevelHandler):
             winners_role = result['winners_role']
             await bot_request('unlock', method='game_completed',
                     alias=self.riddle_alias,
-                    name=self.username, disc=self.disc,
+                    username=self.username, disc=self.disc,
                     winners_role=winners_role)
 
         # Update countries table too
@@ -623,5 +624,5 @@ class _SecretLevelHandler(_LevelHandler):
         await bot_request('unlock', method='secret_solve',
                 alias=self.riddle_alias,
                 level=self.level, points=self.points,
-                name=self.username, disc=self.disc,
+                username=self.username, disc=self.disc,
                 first_to_solve=first_to_solve)

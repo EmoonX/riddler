@@ -43,7 +43,7 @@ async def auth(alias: str):
     ok = await bot_request('is-member-and-has-permissions',
             full_name=result['full_name'],
             username=user.name, disc=user.discriminator)
-    if True:
+    if ok != "True":
         return 'Unauthorized', 401
     
     return 'OK', 200
