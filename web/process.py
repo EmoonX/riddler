@@ -206,21 +206,31 @@ class _PathsHandler:
                 'WHERE riddle = :riddle AND name = :name'
         values = {'riddle': self.riddle_alias, 'name': page['level_name']}
         page_level = await database.fetch_one(query, values)
-            
-        # Get next normal level name (or first)
+                  
         if current_name != '🏅':
-            index = current_level['index'] + 1 if current_level else 1
-            query = 'SELECT * FROM levels ' \
-                    'WHERE riddle = :riddle ' \
-                        'AND is_secret IS FALSE AND `index` = :index'
-            values = {'riddle': self.riddle_alias, 'index': index}
+            # Find if current level is solved (either beforehand or not)
+            query = 'SELECT * FROM user_levels ' \
+                    'WHERE riddle = :riddle AND level_name = :level ' \
+                        'AND completion_time IS NOT NULL'
+            values = {'riddle': self.riddle_alias, 'level': current_name}
             result = await database.fetch_one(query, values)
-            next_name = result['name'] if result else ''
-        
-            if page_level['name'] == next_name and path == page_level['path']:
-                # If it's the new level's front page, register progress
-                lh = _NormalLevelHandler(page_level, self)
-                await lh.register_finding()
+            current_solved = (result is not None)
+            
+            if current_solved:
+                # Get next level name
+                index = current_level['index'] + 1 if current_level else 1
+                query = 'SELECT * FROM levels ' \
+                        'WHERE riddle = :riddle ' \
+                            'AND is_secret IS FALSE AND `index` = :index'
+                values = {'riddle': self.riddle_alias, 'index': index}
+                result = await database.fetch_one(query, values)
+                next_name = result['name'] if result else ''
+            
+                if page_level['name'] == next_name \
+                        and path == page_level['path']:
+                    # If it's the new level's front page, register progress
+                    lh = _NormalLevelHandler(page_level, self)
+                    await lh.register_finding()
             
         # Check for secret level pages
         query = 'SELECT * FROM levels ' \
