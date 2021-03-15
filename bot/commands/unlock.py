@@ -30,7 +30,7 @@ class UnlockHandler:
         # Send congratulatory message
         n = 'DCBAS'.find(level['rank']) + 1
         stars = '★' * n
-        print(('> \033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
+        logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
                 'has beaten level \033[1m%s\033[0m') \
                 % (self.guild.name, self.member.name,
                 self.member.discriminator, level['name']))
@@ -98,7 +98,7 @@ class UnlockHandler:
         await self.member.add_roles(reached)
         
         # Log reaching secret and send message to member
-        print(('> \033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
+        logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
                 'has found secret level \033[1m%s\033[0m') \
                 % (self.guild.name, self.member.name,
                     self.member.discriminator, level['name']))
@@ -124,7 +124,7 @@ class UnlockHandler:
         # Log solving procedure and send message to member
         n = 'DCBAS'.find(level['rank']) + 1
         stars = '★' * n
-        print(('> \033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
+        logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
                 'has completed secret level \033[1m%s\033[0m') 
                 % (self.guild.name, self.member.name,
                     self.member.discriminator, level['name']))
@@ -150,7 +150,7 @@ class UnlockHandler:
         '''Congratulations upon achievement being found.'''
         
         # Log and send congratulatory message
-        print(('> \033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
+        logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
                 'got cheevo \033[1m%s\033[0m!') %
                 (self.guild.name, self.member.name,
                     self.member.discriminator, cheevo['title']))
@@ -195,7 +195,7 @@ class UnlockHandler:
         await update_nickname(self.member, '💎')
 
         # Player has completed the game (for now?)
-        print(('> \033[1m[%s]\033[0m \033[1m%s#%s\033[0m ' \
+        logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m ' \
                 'has finished the game!') \
                 % (self.guild.name,
                     self.member.name, self.member.discriminator))

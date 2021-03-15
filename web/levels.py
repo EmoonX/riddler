@@ -5,8 +5,7 @@ from quart import Blueprint, render_template
 from quart_discord import requires_authorization
 
 import admin.admin as admin
-from auth import User, discord
-from ipc import web_ipc
+from auth import discord
 from util.db import database
 
 # Create app blueprint

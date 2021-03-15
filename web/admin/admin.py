@@ -9,7 +9,7 @@ from PIL import Image
 
 from auth import discord
 from inject import level_ranks, cheevo_ranks
-from ipc import web_ipc
+from webclient import bot_request
 from util.db import database
 
 # Create app blueprint
@@ -39,11 +39,11 @@ async def auth(alias: str):
     if user.id == 315940379553955844:
         return 'OK', 200
     
-    # Check if user is indeed an admin of given guild
-    ok = await web_ipc.request('is_member_and_has_permissions',
+    # Check if user has enough permissions in given guild
+    ok = await bot_request('is-member-and-has-permissions',
             full_name=result['full_name'],
             username=user.name, disc=user.discriminator)
-    if not ok:
+    if True:
         return 'Unauthorized', 401
     
     return 'OK', 200

@@ -32,10 +32,10 @@ async def on_ready():
     # Build riddles dict
     await build_riddles()
     
-    # guild = get(bot.guilds, name='Cipher: Crack the Code')
-    # riddler = get(guild.roles, name='Riddler')
-    # for channel in guild.channels:
-    #     await channel.set_permissions(riddler, read_messages=True)
+    guild = get(bot.guilds, name='Riddler\'s Wonderland')
+    for role in guild.roles:
+        if 'reached-' in role.name or 'solved-' in role.name:
+            await role.delete()
 
 if __name__ == '__main__':
     # Start bot with secret token

@@ -1,14 +1,10 @@
 from discord import Intents
 from discord.ext import commands
-from discord.ext.ipc import Server
 from discord_slash import SlashCommand
 
 
 class Bot(commands.Bot):
-    '''Extended bot class to contain IPC server.'''
-
-    ipc: Server
-    '''Bot server for inter-process communication with Quart'''
+    '''Extended bot class.'''
     
     slash: SlashCommand
     '''Slash Commands object for dealing with special "/" commands'''
@@ -24,9 +20,6 @@ class Bot(commands.Bot):
         # Init Slash Commands object
         self.slash = SlashCommand(self, override_type=True)
         
-        # Start IPC server
-        self.ipc = Server(self, secret_key='RASPUTIN')
-        self.ipc.start()
 
 # Global bot object to be used on other modules
 bot: commands.Bot = Bot()

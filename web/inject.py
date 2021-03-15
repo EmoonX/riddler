@@ -2,7 +2,7 @@ from pycountry import pycountry
 from flag import flag
 
 from auth import discord
-from ipc import web_ipc
+from webclient import bot_request
 from util.db import database
 
 
@@ -82,8 +82,8 @@ async def context_processor():
         riddle = await database.fetch_one(query, {'alias': alias})
         
         if riddle:
-            # Get icon URL by bot IPC
-            url = await web_ipc.request('get_riddle_icon_url',
+            # Get icon URL by bot request
+            url = await bot_request('get-riddle-icon-url',
                     name=riddle['full_name'])
             riddle = dict(riddle)
             riddle['icon_url'] = url
@@ -116,7 +116,7 @@ async def context_processor():
     
     async def get_avatar_url(username: str, disc: str):
         '''Returns user's avatar url from a request sent to bot.'''
-        url = await web_ipc.request('get_avatar_url',
+        url = await bot_request('get-avatar-url',
                 username=username, disc=disc)
         return url
 

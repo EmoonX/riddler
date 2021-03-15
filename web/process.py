@@ -7,7 +7,7 @@ from quart import Blueprint, request, jsonify
 from quart_discord.models import User
 
 from auth import discord
-from ipc import web_ipc
+from webclient import bot_request
 from inject import cheevo_ranks
 from util.db import database
 
@@ -355,7 +355,7 @@ class _PathsHandler:
         await database.execute(query, values)
 
         # Send request to bot to congratulate member
-        await web_ipc.request('unlock', method='cheevo_found',
+        await bot_request('unlock', method='cheevo_found',
                 alias=self.riddle_alias, name=self.username, disc=self.disc,
                 cheevo=dict(cheevo), points=points)
 
@@ -400,7 +400,7 @@ class _LevelHandler:
     async def register_finding(self, method: str) -> bool:
         '''Base level finding procedures.
         
-        :param method: IPC method name; "advance" or "secret_found",
+        :param method: bot request path; "advance" or "secret_found",
             whether it's a normal or secret level
         :return: If a new level was indeed been found'''
         
@@ -422,7 +422,7 @@ class _LevelHandler:
         await database.execute(query, values)
         
         # Call bot unlocking procedure
-        await web_ipc.request('unlock', method=method,
+        await bot_request('unlock', method=method,
                 alias=self.riddle_alias, level=self.level,
                 name=self.username, disc=self.disc)
         
@@ -534,7 +534,7 @@ class _NormalLevelHandler(_LevelHandler):
         await database.execute(query, values)
     
         # Bot level beat procedures
-        await web_ipc.request('unlock', method='beat',
+        await bot_request('unlock', method='beat',
                 alias=self.riddle_alias,
                 level=self.level, points=self.points,
                 name=self.username, disc=self.disc,
@@ -563,7 +563,7 @@ class _NormalLevelHandler(_LevelHandler):
             values = {'alias': self.riddle_alias}
             result = await database.fetch_one(query, values)
             winners_role = result['winners_role']
-            await web_ipc.request('unlock', method='game_completed',
+            await bot_request('unlock', method='game_completed',
                     alias=self.riddle_alias,
                     name=self.username, disc=self.disc,
                     winners_role=winners_role)
@@ -620,7 +620,7 @@ class _SecretLevelHandler(_LevelHandler):
         await database.execute(query, values)
         
         # Bot secret solve procedures
-        await web_ipc.request('unlock', method='secret_solve',
+        await bot_request('unlock', method='secret_solve',
                 alias=self.riddle_alias,
                 level=self.level, points=self.points,
                 name=self.username, disc=self.disc,

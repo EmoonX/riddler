@@ -1,6 +1,6 @@
 from quart import Blueprint, render_template
 
-from ipc import web_ipc
+from webclient import bot_request
 from util.db import database
 
 # Create app blueprint
@@ -19,7 +19,7 @@ async def global_list():
 
     # Get riddles' icon URLs
     for riddle in riddles:
-        url = await web_ipc.request('get_riddle_icon_url',
+        url = await bot_request('get-riddle-icon-url',
                 name=riddle['full_name'])
         riddle['icon_url'] = url
     
@@ -58,7 +58,7 @@ async def riddle_list(alias: str):
     riddle = dict(result)
 
     # Get riddles' icon URL
-    url = await web_ipc.request('get_riddle_icon_url',
+    url = await bot_request('get-riddle-icon-url',
             name=riddle['full_name'])
     riddle['icon_url'] = url
     

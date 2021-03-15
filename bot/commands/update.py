@@ -9,7 +9,6 @@ from riddle import riddles
 from commands.unlock import update_nickname
 
 
-@bot.ipc.route()
 async def insert(data):
     '''Build guild channels and roles from level data.'''
 
@@ -122,7 +121,6 @@ async def add(guild: discord.Guild, level: dict, winners_role: str):
         await channel.set_permissions(solved, read_messages=True)
 
 
-@bot.ipc.route()
 async def update(data):
     '''Úpdate Discord-specific guild info.'''
     

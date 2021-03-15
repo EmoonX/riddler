@@ -6,7 +6,7 @@ from quart_discord import requires_authorization
 from pymysql.err import IntegrityError
 
 from admin.admin import auth, save_image
-from ipc import web_ipc
+from webclient import bot_request
 from util.db import database
 
 # Create app blueprint
@@ -108,7 +108,7 @@ async def levels(alias: str):
             
             # Update Discord channels and roles names if discord_name changed
             if 'discord_name' in level:
-                await web_ipc.request('update', guild_name=full_name,
+                await bot_request('update', guild_name=full_name,
                         old_name=levels_before[index]['discord_name'],
                         new_name=level['discord_name'])
         
@@ -152,7 +152,7 @@ async def levels(alias: str):
                 imgdata = form['%s-imgdata' % index]
                 await save_image('thumbs', alias, filename, imgdata)
                 
-                # Append values to new levels list for Discord IPC
+                # Append values to new levels list for bot request
                 values['is_secret'] = is_secret
                 levels.append(values)
 
@@ -160,7 +160,7 @@ async def levels(alias: str):
             query = 'SELECT * FROM riddles WHERE alias = :alias'
             result = await database.fetch_one(query, {'alias': alias})
             winners_role = result['winners_role']
-            await web_ipc.request('insert', guild_name=full_name,
+            await bot_request('insert', guild_name=full_name,
                     levels=levels, winners_role=winners_role)
         
         # Update pages data to changed or new levels
