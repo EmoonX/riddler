@@ -216,7 +216,7 @@ class _PathsHandler:
             result = await database.fetch_one(query, values)
             current_solved = (result is not None)
             
-            if current_solved:
+            if not current_name or current_solved:
                 # Get next level name
                 index = current_level['index'] + 1 if current_level else 1
                 query = 'SELECT * FROM levels ' \

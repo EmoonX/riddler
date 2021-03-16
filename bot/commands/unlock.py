@@ -58,6 +58,13 @@ class UnlockHandler:
             text += 'You have unlocked special role **@%s**!' % milestone
             await self.member.send(text)
             
+            # Congratulate milestone reached on respective channel
+            channel = get(self.guild.channels, name=level['discord_name'])
+            text = ('**<@!%d>** has beaten level **%s** ' \
+                        'and is now part of **@%s**! Congratulations!') \
+                    % (self.member.id, level['name'], role.name)
+            await channel.send(text)
+            
 
     async def advance(self, level: dict):
         '''Advance to further level when player arrives at a level front page.
