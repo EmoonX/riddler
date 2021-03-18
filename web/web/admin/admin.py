@@ -233,8 +233,7 @@ async def save_image(folder: str, alias: str,
     img = Image.open(BytesIO(data))
     
     # Get correct riddle thumbs dir
-    dir = Path(os.path.dirname(os.path.realpath(__file__)))
-    dir = str(dir.parent) + ('/static/%s/%s' % (folder, alias))
+    dir = '../static/%s/%s' % (folder, alias)
     
     # Erase previous file (if any and filename was changed)
     if prev_filename and filename != prev_filename:

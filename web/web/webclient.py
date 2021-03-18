@@ -6,7 +6,7 @@ async def bot_request(path: str, **kwargs):
     url = 'http://localhost:4757/' + path
     
     for param, value in kwargs.items():
-        if type(value) == dict:
+        if type(value) in (list, dict):
             kwargs[param] = json.dumps(value)
         elif type(value) == bool or value is None:
             kwargs[param] = int(bool(value))

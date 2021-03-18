@@ -1,6 +1,8 @@
-import traceback
+import json
 import logging
+import traceback
 
+from aiohttp import web
 import discord
 from discord.utils import get
 
@@ -9,19 +11,21 @@ from riddle import riddles
 from commands.unlock import update_nickname
 
 
-async def insert(data):
+async def insert(request):
     '''Build guild channels and roles from level data.'''
 
     # Add level channels and roles to the guild
-    guild = get(bot.guilds, name=data.guild_name)
-    for level in data.levels:
+    data = request.rel_url.query
+    guild = get(bot.guilds, name=data['guild_name'])
+    levels = json.loads(data['levels'])
+    for level in levels:
         text = '**[%s]** Processing level **%s**...' \
-                 % (guild.name, level['name'])
+                % (guild.name, level['name'])
         for member in guild.members:
             if member.guild_permissions.administrator and not member.bot:
                 await member.send(text)
         try:
-            await add(guild, level, data.winners_role)
+            await add(guild, level, data['winners_role'])
         except:
             # Print glorious (and much needed) traceback info
             tb = traceback.format_exc()
@@ -32,12 +36,12 @@ async def insert(data):
     for member in guild.members:
         if member.guild_permissions.administrator and not member.bot:
             await member.send(text)
+    
+    return web.Response(status=200)
 
 
 async def add(guild: discord.Guild, level: dict, winners_role: str):
     '''Add guild channels and roles.'''
-    
-    import logging
     
     # Create channel which defaults to no read permission
     name = level['discord_name']
@@ -144,6 +148,7 @@ async def update(data):
             continue
         if member.guild_permissions.administrator and not member.bot:
             await member.send(text)
+
 
 def setup(_):
     pass
