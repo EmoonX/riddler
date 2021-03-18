@@ -5,13 +5,15 @@ from ssl import SSLError
 
 # Allow util folder to be visible
 sys.path.append('..')
+sys.path.append('../..')
 
 from quart import Quart, session, redirect, url_for
 from quart_discord import Unauthorized
 from dotenv import load_dotenv
 
 # Quart app object
-app = Quart(__name__)
+app = Quart(__name__, 
+        template_folder='../templates', static_folder='../static')
 
 # Load environment variables from .env file
 load_dotenv(verbose=True)
