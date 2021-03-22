@@ -1,5 +1,5 @@
 function sendToServer(url) {
-  // URL to where request will be sent to
+  // Base URL to where requests will be sent to
   const SERVER_URL = 'https://riddler.emoon.dev';
 
   // Get session cookie from browser storage
@@ -20,8 +20,8 @@ function sendToServer(url) {
       body: url
     };
     // Send request to server containing URL text
-    const url_to = SERVER_URL + '/process';
-    fetch(url_to, params)
+    const urlTo = SERVER_URL + '/process';
+    fetch(urlTo, params)
       .then(res => {
         console.log(res);
         if (res.status == 401) {
@@ -34,15 +34,6 @@ function sendToServer(url) {
     ;
   });
 }
-
-// URL wildcards from where to list to requests
-const filter = {
-  urls: [
-    '*://*.rnsriddle.com/riddle/*',
-    '*://*.gamemastertips.com/cipher/*',
-    '*://*.thestringharmony.com/*'
-  ]
-};
 
 chrome.webRequest.onHeadersReceived.addListener(function (details) {
   // Send a process request to server whenever response is received

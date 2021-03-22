@@ -5,6 +5,13 @@
 
   "description": "Browser extension for the Riddler system.",
 
+  "content_scripts": [
+    {
+      "matches": ["*://riddler.emoon.dev/*"],
+      "js": ["content.js"]
+    }
+  ],
+
   "background": {
     "scripts": ["background.js"]
   },
@@ -16,9 +23,6 @@
   "permissions": [
     "webRequest",
     "cookies",
-    "*://riddler.emoon.dev/*",
-    "*://*.rnsriddle.com/riddle/*",
-    "*://*.gamemastertips.com/cipher/*",
-    "*://*.thestringharmony.com/*"
+    "*://riddler.emoon.dev/*"
   ]
 }
