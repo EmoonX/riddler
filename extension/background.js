@@ -35,6 +35,12 @@ function sendToServer(url) {
   });
 }
 
+const filter = {
+  urls: [
+    '*://*/*'
+  ]
+};
+
 chrome.webRequest.onHeadersReceived.addListener(function (details) {
   // Send a process request to server whenever response is received
   console.log(details.url, details.statusCode);
@@ -42,3 +48,39 @@ chrome.webRequest.onHeadersReceived.addListener(function (details) {
     sendToServer(details.url);
   }  
 }, filter);
+
+// Set up context menu tree at install time.
+chrome.runtime.onConnect.addListener(function() {
+  // Create one test item for each context type.
+  var contexts = ["page","selection","link","editable","image","video",
+                  "audio"];
+  for (var i = 0; i < contexts.length; i++) {
+    var context = contexts[i];
+    var title = "Test '" + context + "' menu item";
+    var id = chrome.contextMenus.create({"title": title, "contexts":[context],
+                                         "id": "context" + context});
+    console.log("'" + context + "' item:" + id);
+  }
+
+  // Create a parent item and two children.
+  chrome.contextMenus.create({"title": "Test parent item", "id": "parent"});
+  chrome.contextMenus.create(
+      {"title": "Child 1", "parentId": "parent", "id": "child1"});
+  chrome.contextMenus.create(
+      {"title": "Child 2", "parentId": "parent", "id": "child2"});
+  console.log("parent child1 child2");
+
+  // Create some radio items.
+  chrome.contextMenus.create({"title": "Radio 1", "type": "radio",
+                              "id": "radio1"});
+  chrome.contextMenus.create({"title": "Radio 2", "type": "radio",
+                              "id": "radio2"});
+  console.log("radio1 radio2");
+
+  // Create some checkbox items.
+  chrome.contextMenus.create(
+      {"title": "Checkbox1", "type": "checkbox", "id": "checkbox1"});
+  chrome.contextMenus.create(
+      {"title": "Checkbox2", "type": "checkbox", "id": "checkbox2"});
+  console.log("checkbox1 checkbox2");
+});

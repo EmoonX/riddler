@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Riddler",
-  "version": "0.1.4",
+  "version": "0.1.5",
 
   "description": "Browser extension for the Riddler system.",
 
@@ -23,6 +23,17 @@
   "permissions": [
     "webRequest",
     "cookies",
+    "contextMenus",
     "*://riddler.emoon.dev/*"
-  ]
+  ],
+
+  "optional_permissions": [
+    "*://*/"
+  ],
+
+  "browser_action": {
+    "default_icon": "images/riddler-32.png",
+    "default_title": "Riddler...",
+    "default_popup": "options.htm"
+  }
 }
