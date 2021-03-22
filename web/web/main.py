@@ -34,11 +34,12 @@ from players.players import players
 from players.account import account
 from process import process
 from levels import levels
+from get import get
 from util.db import database
 from inject import context_processor
 
 for blueprint in (auth, admin, admin_levels, admin_cheevos, 
-        levels, players, account, process, levels):
+        players, account, process, levels, get):
     # Register app blueprint to allow other modules
     app.register_blueprint(blueprint)
 

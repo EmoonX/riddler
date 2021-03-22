@@ -26,6 +26,19 @@ cheevo_ranks = {
 }
 
 
+async def get_riddles(unlisted=False):
+    '''Return list of all riddles from DB.
+    
+    :param unlisted: if True, returns also unlisted riddles'''
+    query = ''
+    if not unlisted:
+        query = 'SELECT * FROM riddles WHERE unlisted IS FALSE'
+    else:
+        query = 'SELECT * FROM riddles'
+    riddles = await database.fetch_all(query)
+    return riddles
+
+
 async def get_achievements(alias: str, user: dict = None):
     '''Get riddle achievements grouped by points.
     If user is specified, return only cheevos user has gotten'''
@@ -74,12 +87,6 @@ async def context_processor():
     # List of pycountry country objects
     pycountries = pycountry.countries
     
-    async def get_riddles():
-        '''Return list of all riddles from DB.'''
-        query = 'SELECT * FROM riddles'
-        riddles = await database.fetch_all(query)
-        return riddles
-    
     async def get_riddle(alias):
         '''Return riddle info + icon from a given alias.'''
         
@@ -98,7 +105,8 @@ async def context_processor():
 
     async def get_accounts(alias=''):
         '''Get players data from database.
-            riddle: if present, also get riddle-specific data.'''
+        
+        :param alias: if present, also get riddle-specific data.'''
         accounts = []
         if not alias:
             query = 'SELECT * FROM accounts'
@@ -138,7 +146,8 @@ async def context_processor():
     # Dict for extra variables
     extra = {
         'level_ranks': level_ranks, 'cheevo_ranks': cheevo_ranks,
-        'get_achievements': get_achievements, 'get_emoji_flag': flag
+        'get_riddles': get_riddles, 'get_achievements': get_achievements,
+        'get_emoji_flag': flag
     }
     # Return concatenated dict with pairs ("var" -> var_value)
     return {**locals(), **extra}

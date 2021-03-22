@@ -23,7 +23,7 @@ level_ranks = {
     'S': (1000, 'lightcyan')
 }
 for rank, pair in level_ranks.items():
-    level_ranks[rank] = {'points': pair[0], 'color': pair[1]}
+    level_ranks[rank] = {'points': pair[0], 'color': pair[1]}    
 
 
 @process.route('/process', methods=['POST', 'OPTIONS'])
