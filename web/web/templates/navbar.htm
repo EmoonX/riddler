@@ -7,7 +7,23 @@
             <!--<a href="#" class="nav-button">Countries</a>-->
           </div>
         </nav>
-    {% if alias %}
+    {% if not alias %}
+      <nav class="dropdown">
+        <button class="nav-button riddle-banner">
+          <img class="riddle-icon" src="static/images/riddler-icon.png">
+          <div class="name">Riddler</div>
+        </button>
+        {% set riddles = get_riddles() %}
+        <div>
+        {% for riddle in riddles %}
+          {% set riddle = get_riddle(riddle['alias']) %}
+          <a href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" class="nav-button riddle">
+            <img class="icon" src="{{ riddle['icon_url'] }}">{{ riddle['full_name'] }}
+          </a>
+        {% endfor %}
+        </div>
+      </nav>
+    {% else %}
       {% set riddle = get_riddle(alias) %}
       {% if riddle %}
         <nav class="dropdown">

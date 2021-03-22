@@ -74,6 +74,12 @@ async def context_processor():
     # List of pycountry country objects
     pycountries = pycountry.countries
     
+    async def get_riddles():
+        '''Return list of all riddles from DB.'''
+        query = 'SELECT * FROM riddles'
+        riddles = await database.fetch_all(query)
+        return riddles
+    
     async def get_riddle(alias):
         '''Return riddle info + icon from a given alias.'''
         
