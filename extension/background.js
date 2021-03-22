@@ -37,7 +37,7 @@ function sendToServer(url) {
 
 const filter = {
   urls: [
-    '*://*/*'
+    'https://riddler.emoon.dev/*'
   ]
 };
 
