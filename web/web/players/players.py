@@ -20,7 +20,7 @@ async def global_list():
     # Get riddles' icon URLs
     for riddle in riddles:
         url = await bot_request('get-riddle-icon-url',
-                full_name=riddle['full_name'])
+                guild_id=riddle['guild_id'])
         riddle['icon_url'] = url
     
     # Get players data from database
@@ -59,7 +59,7 @@ async def riddle_list(alias: str):
 
     # Get riddles' icon URL
     url = await bot_request('get-riddle-icon-url',
-            full_name=riddle['full_name'])
+            guild_id=riddle['guild_id'])
     riddle['icon_url'] = url
     
     # Get players data from database

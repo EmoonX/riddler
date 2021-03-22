@@ -41,7 +41,7 @@ async def auth(alias: str):
     
     # Check if user has enough permissions in given guild
     ok = await bot_request('is-member-and-has-permissions',
-            full_name=result['full_name'],
+            guild_id=result['guild_id'],
             username=user.name, disc=user.discriminator)
     if ok != "True":
         return 'Unauthorized', 401

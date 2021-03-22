@@ -62,7 +62,7 @@ async def levels(alias: str):
     # Get full name of guild
     query = 'SELECT * FROM riddles WHERE alias = :alias'
     result = await database.fetch_one(query, {'alias': alias})
-    full_name = result['full_name']
+    guild_id = result['guild_id']
     
     async def _update_levels(levels_before: dict,
             levels_after: dict, is_secret=False):
@@ -108,7 +108,7 @@ async def levels(alias: str):
             
             # Update Discord channels and roles names if discord_name changed
             if 'discord_name' in level:
-                await bot_request('update', guild_name=full_name,
+                await bot_request('update', guild_id=guild_id,
                         old_name=levels_before[index]['discord_name'],
                         new_name=level['discord_name'])
         
@@ -160,7 +160,7 @@ async def levels(alias: str):
             query = 'SELECT * FROM riddles WHERE alias = :alias'
             result = await database.fetch_one(query, {'alias': alias})
             winners_role = result['winners_role']
-            await bot_request('insert', guild_name=full_name,
+            await bot_request('insert', guild_id=guild_id,
                     levels=levels, winners_role=winners_role)
         
         # Update pages data to changed or new levels

@@ -16,7 +16,7 @@ async def insert(request):
 
     # Add level channels and roles to the guild
     data = request.rel_url.query
-    guild = get(bot.guilds, name=data['guild_name'])
+    guild = get(bot.guilds, id=int(data['guild_id']))
     levels = json.loads(data['levels'])
     for level in levels:
         text = '**[%s]** Processing level **%s**...' \
@@ -125,29 +125,30 @@ async def add(guild: discord.Guild, level: dict, winners_role: str):
         await channel.set_permissions(solved, read_messages=True)
 
 
-async def update(data):
+async def update(request):
     '''Úpdate Discord-specific guild info.'''
     
     # Update channel name
-    guild = get(bot.guilds, name=data.guild_name)
-    channel = get(guild.channels, name=data.old_name)
-    await channel.edit(name=data.new_name)
+    data = request.rel_url.query
+    guild = get(bot.guilds, name=int(data['guild_id']))
+    channel = get(guild.channels, name=data['old_name'])
+    await channel.edit(name=data['new_name'])
     
     # Update "reached" (and possibly "solved") role name(s)
-    reached = get(guild.roles, name=('reached-%s' % data.old_name))
-    await reached.edit(name=('reached-%s' % data.new_name))
-    solved = get(guild.roles, name=('solved-%s' % data.old_name))
+    reached = get(guild.roles, name=('reached-%s' % data['old_name']))
+    await reached.edit(name=('reached-%s' % data['new_name']))
+    solved = get(guild.roles, name=('solved-%s' % data['old_name']))
     if solved:
-        await reached.edit(name=('solved-%s' % data.new_name))
+        await reached.edit(name=('solved-%s' % data['new_name']))
     
     # Log message to admin by DM
     text = '**[%s]** Renamed level **%s** channel and role(s) to **%s**' \
-            % (guild.name, data.old_name, data.new_name)
+            % (guild.name, data['old_name'], data['new_name'])
     for member in guild.members:
-        if member.name == 'NinthLyfe':
-            continue
         if member.guild_permissions.administrator and not member.bot:
             await member.send(text)
+    
+    return web.Response(status=200)
 
 
 def setup(_):

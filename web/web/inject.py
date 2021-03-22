@@ -90,7 +90,7 @@ async def context_processor():
         if riddle:
             # Get icon URL by bot request
             url = await bot_request('get-riddle-icon-url',
-                    full_name=riddle['full_name'])
+                    guild_id=riddle['guild_id'])
             riddle = dict(riddle)
             riddle['icon_url'] = url
         

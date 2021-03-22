@@ -27,7 +27,7 @@ class Riddle:
         '''Build riddle object by row extracted from database.'''
 
         # Get info from guild's database data
-        self.guild = get(bot.guilds, name=riddle['full_name'])
+        self.guild = get(bot.guilds, id=int(riddle['guild_id']))
         self.winners_suffix = riddle['winners_suffix']
 
         # Get riddle's level info from database query

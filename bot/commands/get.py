@@ -10,7 +10,7 @@ async def is_member_and_has_permissions(request):
     
     # Get Discord member object
     data = request.rel_url.query
-    guild = get(bot.guilds, name=data['full_name'])
+    guild = get(bot.guilds, id=int(data['guild_id']))
     member = get(guild.members,
             name=data['username'], discriminator=data['disc'])
     
@@ -29,8 +29,8 @@ async def is_member_and_has_permissions(request):
 
 async def get_riddle_icon_url(request):
     '''Get riddle's Discord guild info (in dict form) from name.'''
-    full_name = request.rel_url.query['full_name']
-    guild = get(bot.guilds, name=full_name)
+    guild_id = int(request.rel_url.query['guild_id'])
+    guild = get(bot.guilds, id=guild_id)
     url = str(guild.icon_url)
     return web.Response(text=url)
 
