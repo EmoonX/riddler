@@ -12,8 +12,7 @@ from quart_discord import Unauthorized
 from dotenv import load_dotenv
 
 # Quart app object
-app = Quart(__name__, 
-        template_folder='../templates', static_folder='../static')
+app = Quart(__name__, static_folder='../static')
 
 # Load environment variables from .env file
 load_dotenv(verbose=True)

@@ -18,6 +18,7 @@
           <div>
             <a href="{{ url_for('levels.level_list', alias=riddle['alias']) }}" class="nav-button">Level explorer</a>
             <a href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" class="nav-button">Leaderboard</a>
+            <a href="{{ riddle['front_page'] }}" class="nav-button"><img class="icon" src="/static/icons/external-link.png">Front page</a>
           {% if riddle['invite_code'] %}
             <a href="https://discord.gg/{{ riddle['invite_code'] }}" class="nav-button"><img class="icon" src="/static/icons/discord.png">Discord guild</a>
           {% endif %}
