@@ -15,12 +15,14 @@
         </button>
         {% set riddles = get_riddles() %}
         <div>
-        {% for riddle in riddles %}
+      {% for riddle in riddles %}
+        {% if not riddle['unlisted'] %}
           {% set riddle = get_riddle(riddle['alias']) %}
           <a href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" class="nav-button riddle">
             <img class="icon" src="{{ riddle['icon_url'] }}">{{ riddle['full_name'] }}
           </a>
-        {% endfor %}
+        {% endif %}
+      {% endfor %}
         </div>
       </nav>
     {% else %}

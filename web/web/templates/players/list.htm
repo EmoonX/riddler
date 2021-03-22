@@ -34,11 +34,13 @@
             <figcaption>total points</figcaption>
           </figure>
           <div class="riddles-in">
-          {% for riddle in player['riddles'] %}
+        {% for riddle in player['riddles'] %}
+          {% if not riddle['unlisted'] %}
             <a href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}">
               <img class="riddle-icon" src="{{ riddle['icon_url'] }}" title="{{ riddle['full_name'] }}">
             </a>
-          {% endfor %}
+          {% endif %}
+        {% endfor %}
           </div>
         </div>
       {% endfor %}
