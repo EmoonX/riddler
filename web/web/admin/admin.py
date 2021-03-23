@@ -232,6 +232,21 @@ async def save_image(folder: str, alias: str,
     data = b64decode(data)
     img = Image.open(BytesIO(data))
     
+    if folder == 'cheevos':
+        # Center and crop cheevo image 1:1
+        left, top, right, bottom = (0, 0, img.width, img.height)
+        if img.width > img.height:
+            left = (img.width - img.height) / 2
+            right = left + img.height
+        elif img.height > img.width:
+            top = (img.height - img.width) / 2
+            bottom = top + img.width
+        img = img.crop((left, top, right, bottom))
+        
+        # Resize cheevo image to 200x200
+        size = (200, 200)
+        img = img.resize(size)
+    
     # Get correct riddle thumbs dir
     dir = '../static/%s/%s' % (folder, alias)
     
