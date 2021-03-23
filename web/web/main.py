@@ -2,6 +2,7 @@ import sys
 import asyncio
 from asyncio.events import AbstractEventLoop
 from ssl import SSLError
+from datetime import datetime, timedelta
 
 # Allow util folder to be visible
 sys.path.append('..')
@@ -78,12 +79,14 @@ async def before():
 
 @app.after_request
 async def cookies(response):
-    '''Set session cookie to be valid accross sites (SameSite=None).'''
+    '''Set session cookie to be valid accross sites (SameSite=None)
+    and also to expire only after a week of inactivity.'''
     value = session_cookie.dumps(dict(session))
+    dt = datetime.utcnow() + timedelta(days=7)
     if 'Set-Cookie' in response.headers:
         response.headers.pop('Set-Cookie')
     response.set_cookie('session', value,
-            secure=True, samesite='None')
+            expires=dt, secure=True, samesite='None')
     return response
 
 
