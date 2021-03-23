@@ -163,13 +163,15 @@ $(_ => {
   aux.push('get-pages');
   const url = aux.join('/');
   $.get(url, data => {
-    setPages(data);    
+    // Build dictionary of pages from JSON data
+    setPages(data);
+
+    // Add click handler ONLY AFTER dictionary is built
+    $('.levels').on('click', '.row .menu-button', toggleExplorer);
   });
 
   // Dinamically register events for (current or new) explorer actions
-  $('.levels').on('click', '.row .menu-button', toggleExplorer);
   $('.levels').on('click', '.page-explorer .folder-up', folderUp);
-
   $('button[name="upload-pages"]').on('click', function () {
     // Open (hidden) file browser when clicking upload button
     $('input[name="pages"]').trigger('click');
