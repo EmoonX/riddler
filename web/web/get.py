@@ -11,7 +11,7 @@ async def get_riddle_hosts():
     '''Ǵet list of riddle hosts from database.'''
     
     # Get list of hosts
-    riddles = await get_riddles()
+    riddles = await get_riddles(unlisted=True)
     hosts = [riddle['root_path'] for riddle in riddles]
     
     # Set wildcard (*) to protocol, subdomain and path

@@ -1,28 +1,31 @@
 function getRiddleHosts() {
-  // Build list of permitted host URLs
+  // Send synchronous GET request to retrieve riddle host domains
   const hostsURL = 'https://riddler.emoon.dev/get-riddle-hosts';
-  fetch(hostsURL)
-    .then(response => response.text())
-    .then(data => {
-      console.log(data);
-      const hosts = data.split(' ');
-      chrome.permissions.request({
-        origins: hosts,
-      }, function(granted) {
-        if (granted) {
-          console.log('OK!');
-        } else {
-          console.log('NO :(');
-        }
-      });
-    })
-    .catch(error => {
-      console.log(error);
-    })
-  ;
+  const request = new XMLHttpRequest();
+  request.open('GET', hostsURL, false);
+  request.send(null);
+  if (request.status === 200) {
+    const data = request.responseText;
+    const hosts = data.split(' ');
+    return hosts;
+  }
+}
+
+function updateHosts() {
+  // Update host permissions on button click
+  const hosts = getRiddleHosts();
+  chrome.permissions.request({
+    origins: hosts,
+  }, function(granted) {
+    if (granted) {
+      console.log('OK!');
+    } else {
+      console.log('NO :(');
+    }
+  });
 }
 
 window.onload = (_ => {
   document.getElementsByName('update-hosts')[0]
-    .addEventListener('click', getRiddleHosts);
+      .addEventListener('click', updateHosts);
 });

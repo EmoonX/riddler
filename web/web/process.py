@@ -103,6 +103,8 @@ class _PathsHandler:
             self.riddle_alias = 'rns'
         elif 'thestringharmony.com' in domain:
             self.riddle_alias = 'string'
+        elif 'combinats.com' in domain:
+            self.riddle_alias = 'combinats'
         
         # Save basic user info
         self.username = user.username
@@ -119,7 +121,7 @@ class _PathsHandler:
             # Remove base folder from path, if any
             if self.riddle_alias == 'cipher':
                 path = path.replace('/cipher/', '')
-            elif self.riddle_alias == 'rns':
+            elif self.riddle_alias in ('rns', 'combinats'):
                 path = path.replace('/riddle/', '')
             else:
                 path = path.replace('//', '/')

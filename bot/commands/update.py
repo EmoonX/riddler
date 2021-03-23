@@ -95,14 +95,15 @@ async def add(guild: discord.Guild, level: dict, winners_role: str):
             if level['index'] == last_index:
                 last_level = level
                 break
-        last_name = 'reached-' + last_level['discord_name']
-        last_reached = get(guild.roles, name=last_name)
-        for member in guild.members:
-            if member.nick and '💎' in member.nick:
-                if winners in member.roles:
-                    await member.remove_roles(winners)
-                await member.add_roles(last_reached)
-                await update_nickname(member, '[%s]' % last_level['name'])
+        if last_level:
+            last_name = 'reached-' + last_level['discord_name']
+            last_reached = get(guild.roles, name=last_name)
+            for member in guild.members:
+                if member.nick and '💎' in member.nick:
+                    if winners in member.roles:
+                        await member.remove_roles(winners)
+                    await member.add_roles(last_reached)
+                    await update_nickname(member, '[%s]' % last_level['name'])
     
     else:
         # Add new level immediately to riddle's level list
