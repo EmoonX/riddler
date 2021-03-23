@@ -123,6 +123,10 @@ async def context_processor():
         accounts = {account['username']: account for account in accounts}
         return accounts
     
+    def is_authorized() -> bool:
+        '''Return if the user is currently logged in.'''
+        return discord.authorized
+    
     async def get_session_user():
         '''Return current Discord OAuth2 session user.'''
         user = await discord.fetch_user()
