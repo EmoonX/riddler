@@ -1,5 +1,6 @@
 {% extends 'layout.htm' %}
-{% block title %}{{ get_emoji_flag(session['country']) }} {{ user.name }} | Settings{% endblock %}
+{% set country = get_user_country() %}
+{% block title %}{{ get_emoji_flag(country) }} {{ user.name }} | Settings{% endblock %}
 {% block extra %}
     <script src="/static/scripts/settings.js"></script>
 {% endblock %}
@@ -14,7 +15,7 @@
               <input type="text" name="discord_tag" value="{{ user.name }}#{{ user.discriminator }}" disabled>
             </label>
             <label>Country
-              <input type="hidden" id="selected" value="{{ session['country'] }}">
+              <input type="hidden" id="selected" value="{{ country }}">
               <select name="country" required>
                 <option disabled>-- Choose your destiny --</option>
               {% for country in get_sorted_countries() %}

@@ -142,6 +142,16 @@ async def context_processor():
         countries = list(pycountries)
         countries.sort(key=comp_names)
         return countries
+    
+    async def get_user_country():
+        '''Ǵet current user's country code.'''
+        user = await discord.fetch_user()
+        query = 'SELECT * FROM accounts ' \
+                'WHERE username = :name AND discriminator = :disc'
+        values = {'name': user.name, 'disc': user.discriminator}
+        result = await database.fetch_one(query, values)
+        country = result['country']
+        return country
 
     # Dict for extra variables
     extra = {

@@ -36,7 +36,4 @@ async def settings():
             'name': user.name, 'disc': user.discriminator}
     await database.execute(query, values)
 
-    # Also update session data
-    session['country'] = form['country']
-
     return await r('Account details updated successfully!')
