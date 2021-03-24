@@ -90,7 +90,7 @@
                   {% set rating = 0 %}
                 {% else %}
                   {% set rating = level['rating_avg'] %}
-                  {% set rating = (2 * rating)|round(1) / 2 %}
+                  {% set rating = (2 * rating)|round / 2 %}
                 {% endif %}
                 <div class='hearts {{ unrated }}'>
                 {% for i in range(5) %}
