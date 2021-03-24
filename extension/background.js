@@ -1,3 +1,6 @@
+// Time of last login request
+var t0;
+
 function sendToServer(url) {
   // Base URL to where requests will be sent to
   const SERVER_URL = 'https://riddler.emoon.dev';
@@ -25,9 +28,19 @@ function sendToServer(url) {
       .then(res => {
         console.log(res);
         if (res.status == 401) {
+          tNow = new Date();
+          dt = tNow - t0;
+          if (t0 && dt < 5000) {
+            // If current login request is less than 5 seconds
+            // after marked one, don't open a new login tab
+            return;
+          }          
           // Unauthorized, so open Discord auth page on new tab
           const login = SERVER_URL + '/login';
           chrome.tabs.create({url: login});
+
+          // Mark time of current login request
+          t0 = tNow;
         }
       })
       .then(error => {console.log(error)})
