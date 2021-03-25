@@ -115,10 +115,11 @@ header > nav {
     }
   }
   .riddle-banner {
+    position: relative;
     display: flex;
     justify-content: center;
     align-items: center;
-    width: 400px;
+    width: 450px;
     border: medium solid rgba(127, 127, 127, 0.5);
     border-width: 0 medium;
     background-color: rgba(127, 127, 127, 0.2); 
@@ -127,6 +128,12 @@ header > nav {
   
     > .name {
       margin-left: 20px;
+    }
+    &::after {
+      content: '▼';
+      position: absolute;
+      right: 20px;
+      font-size: 1.5em;
     }
   }
 }
