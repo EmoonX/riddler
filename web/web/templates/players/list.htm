@@ -34,13 +34,16 @@
             <figcaption>total points</figcaption>
           </figure>
           <div class="honors">
-        {% for riddle in player['completed_riddles'] %}
-          {% if not riddle['unlisted'] %}
-            <a class="completed" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}">
-              <img class="riddle-icon" src="{{ riddle['icon_url'] }}" title="{{ riddle['full_name'] }}">
+          {% for riddle in player['mastered_riddles'] %}
+            <a class="completed mastered" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}">
+              <img class="riddle-icon" src="{{ riddle['icon_url'] }}" title="{{ riddle['full_name'] }} (MASTERED)">
             </a>
-          {% endif %}
-        {% endfor %}
+          {% endfor %}
+          {% for riddle in player['completed_riddles'] %}
+            <a class="completed" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}">
+              <img class="riddle-icon" src="{{ riddle['icon_url'] }}" title="{{ riddle['full_name'] }} (completed)">
+            </a>
+          {% endfor %}
           </div>
         </div>
       {% endfor %}

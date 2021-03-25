@@ -13,15 +13,23 @@ async def global_list():
     """Global player list."""
 
     # Get riddles data from database
-    query = 'SELECT * from riddles'
+    query = 'SELECT * from riddles ' \
+            'WHERE unlisted IS FALSE'
     result = await database.fetch_all(query)
     riddles = [dict(riddle) for riddle in result]
 
-    # Get riddles' icon URLs
     for riddle in riddles:
+        # Get riddle's icon URL
         url = await bot_request('get-riddle-icon-url',
                 guild_id=riddle['guild_id'])
         riddle['icon_url'] = url
+        
+        # Get total number of achievements on riddle
+        query = 'SELECT COUNT(*) as count FROM achievements ' \
+                'WHERE riddle = :riddle'
+        values = {'riddle': riddle['alias']}
+        result = await database.fetch_one(query, values)
+        riddle['cheevo_count'] = result['count'];
     
     # Get players data from database
     query = 'SELECT * FROM accounts ' \
@@ -32,7 +40,8 @@ async def global_list():
     
     for account in accounts:
         # Build list of riddle account has beaten (so far)
-        account['completed_riddles'] = []
+        account['mastered_riddles'] = []
+        account['completed_riddles'] = []        
         for riddle in riddles:
             query = 'SELECT * FROM riddle_accounts ' \
                     'WHERE riddle = :riddle ' \
@@ -40,9 +49,19 @@ async def global_list():
                         'AND current_level = "🏅"'
             values = {'riddle': riddle['alias'],
                     'name': account['username'], 'disc': account['discriminator']}
-            found = await database.fetch_one(query, values)
-            if found:
-                account['completed_riddles'].append(riddle)
+            completed = await database.fetch_one(query, values)
+            if completed:
+                # Get number of achievements user has gotten on riddle
+                query = 'SELECT COUNT(*) as count FROM user_achievements ' \
+                        'WHERE riddle = :riddle ' \
+                            'AND username = :name AND discriminator = :disc '
+                result = await database.fetch_one(query, values)
+                
+                # Append riddle to list of mastered or completed ones
+                if result['count'] == riddle['cheevo_count']:
+                    account['mastered_riddles'].append(riddle)
+                else:
+                    account['completed_riddles'].append(riddle)
 
     # Render page with account info
     return await render_template('players/list.htm',

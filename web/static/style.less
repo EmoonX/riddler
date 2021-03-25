@@ -813,7 +813,7 @@ section.list.players > .row {
 
     > .completed {
       position: relative;
-      z-index: -1000;
+      z-index: 0;
       text-align: left;
       text-decoration: none;
 
@@ -822,7 +822,12 @@ section.list.players > .row {
         position: absolute;
         z-index: 1000;
         margin-left: -25px;
+        font-size: 1.2em;
         text-shadow: 0 0 0.4em crimson, 0 0 0.8em crimson;
+      }
+      &.mastered::before {
+        content: '💎';
+        text-shadow: 0 0 0.4em teal, 0 0 0.8em teal, 0 0 1.2em teal;
       }
     }
   }
