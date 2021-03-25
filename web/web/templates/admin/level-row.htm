@@ -1,29 +1,29 @@
 <div class="row">
   <div class="name">
-    <label class="key">
+    <label class="key" title="ℹ️ UTF-8 level name that'll appear almost everywhere.">
       Level
       <input type="text" name="{{ index }}-name" size="2" value="{{ level['name'] }}" required>
     </label>
-    <div class="menu-button">☰</div>
+    <div class="menu-button" title="ℹ️ File explorer&#10;&#10;Add or remove files from level by clicking on them. Highlighted ones are marked as part of the current one. Navigation can be made by double-clicking on folders and using the &quot;folder up&quot; button. First clicked file will automatically fill the &quot;Front page path&quot; field.">☰</div>
   </div>
   <div class="thumb">
-    <img id="{{ index }}-thumb" class="level" src="{{ image }}">
+    <img id="{{ index }}-thumb" class="level" src="{{ image }}" title="ℹ️ Level's front image; if present, must be the same one found in front page's path.">
     <input type="file" id="{{ index }}-input" class="thumb-input" accept="image/*">
     <input type="hidden" name="{{ index }}-image" value="{{ level['image'] }}">
     <input type="hidden" name="{{ index }}-imgdata">
   </div>
   <div>
-    <label>
+    <label title="ℹ️ Path corresponding to the level's front page; generally the first non-redirecting one and that also contains level's front image.&#10;&#10;(automatically filled in when clicking the first file on level's file explorer)">
       Front page path
       <input type="text" class="front-path" name="{{ index }}-path" size="15" value="{{ level['path'] }}" required>
     </label>
-    <label>
+    <label title="ℹ️ Path corresponding to the first non-redirecting page after entering current level's answer (which can be answer's page itself).">
       Answer path
       <input type="text" class="answer-path" name="{{ index }}-answer" size="15" value="{{ level['answer'] }}" required>
     </label>
   </div> 
   <div>
-    <fieldset class="rank" title="Select rank according to achievement's difficulty or importance.&#10;&#10;[🥉] 'Dumb' and/or easy-to-reach cheevos;&#10;[🥈] Substancial ones that require creativity and/or out-of-the-box thinking;&#10;[🥇] Good challenges like secret levels or very well hidden eggs;&#10;[💎] Should be reserved for the best among the best (like reaching a vital game's landmark).">
+    <fieldset class="rank" title="ℹ️ Select rank according to level's difficulty and length.&#10;&#10;[D] Tutorial levels, which just introduce riddle mechanics and nothing more;&#10;[C] Easy and simple levels that don't require substantial thinking;&#10;[B] Challenging levels that require a moderate ammount of thinking and/or work;&#10;[A] Highly challenging levels which need out-of-the-box thinking and/or considerable ammounts of work;&#10;[S] The &quot;cream of the crop&quot;, milestone levels that consist of dozens of pages and &quot;sub-levels&quot; and are almost garanteed to leave players stuck for days and days.">
       <legend>Rank</legend>
     {% for rank, info in level_ranks.items()|reverse %}
       <label style="color: {{ info['color'] }}">
@@ -37,11 +37,11 @@
     </fieldset>
   </div>
   <div>
-    <label>
+    <label title="ℹ️ Separate grouped category to appear on level explorer; also currently corresponds to the Discord category the level's channel will be in.">
       Category
       <input type="text" name="{{ index }}-discord_category" size="10" value="{{ level['discord_category'] }}" required>
     </label>
-    <label>
+    <label title="ℹ️ Name to be used on Discord channel and role(s). ASCII, can only contain lowercase letters and hyphens (-); it's generally intended to be the same (or to have the same pronunciation) as the level name.">
       Discord name
       <input type="text" name="{{ index }}-discord_name" size="6" value="{{ level['discord_name'] }}" required>
     </label>
