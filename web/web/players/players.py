@@ -31,17 +31,18 @@ async def global_list():
     accounts = [dict(account) for account in result]
     
     for account in accounts:
-        # Build list of riddle current account plays
-        account['riddles'] = []
+        # Build list of riddle account has beaten (so far)
+        account['completed_riddles'] = []
         for riddle in riddles:
             query = 'SELECT * FROM riddle_accounts ' \
                     'WHERE riddle = :riddle ' \
-                        'AND username = :name AND discriminator = :disc'
+                        'AND username = :name AND discriminator = :disc ' \
+                        'AND current_level = "🏅"'
             values = {'riddle': riddle['alias'],
                     'name': account['username'], 'disc': account['discriminator']}
             found = await database.fetch_one(query, values)
             if found:
-                account['riddles'].append(riddle)
+                account['completed_riddles'].append(riddle)
 
     # Render page with account info
     return await render_template('players/list.htm',

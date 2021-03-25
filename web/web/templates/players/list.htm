@@ -1,5 +1,5 @@
 {% extends 'layout.htm' %}
-{% block title %}Riddler | Global leaderboard{% endblock %}
+{% block title %}Global leaderboard{% endblock %}
 {% block content %}
     <main>
       <h1>Global leaderboard</h1>
@@ -33,10 +33,10 @@
             <var class="points"><var class="zeroes">{{ zeroes }}</var>{{ score }}</var>
             <figcaption>total points</figcaption>
           </figure>
-          <div class="riddles-in">
-        {% for riddle in player['riddles'] %}
+          <div class="honors">
+        {% for riddle in player['completed_riddles'] %}
           {% if not riddle['unlisted'] %}
-            <a href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}">
+            <a class="completed" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}">
               <img class="riddle-icon" src="{{ riddle['icon_url'] }}" title="{{ riddle['full_name'] }}">
             </a>
           {% endif %}

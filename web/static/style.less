@@ -806,10 +806,25 @@ section.list.players > .row {
       }
     }
   }
-  > .riddles-in {
+  > .honors {
     width: 300px;
     flex-direction: row;
     justify-content: space-evenly;
+
+    > .completed {
+      position: relative;
+      z-index: -1000;
+      text-align: left;
+      text-decoration: none;
+
+      &::before {
+        content: '🏅';
+        position: absolute;
+        z-index: 1000;
+        margin-left: -25px;
+        text-shadow: 0 0 0.4em crimson, 0 0 0.8em crimson;
+      }
+    }
   }
   > .cheevos {
     > figure {

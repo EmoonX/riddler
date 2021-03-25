@@ -98,13 +98,15 @@ class _PathsHandler:
         # Set riddle alias based on href domain
         parsed = urlparse(url_list[0])
         domain = parsed.netloc
-        self.riddle_alias = 'cipher'
+        self.riddle_alias = '????'
         if 'rnsriddle.com' in domain:
             self.riddle_alias = 'rns'
         elif 'thestringharmony.com' in domain:
             self.riddle_alias = 'string'
         elif 'combinats.com' in domain:
             self.riddle_alias = 'combinats'
+        elif 'gamemastertips.com' in domain:
+            self.riddle_alias = 'cipher'
         
         # Save basic user info
         self.username = user.username
