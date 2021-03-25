@@ -1,6 +1,6 @@
-from quart import Blueprint, request, session, \
-        render_template, redirect, url_for
+from quart import Blueprint, request, render_template
 from quart_discord import requires_authorization
+from pycountry import pycountry
 
 from auth import discord
 from util.db import database
@@ -28,6 +28,11 @@ async def settings():
     form = await request.form
     if not 'country' in form:
         return await r('Please fill out the required form fields!')
+
+    # Check if user tried to submit a phony country code
+    country = pycountry.countries.get(alpha_2=form['country'])
+    if not country:
+        return await r('No bogus countries allowed...')
     
     # Update info in accounts table
     query = 'UPDATE accounts SET country = :country ' \

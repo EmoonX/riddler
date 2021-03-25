@@ -5,6 +5,7 @@ from quart import Quart, Blueprint, request, session, \
 from quart_discord import DiscordOAuth2Session
 from quart_discord.models.user import User
 from quart.sessions import SecureCookieSessionInterface
+from pycountry import pycountry
 
 from util.db import database
 
@@ -42,13 +43,23 @@ def discord_session_init(app: Quart):
 async def register():
     '''Register new account on database based on Discord auth.'''
     
+    def r(msg):
+        '''Render page with **kwargs.'''
+        return render_template('players/register.htm',
+                user=user, msg=msg)
+    
     # Render registration page on GET
     user = await discord.fetch_user()
     if request.method == 'GET':
-        return await render_template('players/register.htm', user=user)
+        return await r('')
+    
+    # Check if user tried to submit a phony country code
+    form = await request.form
+    country = pycountry.countries.get(alpha_2=form['country'])
+    if not country:
+        return await r('No bogus countries allowed...')
     
     # Insert value on accounts table
-    form = await request.form
     query = 'INSERT INTO accounts ' \
             '(username, discriminator, country) ' \
             'VALUES (:name, :disc, :country)'
