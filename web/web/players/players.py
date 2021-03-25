@@ -24,7 +24,7 @@ async def global_list():
                 guild_id=riddle['guild_id'])
         riddle['icon_url'] = url
         
-        # Get total number of achievements on riddle
+        # Get total number of riddle achievements
         query = 'SELECT COUNT(*) as count FROM achievements ' \
                 'WHERE riddle = :riddle'
         values = {'riddle': riddle['alias']}
@@ -82,6 +82,13 @@ async def riddle_list(alias: str):
             guild_id=riddle['guild_id'])
     riddle['icon_url'] = url
     
+    # Get total number of riddle achievements
+    query = 'SELECT COUNT(*) as count FROM achievements ' \
+            'WHERE riddle = :riddle'
+    values = {'riddle': riddle['alias']}
+    result = await database.fetch_one(query, values)
+    riddle['cheevo_count'] = result['count'];
+    
     # Get players data from database
     query = 'SELECT * FROM (' \
             '(SELECT *, 999999 AS `index`, ' \
@@ -100,14 +107,16 @@ async def riddle_list(alias: str):
     result = await database.fetch_all(query, {'riddle': alias})
     accounts = [dict(account) for account in result]
 
-    # Get players' countries and page counts
     for account in accounts:
+        # Get player country
         query = 'SELECT * FROM accounts WHERE ' \
                 'username = :name AND discriminator = :disc'
         values = {'name': account['username'],
                 'disc': account['discriminator']}
         result = await database.fetch_one(query, values)
         account['country'] = result['country']
+        
+        # Get found pages count
         query = 'SELECT riddle, username, discriminator, ' \
                     'COUNT(*) AS page_count ' \
                 'FROM user_pages ' \
@@ -117,6 +126,14 @@ async def riddle_list(alias: str):
         values = {'riddle': alias, **values}
         result = await database.fetch_one(query, values);
         account['page_count'] = result['page_count']
+        
+        # Show 💎 if player has gotten all possible cheevos on riddle
+        query = 'SELECT COUNT(*) as count FROM user_achievements ' \
+                'WHERE riddle = :riddle ' \
+                    'AND username = :name AND discriminator = :disc '
+        result = await database.fetch_one(query, values)
+        if result['count'] == riddle['cheevo_count']:
+            account['current_level'] = '💎'
 
     # Render page with account info
     return await render_template('players/riddle/list.htm',

@@ -30,10 +30,12 @@
               </div>
             </div>
             <figure class="current-level">
-            {% if player['current_level'] != '🏅' %}
+            {% if player['current_level'] not in ('💎', '🏅') %}
               <figcaption>Currently on</figcaption>
+            {% elif player['current_level'] == '💎' %}
+              {% set style_mastered = 'style="text-shadow: 0 0 0.4em teal, 0 0 0.8em teal, 0 0 1.2em teal;"'|safe %}
             {% endif %}
-              <var>{{ player['current_level'] }}</var>
+              <var {{ style_mastered }}>{{ player['current_level'] }}</var>
             </figure>
             <figure class="score">
               {% set score = player['score'] %}

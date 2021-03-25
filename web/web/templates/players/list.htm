@@ -35,13 +35,13 @@
           </figure>
           <div class="honors">
           {% for riddle in player['mastered_riddles'] %}
-            <a class="completed mastered" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}">
-              <img class="riddle-icon" src="{{ riddle['icon_url'] }}" title="{{ riddle['full_name'] }} (MASTERED)">
+            <a class="completed mastered" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" title="{{ riddle['full_name'] }} (MASTERED)">
+              <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
             </a>
           {% endfor %}
           {% for riddle in player['completed_riddles'] %}
-            <a class="completed" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}">
-              <img class="riddle-icon" src="{{ riddle['icon_url'] }}" title="{{ riddle['full_name'] }} (completed)">
+            <a class="completed" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" title="{{ riddle['full_name'] }} (completed)">
+              <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
             </a>
           {% endfor %}
           </div>
