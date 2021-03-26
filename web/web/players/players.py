@@ -127,13 +127,14 @@ async def riddle_list(alias: str):
         result = await database.fetch_one(query, values);
         account['page_count'] = result['page_count']
         
-        # Show 💎 if player has gotten all possible cheevos on riddle
-        query = 'SELECT COUNT(*) as count FROM user_achievements ' \
-                'WHERE riddle = :riddle ' \
+        if account['current_level'] == '🏅':
+            # Show 💎 if player has gotten all possible cheevos on riddle
+            query = 'SELECT COUNT(*) as count FROM user_achievements ' \
+                    'WHERE riddle = :riddle ' \
                     'AND username = :name AND discriminator = :disc '
-        result = await database.fetch_one(query, values)
-        if result['count'] == riddle['cheevo_count']:
-            account['current_level'] = '💎'
+            result = await database.fetch_one(query, values)
+            if result['count'] == riddle['cheevo_count']:
+                account['current_level'] = '💎'
 
     # Render page with account info
     return await render_template('players/riddle/list.htm',
