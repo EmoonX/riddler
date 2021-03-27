@@ -277,7 +277,7 @@ var, .menu-button {
 
 hr {
   width: 50%;
-  margin: 100px 0 50px 0;
+  margin: 100px auto 50px auto;
   border-image: linear-gradient(
     to right,
     transparent,
@@ -1211,4 +1211,43 @@ section.list.levels.admin > .page-explorer {
 
 section.list.levels.admin + button {
   margin-top: 60px;
+}
+
+/* ------------------------------------------------------------------------- */
+/* -- Info pages -- */
+
+p.riddler-synopsis {
+  font-size: 1.5em;
+  line-height: 1.2em;
+}
+
+strong {
+  text-shadow: 0 0 0.8em white;
+}
+
+em {
+  text-decoration: underline;
+}
+
+h2 {
+  margin: 1.5em 0;
+}
+
+ol {
+  text-align: left;
+  counter-reset: item;
+
+  > li {
+    margin: 20px 20px;
+    list-style-type: none;
+    counter-increment: item;
+
+    &::before {
+      margin: 0 10px;
+      font-size: 1.5em;
+      font-weight: bold;
+      text-shadow: 0 0 0.8em white;
+      content: counter(item) ".";
+    }
+  }
 }
