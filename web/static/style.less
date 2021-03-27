@@ -1238,7 +1238,7 @@ ol {
   counter-reset: item;
 
   > li {
-    margin: 20px 20px;
+    margin: 10px 20px;
     list-style-type: none;
     counter-increment: item;
 
@@ -1248,6 +1248,15 @@ ol {
       font-weight: bold;
       text-shadow: 0 0 0.8em white;
       content: counter(item) ".";
+    }
+    > nav.extension-links, > figure {
+      display: flex;
+      justify-content: space-evenly;
+      margin: 50px 0;  
+
+      figure {
+        text-align: center;
+      }
     }
   }
 }
