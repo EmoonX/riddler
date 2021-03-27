@@ -601,7 +601,6 @@ section.list > .row {
     justify-content: space-evenly;
     align-items: center;
   }
-
   > .thumb {
     width: 150px;
 
@@ -616,7 +615,6 @@ section.list > .row {
       font-size: 0.6em;
     }
   }
-
   label {
     text-align: center;
 
@@ -725,10 +723,17 @@ section.list.players > .row {
   z-index: -1000;
   height: 120px;
 
+  &:nth-child(even) {
+    background-image: linear-gradient(
+      to right,
+      transparent,
+      rgba(127, 127, 127, 0.2) 15% 85%,
+      transparent
+    );
+  }
   figcaption {
     font-size: 0.8em;
   }
-
   > .rank {
     width: 80px;
     font-size: 1.5em;
@@ -814,7 +819,7 @@ section.list.players > .row {
     }
   }
   > .honors {
-    width: 300px;
+    width: 400px;
     flex-direction: row;
     justify-content: space-evenly;
 
