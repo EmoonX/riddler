@@ -246,16 +246,16 @@ class _PathsHandler:
             # "A secret has been found"
             sh = _SecretLevelHandler(secret, self)
             await sh.register_finding()
-        else:
-            # Otherwise, check if a secret level was beaten
-            query = 'SELECT * FROM levels ' \
-                    'WHERE riddle = :riddle AND is_secret IS TRUE ' \
-                    'AND answer = :answer'
-            values = {'riddle': self.riddle_alias, 'answer': path}
-            secret = await database.fetch_one(query, values)
-            if secret:
-                sh = _SecretLevelHandler(secret, self)
-                await sh.register_completion()
+        
+        # Check if a secret level was beaten
+        query = 'SELECT * FROM levels ' \
+                'WHERE riddle = :riddle AND is_secret IS TRUE ' \
+                'AND answer = :answer'
+        values = {'riddle': self.riddle_alias, 'answer': path}
+        secret = await database.fetch_one(query, values)
+        if secret:
+            sh = _SecretLevelHandler(secret, self)
+            await sh.register_completion()
 
         # if not has_access():
         #     # Forbid user from accessing any level further than permitted
