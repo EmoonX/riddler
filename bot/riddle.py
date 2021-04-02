@@ -41,10 +41,10 @@ class Riddle:
             self.secret_levels[id] = level
 
         # Build dict of riddle's unlock handlers
-        self.uh_dict = {}
-        for member in self.guild.members:
-            uh = UnlockHandler(self.guild, self.levels, member)
-            self.uh_dict[member] = uh
+        # self.uh_dict = {}
+        # for member in self.guild.members:
+        #     uh = UnlockHandler(self.guild, self.levels, member)
+        #     self.uh_dict[member] = uh
 
 
 # Global dict of (guild_alias -> riddle) which bot supervises
