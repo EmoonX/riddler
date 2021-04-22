@@ -51,22 +51,23 @@ async def add(guild: discord.Guild, level: dict, winners_role: str):
         if not category:
             # Create category if nonexistent
             category = await guild.create_category(name=level['discord_category'])
+
+            # Set read permission for Riddler role
+            riddler = get(guild.roles, name='Riddler')
+            await channel.set_permissions(riddler, read_messages=True)
+            
+            # Unset read permission for @everyone
+            everyone = guild.default_role
+            await channel.set_permissions(everyone, read_messages=False)
+            
         channel = await category.create_text_channel(name)
-    if channel:
-        # Set read permission for Riddler role
-        riddler = get(guild.roles, name='Riddler')
-        await channel.set_permissions(riddler, read_messages=True)
-        
-        # Unset read permission for @everyone
-        everyone = guild.default_role
-        await channel.set_permissions(everyone, read_messages=False)
 
     # Create "reached" level role
     role_name = 'reached-' + name
     reached = get(guild.roles, name=role_name)
     if not reached:
         color = discord.Color.from_rgb(0xcc, 0xcc, 0xcc)
-        reached = await guild.create_role(name=role_name, color=color)  
+        reached = await guild.create_role(name=role_name, color=color)
 
     riddle = get(riddles.values(), guild=guild)
     if not level['is_secret']:
