@@ -218,6 +218,20 @@ async def update_all_riddles():
         if response[1] != 200:
             return response
     
+    # Update sepately players' global scores
+    query = 'UPDATE accounts ' \
+            'SET global_score = 0 '
+    await database.execute(query)
+    query = 'SELECT * FROM riddle_accounts'
+    riddle_accounts = await database.fetch_all(query)
+    for row in riddle_accounts:
+        query = 'UPDATE accounts ' \
+                'SET global_score = global_score + :score ' \
+                'WHERE username = :name AND discriminator = :disc'
+        values = {'score': row['score'],
+                'name': row['username'], 'disc': row['discriminator']}
+        await database.execute(query, values)
+    
     return 'SUCCESS :)', 200
 
     
