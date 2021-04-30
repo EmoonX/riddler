@@ -1,7 +1,6 @@
 import os
 from base64 import b64decode
 from io import BytesIO
-from pathlib import Path
 
 from quart import Blueprint
 from quart_discord import requires_authorization
@@ -47,6 +46,57 @@ async def auth(alias: str):
         return 'Unauthorized', 401
     
     return 'OK', 200
+
+
+@admin.route('/admin/update-all-riddles', methods=['GET'])
+@requires_authorization
+async def update_all_riddles():
+    '''Update everything on every single riddle.'''
+    
+    # Only root can do it!
+    ok = await root_auth()
+    if not ok:
+        return 'Unauthorized', 401
+    
+    # Get all riddle aliases from DB
+    query = 'SELECT * FROM riddles'
+    result = await database.fetch_all(query)
+    
+    # Run update_all on every riddle
+    for row in result:
+        alias = row['alias']
+        response = await update_all(alias)
+        if response[1] != 200:
+            return response
+    
+    # Update sepately players' global scores
+    query = 'UPDATE accounts ' \
+            'SET global_score = 0 '
+    await database.execute(query)
+    query = 'SELECT * FROM riddle_accounts'
+    riddle_accounts = await database.fetch_all(query)
+    for row in riddle_accounts:
+        query = 'UPDATE accounts ' \
+                'SET global_score = global_score + :score ' \
+                'WHERE username = :name AND discriminator = :disc'
+        values = {'score': row['score'],
+                'name': row['username'], 'disc': row['discriminator']}
+        await database.execute(query, values)
+    
+    return 'SUCCESS :)', 200
+
+
+@admin.route('/admin/<alias>/update-all', methods=['GET'])
+@requires_authorization
+async def update_all(alias: str):
+    '''Wildcard route for running all update ones above.'''
+    update_methods = \
+        (update_scores, update_completion_count, update_ratings)
+    for update in update_methods:
+        response = await update(alias)
+        if response[1] != 200:
+            return response      
+    return 'SUCCESS :)', 200
 
 
 @admin.route('/admin/<alias>/update-scores', methods=['GET'])
@@ -183,57 +233,6 @@ async def update_ratings(alias: str):
     
     return 'SUCCESS :)', 200
 
-
-@admin.route('/admin/<alias>/update-all', methods=['GET'])
-@requires_authorization
-async def update_all(alias: str):
-    '''Wildcard route for running all update ones above.'''
-    update_methods = \
-        (update_scores, update_completion_count, update_ratings)
-    for update in update_methods:
-        response = await update(alias)
-        if response[1] != 200:
-            return response      
-    return 'SUCCESS :)', 200
-
-
-@admin.route('/admin/update-all-riddles', methods=['GET'])
-@requires_authorization
-async def update_all_riddles():
-    '''Update everything on every single riddle.'''
-    
-    # Only root can do it!
-    ok = await root_auth()
-    if not ok:
-        return 'Unauthorized', 401
-    
-    # Get all riddle aliases from DB
-    query = 'SELECT * FROM riddles'
-    result = await database.fetch_all(query)
-    
-    # Run update_all on every riddle
-    for row in result:
-        alias = row['alias']
-        response = await update_all(alias)
-        if response[1] != 200:
-            return response
-    
-    # Update sepately players' global scores
-    query = 'UPDATE accounts ' \
-            'SET global_score = 0 '
-    await database.execute(query)
-    query = 'SELECT * FROM riddle_accounts'
-    riddle_accounts = await database.fetch_all(query)
-    for row in riddle_accounts:
-        query = 'UPDATE accounts ' \
-                'SET global_score = global_score + :score ' \
-                'WHERE username = :name AND discriminator = :disc'
-        values = {'score': row['score'],
-                'name': row['username'], 'disc': row['discriminator']}
-        await database.execute(query, values)
-    
-    return 'SUCCESS :)', 200
-
     
 async def save_image(folder: str, alias: str,
         filename: str, imgdata: str, prev_filename=''):
@@ -261,7 +260,7 @@ async def save_image(folder: str, alias: str,
         size = (200, 200)
         img = img.resize(size)
     
-    # Get correct riddle thumbs dir
+    # Get correct riddle dir
     dir = '../static/%s/%s' % (folder, alias)
     
     # Erase previous file (if any and filename was changed)

@@ -15,7 +15,6 @@ class Extra(commands.Cog):
         await ctx.respond()
         await ctx.send('Pong! (%dms)' % latency)
 
-
     @commands.command()
     async def balthify(self, ctx):
         '''Turn text into Balthazar-speak!'''

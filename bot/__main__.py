@@ -23,7 +23,7 @@ from riddle import build_riddles, riddles
 async def on_ready():
     '''Procedures upon bot initialization.'''
 
-    print('> Bot up and running!')
+    logging.info('> Bot up and running!')
     
     # Start cogwatch on commands folder
     watcher = Watcher(bot, path='commands', preload=True)
