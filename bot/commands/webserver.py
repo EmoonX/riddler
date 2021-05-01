@@ -12,6 +12,7 @@ from commands.get import is_member_and_has_permissions, \
         get_riddle_icon_url, get_avatar_url
 from commands.update import insert, update
 from commands.unlock import UnlockHandler
+from commands.user import update_user
 
       
 class WebServer(commands.Cog):
@@ -29,6 +30,7 @@ class WebServer(commands.Cog):
         app.router.add_get('/insert', insert)
         app.router.add_get('/update', update)
         app.router.add_get('/unlock', unlock)
+        app.router.add_get('/update-user', update_user)
         runner = web.AppRunner(app)
         await runner.setup()
         self.site = web.TCPSite(runner, 'localhost', 4757)

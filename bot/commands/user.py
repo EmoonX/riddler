@@ -1,10 +1,12 @@
 import logging
 
 import requests
+from aiohttp import web
 
 from discord.ext import commands
 from discord import User as DiscordUser
 from discord.errors import Forbidden
+from util.db import database
 
 
 class User(commands.Cog):
@@ -37,10 +39,19 @@ class User(commands.Cog):
                             % (guild.name, nick_old))
         
         if before.name != after.name \
-                or before.discriminator != before.discriminator:
-            # Username and/or discriminator were changed, so
-            # send a request to webserver to update DB tables
-            pass
+                or before.discriminator != after.discriminator:
+            # Username and/or discriminator were changed, so update tables
+            # (we only need to do it manually in the accounts table, since
+            # remaining ones are updated in cascade per foreign keys magic).
+            query = 'UPDATE accounts ' \
+                    'SET username = :name_new, discriminator = :disc_new ' \
+                    'WHERE username = :name_old AND discriminator = :disc_old '
+            values = {'name_new': after.name, 'disc_new': after.discriminator,
+                    'name_old': before.name, 'disc_old': before.discriminator}
+            await database.execute(query, values)
+            logging.info('User %s#%s is now known as %s#%s'
+                    % (before.name, before.discriminator, 
+                        after.name, after.discriminator))
 
 
 def setup(bot: commands.Bot):
