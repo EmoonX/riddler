@@ -214,9 +214,13 @@ class _PathsHandler:
         if current_name != '🏅':
             # Find if current level is solved (either beforehand or not)
             query = 'SELECT * FROM user_levels ' \
-                    'WHERE riddle = :riddle AND level_name = :level ' \
+                    'WHERE riddle = :riddle ' \
+                        'AND username = :name AND discriminator = :disc ' \
+                        'AND level_name = :level ' \
                         'AND completion_time IS NOT NULL'
-            values = {'riddle': self.riddle_alias, 'level': current_name}
+            values = {'riddle': self.riddle_alias, 
+                    'name': self.username, 'disc': self.disc,
+                    'level': current_name}
             result = await database.fetch_one(query, values)
             current_solved = (result is not None)
             
