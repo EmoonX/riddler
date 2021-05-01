@@ -1,5 +1,7 @@
 import logging
 
+import requests
+
 from discord.ext import commands
 from discord import User as DiscordUser
 from discord.errors import Forbidden
@@ -21,18 +23,25 @@ class User(commands.Cog):
             # Username was changed, so update nicks on every guild user is in
             for guild in self.bot.guilds:
                 member = guild.get_member(before.id)
-                if member and member.nick:
-                    # (just replace first ocurrence to avoid nonsense)
-                    nick_old = member.nick
-                    nick_new = nick_old.replace(before.name, after.name, 1)
-                    try:
-                        await member.edit(nick=nick_new)
-                        logging.info('[%s] Nickname "%s" changed to "%s"'
-                                % (guild.name, nick_old, nick_new))
-                    except Forbidden:
-                        logging.info('[%s] (403) Can\'t change nick of "%s"'
-                                % (guild.name, nick_old))
-    
+                if not member or not member.nick:
+                    continue
+                # (just replace first ocurrence to avoid nonsense)
+                nick_old = member.nick
+                nick_new = nick_old.replace(before.name, after.name, 1)
+                try:
+                    await member.edit(nick=nick_new)
+                    logging.info('[%s] Nickname "%s" changed to "%s"'
+                            % (guild.name, nick_old, nick_new))
+                except Forbidden:
+                    logging.info('[%s] (403) Can\'t change nick of "%s"'
+                            % (guild.name, nick_old))
+        
+        if before.name != after.name \
+                or before.discriminator != before.discriminator:
+            # Username and/or discriminator were changed, so
+            # send a request to webserver to update DB tables
+            pass
+
 
 def setup(bot: commands.Bot):
     '''Add cog every time extension (module) is (re)loaded.'''
