@@ -22,7 +22,8 @@ async def level_list(alias: str):
             'name': user.name, 'disc': user.discriminator}
 
     # Get level dict (and mark them as unlocked and/or beaten appropriately)
-    query = 'SELECT * FROM levels WHERE riddle = :riddle'
+    query = 'SELECT * FROM levels WHERE riddle = :riddle ' \
+            'ORDER BY is_secret, `index`'
     result = await database.fetch_all(query, {'riddle': alias})
     levels = {}
     for level in result:
