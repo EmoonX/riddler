@@ -37,22 +37,21 @@ async def process_url():
         response = jsonify({'message': 'Unauthorized'})
         status = 401 if request.method == 'POST' else 200
     else:
-        # Receive URLs from request and build list
-        s = (await request.data).decode('utf-8')
-        url_list = s.split('\n')
-
         if request.method =='POST':
-            # Create paths handler object and build player data
+            # Receive path from request
+            path = (await request.data).decode('utf-8')
+
+            # Create path handler object and build player data
             user = await discord.fetch_user()
-            ph = _PathsHandler(user, url_list)
+            ph = _PathHandler()
+            await ph.build_handler(user, path)
             await ph.build_player_riddle_data()
 
-            # Process all received paths
-            for path in ph.paths:
-                print(('\033[1m[%s]\033[0m Processing path \033[1m%s\033[0m '
-                        'from \033[1m%s\033[0m#\033[1m%s\033[0m')
-                        % (ph.riddle_alias, path, ph.username, ph.disc))
-                await ph.process(path)
+            # Process received path
+            print(('\033[1m[%s]\033[0m Processing path \033[1m%s\033[0m '
+                    'from \033[1m%s\033[0m#\033[1m%s\033[0m')
+                    % (ph.riddle_alias, ph.path, ph.username, ph.disc))
+            await ph.process()
         
         # Successful response :)
         response = jsonify({'message': 'Success!'})
@@ -70,77 +69,63 @@ async def process_url():
     return response, status
 
 
-class _PathsHandler:
+class _PathHandler:
     '''Handler for processing level paths.
 
     Updates the needed tables on database and request 
     guild changes to be done by bot.'''
 
-    # Alias of riddle hosted on URLs domain
     riddle_alias: str
+    '''Alias of riddle hosted on URL domain'''
 
-    # Username and discriminator of logged in player
     username: str
     disc: str
+    '''Username and discriminator of logged in player'''
 
-    # Dict containing player's riddle account info from DB
     riddle_account: dict
+    '''Dict containing player's riddle account info from DB'''
 
-    # Paths to be processed by handler
-    paths: list
+    path: list
+    '''Path to be processed by handler'''
 
-    def __init__(self, user: User, url_list: list):
-        '''Ṕarse riddle and paths from url list and get user info.
+    async def build_handler(self, user: User, url: str):
+        '''Get path from raw URL and get user info from DB.
         
-        @param url_list: the list of received URLs
-        @param user: Discord user object for logged in player'''
+        @param user: Discord user object for logged in player
+        @param path: raw URL sent by the extension'''
 
-        # Set riddle alias based on href domain
-        parsed = urlparse(url_list[0])
+        # Get domain from parsed URL
+        parsed = urlparse(url)
         domain = parsed.netloc
-        self.riddle_alias = '????'
-        if 'rnsriddle.com' in domain:
-            self.riddle_alias = 'rns'
-        elif 'thestringharmony.com' in domain:
-            self.riddle_alias = 'string'
-        elif 'combinats.com' in domain:
-            self.riddle_alias = 'combinats'
-        elif 'gamemastertips.com' in domain:
-            self.riddle_alias = 'cipher'
+
+        # Retrieve riddle alias which matches root path
+        query = 'SELECT * FROM riddles ' \
+                +('WHERE root_path LIKE "%%%s%%"') % domain
+        result = await database.fetch_one(query)
+        self.riddle_alias = result['alias']
+        root_path = result['root_path']
         
         # Save basic user info
         self.username = user.username
         self.disc = user.discriminator
 
-        self.paths = []
-        for url in url_list:
-            # Parse path from url (ignore external pages)
-            parsed = urlparse(url)
-            path = '/' + parsed.path
-            if parsed.netloc != domain or not path:
-                continue
+        # Parse URL
+        parsed = urlparse(url)
+        if parsed.netloc != domain:
+            # Ignore external pages
+            return        
 
-            # Remove base folder from path, if any
-            if self.riddle_alias == 'cipher':
-                path = path.replace('/cipher/', '')
-            elif self.riddle_alias in ('rns', 'combinats'):
-                path = path.replace('/riddle/', '')
-            else:
-                path = path.replace('//', '/')
-            if not path:
-                continue
+        # Get relative path by removing root portion (and "www.", if preseent)
+        self.path = url.replace('www.', '').replace(root_path, '')
 
-            if path[-1] == '/':
-                # If a folder itself, add "index.htm" to path's end
-                path += 'index.htm'
-            else:
-                # If no extension, force an explicit ".htm" to the end
-                has_dot = path.count('.')
-                if not has_dot:
-                    path += '.htm'
-            
-            # Add path to list
-            self.paths.append(path)
+        if self.path[-1] == '/':
+            # If a folder itself, add "index.htm" to path's end
+            self.path += 'index.htm'
+        else:
+            # If no extension, append explicit ".htm" to the end
+            has_dot = self.path.count('.')
+            if not has_dot:
+                self.path += '.htm'
     
     async def build_player_riddle_data(self):
         '''Build player riddle data from database,
@@ -171,14 +156,14 @@ class _PathsHandler:
         # Build dict from query result
         self.riddle_account = dict(result)
 
-    async def process(self, path: str):
+    async def process(self):
         '''Process level path.
         
         @path: a level path in the current riddle domain'''            
         
         # Check if it's not an txt/image/video/etc
-        dot_index = path.rfind('.')
-        extension = path[(dot_index + 1):]
+        dot_index = self.path.rfind('.')
+        extension = self.path[(dot_index + 1):]
         is_page = 'htm' in extension or 'php' in extension
 
         if is_page:
@@ -191,7 +176,7 @@ class _PathsHandler:
         values = {'riddle': self.riddle_alias, 'name': current_name}
         current_level = await database.fetch_one(query, values)
 
-        if current_level and path == current_level['answer']:
+        if current_level and self.path == current_level['answer']:
             # If user entered a correct and new answer, register completion
             lh = _NormalLevelHandler(current_level, self)
             await lh.register_completion()
@@ -199,7 +184,7 @@ class _PathsHandler:
         # Check if path corresponds to a valid page (non 404)
         query = 'SELECT * FROM level_pages ' \
                 'WHERE riddle = :riddle AND path = :path'
-        values = {'riddle': self.riddle_alias, 'path': path}
+        values = {'riddle': self.riddle_alias, 'path': self.path}
         page = await database.fetch_one(query, values)
         if not page or not page['level_name']:
             # Page not found!
@@ -235,7 +220,7 @@ class _PathsHandler:
                 next_name = result['name'] if result else ''
             
                 if page_level['name'] == next_name \
-                        and path == page_level['path']:
+                        and self.path == page_level['path']:
                     # If it's the new level's front page, register progress
                     lh = _NormalLevelHandler(page_level, self)
                     await lh.register_finding()
@@ -244,7 +229,7 @@ class _PathsHandler:
         query = 'SELECT * FROM levels ' \
                 'WHERE riddle = :riddle AND is_secret IS TRUE ' \
                 'AND path = :path'
-        values = {'riddle': self.riddle_alias, 'path': path}
+        values = {'riddle': self.riddle_alias, 'path': self.path}
         secret = await database.fetch_one(query, values)
         if secret:
             # "A secret has been found"
@@ -255,7 +240,7 @@ class _PathsHandler:
         query = 'SELECT * FROM levels ' \
                 'WHERE riddle = :riddle AND is_secret IS TRUE ' \
                 'AND answer = :answer'
-        values = {'riddle': self.riddle_alias, 'answer': path}
+        values = {'riddle': self.riddle_alias, 'answer': self.path}
         secret = await database.fetch_one(query, values)
         if secret:
             sh = _SecretLevelHandler(secret, self)
@@ -283,11 +268,11 @@ class _PathsHandler:
             values = {'riddle': self.riddle_alias,
                     'username': self.username, 'disc': self.disc,
                     'level_name': page['level_name'],
-                    'path': path, 'time': tnow}
+                    'path': self.path, 'time': tnow}
             await database.execute(query, values)
 
             # Check and possibly grant an achievement
-            await self._process_cheevo(path)
+            await self._process_cheevo()
     
     async def _update_counters(self):
         '''Update player and riddle hit counters.'''
@@ -307,14 +292,15 @@ class _PathsHandler:
                 'WHERE alias = :alias '
         await database.execute(query, {'alias': self.riddle_alias})
     
-    async def _process_cheevo(self, path: str):
+    async def _process_cheevo(self):
         '''Grant cheevo and awards if page is an achievement one.'''
 
         # Check if it's an achievement page
         query = 'SELECT * FROM achievements ' \
                 'WHERE riddle = :riddle ' \
                     'AND JSON_CONTAINS(paths_json, :path, "$.paths")'
-        values = {'riddle': self.riddle_alias, 'path': ('\"%s\"' % path)}
+        values = {'riddle': self.riddle_alias,
+                'path': ('\"%s\"' % self.path)}
         cheevo = await database.fetch_one(query, values)
         if not cheevo:
             return
@@ -388,7 +374,7 @@ class _LevelHandler:
     # Points awarded upon level completion
     points: int
     
-    def __init__(self, level: dict, ph: _PathsHandler):
+    def __init__(self, level: dict, ph: _PathHandler):
         '''Register level DB data and points,
         as well as parent attributes from PH.
         
@@ -496,7 +482,7 @@ class _LevelHandler:
 class _NormalLevelHandler(_LevelHandler):
     '''Handler for normal (non secret) levels.'''
 
-    def __init__(self, level: dict, ph: _PathsHandler):
+    def __init__(self, level: dict, ph: _PathHandler):
         super().__init__(level, ph)
     
     async def register_finding(self):
@@ -602,7 +588,7 @@ class _NormalLevelHandler(_LevelHandler):
 class _SecretLevelHandler(_LevelHandler):
     '''Handler for secret levels.'''
 
-    def __init__(self, level: dict, ph: _PathsHandler):
+    def __init__(self, level: dict, ph: _PathHandler):
         super().__init__(level, ph)
 
     async def register_finding(self):
