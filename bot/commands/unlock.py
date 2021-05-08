@@ -64,29 +64,28 @@ class UnlockHandler:
                         'and is now part of **@%s**! Congratulations!') \
                     % (self.member.id, level['name'], role.name)
             await channel.send(text)
-            
 
     async def advance(self, level: dict):
         '''Advance to further level when player arrives at a level front page.
         "reached" role is granted to user and thus given access to channel(s).'''
 
         # Remove old "reached" role from user
+        for role in self.member.roles:
+            if not 'reached-' in role.name:
+                continue
+            old_name = role.name.replace('reached-', '')
+            old_level = None
+            for other in self.levels.values():
+                if other['discord_name'] == old_name:
+                    old_level = other
+                    break
+            if old_level:
+                await self.member.remove_roles(role)
+
+        # Add "reached" role to member
         name = level['discord_name']
         if not name:
             name = level['name']
-        for role in self.member.roles:
-            if 'reached-' in role.name:
-                old_name = role.name.replace('reached-', '')
-                old_level = None
-                for other in self.levels.values():
-                    if other['discord_name'] == old_name:
-                        old_level = other
-                        break
-                if old_level:
-                    await self.member.remove_roles(role)
-                    break
-
-        # Add "reached" role to member
         role = get(self.guild.roles, name=('reached-%s' % name))
         await self.member.add_roles(role)
 
