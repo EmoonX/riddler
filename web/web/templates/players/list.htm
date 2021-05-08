@@ -4,6 +4,7 @@
     <main>
       <h1>Global leaderboard</h1>
       <section class="list players">
+        {% set avatar_urls = fetch_avatar_urls() %}
         {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
       {% for player in accounts %}
         <div class="row">
@@ -19,7 +20,8 @@
           </div>
           <div class="player">
             <a href="#">
-              <img class="avatar" src="{{ get_avatar_url(player['username'], player['discriminator']) }}">
+              {% set tag = player['username'] + '#' + player['discriminator'] %}
+              <img class="avatar" src="{{ avatar_urls[tag] }}">
             </a>
             <div>
               {% set country_name = pycountries.get(alpha_2=player['country']).name %}

@@ -115,7 +115,7 @@ class _PathHandler:
             # Ignore external pages
             return        
 
-        # Get relative path by removing root portion (and "www.", if preseent)
+        # Get relative path by removing root portion (and "www.", if present)
         self.path = url.replace('www.', '').replace(root_path, '')
 
         if self.path[-1] == '/':

@@ -1,3 +1,5 @@
+import json
+
 from aiohttp import web
 from discord.utils import get
 
@@ -43,6 +45,34 @@ async def get_avatar_url(request):
     user = get(members, name=username, discriminator=disc)
     url = str(user.avatar_url)
     return web.Response(text=url)
+
+
+async def fetch_avatar_urls(request):
+    '''Fetch avatar URLs and return a dict of them. If `guild`
+    is given, fetch all user avatars from a given guild;
+    otherwise, just fetch avatars from all guilds.'''
+
+    guild_id = request.rel_url.query.get('guild_id')
+    members = None
+    if guild_id:
+        # Get all given guild members
+        guild_id = int(guild_id)
+        guild = get(bot.guilds, id=guild_id)
+        members = guild.members
+    else:
+        # Get members from all guilds bot has access
+        members = bot.get_all_members()
+    
+    # Build dict of pairs (DiscordTag -> URL)
+    urls = {}
+    for member in members:
+        tag = member.name + '#' + member.discriminator
+        url = str(member.avatar_url)
+        urls[tag] = url
+    
+    # Convert dict to JSON format and return response with it
+    data = json.dumps(urls)
+    return web.Response(text=data)
 
 
 def setup(_):

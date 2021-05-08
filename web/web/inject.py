@@ -1,3 +1,5 @@
+import json
+
 from pycountry import pycountry
 from flag import flag
 
@@ -137,6 +139,19 @@ async def context_processor():
         url = await bot_request('get-avatar-url',
                 username=username, disc=disc)
         return url
+    
+    async def fetch_avatar_urls(guild_id: int = None):
+        '''Fetch avatar URLs from bot request, parse then and return a dict.
+        If `guild` is present, fetch only from given guild;
+        otherwise, return all avatars bot has access.'''
+        data = None
+        if guild_id:
+            print(guild_id)
+            data = await bot_request('fetch-avatar-urls', guild_id=guild_id)
+        else:
+            data = await bot_request('fetch-avatar-urls')
+        urls = json.loads(data)
+        return urls
 
     def get_sorted_countries():
         '''Get sorted list of countries by name.'''
