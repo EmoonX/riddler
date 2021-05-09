@@ -102,7 +102,6 @@ class _PathHandler:
         query = 'SELECT * FROM riddles ' \
                 +('WHERE root_path LIKE "%%%s%%"') % domain
         result = await database.fetch_one(query)
-        print(domain)
         self.riddle_alias = result['alias']
         root_path = result['root_path']
         
