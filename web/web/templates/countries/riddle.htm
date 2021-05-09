@@ -20,9 +20,9 @@
           </div>
           <div class="country">
             {% set name = pycountries.get(alpha_2=country['country'])['name'] %}
-            <div class="flag">
+            <a class="flag" href="/{{ alias }}/players/{{ country['country'] }}">
               <img src="/static/flags/{{ country['country'] }}.png">
-            </div>
+            </a>
             <div class="name">{{ name }}</div>
           </div>
           <figure class="player-count">
