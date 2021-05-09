@@ -30,20 +30,23 @@ class UnlockHandler:
         # Send congratulatory message
         n = 'DCBAS'.find(level['rank']) + 1
         stars = '★' * n
+        name = level['name']
+        if level['latin_name']:
+            name += ' (%s)' % level['latin_name']
         logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
                 'has beaten level \033[1m%s\033[0m') \
                 % (self.guild.name, self.member.name,
-                self.member.discriminator, level['name']))
-        text = ('**[%s]** You have solved level **%s** (%s) ' \
+                    self.member.discriminator, name))
+        text = ('**[%s]** You have solved level **%s** [%s] ' \
                     'and won **%d** points!\n') \
-                % (self.guild.name, level['name'], stars, points)
+                % (self.guild.name, name, stars, points)
         await self.member.send(text)
         
         # Send also to channels if first to solve level
         if first_to_solve:
             text = '**🏅 FIRST TO SOLVE 🏅**\n'
             text += ('**<@!%d>** has completed level **%s**! ' \
-                    'Congratulations!') % (self.member.id, level['name'])
+                    'Congratulations!') % (self.member.id, name)
             channel = get(self.guild.channels, name=level['discord_name'])
             await channel.send(text)
             achievements = get(self.guild.channels, name='achievements')
@@ -62,7 +65,7 @@ class UnlockHandler:
             channel = get(self.guild.channels, name=level['discord_name'])
             text = ('**<@!%d>** has beaten level **%s** ' \
                         'and is now part of **@%s**! Congratulations!') \
-                    % (self.member.id, level['name'], role.name)
+                    % (self.member.id, name, role.name)
             await channel.send(text)
 
     async def advance(self, level: dict):
@@ -97,19 +100,22 @@ class UnlockHandler:
         '''Grant access to secret channel.'''
         
         # Grant "reached" role
-        name = level['discord_name']
-        if not name:
-            name = level['name']
-        reached = get(self.guild.roles, name=('reached-%s' % name))
+        discord_name = level['discord_name']
+        if not discord_name:
+            discord_name = level['name']
+        reached = get(self.guild.roles, name=('reached-%s' % discord_name))
         await self.member.add_roles(reached)
         
         # Log reaching secret and send message to member
+        name = level['name']
+        if level['latin_name']:
+            name += ' (%s)' % level['latin_name']
         logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
                 'has found secret level \033[1m%s\033[0m') \
                 % (self.guild.name, self.member.name,
-                    self.member.discriminator, level['name']))
+                    self.member.discriminator, name))
         text = '**[%s]** You have found secret level **%s**. Congratulations!' \
-                % (self.guild.name, level['name'])
+                % (self.guild.name, name)
         await self.member.send(text)
 
     async def secret_solve(self, level: dict, points: int,
@@ -117,11 +123,11 @@ class UnlockHandler:
         '''Solve secret level and grant special colored role.'''
         
         # Get roles from guild
-        name = level['discord_name']
-        if not name:
-            name = level['name']
-        reached = get(self.guild.roles, name=('reached-%s' % name))
-        solved = get(self.guild.roles, name=('solved-%s' % name))
+        discord_name = level['discord_name']
+        if not discord_name:
+            discord_name = level['name']
+        reached = get(self.guild.roles, name=('reached-%s' % discord_name))
+        solved = get(self.guild.roles, name=('solved-%s' % discord_name))
         
         # Remove old "reached" role and add "solved" role to member
         await self.member.remove_roles(reached)
@@ -130,22 +136,25 @@ class UnlockHandler:
         # Log solving procedure and send message to member
         n = 'DCBAS'.find(level['rank']) + 1
         stars = '★' * n
+        name = level['name']
+        if level['latin_name']:
+            name += ' (%s)' % level['latin_name']
         logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
                 'has completed secret level \033[1m%s\033[0m') 
                 % (self.guild.name, self.member.name,
-                    self.member.discriminator, level['name']))
-        text = ('**[%s]** You have solved secret level **%s** (%s) ' \
+                    self.member.discriminator, name))
+        text = ('**[%s]** You have solved secret level **%s** [%s] ' \
                     'and won **%d** points!\n') \
-                % (self.guild.name, level['name'], stars, points)
+                % (self.guild.name, name, stars, points)
         await self.member.send(text)
         
         # Send congratulations message to channel (and cheevos one) :)
-        channel = get(self.guild.channels, name=name)
+        channel = get(self.guild.channels, name=discord_name)
         text = ''
         if first_to_solve:
             text = '**🏅 FIRST TO SOLVE 🏅**\n'
         text += ('**<@!%d>** has completed secret level **%s**! ' \
-                'Congratulations!') % (self.member.id, level['name'])
+                'Congratulations!') % (self.member.id, name)
         await channel.send(text)
         if first_to_solve:
             achievements = get(self.guild.channels, name='achievements')
@@ -205,7 +214,7 @@ class UnlockHandler:
                 'has finished the game!') \
                 % (self.guild.name,
                     self.member.name, self.member.discriminator))
-        text = '**[%s]** You just completed the game! **Congrats!**' \
+        text = '**[%s]** You just completed the game! **Congratulations!**' \
                 % self.guild.name
         await self.member.send(text)
 
