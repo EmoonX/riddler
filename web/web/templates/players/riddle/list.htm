@@ -1,9 +1,10 @@
 {% extends 'layout.htm' %}
 {% set riddle = get_riddle(alias) %}
+{% set flag = '🗺️' %}
 {% if country %}
   {% set flag = get_emoji_flag(country) %}
-  {% set flag_html = ('<span class="flag">' + flag + '</span> | ')|safe %}
 {% endif %}
+{% set flag_html = ('<span class="flag">' + flag + '</span> | ')|safe %}
 {% block title %}{{ flag }} | Leaderboard | {{ riddle['full_name'] }}{% endblock %}
 {% block content %}
     <main>

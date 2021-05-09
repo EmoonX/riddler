@@ -109,12 +109,6 @@ class _PathHandler:
         self.username = user.username
         self.disc = user.discriminator
 
-        # Parse URL
-        parsed = urlparse(url)
-        if parsed.netloc != domain:
-            # Ignore external pages
-            return        
-
         # Get relative path by removing root portion (and "www.", if present)
         self.path = url.replace('www.', '').replace(root_path, '')
 

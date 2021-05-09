@@ -193,12 +193,12 @@ class UnlockHandler:
                 await self.member.remove_roles(role)
                 break
 
-        # Add flashy "winners" role
+        # Add flashy winners role
         winners = get(self.guild.roles, name=winners_role)
         await self.member.add_roles(winners)
 
         # Update nickname with winner's badge
-        await update_nickname(self.member, '💎')
+        await update_nickname(self.member, '🏅')
 
         # Player has completed the game (for now?)
         logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m ' \
@@ -217,7 +217,7 @@ async def update_nickname(member: Member, s: str):
     total = len(name) + 1 + len(s)
     if total > 32:
         excess = total - 32
-        name = name[:(-(excess + 5))] + '(...)'
+        name = name[:-(excess + 5)] + '(...)'
     nick = name + ' ' + s
     try:
         await member.edit(nick=nick)
