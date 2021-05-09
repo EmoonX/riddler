@@ -85,35 +85,30 @@ class _PathHandler:
     riddle_account: dict
     '''Dict containing player's riddle account info from DB'''
 
-    path: list
+    path: str
     '''Path to be processed by handler'''
 
     async def build_handler(self, user: User, url: str):
         '''Get path from raw URL and get user info from DB.
         
         @param user: Discord user object for logged in player
-        @param path: raw URL sent by the extension'''
+        @param url: raw URL sent by the extension'''
 
-        # Get domain from parsed URL
+        # Get domain from parsed URL (exclude "www.")
         parsed = urlparse(url)
-        domain = parsed.netloc
+        domain = parsed.netloc.replace('www.', '')
 
         # Retrieve riddle alias which matches root path
         query = 'SELECT * FROM riddles ' \
                 +('WHERE root_path LIKE "%%%s%%"') % domain
         result = await database.fetch_one(query)
+        print(domain)
         self.riddle_alias = result['alias']
         root_path = result['root_path']
         
         # Save basic user info
         self.username = user.username
         self.disc = user.discriminator
-
-        # Parse URL
-        parsed = urlparse(url)
-        if parsed.netloc != domain:
-            # Ignore external pages
-            return        
 
         # Get relative path by removing root portion (and "www.", if present)
         self.path = url.replace('www.', '').replace(root_path, '')

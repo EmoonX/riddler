@@ -146,7 +146,6 @@ async def context_processor():
         otherwise, return all avatars bot has access.'''
         data = None
         if guild_id:
-            print(guild_id)
             data = await bot_request('fetch-avatar-urls', guild_id=guild_id)
         else:
             data = await bot_request('fetch-avatar-urls')
