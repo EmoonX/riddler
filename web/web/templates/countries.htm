@@ -1,0 +1,48 @@
+{% extends 'layout.htm' %}
+{% block title %}Countries leaderboard{% endblock %}
+{% block content %}
+    <main>
+      <h1>Countries leaderboard</h1>
+      <section class="list players countries">
+        {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
+      {% for country in countries %}
+        <div class="row">
+          <div class="rank">
+            {% if loop.index <= 3 %}
+              {% set rank = '🥇🥈🥉'[loop.index - 1] %}
+              {% set color = colors[loop.index - 1] %}
+              {% set style = 'style="text-shadow: 0 0 8px %(c)s, 0 0 16px %(c)s, 0 0 24px %(c)s"'|safe % {'c': color} %}
+            {% else %}
+              {% set rank = '#' + loop.index|string %}
+            {% endif %}
+            <var {{ style }}>{{ rank }}</var>
+          </div>
+          <div class="country">
+            {% set name = pycountries.get(alpha_2=country['country'])['name'] %}
+            <div class="flag">
+              <img src="/static/flags/{{ country['country'] }}.png">
+            </div>
+            <div class="name">{{ name }}</div>
+          </div>
+          <figure class="player-count">
+            {% set count = country['player_count'] %}
+            <var class='count'>{{ count }}</var>
+            <figcaption>player(s)</figcaption>
+          </figure>
+          <figure class="score">
+            {% set score = country['total_score'] %}
+            {% set zeroes = '0' * 6 %}
+            <var class="points"><var class="zeroes">{{ zeroes }}</var>{{ score }}</var>
+            <figcaption>total points</figcaption>
+          </figure>
+          <figure class="score average">
+            {% set average = country['avg_score']|round %}
+            {% set zeroes = '0' * 6 %}
+            <var class="points"><var class="zeroes">{{ zeroes }}</var>{{ average }}</var>
+            <figcaption>average score</figcaption>
+          </figure>
+        </div>
+      {% endfor %}
+      </section>
+    </main>
+{% endblock %}

@@ -1,0 +1,31 @@
+from quart import Blueprint, render_template
+
+from webclient import bot_request
+from util.db import database
+
+# Create app blueprint
+countries = Blueprint('countries', __name__)
+
+
+@countries.route("/countries")
+async def global_list():
+    """Global countries list."""
+
+    # Get countries data (player count and score) from DB
+    query = 'SELECT country, COUNT(*) AS player_count, ' \
+                'SUM(global_score) AS total_score, ' \
+                'AVG(global_score) AS avg_score ' \
+            'FROM accounts ' \
+            'WHERE global_score > 1000 ' \
+            'GROUP BY country ' \
+            'ORDER BY avg_score DESC'
+    result = await database.fetch_all(query)
+    
+    # Build list of countries, removing ones with fewer than 2 players
+    countries = []
+    for row in result:
+        if row['player_count'] >= 2:
+            countries.append(row)
+
+    # Render page with countries info
+    return await render_template('countries.htm', countries=countries)

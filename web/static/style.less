@@ -919,6 +919,53 @@ section.list.players > .row {
 }
 
 /* ------------------------------------------------------------------------- */
+/* -- Countries lists -- */
+
+section.list.countries > .row {
+  > .country {
+    flex-direction: row;
+    justify-content: flex-start;
+    width: 300px;
+
+    > .flag {
+      display: flex;
+      justify-content: center;
+      width: 120px;
+
+      img {
+        max-width: 70px;
+        max-height: 50px;
+        border-radius: 10%;
+        box-shadow: 0 0 0.4em rgba(255, 255, 221, 0.5);
+      }
+    }
+    > .name {
+      width: 180px;
+      text-align: center;
+      font-size: 1.2em;
+      font-weight: bold;
+      text-shadow: 0 0 0.4em mediumvioletred,
+          0 0 0.8em mediumvioletred;
+      
+      &::first-letter {
+        font-size: 1.4em;
+      }
+    }
+  }
+  > .player-count {
+    > var.count {
+      font-size: 2em;
+    }
+  }
+  > .score.average {
+    > var.points {
+      text-shadow: 0 0 0.4em mediumspringgreen,
+          0 0 0.8em mediumspringgreen;
+    }
+  }
+}
+
+/* ------------------------------------------------------------------------- */
 /* -- Levels lists -- */
 
 section.list.levels > .row {
@@ -1031,7 +1078,7 @@ section.list.levels > .row {
 }
 
 /* ------------------------------------------------------------------------- */
-/* -- Page Explorer -- */
+/* -- Level Explorer -- */
 
 section.list.levels > .row:not(:first-child) {
   margin-top: 0px;

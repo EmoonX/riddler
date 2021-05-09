@@ -92,7 +92,7 @@ class _PathHandler:
         '''Get path from raw URL and get user info from DB.
         
         @param user: Discord user object for logged in player
-        @param url: raw URL sent by the extension'''
+        @param path: raw URL sent by the extension'''
 
         # Get domain from parsed URL (exclude "www.")
         parsed = urlparse(url)
@@ -108,6 +108,12 @@ class _PathHandler:
         # Save basic user info
         self.username = user.username
         self.disc = user.discriminator
+
+        # Parse URL
+        parsed = urlparse(url)
+        if parsed.netloc != domain:
+            # Ignore external pages
+            return        
 
         # Get relative path by removing root portion (and "www.", if present)
         self.path = url.replace('www.', '').replace(root_path, '')
