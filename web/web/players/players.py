@@ -9,8 +9,9 @@ players = Blueprint('players', __name__)
 
 @players.route('/')
 @players.route('/players')
-async def global_list():
-    '''Global player list.'''
+@players.route('/countries/<country>')
+async def global_list(country: str = None):
+    '''Global (and by country) players list.'''
 
     # Get riddles data from database
     query = 'SELECT * from riddles ' \
@@ -32,8 +33,9 @@ async def global_list():
         riddle['cheevo_count'] = result['count'];
     
     # Get players data from database
-    query = 'SELECT * FROM accounts ' \
-            'WHERE global_score > 0 ' \
+    cond = ('country = "%s" AND' % country) if country else ''
+    query = 'SELECT * FROM accounts ' + \
+            ('WHERE %s global_score > 0 ' % cond) + \
             'ORDER BY global_score DESC'
     result = await database.fetch_all(query)
     accounts = [dict(account) for account in result]
@@ -65,7 +67,7 @@ async def global_list():
 
     # Render page with account info
     return await render_template('players/list.htm',
-            accounts=accounts, riddles=riddles)
+            accounts=accounts, riddles=riddles, country=country)
 
 
 @players.route('/<alias>/players')
