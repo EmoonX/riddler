@@ -9,7 +9,7 @@ countries = Blueprint('countries', __name__)
 
 @countries.route("/countries")
 async def global_list():
-    """Global countries list."""
+    '''Global countries list.'''
 
     # Get countries data (player count and score) from DB
     query = 'SELECT country, COUNT(*) AS player_count, ' \
@@ -28,4 +28,34 @@ async def global_list():
             countries.append(row)
 
     # Render page with countries info
-    return await render_template('countries.htm', countries=countries)
+    return await render_template('countries/global.htm',
+            countries=countries)
+
+
+@countries.route("/<alias>/countries")
+async def riddle_list(alias: str):
+    '''Riddle countries list.'''
+
+    # Get riddle-specific countries data from DB
+    query = 'SELECT country, COUNT(*) AS player_count, ' \
+                'SUM(score) AS total_score, ' \
+                'AVG(score) AS avg_score ' \
+            'FROM riddle_accounts AS r_acc ' \
+                'INNER JOIN accounts AS acc ' \
+                'ON r_acc.username = acc.username ' \
+                    'AND r_acc.discriminator = acc.discriminator ' \
+            'WHERE riddle = :riddle AND score > 1000 ' \
+            'GROUP BY country ' \
+            'ORDER BY avg_score DESC'
+    values = {'riddle': alias}
+    result = await database.fetch_all(query, values)
+    
+    # Build list of countries, removing ones with fewer than 2 players
+    countries = []
+    for row in result:
+        if row['player_count'] >= 2:
+            countries.append(row)
+
+    # Render page with countries info
+    return await render_template('countries/riddle.htm',
+            alias=alias, countries=countries)
