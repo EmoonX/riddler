@@ -9,7 +9,7 @@ players = Blueprint('players', __name__)
 
 @players.route('/')
 @players.route('/players')
-@players.route('/countries/<country>')
+@players.route('/players/<country>')
 async def global_list(country: str = None):
     '''Global (and by country) players list.'''
 
@@ -71,8 +71,9 @@ async def global_list(country: str = None):
 
 
 @players.route('/<alias>/players')
-async def riddle_list(alias: str):
-    '''Riddle player list'''
+@players.route('/<alias>/players/<country>')
+async def riddle_list(alias: str, country: str = None):
+    '''Riddle (and by country) player lists.'''
 
     # Get riddle data from database
     query = 'SELECT * from riddles WHERE alias = :alias'
@@ -92,10 +93,11 @@ async def riddle_list(alias: str):
     riddle['cheevo_count'] = result['count'];
     
     # Get players data from database
+    cond = ('WHERE country = "%s" ' % country) if country else ''
     query = 'SELECT * FROM (' \
             '(SELECT *, 999999 AS `index`, ' \
                     '2 AS filter FROM riddle_accounts ' \
-                'WHERE riddle_accounts.riddle = :riddle ' \
+                'WHERE riddle_accounts.riddle = :riddle ' + \
                     'AND current_level = "🏅") ' \
             'UNION ALL ' \
             '(SELECT riddle_accounts.*, levels.`index`, ' \
@@ -105,6 +107,10 @@ async def riddle_list(alias: str):
                 'WHERE riddle_accounts.riddle = :riddle ' \
                     'AND levels.riddle = :riddle) ' \
             ') AS result ' \
+            'INNER JOIN accounts AS acc ' \
+                'ON result.username = acc.username ' \
+                    'AND result.discriminator = acc.discriminator ' + \
+            ('%s' % cond) + \
             'ORDER BY `index` DESC, score DESC LIMIT 1000 '
     result = await database.fetch_all(query, {'riddle': alias})
     accounts = [dict(account) for account in result]
@@ -140,4 +146,4 @@ async def riddle_list(alias: str):
 
     # Render page with account info
     return await render_template('players/riddle/list.htm',
-            alias=alias, accounts=accounts)
+            alias=alias, accounts=accounts, country=country)

@@ -1,12 +1,12 @@
 {% extends 'layout.htm' %}
-{% set flag = 'Global' %}
 {% if country %}
-  {% set flag = ('<span class="flag">' + get_emoji_flag(country) + '</span>')|safe %}
+  {% set flag = get_emoji_flag(country) %}
+  {% set flag_html = ('<span class="flag">' + flag + '</span>')|safe %}
 {% endif %}
-{% block title %}{{ flag }} leaderboard{% endblock %}
+{% block title %}{{ flag }} | Global leaderboard{% endblock %}
 {% block content %}
     <main>
-      <h1>{{ flag }} leaderboard</h1>
+      <h1>{{ flag_html }} | Global leaderboard</h1>
       <section class="list players">
         {% set avatar_urls = fetch_avatar_urls() %}
         {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
