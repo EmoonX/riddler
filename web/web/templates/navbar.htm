@@ -4,6 +4,7 @@
           <button class="nav-button menu">≡</button>
           <div>
             <a href="{{ url_for('players.global_list') }}" class="nav-button">All players</a>
+            <a href="{{ url_for('countries.global_list') }}" class="nav-button">Countries</a>
             <!--<a href="#" class="nav-button">Countries</a>-->
             <a href="{{ url_for('info.about') }}" class="nav-button">About / Help</a>
             <a href="https://discord.gg/MpFRcFhmHn" class="nav-button" target="_blank">
@@ -38,6 +39,7 @@
           <div>
             <a href="{{ url_for('levels.level_list', alias=riddle['alias']) }}" class="nav-button">Level explorer</a>
             <a href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" class="nav-button">Leaderboard</a>
+            <a href="{{ url_for('countries.riddle_list', alias=riddle['alias']) }}" class="nav-button">Countries leaderboard</a>
             <a href="{{ riddle['front_page'] }}" class="nav-button" target="_blank">
               <img class="icon" src="/static/icons/external-link.png">Front page</a>
             </a>
