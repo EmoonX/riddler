@@ -10,6 +10,7 @@
       <h1>{{ flag_html }}Global leaderboard</h1>
       <section class="list players">
         {% set avatar_urls = fetch_avatar_urls() %}
+        {% set riddles = fetch_riddles() %}
         {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
       {% for player in accounts %}
         <div class="row">
@@ -42,13 +43,15 @@
           </figure>
           <div class="honors">
           {% for riddle in player['mastered_riddles'] %}
+            {% set icon_url = riddles[riddle['alias']]['icon_url'] %}
             <a class="completed mastered" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" title="{{ riddle['full_name'] }} (MASTERED)">
-              <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
+              <img class="riddle-icon" src="{{ icon_url }}">
             </a>
           {% endfor %}
           {% for riddle in player['completed_riddles'] %}
+            {% set icon_url = riddles[riddle['alias']]['icon_url'] %}
             <a class="completed" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" title="{{ riddle['full_name'] }} (completed)">
-              <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
+              <img class="riddle-icon" src="{{ icon_url }}">
             </a>
           {% endfor %}
           </div>

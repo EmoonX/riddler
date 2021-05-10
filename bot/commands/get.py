@@ -30,11 +30,22 @@ async def is_member_and_has_permissions(request):
 
 
 async def get_riddle_icon_url(request):
-    '''Get riddle's Discord guild info (in dict form) from name.'''
+    '''Get riddle's icon URL from its guild ID.'''
     guild_id = int(request.rel_url.query['guild_id'])
     guild = get(bot.guilds, id=guild_id)
     url = str(guild.icon_url)
     return web.Response(text=url)
+
+
+async def fetch_riddle_icon_urls(request):
+    '''Fetch all riddles' icon URLs,
+    returning a JSON dict of pairs (guild ID -> url).'''
+    urls = {}
+    for guild in bot.guilds:
+        url = str(guild.icon_url)
+        urls[guild.id] = url
+    data = json.dumps(urls)
+    return web.Response(text=data)
 
 
 async def get_avatar_url(request):

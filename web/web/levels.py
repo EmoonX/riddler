@@ -38,7 +38,7 @@ async def level_list(alias: str):
             values = {**base_values, 'level_name': level['name']}
             result = await database.fetch_one(query, values)
             
-            _, status = await admin.auth(alias)
+            # _, status = await admin.auth(alias)
             # if status == 200:
             if False:
                 # If admin of riddle, everything is unlocked :)

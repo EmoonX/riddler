@@ -105,6 +105,27 @@ async def context_processor():
         
         return riddle
 
+    async def fetch_riddles():
+        '''Return all riddles info + icons.'''
+        
+        # Get DB row data
+        query = 'SELECT * FROM riddles'
+        result = await database.fetch_all(query)
+        
+        # Fetch icon URLs by bot request
+        data = await bot_request('fetch-riddle-icon-urls')
+        urls = json.loads(data)
+
+        # Build dict of riddles
+        riddles = {}
+        for row in result:
+            row = dict(row)
+            guild_id = str(row['guild_id'])
+            row['icon_url'] = urls[guild_id]
+            riddles[row['alias']] = row
+        
+        return riddles
+
     async def get_accounts(alias=''):
         '''Get players data from database.
         

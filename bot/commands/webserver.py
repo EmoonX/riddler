@@ -7,7 +7,8 @@ from aiohttp import web
 from discord.ext import commands
 
 from commands.get import is_member_and_has_permissions, \
-        get_riddle_icon_url, get_avatar_url, fetch_avatar_urls
+        get_riddle_icon_url, fetch_riddle_icon_urls, \
+        get_avatar_url, fetch_avatar_urls
 from commands.update import insert, update
 from commands.unlock import UnlockHandler
 from util.db import database
@@ -25,6 +26,7 @@ class WebServer(commands.Cog):
         app.router.add_get('/is-member-and-has-permissions',
                 is_member_and_has_permissions)
         app.router.add_get('/get-riddle-icon-url', get_riddle_icon_url)
+        app.router.add_get('/fetch-riddle-icon-urls', fetch_riddle_icon_urls)
         app.router.add_get('/get-avatar-url', get_avatar_url)
         app.router.add_get('/fetch-avatar-urls', fetch_avatar_urls)
         app.router.add_get('/insert', insert)
