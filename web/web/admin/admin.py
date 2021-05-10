@@ -262,6 +262,9 @@ async def save_image(folder: str, alias: str,
     
     # Get correct riddle dir
     dir = '../static/%s/%s' % (folder, alias)
+    if not os.path.isdir(dir):
+        # Create directory if nonexistent
+        os.makedirs(dir)
     
     # Erase previous file (if any and filename was changed)
     if prev_filename and filename != prev_filename:
