@@ -5,9 +5,7 @@ import traceback
 
 from aiohttp import web
 from discord.ext import commands
-from discord.utils import get
 
-from riddle import riddles
 from commands.get import is_member_and_has_permissions, \
         get_riddle_icon_url, get_avatar_url, fetch_avatar_urls
 from commands.update import insert, update
@@ -45,13 +43,10 @@ class WebServer(commands.Cog):
 async def unlock(request):
     '''Ŕeceive data from web request and issue unlocking method.'''
     
-    # Get unlock handler for guild member
+    # Build unlock handler for guild member
     data = request.rel_url.query
     alias = data['alias']
-    riddle = riddles[alias]
-    member = get(riddle.guild.members,
-            name=data['username'], discriminator=data['disc'])
-    uh = UnlockHandler(riddle.guild, riddle.levels, member)
+    uh = UnlockHandler(alias, data['username'], data['disc'])
     
     # Parse JSON params into dicts
     params = {}
@@ -75,8 +70,6 @@ async def unlock(request):
                 params['first_to_solve'])
     elif params['method'] == 'cheevo_found':
         args = (params['cheevo'], params['points'])
-    elif params['method'] == 'game_completed':
-        args = (params['winners_role'],)
 
     # Call unlocking method by name with correct number of args
     try:

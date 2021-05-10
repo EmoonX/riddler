@@ -3,12 +3,16 @@ import logging
 from discord import Guild, Member, File
 from discord.utils import get
 
+from riddle import riddles
 from util.db import database
 
 
 class UnlockHandler:
     '''Handler for processing guild unlocking procedures
     (granting roles, congratulating player, finishing the game, etc).'''
+
+    alias: str
+    '''Unique identifier for riddle'''
 
     guild: Guild
     '''Guild where things will be unlocked'''
@@ -17,13 +21,16 @@ class UnlockHandler:
     '''Dict of normal riddle levels'''
 
     member: Member
-    '''Discord guild member, the one that is unlocking'''
+    '''Discord guild member, the one to unlock things for'''
 
-    def __init__(self, guild: Guild, levels: dict, member: Member):
-        '''Build handler.'''
-        self.guild = guild
-        self.levels = levels
-        self.member = member
+    def __init__(self, alias: str, username: str, disc: str):
+        '''Build handler for guild `alias` and member `username#disc`.'''
+        self.alias = alias
+        riddle = riddles[alias]
+        self.guild = riddle.guild
+        self.levels = riddle.levels
+        self.member = get(riddle.guild.members,
+                name=username, discriminator=disc)
 
     async def beat(self, level: dict, points: int,
             first_to_solve: bool, milestone: str):
@@ -187,8 +194,15 @@ class UnlockHandler:
             description = '_"%s"_' % cheevo['description']
             await self.member.send(description, file=image)
 
-    async def game_completed(self, winners_role: str):
+    async def game_completed(self):
         '''Do the honors upon user completing game.'''
+
+        # Get completed role name from DB    
+        query = 'SELECT * FROM riddles ' \
+                'WHERE alias = :alias'
+        values = {'alias': self.alias}
+        result = await database.fetch_one(query, values)
+        completed_name = result['mastered_role']
 
         # Remove last level's "reached" role
         for role in self.member.roles:
@@ -204,9 +218,9 @@ class UnlockHandler:
                 await self.member.remove_roles(role)
                 break
 
-        # Add flashy winners role
-        winners = get(self.guild.roles, name=winners_role)
-        await self.member.add_roles(winners)
+        # Get completed role and add it to player
+        completed_role = get(self.guild.roles, name=completed_name)
+        await self.member.add_roles(completed_role)
 
         # Update nickname with winner's badge
         await update_nickname(self.member, '🏅')
@@ -227,7 +241,7 @@ class UnlockHandler:
         # Get mastered role name from DB    
         query = 'SELECT * FROM riddles ' \
                 'WHERE alias = :alias'
-        values = {'alias': alias}
+        values = {'alias': self.alias}
         result = await database.fetch_one(query, values)
         mastered_name = result['mastered_role']
 
