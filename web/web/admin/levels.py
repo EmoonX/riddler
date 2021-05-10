@@ -157,11 +157,7 @@ async def levels(alias: str):
                 levels.append(values)
 
             # Update Discord guild channels and roles with new levels info
-            query = 'SELECT * FROM riddles WHERE alias = :alias'
-            result = await database.fetch_one(query, {'alias': alias})
-            winners_role = result['winners_role']
-            await bot_request('insert', guild_id=guild_id,
-                    levels=levels, winners_role=winners_role)
+            await bot_request('insert', alias=alias, levels=levels)
         
         # Update pages data to changed or new levels
         for i in range(1, len(levels_after) + 1):
