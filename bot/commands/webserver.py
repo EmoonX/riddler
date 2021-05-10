@@ -12,6 +12,7 @@ from commands.get import is_member_and_has_permissions, \
         get_riddle_icon_url, get_avatar_url, fetch_avatar_urls
 from commands.update import insert, update
 from commands.unlock import UnlockHandler
+from util.db import database
 
       
 class WebServer(commands.Cog):
@@ -20,7 +21,8 @@ class WebServer(commands.Cog):
         self.bot = bot
         
     async def webserver(self):
-        
+        '''Set up aiohttp webserver for handling
+        requests from the Quart webserver.'''
         app = web.Application()
         app.router.add_get('/is-member-and-has-permissions',
                 is_member_and_has_permissions)
@@ -45,7 +47,8 @@ async def unlock(request):
     
     # Get unlock handler for guild member
     data = request.rel_url.query
-    riddle = riddles[data['alias']]
+    alias = data['alias']
+    riddle = riddles[alias]
     member = get(riddle.guild.members,
             name=data['username'], discriminator=data['disc'])
     uh = UnlockHandler(riddle.guild, riddle.levels, member)
@@ -83,6 +86,34 @@ async def unlock(request):
         # Print glorious (and much needed) traceback info
         tb = traceback.format_exc()
         logging.error(tb)
+        return web.Response(status=500)
+    
+    # If player has gotten max score,
+    # give him mastered special role and 💎 on nick 
+    methods = ('cheevo_found', 'secret_solve', 'game_completed')
+    if params['method'] in methods:
+        # Check if player completed all levels
+        query = 'SELECT * FROM levels ' \
+                'WHERE riddle = :riddle AND name NOT IN ' \
+                    '(SELECT name FROM user_levels ' \
+                    'WHERE riddle = :riddle ' \
+                        'AND username = :name AND discriminator = :disc ' \
+                        'AND completion_time IS NOT NULL)'
+        values = {'riddle': alias,
+                'name': data['username'], 'disc': data['disc']}
+        result_levels = await database.fetch_one(query, values)
+
+        # Check if player unlocked all achievements
+        query = 'SELECT * FROM achievements ' \
+                'WHERE riddle = :riddle AND title NOT IN ' \
+                    '(SELECT title FROM user_achievements ' \
+                    'WHERE riddle = :riddle ' \
+                        'AND username = :name AND discriminator = :disc)'
+        result_cheevos = await database.fetch_one(query, values)
+
+        # If nothing was found, then player got everything
+        if not result_levels and not result_cheevos:
+            await uh.game_mastered(alias)        
     
     return web.Response(status=200)
 

@@ -333,7 +333,7 @@ class _PathHandler:
             print('Duplicate cheevo!')
             return
 
-        # Also Update user, country and global scores
+        # Also Update user and global scores
         points = cheevo_ranks[cheevo['rank']]['points']
         query = 'UPDATE riddle_accounts ' \
                 'SET score = score + :points ' \
@@ -342,10 +342,6 @@ class _PathHandler:
         values = {'points': points, 'riddle': self.riddle_alias,
                 'name': self.username, 'disc': self.disc}
         await database.execute(query, values)
-        # cursor.execute("UPDATE countries "
-        #         "SET total_score = total_score + %s "
-        #         "WHERE alpha_2 = %s",
-        #         (points, session['user']['country']))
         query = 'UPDATE accounts ' \
                 'SET global_score = global_score + :points ' \
                 'WHERE username = :name AND discriminator = :disc'
@@ -453,7 +449,7 @@ class _LevelHandler:
                 'name': self.level['name']}
         await database.execute(query, values)
 
-        # Update user, country and global scores
+        # Update user and global scores
         query = 'UPDATE riddle_accounts ' \
                 'SET score = score + :points ' \
                 'WHERE riddle = :riddle ' \
@@ -461,10 +457,6 @@ class _LevelHandler:
         values = {'points': self.points, 'riddle': self.riddle_alias,
                 'name': self.username, 'disc': self.disc}
         await database.execute(query, values)
-        # cursor.execute("UPDATE countries "
-        #         "SET total_score = total_score + %s "
-        #         "WHERE alpha_2 = %s",
-        #         (points, session['user']['country']))
         query = 'UPDATE accounts ' \
                 'SET global_score = global_score + :points ' \
                 'WHERE username = :name AND discriminator = :disc'
@@ -566,17 +558,6 @@ class _NormalLevelHandler(_LevelHandler):
                     alias=self.riddle_alias,
                     username=self.username, disc=self.disc,
                     winners_role=winners_role)
-
-        # Update countries table too
-        # cursor.execute("UPDATE countries "
-        #         "SET highest_level = GREATEST(highest_level, %s) "
-        #         "WHERE alpha_2 = %s",
-        #         (current_level, session['user']['country']))
-        # if int(current_level) > get_level_count()[0]:
-        #     cursor.execute("UPDATE countries "
-        #             "SET winners_count = winners_count + 1 "
-        #             "WHERE alpha_2 = %s",
-        #             (session['user']['country'],))
 
 
 class _SecretLevelHandler(_LevelHandler):

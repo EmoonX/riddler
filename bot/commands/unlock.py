@@ -3,6 +3,8 @@ import logging
 from discord import Guild, Member, File
 from discord.utils import get
 
+from util.db import database
+
 
 class UnlockHandler:
     '''Handler for processing guild unlocking procedures
@@ -214,8 +216,37 @@ class UnlockHandler:
                 'has finished the game!') \
                 % (self.guild.name,
                     self.member.name, self.member.discriminator))
-        text = '**[%s]** You just completed the game! **Congratulations!**' \
-                % self.guild.name
+        text = '**[%s] 🏅 GAME COMPLETED 🏅**\n' % self.guild.name
+        text += 'You just completed the game! **Congratulations!**'
+        await self.member.send(text)
+    
+    async def game_mastered(self, alias: str):
+        '''Do the honors upon user mastering game,
+        i.e beating all levels and finding all achievements.'''
+
+        # Get mastered role name from DB    
+        query = 'SELECT * FROM riddles ' \
+                'WHERE alias = :alias'
+        values = {'alias': alias}
+        result = await database.fetch_one(query, values)
+        mastered_name = result['mastered_role']
+
+        # Get guild role and grant it to player
+        mastered_role = get(self.guild.roles, name=mastered_name)
+        await self.member.add_roles(mastered_role)
+
+        # Update nickname with shiny 💎
+        await update_nickname(self.member, '💎')
+
+        # Player has mastered the game (for now?)
+        logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m ' \
+                'has mastered the game!') \
+                % (self.guild.name,
+                    self.member.name, self.member.discriminator))
+        text = '**[%s] 💎 GAME MASTERED 💎**\n' % self.guild.name
+        text += 'You have beaten all levels, found all achievements ' \
+                'and scored every single possible point on the game! ' \
+                '**Outstanding!**'
         await self.member.send(text)
 
 
