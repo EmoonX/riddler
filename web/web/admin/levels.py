@@ -188,7 +188,8 @@ async def levels(alias: str):
 async def _fetch_levels(alias: str, is_secret=False):
     '''Fetch guild levels info from database.'''
     query = 'SELECT * FROM levels ' \
-            'WHERE riddle = :riddle AND is_secret = :is_secret'
+            'WHERE riddle = :riddle AND is_secret = :is_secret ' \
+            'ORDER BY `index`'
     values = {'riddle': alias, 'is_secret': is_secret}
     result = await database.fetch_all(query, values)
     levels = {level['index']: dict(level) for level in result}
