@@ -167,10 +167,24 @@ async def levels(alias: str):
                 continue
             pages = json.loads(aux)
             for page in pages:
-                query = 'UPDATE level_pages SET level_name = :name ' \
-                        'WHERE riddle = :riddle AND path = :path'
-                values = {'name': form['%s-name' % index],
-                    'riddle': alias, 'path': page}
+                # Delete page from old table, whichever it is
+                for table in ('level_pages', 'level_pages_null'):
+                    query = ('DELETE FROM %s ' % table) + \
+                            'WHERE riddle = :riddle AND path = :path'
+                    values = {'riddle': alias, 'path': page}
+                    await database.execute(query, values)
+
+                # Insert page into new table
+                level_to = form['%s-name' % index]
+                if level_to:
+                    query = 'INSERT INTO level_pages ' \
+                            'VALUES (:riddle, :path, :level_name)'
+                    values = {'riddle': alias, 'path': page,
+                            'level_name': level_to}
+                else:
+                    query = 'INSERT INTO level_pages_null ' \
+                            'VALUES (:riddle, :path)'
+                    values = {'riddle': alias, 'path': page }
                 await database.execute(query, values)
     
     # Update both normal and secret levels
@@ -207,7 +221,11 @@ async def get_pages(alias: str) -> str:
         return msg, status
     
     # Build list of paths from database data
-    query = 'SELECT * FROM level_pages WHERE riddle = :riddle'
+    query = 'SELECT riddle, path, level_name FROM level_pages ' \
+            'WHERE riddle = :riddle ' \
+            'UNION ' \
+            'SELECT riddle, path, NULL FROM level_pages_null ' \
+            'WHERE riddle = :riddle'
     values = {'riddle': alias}
     result = await database.fetch_all(query, values)
     paths = []
@@ -278,8 +296,8 @@ async def update_pages(alias: str):
 
     for page in data:
         try:
-            query = 'INSERT INTO level_pages ' \
-                '(riddle, path) VALUES (:riddle, :path)'
+            query = 'INSERT INTO level_pages_null ' \
+                'VALUES (:riddle, :path)'
             values = {'riddle': alias, 'path': page}
             await database.execute(query, values)
             print(('> \033[1m[%s]\033[0m Added page \033[1m%s\033[0m ' \
