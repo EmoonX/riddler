@@ -78,6 +78,9 @@ class _PathHandler:
     riddle_alias: str
     '''Alias of riddle hosted on URL domain'''
 
+    unlisted: bool
+    '''If riddle is currently unlisted'''
+
     username: str
     disc: str
     '''Username and discriminator of logged in player'''
@@ -104,6 +107,9 @@ class _PathHandler:
         result = await database.fetch_one(query)
         self.riddle_alias = result['alias']
         root_path = result['root_path']
+
+        # Set riddle as unlisted or not
+        self.unlisted = bool(result['unlisted'])
         
         # Save basic user info
         self.username = user.username
@@ -342,11 +348,12 @@ class _PathHandler:
         values = {'points': points, 'riddle': self.riddle_alias,
                 'name': self.username, 'disc': self.disc}
         await database.execute(query, values)
-        query = 'UPDATE accounts ' \
-                'SET global_score = global_score + :points ' \
-                'WHERE username = :name AND discriminator = :disc'
-        values.pop('riddle')
-        await database.execute(query, values)
+        if not self.unlisted:
+            query = 'UPDATE accounts ' \
+                    'SET global_score = global_score + :points ' \
+                    'WHERE username = :name AND discriminator = :disc'
+            values.pop('riddle')
+            await database.execute(query, values)
 
         # Send request to bot to congratulate member
         await bot_request('unlock', method='cheevo_found',
@@ -376,7 +383,8 @@ class _LevelHandler:
         self.points = level_ranks[rank]['points']
         
         # Set some attributes from parent caller PH for easier access
-        for name in ('riddle_alias', 'username', 'disc', 'riddle_account'):
+        for name in ('riddle_alias', 'unlisted',
+                'username', 'disc', 'riddle_account'):
             attr = getattr(ph, name)
             setattr(self, name, attr)
     
@@ -457,12 +465,13 @@ class _LevelHandler:
         values = {'points': self.points, 'riddle': self.riddle_alias,
                 'name': self.username, 'disc': self.disc}
         await database.execute(query, values)
-        query = 'UPDATE accounts ' \
-                'SET global_score = global_score + :points ' \
-                'WHERE username = :name AND discriminator = :disc'
-        values = {'points': self.points,
-                'name': self.username, 'disc': self.disc}
-        await database.execute(query, values)
+        if not self.unlisted:
+            query = 'UPDATE accounts ' \
+                    'SET global_score = global_score + :points ' \
+                    'WHERE username = :name AND discriminator = :disc'
+            values = {'points': self.points,
+                    'name': self.username, 'disc': self.disc}
+            await database.execute(query, values)
 
 
 class _NormalLevelHandler(_LevelHandler):
@@ -553,11 +562,9 @@ class _NormalLevelHandler(_LevelHandler):
             query = 'SELECT * FROM riddles WHERE alias = :alias'
             values = {'alias': self.riddle_alias}
             result = await database.fetch_one(query, values)
-            winners_role = result['winners_role']
             await bot_request('unlock', method='game_completed',
                     alias=self.riddle_alias,
-                    username=self.username, disc=self.disc,
-                    winners_role=winners_role)
+                    username=self.username, disc=self.disc)
 
 
 class _SecretLevelHandler(_LevelHandler):

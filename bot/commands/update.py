@@ -17,8 +17,8 @@ async def insert(request):
 
     # Get riddle and guild info from DB
     data = request.rel_url.query
-    query = 'SELECT * FROM riddles' \
-            'WHERE alias = alias'
+    query = 'SELECT * FROM riddles ' \
+            'WHERE alias = :alias'
     values = {'alias': data['alias']}
     result = await database.fetch_one(query, values)
 
@@ -26,8 +26,8 @@ async def insert(request):
     # and likewise completed and mastered roles
     guild = get(bot.guilds, id=result['guild_id'])
     riddle = get(riddles.values(), guild=guild)
-    completed_role = get(guild.roles, name=data['completed_role'])
-    mastered_role = get(guild.roles, name=data['mastered_role'])
+    completed_role = get(guild.roles, name=result['completed_role'])
+    mastered_role = get(guild.roles, name=result['mastered_role'])
 
     async def add(level: dict):
         '''Add guild channels and roles.'''
@@ -41,15 +41,16 @@ async def insert(request):
                 # Create category if nonexistent
                 category = await guild.create_category(name=level['discord_category'])
 
-                # Set read permission for Riddler role
-                riddler = get(guild.roles, name='Riddler')
-                await channel.set_permissions(riddler, read_messages=True)
-                
-                # Unset read permission for @everyone
-                everyone = guild.default_role
-                await channel.set_permissions(everyone, read_messages=False)
-                
+            # Create text channel inside category    
             channel = await category.create_text_channel(name)
+
+            # Set read permission for Riddler role
+            riddler = get(guild.roles, name='Riddler')
+            await channel.set_permissions(riddler, read_messages=True)
+            
+            # Unset read permission for @everyone
+            everyone = guild.default_role
+            await channel.set_permissions(everyone, read_messages=False)
 
         # Create "reached" level role
         role_name = 'reached-' + name

@@ -61,6 +61,7 @@ async def update_all_riddles():
     # Get all riddle aliases from DB
     query = 'SELECT * FROM riddles'
     result = await database.fetch_all(query)
+    riddles = {riddle['alias']: riddle for riddle in result}
     
     # Run update_all on every riddle
     for row in result:
@@ -76,6 +77,10 @@ async def update_all_riddles():
     query = 'SELECT * FROM riddle_accounts'
     riddle_accounts = await database.fetch_all(query)
     for row in riddle_accounts:
+        riddle = riddles[row['riddle']]
+        if riddle['unlisted']:
+            # Ignore unlisted riddles
+            continue
         query = 'UPDATE accounts ' \
                 'SET global_score = global_score + :score ' \
                 'WHERE username = :name AND discriminator = :disc'
@@ -153,13 +158,18 @@ async def update_scores(alias: str):
         values = {'score': new_score, **values}
         await database.execute(query, values)
         
-        # Update player's global score
-        query = 'UPDATE accounts ' \
-                'SET global_score = (global_score - :cur + :new) ' \
-                'WHERE username = :name and discriminator = :disc'
-        new_values = {'cur': cur_score, 'new': new_score,
-                'name': row['username'], 'disc': row['discriminator']}
-        await database.execute(query, new_values)
+        # If riddle is listed, pdate player's global score
+        query = 'SELECT * FROM riddles ' \
+                'WHERE alias = :alias'
+        values = {'alias': alias}
+        result = await database.fetch_one(query, values)
+        if not result['unlisted']:
+            query = 'UPDATE accounts ' \
+                    'SET global_score = (global_score - :cur + :new) ' \
+                    'WHERE username = :name and discriminator = :disc'
+            new_values = {'cur': cur_score, 'new': new_score,
+                    'name': row['username'], 'disc': row['discriminator']}
+            await database.execute(query, new_values)
     
     return 'SUCCESS :)', 200
 
