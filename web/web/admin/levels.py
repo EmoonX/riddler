@@ -45,7 +45,7 @@ async def levels(alias: str):
     secrets_after = {}
     for name, value in form.items():
         i = name.find('-')
-        if i == -1:
+        if i == -1 or name[:i] == 'removed':
             continue
         index, attr = name[:i], name[(i+1):]
         if 's' not in index:
@@ -78,20 +78,20 @@ async def levels(alias: str):
             
             level_before = levels_before[index]
             level = levels_after[index]
-            if not set(level.keys()).issubset({'imgdata', 'pages'}):
+            if not set(level.keys()).issubset({'imgdata', 'added-pages'}):
                 # Update level(s) database data
                 query = 'UPDATE levels SET '
                 values = {'riddle': alias,
                         'is_secret': is_secret, 'index': index}
                 aux = []
                 for attr, value in level.items():
-                    if attr in ('imgdata', 'pages'):
+                    if attr in ('imgdata', 'added-pages'):
                         continue
                     s = '`%s` = :%s' % (attr, attr)
                     aux.append(s)
                     if attr == 'discord_category':
                         other = 'level_set'
-                        t = '`%s` = :%s' % (other, other)
+                        t = '`%s` = :%s' % (other, attr)
                         aux.append(t)
                     values[attr] = value
                 query += ', '.join(aux)
@@ -159,14 +159,27 @@ async def levels(alias: str):
             # Update Discord guild channels and roles with new levels info
             await bot_request('insert', alias=alias, levels=levels)
         
+        # Delete removed pages from main table and insert them into null one
+        aux = form['removed-pages']
+        if aux:
+            removed_pages = json.loads(aux)
+            for page in removed_pages:
+                query = 'DELETE FROM level_pages ' + \
+                        'WHERE riddle = :riddle AND `path` = :path'
+                values = {'riddle': alias, 'path': page}
+                await database.execute(query, values)
+                query = 'INSERT IGNORE INTO level_pages_null ' + \
+                        'VALUES (:riddle, :path)'
+                await database.execute(query, values)
+
         # Update pages data to changed or new levels
         for i in range(1, len(levels_after) + 1):
             index = str(i) if not is_secret else 's%d' % i
-            aux = form['%s-pages' % index]
+            aux = form['%s-added-pages' % index]
             if not aux:
                 continue
-            pages = json.loads(aux)
-            for page in pages:
+            added_pages = json.loads(aux)
+            for page in added_pages:
                 # Delete page from old table, whichever it is
                 for table in ('level_pages', 'level_pages_null'):
                     query = ('DELETE FROM %s ' % table) + \
@@ -174,17 +187,12 @@ async def levels(alias: str):
                     values = {'riddle': alias, 'path': page}
                     await database.execute(query, values)
 
-                # Insert page into new table
+                # Insert new page into table
                 level_to = form['%s-name' % index]
-                if level_to:
-                    query = 'INSERT INTO level_pages ' \
-                            'VALUES (:riddle, :path, :level_name)'
-                    values = {'riddle': alias, 'path': page,
-                            'level_name': level_to}
-                else:
-                    query = 'INSERT INTO level_pages_null ' \
-                            'VALUES (:riddle, :path)'
-                    values = {'riddle': alias, 'path': page }
+                query = 'INSERT INTO level_pages ' \
+                        'VALUES (:riddle, :path, :level_name)'
+                values = {'riddle': alias, 'path': page,
+                        'level_name': level_to}
                 await database.execute(query, values)
     
     # Update both normal and secret levels
@@ -225,7 +233,8 @@ async def get_pages(alias: str) -> str:
             'WHERE riddle = :riddle ' \
             'UNION ' \
             'SELECT riddle, path, NULL FROM level_pages_null ' \
-            'WHERE riddle = :riddle'
+            'WHERE riddle = :riddle ' \
+            'ORDER BY `path`'
     values = {'riddle': alias}
     result = await database.fetch_all(query, values)
     paths = []

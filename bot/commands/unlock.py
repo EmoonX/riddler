@@ -202,7 +202,7 @@ class UnlockHandler:
                 'WHERE alias = :alias'
         values = {'alias': self.alias}
         result = await database.fetch_one(query, values)
-        completed_name = result['mastered_role']
+        completed_name = result['completed_role']
 
         # Remove last level's "reached" role
         for role in self.member.roles:

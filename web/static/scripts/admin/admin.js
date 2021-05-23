@@ -11,8 +11,11 @@ const cheevoRankColors = {
   'S': 'darkturquoise'
 };
 
-// Dictionary of sets of current highlighted pages for each level
-var currentPages = {};
+// Dictionary of sets of current added pages for each level
+var addedPages = {};
+
+// Set of removed (unhighlighted) level pages
+var removedPages = new Set();
 
 function changeThumb() {
   // Load image from file browser
@@ -47,49 +50,65 @@ function changeCheevoRank() {
 
 function clickIcon() {
   // Mark/unmark file/page as belonging to current level
+
+  // Check if page is indeed a file; ignore folders
   const page = $(this).find('figcaption').text();
   const j = page.lastIndexOf('.');
-  if (j != -1) {
-    $(this).toggleClass('current');
-    const explorer = $(this).parents('.page-explorer');
-    const levelName = explorer.prev().find('.key > input').val();
-    const folderPath = explorer.find('.path').text();
-    const folder = getFolderEntry(folderPath, '', true)
-    const row = folder['children'][page];
-    if ($(this).hasClass('current')) {
-      const frontPath = explorer.prev().find('.front-path');
-      if (! frontPath.val()) {
-        frontPath.val(row['path']);
-      }
-      if (! currentPages[levelName]) {
-        currentPages[levelName] = new Set();
-      }
-      row['level_name'] = levelName;
-      currentPages[levelName].add(row['path']);
-    } else {
-      row['level_name'] = 'NULL';
-      currentPages[levelName].delete(row['path']);
-    }
-    const index = explorer.attr('id');
-    const json = JSON.stringify([...currentPages[levelName]]);
-    $(`input[name="${index}-pages"]`).last().val(json);
-
-    // Recursively mark/unmark parent folders for highlighting
-    const segments = folderPath.split('/').slice(1, -1);
-    var parent = pages['/'];
-    segments.forEach(seg => {
-      const folder = parent['children'][seg];
-      if ($(this).hasClass('current')) {
-        if (! folder['levels'][levelName]) {
-          folder['levels'][levelName] = 0;
-        }
-        folder['levels'][levelName] += 1;
-      } else {
-        folder['levels'][levelName] -= 1;
-      }
-      parent = folder;
-    });
+  if (j == -1) {
+    return;
   }
+  // Change file state
+  $(this).toggleClass('current');
+  
+  // Get level and folder info
+  const explorer = $(this).parents('.page-explorer');
+  const index = explorer.attr('id');
+  const levelName = explorer.prev().find('.key > input').val();
+  const folderPath = explorer.find('.path').text();
+  const folder = getFolderEntry(folderPath, '', true)
+  const row = folder['children'][page];
+
+  if ($(this).hasClass('current')) {
+    // File was highlighted
+    const frontPath = explorer.prev().find('.front-path');
+    if (! frontPath.val()) {
+      // Automatically fill front path on first highlight
+      frontPath.val(row['path']);
+    }
+    if (! addedPages[levelName]) {
+      addedPages[levelName] = new Set();
+    }
+    row['level_name'] = levelName;
+    removedPages.delete(row['path'])
+    addedPages[levelName].add(row['path']);
+    const addedJSON = JSON.stringify([...addedPages[levelName]]);
+    $(`input[name="${index}-added-pages"]`).val(addedJSON);
+  } else {
+    // File was unhighlighted
+    row['level_name'] = 'NULL';
+    if (addedPages[levelName]) {
+      addedPages[levelName].delete(row['path']);
+    }
+    removedPages.add(row['path'])
+    const removedJSON = JSON.stringify([...removedPages]);
+  $(`input[name="removed-pages"]`).val(removedJSON);
+  }
+
+  // Recursively mark/unmark parent folders for highlighting
+  const segments = folderPath.split('/').slice(1, -1);
+  var parent = pages['/'];
+  segments.forEach(seg => {
+    const folder = parent['children'][seg];
+    if ($(this).hasClass('current')) {
+      if (! folder['levels'][levelName]) {
+        folder['levels'][levelName] = 0;
+      }
+      folder['levels'][levelName] += 1;
+    } else {
+      folder['levels'][levelName] -= 1;
+    }
+    parent = folder;
+  });
 }
 
 function doubleClickIcon() {
