@@ -27,16 +27,19 @@ for rank, pair in level_ranks.items():
 
 
 @process.route('/process', methods=['POST', 'OPTIONS'])
+@process.route('/process-beta', methods=['POST', 'OPTIONS'])
 async def process_url():
     '''Process an URL sent by browser extension.'''
 
-    response = None
-    status = None
     if not await discord.authorized:
         # Unauthorized, return status 401
-        response = jsonify({'message': 'Unauthorized'})
+        response = 'Not logged in'
         status = 401 if request.method == 'POST' else 200
     else:
+        # Successful response :)
+        response = 'Success!'
+        status = 200
+
         if request.method =='POST':
             # Receive path from request
             path = (await request.data).decode('utf-8')
@@ -44,26 +47,19 @@ async def process_url():
             # Create path handler object and build player data
             user = await discord.fetch_user()
             ph = _PathHandler()
-            await ph.build_handler(user, path)
-            await ph.build_player_riddle_data()
+            invite_code = await ph.build_handler(user, path)
+            if invite_code and 'process-beta' in request.url:
+                # User is not currently member of riddle's guild :()
+                response = invite_code
+                status = 401
+            else:
+                await ph.build_player_riddle_data()
 
-            # Process received path
-            print(('\033[1m[%s]\033[0m Processing path \033[1m%s\033[0m '
-                    'from \033[1m%s\033[0m#\033[1m%s\033[0m')
-                    % (ph.riddle_alias, ph.path, ph.username, ph.disc))
-            await ph.process()
-        
-        # Successful response :)
-        response = jsonify({'message': 'Success!'})
-        status = 200
-    
-    # (Chrome security issues) Allow CORS to be requested from other domains
-    if request.referrer:
-        ref = request.referrer[:-1]
-        response.headers.add('Access-Control-Allow-Origin', ref)
-        response.headers.add('Access-Control-Allow-Headers', 'Content-Type')
-        response.headers.add('Access-Control-Allow-Headers', 'Cookie')
-        response.headers.add('Access-Control-Allow-Credentials', 'true')
+                # Process received path
+                print(('\033[1m[%s]\033[0m Processing path \033[1m%s\033[0m '
+                        'from \033[1m%s\033[0m#\033[1m%s\033[0m')
+                        % (ph.riddle_alias, ph.path, ph.username, ph.disc))
+                await ph.process()
     
     # Return response
     return response, status
@@ -101,15 +97,22 @@ class _PathHandler:
         parsed = urlparse(url)
         domain = parsed.netloc.replace('www.', '')
 
-        # Retrieve riddle alias which matches root path
+        # Retrieve riddle info from database
         query = 'SELECT * FROM riddles ' \
                 +('WHERE root_path LIKE "%%%s%%"') % domain
-        result = await database.fetch_one(query)
-        self.riddle_alias = result['alias']
-        root_path = result['root_path']
+        riddle = await database.fetch_one(query)
 
-        # Set riddle as unlisted or not
-        self.unlisted = bool(result['unlisted'])
+        is_member = await bot_request('is-member-of-guild',
+                guild_id=riddle['guild_id'],
+                username=user.name, disc=user.discriminator)
+        invite_code = None
+        if is_member == 'False':
+            invite_code = riddle['invite_code']
+
+        # Save basic riddle info
+        self.riddle_alias = riddle['alias']
+        root_path = riddle['root_path']
+        self.unlisted = bool(riddle['unlisted'])
         
         # Save basic user info
         self.username = user.username
@@ -126,6 +129,8 @@ class _PathHandler:
             has_dot = self.path.count('.')
             if not has_dot:
                 self.path += '.htm'
+        
+        return invite_code
     
     async def build_player_riddle_data(self):
         '''Build player riddle data from database,

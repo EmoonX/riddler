@@ -23,24 +23,33 @@ function sendToServer(url) {
       body: url
     };
     // Send request to server containing URL text
-    const urlTo = SERVER_URL + '/process';
+    const urlTo = SERVER_URL + '/process-beta';
     fetch(urlTo, params)
       .then(res => {
         console.log(res);
         if (res.status == 401) {
-          tNow = new Date();
-          dt = tNow - t0;
-          if (t0 && dt < 5000) {
-            // If current login request is less than 5 seconds
-            // after marked one, don't open a new login tab
-            return;
-          }          
-          // Unauthorized, so open Discord auth page on new tab
-          const login = SERVER_URL + '/login';
-          chrome.tabs.create({url: login});
+          res.text().then(text => {
+            if (text == 'Not logged in') {
+              console.log('401: Not logged in');
+              tNow = new Date();
+              dt = tNow - t0;
+              if (t0 && dt < 5000) {
+                // If current login request is less than 5 seconds
+                // after marked one, don't open a new login tab
+                return;
+              }          
+              // Not logged in, so open Discord auth page on new tab
+              const login = SERVER_URL + '/login';
+              chrome.tabs.create({url: login});
 
-          // Mark time of current login request
-          t0 = tNow;
+              // Mark time of current login request
+              t0 = tNow;
+            } else {
+              console.log('401: Not member of guild');
+              const invite = 'https://discord.gg/' + text;
+              chrome.tabs.create({url: invite});
+            }
+          });
         }
       })
       .then(error => {console.log(error)})

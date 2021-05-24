@@ -6,6 +6,17 @@ from discord.utils import get
 from bot import bot
 
 
+async def is_member_of_guild(request):
+    '''Return if user is currently member of given guild'''
+    data = request.rel_url.query
+    guild = get(bot.guilds, id=int(data['guild_id']))
+    member = get(guild.members,
+            name=data['username'], discriminator=data['disc'])
+    if not member:
+        return web.Response(text="False")            
+    return web.Response(text="True")
+
+
 async def is_member_and_has_permissions(request):
     '''Return if user is a current member 
     AND has enough permissions in given guild.'''
@@ -26,6 +37,7 @@ async def is_member_and_has_permissions(request):
         permission = getattr(member.guild_permissions, s)
         if not permission:
             return web.Response(text="False")
+            
     return web.Response(text="True")
 
 

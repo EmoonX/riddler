@@ -6,7 +6,8 @@ import traceback
 from aiohttp import web
 from discord.ext import commands
 
-from commands.get import is_member_and_has_permissions, \
+from commands.get import is_member_of_guild, \
+        is_member_and_has_permissions, \
         get_riddle_icon_url, fetch_riddle_icon_urls, \
         get_avatar_url, fetch_avatar_urls
 from commands.update import insert, update
@@ -23,6 +24,7 @@ class WebServer(commands.Cog):
         '''Set up aiohttp webserver for handling
         requests from the Quart webserver.'''
         app = web.Application()
+        app.router.add_get('/is-member-of-guild', is_member_of_guild)
         app.router.add_get('/is-member-and-has-permissions',
                 is_member_and_has_permissions)
         app.router.add_get('/get-riddle-icon-url', get_riddle_icon_url)

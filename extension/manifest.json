@@ -20,7 +20,7 @@
   ],
 
   "browser_action": {
-    "default_icon": "images/riddler-32.png",
+    "default_icon": "images/letter-r-32.png",
     "default_title": "Riddler",
     "default_popup": "popup.html"
   }
