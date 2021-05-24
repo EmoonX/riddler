@@ -14,6 +14,7 @@ function getRiddleHosts() {
 function updateHosts() {
   // Update host permissions on button click
   const hosts = getRiddleHosts();
+  console.log(hosts);
   chrome.permissions.request({
     origins: hosts,
   }, function(granted) {

@@ -47,8 +47,11 @@ async def process_url():
             # Create path handler object and build player data
             user = await discord.fetch_user()
             ph = _PathHandler()
-            invite_code = await ph.build_handler(user, path)
-            if invite_code and 'process-beta' in request.url:
+            ok, invite_code = await ph.build_handler(user, path)
+            if not ok and not invite_code:
+                response = 'Not a level page'
+                status = 404
+            elif not ok and invite_code and 'process-beta' in request.url:
                 # User is not currently member of riddle's guild :()
                 response = invite_code
                 status = 401
@@ -56,10 +59,11 @@ async def process_url():
                 await ph.build_player_riddle_data()
 
                 # Process received path
-                print(('\033[1m[%s]\033[0m Processing path \033[1m%s\033[0m '
-                        'from \033[1m%s\033[0m#\033[1m%s\033[0m')
-                        % (ph.riddle_alias, ph.path, ph.username, ph.disc))
-                await ph.process()
+                ok = await ph.process()
+                if ok:
+                    print(('\033[1m[%s]\033[0m Received path \033[1m%s\033[0m '
+                            'from \033[1m%s\033[0m#\033[1m%s\033[0m')
+                            % (ph.riddle_alias, ph.path, ph.username, ph.disc))
     
     # Return response
     return response, status
@@ -93,20 +97,26 @@ class _PathHandler:
         @param user: Discord user object for logged in player
         @param path: raw URL sent by the extension'''
 
-        # Get domain from parsed URL (exclude "www.")
-        parsed = urlparse(url)
-        domain = parsed.netloc.replace('www.', '')
+        # Exclude potential "www." from URL
+        url = url.replace('www.', '')
 
         # Retrieve riddle info from database
         query = 'SELECT * FROM riddles ' \
-                +('WHERE root_path LIKE "%%%s%%"') % domain
-        riddle = await database.fetch_one(query)
+                'WHERE LOCATE(root_path, :url)'
+        values = {'url': url}
+        riddle = await database.fetch_one(query, values)
+        if not riddle:
+            # Page outside of levels, like forum and admin ones
+            return False, None
 
+        # Check if user is member of riddle guild
         is_member = await bot_request('is-member-of-guild',
                 guild_id=riddle['guild_id'],
                 username=user.name, disc=user.discriminator)
+        ok = True
         invite_code = None
         if is_member == 'False':
+            ok = False
             invite_code = riddle['invite_code']
 
         # Save basic riddle info
@@ -130,7 +140,7 @@ class _PathHandler:
             if not has_dot:
                 self.path += '.htm'
         
-        return invite_code
+        return ok, invite_code
     
     async def build_player_riddle_data(self):
         '''Build player riddle data from database,
@@ -193,7 +203,7 @@ class _PathHandler:
         page = await database.fetch_one(query, values)
         if not page or not page['level_name']:
             # Page not found!
-            return
+            return False
         
         # Get requested page's level info from DB
         query = 'SELECT * FROM levels ' \
@@ -278,6 +288,8 @@ class _PathHandler:
 
             # Check and possibly grant an achievement
             await self._process_cheevo()
+        
+        return True
     
     async def _update_counters(self):
         '''Update player and riddle hit counters.'''

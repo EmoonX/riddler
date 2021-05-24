@@ -23,7 +23,7 @@ function sendToServer(url) {
       body: url
     };
     // Send request to server containing URL text
-    const urlTo = SERVER_URL + '/process-beta';
+    const urlTo = SERVER_URL + '/process';
     fetch(urlTo, params)
       .then(res => {
         console.log(res);
