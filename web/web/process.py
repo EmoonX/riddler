@@ -51,7 +51,7 @@ async def process_url():
             if not ok and not invite_code:
                 response = 'Not a level page'
                 status = 404
-            elif not ok and invite_code and 'process-beta' in request.url:
+            elif not ok and invite_code and 'process' in request.url:
                 # User is not currently member of riddle's guild :()
                 response = invite_code
                 status = 401
