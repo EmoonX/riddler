@@ -5,8 +5,8 @@ from quart import Quart, Blueprint, request, session, \
 from quart_discord import DiscordOAuth2Session
 from quart_discord.models.user import User
 from quart.sessions import SecureCookieSessionInterface
-from pycountry import pycountry
 
+from countries import country_names
 from util.db import database
 
 # Discord OAuth2 sessionz
@@ -55,7 +55,7 @@ async def register():
     
     # Check if user tried to submit a phony country code
     form = await request.form
-    country = pycountry.countries.get(alpha_2=form['country'])
+    country = country_names.get(alpha_2=form['country'])
     if not country:
         return await r('No bogus countries allowed...')
     

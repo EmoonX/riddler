@@ -1,9 +1,11 @@
 import json
 
 from pycountry import pycountry
+import country_converter as coco
 from flag import flag
 
 from auth import discord
+from countries import country_names
 from webclient import bot_request
 from util.db import database
 
@@ -17,6 +19,7 @@ level_ranks = {
     'A': f(400, 'crimson'),
     'S': f(1000, 'lightcyan')
 }
+
 # Colors for achievements outline based on ranks
 g = lambda e, p, s, c, d : \
         {'emoji': e, 'points': p, 'size': s, 'color': c, 'description': d}
@@ -85,9 +88,6 @@ async def get_achievements(alias: str, user: dict = None):
 
 async def context_processor():
     '''Inject variables and functions in Jinja.'''
-
-    # List of pycountry country objects
-    pycountries = pycountry.countries
     
     async def get_riddle(alias):
         '''Return riddle info + icon from a given alias.'''
@@ -174,12 +174,12 @@ async def context_processor():
         return urls
 
     def get_sorted_countries():
-        '''Get sorted list of countries by name.'''
-        def comp_names(country):
-            '''Sort countries by real name (instead of alpha_2).'''
-            return country.name
-        countries = list(pycountries)
-        countries.sort(key=comp_names)
+        '''Get sorted list of country pairs (short_name, alpha_2).'''
+        countries = []
+        for alpha_2, short_name in country_names.items():
+            country = (short_name, alpha_2)
+            countries.append(country)
+        countries.sort()
         return countries
     
     async def get_user_country():
@@ -191,12 +191,20 @@ async def context_processor():
         result = await database.fetch_one(query, values)
         country = result['country']
         return country
+    
+    # Build dict of country names
+    cc = coco.CountryConverter()
+    for country in pycountry.countries:
+        alpha_2 = country.alpha_2
+        short_name = cc.convert(alpha_2, to='short_name')
+        country_names[alpha_2] = short_name
 
     # Dict for extra variables
     extra = {
         'level_ranks': level_ranks, 'cheevo_ranks': cheevo_ranks,
         'get_riddles': get_riddles, 'get_achievements': get_achievements,
-        'get_emoji_flag': flag
+        'country_names': country_names, 'get_emoji_flag': flag,
+        'pycountries': pycountry.countries
     }
     # Return concatenated dict with pairs ("var" -> var_value)
     return {**locals(), **extra}

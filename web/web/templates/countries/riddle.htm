@@ -19,7 +19,7 @@
             <var {{ style }}>{{ rank }}</var>
           </div>
           <div class="country">
-            {% set name = pycountries.get(alpha_2=country['country'])['name'] %}
+            {% set name = country_names.[country['country']] %}
             <a class="flag" href="/{{ alias }}/players/{{ country['country'] }}">
               <img src="/static/flags/{{ country['country'] }}.png">
             </a>

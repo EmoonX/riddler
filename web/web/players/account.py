@@ -1,8 +1,8 @@
 from quart import Blueprint, request, render_template
 from quart_discord import requires_authorization
-from pycountry import pycountry
 
 from auth import discord
+from inject import country_names
 from util.db import database
 
 # Create app blueprint
@@ -30,7 +30,7 @@ async def settings():
         return await r('Please fill out the required form fields!')
 
     # Check if user tried to submit a phony country code
-    country = pycountry.countries.get(alpha_2=form['country'])
+    country = country_names.get(form['country'])
     if not country:
         return await r('No bogus countries allowed...')
     

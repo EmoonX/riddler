@@ -31,9 +31,9 @@
                 <img class="avatar" src="{{ avatar_urls[tag] }}">
               </a>
               <div>
-                {% set country_name = pycountries.get(alpha_2=player['country']).name %}
+                {% set country_name = country_names[player['country']] %}
                 <a class="username" href="#">{{ player['username'] }}</a><!--
-             --><a class="country" href="/{{ alias }}/players/{{ player['country'] }}"><img class="flag" src="/static/flags/{{ player['country'] }}.png" title="{{ country_name }}"></a>
+             --><a class="country" href="/{{ alias }}/players/{{ player['country'] }}" title="{{ country_name }}"><img class="flag" src="/static/flags/{{ player['country'] }}.png"></a>
               </div>
             </div>
             <figure class="current-level">

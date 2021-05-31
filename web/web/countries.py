@@ -6,6 +6,9 @@ from util.db import database
 # Create app blueprint
 countries = Blueprint('countries', __name__)
 
+# Dict of pairs (alpha_2 -> short_country_name)
+country_names = {}
+
 
 @countries.route("/countries")
 async def global_list():
