@@ -22,7 +22,7 @@
         <div>
        {% for riddle in riddles %}
           {% set riddle = get_riddle(riddle['alias']) %}
-          <a href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" class="nav-button riddle">
+          <a href="{{ url_for('levels.level_list', alias=riddle['alias']) }}" class="nav-button riddle">
             <img class="icon" src="{{ riddle['icon_url'] }}">{{ riddle['full_name'] }}
           </a>
         {% endfor %}

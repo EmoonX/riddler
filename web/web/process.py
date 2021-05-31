@@ -27,46 +27,44 @@ for rank, pair in level_ranks.items():
 
 
 @process.route('/process', methods=['POST', 'OPTIONS'])
-@process.route('/process-beta', methods=['POST', 'OPTIONS'])
 async def process_url():
     '''Process an URL sent by browser extension.'''
 
     if not await discord.authorized:
-        # Unauthorized, return status 401
-        response = 'Not logged in'
+        # Not logged in, return status 401
         status = 401 if request.method == 'POST' else 200
-    else:
-        # Successful response :)
-        response = 'Success!'
-        status = 200
-
-        if request.method =='POST':
-            # Receive path from request
-            path = (await request.data).decode('utf-8')
-
-            # Create path handler object and build player data
-            user = await discord.fetch_user()
-            ph = _PathHandler()
-            ok, invite_code = await ph.build_handler(user, path)
-            if not ok and not invite_code:
-                response = 'Not a level page'
-                status = 404
-            elif not ok and invite_code and 'process' in request.url:
-                # User is not currently member of riddle's guild :()
-                response = invite_code
-                status = 401
-            else:
-                await ph.build_player_riddle_data()
-
-                # Process received path
-                ok = await ph.process()
-                if ok:
-                    print(('\033[1m[%s]\033[0m Received path \033[1m%s\033[0m '
-                            'from \033[1m%s\033[0m#\033[1m%s\033[0m')
-                            % (ph.riddle_alias, ph.path, ph.username, ph.disc))
+        return 'Not logged in', status
     
-    # Return response
-    return response, status
+    if request.method =='POST':
+        # Receive path from request
+        path = (await request.data).decode('utf-8')
+
+        # Create path handler object and build player data
+        user = await discord.fetch_user()
+        ph = _PathHandler()
+        ok, invite_code = await ph.build_handler(user, path)
+        if not ok:
+            if not invite_code:
+                # Page is not inside root path (like forum or admin pages)
+                return 'Not part of root path', 403
+
+            # User is not currently member of riddle's guild :()
+            return invite_code, 401  
+        
+        await ph.build_player_riddle_data()
+
+        # Process received path
+        ok = await ph.process()
+        if not ok:
+            # Page inside root path, but nevertheless not a level one
+            return 'Not a level page', 404
+
+        print(('\033[1m[%s]\033[0m Received path \033[1m%s\033[0m '
+                'from \033[1m%s\033[0m#\033[1m%s\033[0m')
+                % (ph.riddle_alias, ph.path, ph.username, ph.disc))
+    
+    # Everything's good
+    return 'Success!', 200
 
 
 class _PathHandler:

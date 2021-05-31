@@ -123,7 +123,7 @@
           <div class="currently-in">
           {% for user in level['users'] %}
             {% set player = accounts[user['username']] %}
-            <a href="#">
+            <a href="#" title="{{ player['username'] }}">
               {% set tag = player['username'] + '#' + player['discriminator'] %}
               <img width="50" height="50" class="avatar-small" src="{{ avatar_urls[tag] }}">
             </a>
