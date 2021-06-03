@@ -2,7 +2,7 @@ import os
 
 from quart import Quart, Blueprint, request, session, \
         render_template, redirect, url_for
-from quart_discord import DiscordOAuth2Session
+from quart_discord import DiscordOAuth2Session, exceptions
 from quart_discord.models.user import User
 from quart.sessions import SecureCookieSessionInterface
 
@@ -55,7 +55,7 @@ async def register():
     
     # Check if user tried to submit a phony country code
     form = await request.form
-    country = country_names.get(alpha_2=form['country'])
+    country = country_names.get(form['country'])
     if not country:
         return await r('No bogus countries allowed...')
     
@@ -84,7 +84,10 @@ async def callback():
     '''Callback for OAuth2 authentication.'''
 
     # Execute the callback
-    await discord.callback()
+    try:
+        await discord.callback()
+    except exceptions.AccessDenied:
+        return 'Unauthorized', 401
 
     # If user doesn't have an account on database, do registration
     user = await discord.fetch_user()

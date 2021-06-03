@@ -1,3 +1,4 @@
+import re
 import json
 from urllib.parse import urlparse
 from datetime import datetime
@@ -128,6 +129,11 @@ class _PathHandler:
 
         # Get relative path by removing root portion (and "www.", if present)
         self.path = url.replace('www.', '').replace(root_path, '')
+
+        # Ignore occurrences of consecutive slashes and trailling #
+        self.path = re.sub('/{2,}', '/', self.path)
+        if self.path[-1] == '#':
+            self.path = self.path[:-1]
 
         if self.path[-1] == '/':
             # If a folder itself, add "index.htm" to path's end
