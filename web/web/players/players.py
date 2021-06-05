@@ -36,10 +36,18 @@ async def global_list(country: str = None):
     accounts = [dict(account) for account in result]
     
     for account in accounts:
-        # Build list of riddle account has beaten (so far)
+        # Build list of riddles player has honors for
+        account['created_riddles'] = []
         account['mastered_riddles'] = []
-        account['completed_riddles'] = []        
+        account['completed_riddles'] = []      
         for riddle in riddles:
+            # Check if player is creator of current riddle
+            if riddle['creator_username'] == account['username'] \
+                    and riddle['creator_disc'] == account['discriminator']:
+                account['created_riddles'].append(riddle)
+                continue
+
+            # Check riddle completion
             query = 'SELECT * FROM riddle_accounts ' \
                     'WHERE riddle = :riddle ' \
                         'AND username = :name AND discriminator = :disc ' \

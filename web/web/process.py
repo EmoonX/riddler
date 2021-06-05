@@ -130,7 +130,7 @@ class _PathHandler:
         # Get relative path by removing root portion (and "www.", if present)
         self.path = url.replace('www.', '').replace(root_path, '')
 
-        # Ignore occurrences of consecutive slashes and trailling #
+        # Ignore occurrences of consecutive slashes and trailing #
         self.path = re.sub('/{2,}', '/', self.path)
         if self.path[-1] == '#':
             self.path = self.path[:-1]

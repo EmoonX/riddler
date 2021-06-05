@@ -42,18 +42,15 @@
             <figcaption>total points</figcaption>
           </figure>
           <div class="honors">
-          {% for riddle in player['mastered_riddles'] %}
+        {% for honor in ('created', 'mastered', 'completed') %}
+          {% set honor_set = honor + '_riddles' %}
+          {% for riddle in player[honor_set] %}
             {% set icon_url = riddles[riddle['alias']]['icon_url'] %}
-            <a class="completed mastered" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" title="{{ riddle['full_name'] }} (MASTERED)">
+            <a class="honor {{ honor }}" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" title="{{ riddle['full_name'] }} ({{ honor.upper() }})">
               <img class="riddle-icon" src="{{ icon_url }}">
             </a>
           {% endfor %}
-          {% for riddle in player['completed_riddles'] %}
-            {% set icon_url = riddles[riddle['alias']]['icon_url'] %}
-            <a class="completed" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" title="{{ riddle['full_name'] }} (completed)">
-              <img class="riddle-icon" src="{{ icon_url }}">
-            </a>
-          {% endfor %}
+        {% endfor %}
           </div>
         </div>
       {% endfor %}

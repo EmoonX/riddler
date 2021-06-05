@@ -830,23 +830,29 @@ section.list.players > .row {
     flex-direction: row;
     justify-content: space-evenly;
 
-    > .completed {
+    > .honor {
       position: relative;
       z-index: 0;
       text-align: left;
       text-decoration: none;
 
       &::before {
-        content: '🏅';
         position: absolute;
         z-index: 1000;
         margin-left: -25px;
         font-size: 1.2em;
-        text-shadow: 0 0 0.4em crimson, 0 0 0.8em crimson;
+      }
+      &.created::before {
+        content: '👑';
+        text-shadow: 0 0 0.4em goldenrod, 0 0 0.8em goldenrod;
       }
       &.mastered::before {
         content: '💎';
         text-shadow: 0 0 0.4em teal, 0 0 0.8em teal, 0 0 1.2em teal;
+      }
+      &.completed::before {
+        content: '🏅';
+        text-shadow: 0 0 0.4em crimson, 0 0 0.8em crimson;
       }
     }
   }
