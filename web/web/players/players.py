@@ -146,7 +146,17 @@ async def riddle_list(alias: str, country: str = None):
             result = await database.fetch_one(query, values)
             if result['count'] == riddle['cheevo_count']:
                 account['current_level'] = '💎'
+    
+    # Pluck creator account from main list to show it separately 👑
+    creator_account = None
+    for i, account in enumerate(accounts):
+        if account['username'] == riddle['creator_username'] \
+                and account['discriminator'] == riddle['creator_disc']:
+            creator_account = account
+            accounts.pop(i)
+            break
 
     # Render page with account info
     return await render_template('players/riddle/list.htm',
-            alias=alias, accounts=accounts, country=country)
+            alias=alias, creator_account=creator_account,
+            accounts=accounts, country=country)

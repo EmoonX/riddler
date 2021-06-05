@@ -13,15 +13,21 @@
         <section class="list players">
           {% set avatar_urls = fetch_avatar_urls(riddle['guild_id']) %}
           {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
-        {% for player in accounts %}
+        {% for player in accounts + [creator_account] if player %}
+        {% if loop.index > accounts|length %}
+          {% set rank = '👑' %}
+          {% set color = 'crimson' %}
+          {% set style = 'style="text-shadow: 0 0 8px %(c)s, 0 0 16px %(c)s, 0 0 24px %(c)s"'|safe % {'c': color} %}
+          <hr>
+        {% endif %}
           <div class="row">
             <div class="rank">
               {% if loop.index <= 3 %}
                 {% set rank = '🥇🥈🥉'[loop.index - 1] %}
                 {% set color = colors[loop.index - 1] %}
                 {% set style = 'style="text-shadow: 0 0 8px %(c)s, 0 0 16px %(c)s, 0 0 24px %(c)s"'|safe % {'c': color} %}
-              {% else %}
-                {% set rank = '#' + loop.index|string %}
+              {% elif loop.index <= accounts|length %}
+                {% set rank = '#' + (loop.index - 1)|string %}
               {% endif %}
               <var {{ style }}>{{ rank }}</var>
             </div>

@@ -723,6 +723,17 @@ span.flag {
 section.list.players {
   position: relative;
   z-index: 0;
+
+  > hr {
+    margin: 60px auto;
+    border-image: linear-gradient(
+      to right,
+      transparent,
+      rgba(255, 255, 255, 0.5) 10% 90%,
+      transparent
+    );
+    border-image-slice: 1;
+  }
 }
 
 section.list.players > .row {
