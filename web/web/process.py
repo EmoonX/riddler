@@ -136,8 +136,8 @@ class _PathHandler:
             self.path = self.path[:-1]
 
         if self.path[-1] == '/':
-            # If a folder itself, add "index.htm" to path's end
-            self.path += 'index.htm'
+            # If a folder itself, add "index.htm[l]" to path's end
+            self.path += 'index.' + riddle['html_extension']
         else:
             # If no extension, append explicit ".htm" to the end
             has_dot = self.path.count('.')
