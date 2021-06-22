@@ -152,7 +152,7 @@ async def context_processor():
     
     async def get_session_user():
         '''Return current Discord OAuth2 session user.'''
-        user = await discord.fetch_user()
+        user = await discord.get_user()
         return user
     
     async def get_avatar_url(username: str, disc: str):
@@ -184,7 +184,7 @@ async def context_processor():
     
     async def get_user_country():
         '''Ǵet current user's country code.'''
-        user = await discord.fetch_user()
+        user = await discord.get_user()
         query = 'SELECT * FROM accounts ' \
                 'WHERE username = :name AND discriminator = :disc'
         values = {'name': user.name, 'disc': user.discriminator}

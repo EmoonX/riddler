@@ -17,7 +17,7 @@ levels = Blueprint('levels', __name__)
 async def level_list(alias: str):
     '''Fetch list of levels, showing only desired public info.'''
     
-    user = await discord.fetch_user()
+    user = await discord.get_user()
     base_values = {'riddle': alias,
             'name': user.name, 'disc': user.discriminator}
 
@@ -107,7 +107,7 @@ async def get_pages(alias: str) -> str:
     '''Return a recursive JSON of all riddle folders and pages.'''
     
     # Build dict of (level -> paths) from user database data
-    user = await discord.fetch_user()
+    user = await discord.get_user()
     query = 'SELECT level_name, path FROM user_pages ' \
             'WHERE riddle = :riddle ' \
                 'AND username = :name AND discriminator = :disc'
@@ -197,7 +197,7 @@ async def rate(alias: str, level_name: str, rating: int):
     '''Update level rating upon user giving new one.'''
 
     # Must not have logged out meanwhile
-    user = await discord.fetch_user()
+    user = await discord.get_user()
     if not user:
         return 'Unauthorized', 401
     

@@ -5,6 +5,7 @@ from quart import Quart, Blueprint, request, session, \
 from quart_discord import DiscordOAuth2Session, exceptions
 from quart_discord.models.user import User
 from quart.sessions import SecureCookieSessionInterface
+from oauthlib.oauth2.rfc6749.errors import InvalidGrantError
 
 from countries import country_names
 from util.db import database
@@ -33,6 +34,16 @@ def discord_session_init(app: Quart):
     global discord
     discord = DiscordOAuth2Session(app)
 
+    async def _get_user():
+        '''Return Discord OAuth2 user object.
+        If token/cookie error is thrown, make user log in again.'''
+        try:
+            return await discord.fetch_user()
+        except InvalidGrantError:
+            discord.revoke()
+            return await discord.fetch_user()
+    setattr(discord, 'get_user', _get_user)
+
     # Create session cookie
     global session_cookie
     session_cookie = \
@@ -49,7 +60,7 @@ async def register():
                 user=user, msg=msg)
     
     # Render registration page on GET
-    user = await discord.fetch_user()
+    user = await discord.get_user()
     if request.method == 'GET':
         return await r('')
     
@@ -90,7 +101,7 @@ async def callback():
         return 'Unauthorized', 401
 
     # If user doesn't have an account on database, do registration
-    user = await discord.fetch_user()
+    user = await discord.get_user()
     query = 'SELECT * FROM accounts ' \
             'WHERE username = :name AND discriminator = :disc'
     values= {'name': user.name, 'disc': user.discriminator}

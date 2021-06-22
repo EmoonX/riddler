@@ -20,7 +20,7 @@ async def settings():
                 user=user, msg=msg)
     
     # Render page normally on GET
-    user = await discord.fetch_user()
+    user = await discord.get_user()
     if request.method == 'GET':
         return await r('')
 

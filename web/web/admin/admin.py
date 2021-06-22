@@ -18,7 +18,7 @@ admin = Blueprint('admin', __name__)
 @requires_authorization
 async def root_auth() -> bool:
     '''Check if you are... Emoon.'''
-    user = await discord.fetch_user()
+    user = await discord.get_user()
     return (user.id == 315940379553955844)
 
 
@@ -34,7 +34,7 @@ async def auth(alias: str):
         return 'Riddle not found!', 404
     
     # Big boss can access everything 8)
-    user = await discord.fetch_user()
+    user = await discord.get_user()
     if user.id == 315940379553955844:
         return 'OK', 200
     

@@ -41,7 +41,7 @@ async def process_url():
         path = (await request.data).decode('utf-8')
 
         # Create path handler object and build player data
-        user = await discord.fetch_user()
+        user = await discord.get_user()
         ph = _PathHandler()
         ok, invite_code = await ph.build_handler(user, path)
         if not ok:

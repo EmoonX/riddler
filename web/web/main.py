@@ -84,7 +84,7 @@ async def cookies(response):
     '''Set session cookie to be valid accross sites (SameSite=None)
     and also to expire only after a week of inactivity.'''
     value = session_cookie.dumps(dict(session))
-    dt = datetime.utcnow() + timedelta(days=7)
+    dt = datetime.utcnow() + timedelta(days=365)
     if 'Set-Cookie' in response.headers:
         response.headers.pop('Set-Cookie')
     response.set_cookie('session', value,

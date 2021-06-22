@@ -36,8 +36,6 @@ async def on_ready():
     # riddler = get(guild.roles, name='Riddler')
     # logging.info(riddler.mention)
 
-    await bot.change_presence(status=Status.dnd)
-
 
 if __name__ == '__main__':
     # Start bot with secret token
