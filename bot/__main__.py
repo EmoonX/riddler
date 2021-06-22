@@ -2,8 +2,8 @@ import os
 import sys
 import logging
 
-from discord.utils import get
 from dotenv import load_dotenv
+from discord import Status
 from cogwatch import Watcher
 
 # Allow util folder to be visible
@@ -16,7 +16,7 @@ load_dotenv(verbose=True)
 logging.basicConfig(level=logging.INFO)
 
 from bot import bot
-from riddle import build_riddles, riddles
+from riddle import build_riddles
 
 
 @bot.event
@@ -35,6 +35,8 @@ async def on_ready():
     # guild = get(bot.guilds, name='Cipher: Crack the Code')
     # riddler = get(guild.roles, name='Riddler')
     # logging.info(riddler.mention)
+
+    await bot.change_presence(status=Status.dnd)
 
 
 if __name__ == '__main__':

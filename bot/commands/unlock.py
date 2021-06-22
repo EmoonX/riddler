@@ -2,6 +2,7 @@ import logging
 
 from discord import Guild, Member, File
 from discord.utils import get
+from discord.errors import Forbidden
 
 from riddle import riddles
 from util.db import database
@@ -31,6 +32,17 @@ class UnlockHandler:
         self.levels = riddle.levels
         self.member = get(riddle.guild.members,
                 name=username, discriminator=disc)
+    
+    async def _send(self, text: str):
+        '''Try to send a message to member.
+        If they don't accept DMs from bot, ignore.'''
+        try:
+            await self.member.send(text)
+        except Forbidden:
+            logging.info(('\033[1m[%s]\033[0m ' \
+                    'Can\'t send messages  to \033[1m%s#%s\033[0m ')
+                    % (self.guild.name, self.member.name,
+                        self.member.discriminator))
 
     async def beat(self, level: dict, points: int,
             first_to_solve: bool, milestone: str):
@@ -49,7 +61,7 @@ class UnlockHandler:
         text = ('**[%s]** You have solved level **%s** [%s] ' \
                     'and won **%d** points!\n') \
                 % (self.guild.name, name, stars, points)
-        await self.member.send(text)
+        await self._send(text)
         
         # Send also to channels if first to solve level
         if first_to_solve:
@@ -68,7 +80,7 @@ class UnlockHandler:
             await self.member.add_roles(role)
             text = '**[%s] 🗿 MILESTONE REACHED 🗿**\n' % self.guild.name
             text += 'You have unlocked special role **@%s**!' % milestone
-            await self.member.send(text)
+            await self._send(text)
             
             # Congratulate milestone reached on respective channel
             channel = get(self.guild.channels, name=level['discord_name'])
@@ -125,7 +137,7 @@ class UnlockHandler:
                     self.member.discriminator, name))
         text = '**[%s]** You have found secret level **%s**. Congratulations!' \
                 % (self.guild.name, name)
-        await self.member.send(text)
+        await self._send(text)
 
     async def secret_solve(self, level: dict, points: int,
             first_to_solve=False):
@@ -155,7 +167,7 @@ class UnlockHandler:
         text = ('**[%s]** You have solved secret level **%s** [%s] ' \
                     'and won **%d** points!\n') \
                 % (self.guild.name, name, stars, points)
-        await self.member.send(text)
+        await self._send(text)
         
         # Send congratulations message to channel (and cheevos one) :)
         channel = get(self.guild.channels, name=discord_name)
@@ -181,7 +193,7 @@ class UnlockHandler:
         text = ('**[%s]** You have found achievement **_%s_** '
                 'and won **%d** points!\n') \
                 % (self.guild.name, cheevo['title'], points)
-        await self.member.send(text)
+        await self._send(text)
         
         # Get cheevo thumb image from path
         image_path = '../web/static/cheevos/%s/%s' \
@@ -232,7 +244,7 @@ class UnlockHandler:
                     self.member.name, self.member.discriminator))
         text = '**[%s] 🏅 GAME COMPLETED 🏅**\n' % self.guild.name
         text += 'You just completed the game! **Congratulations!**'
-        await self.member.send(text)
+        await self._send(text)
     
     async def game_mastered(self, alias: str):
         '''Do the honors upon user mastering game,
@@ -261,7 +273,7 @@ class UnlockHandler:
         text += 'You have beaten all levels, found all achievements ' \
                 'and scored every single possible point on the game! ' \
                 '**Outstanding!**'
-        await self.member.send(text)
+        await self._send(text)
 
 
 async def update_nickname(member: Member, s: str):

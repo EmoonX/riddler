@@ -135,8 +135,11 @@ async def riddle_list(alias: str, country: str = None):
                     'AND username = :name AND discriminator = :disc ' \
                 'GROUP BY riddle, username, discriminator'
         values = {'riddle': alias, **values}
-        result = await database.fetch_one(query, values);
-        account['page_count'] = result['page_count']
+        result = await database.fetch_one(query, values)
+        try:
+            account['page_count'] = result['page_count']
+        except:
+            pass
         
         if account['current_level'] == '🏅':
             # Show 💎 if player has gotten all possible cheevos on riddle

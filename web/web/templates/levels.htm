@@ -26,7 +26,9 @@
             <var class='latin-name'>({{ level['latin_name'] }})</var>
           {% endif %}
           </div>
-            {% if level['unlocked'] %}<div class="menu-button">☰</div>{% endif %}
+        {% if level['unlocked'] %}
+          <div class="menu-button">☰</div>
+        {% endif %}
           </div>
         {% if level['unlocked'] and level['image'] %}
           <div class="thumb">

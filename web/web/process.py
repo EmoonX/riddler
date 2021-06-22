@@ -580,9 +580,6 @@ class _NormalLevelHandler(_LevelHandler):
             await database.execute(query, values)
             
             # Bot game finish procedures
-            query = 'SELECT * FROM riddles WHERE alias = :alias'
-            values = {'alias': self.riddle_alias}
-            result = await database.fetch_one(query, values)
             await bot_request('unlock', method='game_completed',
                     alias=self.riddle_alias,
                     username=self.username, disc=self.disc)
