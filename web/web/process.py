@@ -60,9 +60,11 @@ async def process_url():
             # Page inside root path, but nevertheless not a level one
             return 'Not a level page', 404
 
+        # Log received path with timestamp
+        tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         print(('\033[1m[%s]\033[0m Received path \033[1m%s\033[0m '
-                'from \033[1m%s\033[0m#\033[1m%s\033[0m')
-                % (ph.riddle_alias, ph.path, ph.username, ph.disc))
+                'from \033[1m%s\033[0m#\033[1m%s\033[0m (%s)')
+                % (ph.riddle_alias, ph.path, ph.username, ph.disc, tnow))
     
     # Everything's good
     return 'Success!', 200
