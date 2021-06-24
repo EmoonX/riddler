@@ -3,8 +3,8 @@ import sys
 import logging
 
 from dotenv import load_dotenv
-from discord import Status
 from cogwatch import Watcher
+from discord.utils import get
 
 # Allow util folder to be visible
 sys.path.append('..')
@@ -32,9 +32,11 @@ async def on_ready():
     # Build riddles dict
     await build_riddles()
     
-    # guild = get(bot.guilds, name='Cipher: Crack the Code')
-    # riddler = get(guild.roles, name='Riddler')
-    # logging.info(riddler.mention)
+    # guild = get(bot.guilds, name='Croc Riddle')
+    # for channel in guild.channels:
+    #     if 'level' in channel.name:
+    #         everyone = guild.default_role
+    #         await channel.set_permissions(everyone, read_messages=True)
 
 
 if __name__ == '__main__':

@@ -116,7 +116,7 @@ class _PathHandler:
                 username=user.name, disc=user.discriminator)
         ok = True
         invite_code = None
-        if is_member == 'False':
+        if is_member == 'False' and riddle['invite_code']:
             ok = False
             invite_code = riddle['invite_code']
 

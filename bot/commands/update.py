@@ -44,13 +44,13 @@ async def insert(request):
             # Create text channel inside category    
             channel = await category.create_text_channel(name)
 
-            # Set read permission for Riddler role
-            riddler = get(guild.roles, name='Riddler')
-            await channel.set_permissions(riddler, read_messages=True)
-            
-            # Unset read permission for @everyone
-            everyone = guild.default_role
-            await channel.set_permissions(everyone, read_messages=False)
+        # Set read permission for Riddler role
+        riddler = get(guild.roles, name='Riddler')
+        await channel.set_permissions(riddler, read_messages=True)
+        
+        # Unset read permission for @everyone
+        everyone = guild.default_role
+        await channel.set_permissions(everyone, read_messages=False)
 
         # Create "reached" level role
         role_name = 'reached-' + name
