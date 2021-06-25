@@ -188,14 +188,10 @@ async def update_completion_count(alias: str):
     query = 'SELECT level_name, COUNT(*) AS count ' \
                 'FROM user_levels ' \
             'WHERE riddle = :riddle AND completion_time IS NOT NULL ' \
-            'GROUP BY riddle, level_name'
+            'GROUP BY level_name'
     levels = await database.fetch_all(query, {'riddle': alias})
     
     # Update completion count for all riddle levels
-    query = 'UPDATE levels ' \
-            'SET completion_count = 0 ' \
-            'WHERE riddle = :riddle'
-    await database.execute(query, {'riddle': alias})
     for level in levels:
         query = 'UPDATE levels ' \
                 'SET completion_count = :count ' \
