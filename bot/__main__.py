@@ -33,10 +33,11 @@ async def on_ready():
     await build_riddles()
     
     # guild = get(bot.guilds, name='Croc Riddle')
-    # for channel in guild.channels:
-    #     if 'level' in channel.name:
-    #         everyone = guild.default_role
-    #         await channel.set_permissions(everyone, read_messages=True)
+    # emoon = get(guild.members, name='Emoon')
+    # logging.info(emoon)
+    # admin = get(guild.roles, name='admin')
+    # logging.info(admin)
+    # await emoon.remove_roles(admin)
 
 
 if __name__ == '__main__':
