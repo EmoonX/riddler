@@ -10,6 +10,5 @@ emoji_country_flag==1.2.3
 discord_py_slash_command==1.0.9.5
 cogwatch==2.1.0
 discord==1.0.1
-pypresence>=4.2.0
 Pillow==8.2.0
 python-dotenv==0.15.0

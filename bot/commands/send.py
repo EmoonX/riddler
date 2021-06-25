@@ -9,9 +9,8 @@ class Send(commands.Cog):
 
     @commands.command()
     async def send(self, ctx):
-        guild = get(bot.guilds, name='Cipher: Crack the Code')
+        guild = get(bot.guilds, name='RNS Riddle')
         member = get(guild.members, name=ctx.author.name)
-        role = None
         if not member or not member.guild_permissions.manage_guild:
             # You are not an admin of given guild
             text = '> `!send` - Access denied'
