@@ -121,7 +121,10 @@ async def context_processor():
         for row in result:
             row = dict(row)
             guild_id = str(row['guild_id'])
-            row['icon_url'] = urls[guild_id]
+            try:
+                row['icon_url'] = urls[guild_id]
+            except:
+                pass
             riddles[row['alias']] = row
         
         return riddles
@@ -166,7 +169,8 @@ async def context_processor():
         If `guild` is present, fetch only from given guild;
         otherwise, return all avatars bot has access.'''
         data = None
-        if guild_id:
+        # if guild_id:
+        if False:
             data = await bot_request('fetch-avatar-urls', guild_id=guild_id)
         else:
             data = await bot_request('fetch-avatar-urls')
