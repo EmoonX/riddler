@@ -89,12 +89,11 @@ async def insert(request):
                 last_name = 'reached-' + last_level['discord_name']
                 last_reached = get(guild.roles, name=last_name)
                 for member in guild.members:
-                    if not member.nick or not member.nick[-1] in ('🏅', '💎'):
+                    if not completed_role in member.roles:
                         continue
-                    if completed_role in member.roles:
-                        await member.remove_roles(completed_role)
-                        if mastered_role in member.roles:
-                            await member.remove_roles(mastered_role)
+                    await member.remove_roles(completed_role)
+                    if mastered_role in member.roles:
+                        await member.remove_roles(mastered_role)
                     await member.add_roles(last_reached)
                     await update_nickname(member, '[%s]' % last_level['name'])
         
@@ -117,6 +116,12 @@ async def insert(request):
             # Set "reached" and "solved" read permission to the new channel
             await channel.set_permissions(reached, read_messages=True)
             await channel.set_permissions(solved, read_messages=True)
+
+            # Remove mastered roles from such members and swap 💎 back to 🏅
+            for member in guild.members:
+                if mastered_role in member.roles:
+                    await member.remove_roles(mastered_role)
+                    await update_nickname(member, '🏅')
 
     # Add level channels and roles to the guild
     levels = json.loads(data['levels'])
