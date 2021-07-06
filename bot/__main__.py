@@ -32,11 +32,11 @@ async def on_ready():
     # Build riddles dict
     await build_riddles()
     
-    guild = get(bot.guilds, name='RNS Riddle')
-    member = get(guild.members, name='Emoon')
-    from commands.user import User
-    user = User(bot)
-    await user.on_member_join(member)
+    # guild = get(bot.guilds, name='RNS Riddle')
+    # member = get(guild.members, name='Emoon')
+    # from commands.user import User
+    # user = User(bot)
+    # await user.on_member_join(member)
 
 
 if __name__ == '__main__':

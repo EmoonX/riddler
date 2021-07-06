@@ -2,6 +2,7 @@ import logging
 
 from discord.ext import commands
 from discord import User as DiscordUser, Member
+from discord.utils import get
 from discord.errors import Forbidden
 
 from commands.unlock import UnlockHandler
@@ -16,50 +17,52 @@ class User(commands.Cog):
     
     @commands.Cog.listener()
     async def on_member_join(self, member: Member):
-        try:
-            # Get riddle alias from guild ID
-            query = 'SELECT * FROM riddles ' \
-                    'WHERE guild_id = :id'
-            values = {'id': member.guild.id}
-            result = await database.fetch_one(query, values)
-            alias = result['alias']
+        # Get riddle alias from guild ID
+        query = 'SELECT * FROM riddles ' \
+                'WHERE guild_id = :id'
+        values = {'id': member.guild.id}
+        result = await database.fetch_one(query, values)
+        alias = result['alias']
 
-            # Get player riddle account
-            query = 'SELECT * FROM riddle_accounts ' \
-                    'WHERE riddle = :alias ' \
-                        'AND username = :name AND discriminator = :disc'
-            values = {'alias': alias,
-                    'name': member.name, 'disc': member.discriminator}
-            account = await database.fetch_one(query, values)
-            if not account:
-                # Member still hasn't started riddle, so nothing to do
-                return
-            
-            # Grant role to member relative to current reached normal level
-            current_level = account['current_level']
-            if current_level != '🏅':
-                uh = UnlockHandler(alias, member.name, member.discriminator)
-                query = 'SELECT * FROM levels ' \
-                        'WHERE riddle = :alias AND name = :level_name'
-                values = {'alias': alias, 'level_name': current_level}
-                level = await database.fetch_one(query, values)
-                await uh.advance(level)
-            # for row in result:
-            #     level_name = row['level_name']
-            #     query = 'SELECT * FROM levels ' \
-            #             'WHERE riddle = "rns" AND name = :level_name'
-            #     values = {'level_name': level_name}
-            #     level = await database.fetch_one(query, values)
-            #     if level['is_secret'] == 1 and row['completion_time']:
-            #         logging.info(name)
-            #         logging.info(level_name)
-            #         from commands.unlock import UnlockHandler
-            #         uh = UnlockHandler('rns', name, member.discriminator)
-            #         await uh.secret_solve(level, 0)
-        except:
-            import traceback
-            tb = traceback.format_exc()
-            logging.error(tb)
+        # Get player riddle account
+        query = 'SELECT * FROM riddle_accounts ' \
+                'WHERE riddle = :alias ' \
+                    'AND username = :name AND discriminator = :disc'
+        values = {'alias': alias,
+                'name': member.name, 'disc': member.discriminator}
+        account = await database.fetch_one(query, values)
+        if not account:
+            # Member still hasn't started riddle, so nothing to do
+            return
+
+        # Build UnlockHandler object for unlocking procedures
+        uh = UnlockHandler(alias, member.name, member.discriminator)
+        
+        # Advance member's progress to current reached normal level
+        current_level = account['current_level']
+        if current_level != '🏅':
+            query = 'SELECT * FROM levels ' \
+                    'WHERE riddle = :alias AND name = :level_name'
+            values = {'alias': alias, 'level_name': current_level}
+            level = await database.fetch_one(query, values)
+            await uh.advance(level)
+        
+        # Search for reached/solved secret levels and grant roles to member
+        query = 'SELECT * FROM user_levels ' \
+                'INNER JOIN levels ' \
+                    'ON user_levels.riddle = levels.riddle ' \
+                        'AND user_levels.level_name = levels.name ' \
+                'WHERE levels.riddle = :alias AND is_secret IS TRUE ' \
+                    'AND username = :name AND discriminator = :disc'
+        values = {'alias': alias,
+                'name': member.name, 'disc': member.discriminator}
+        secret_levels = await database.fetch_all(query, values)
+        for level in secret_levels:
+            role_name = 'reached-' if not level['completion_time'] \
+                    else 'solved-'
+            role_name += level['discord_name']
+            role = get(member.guild.roles, name=role_name)
+            await member.add_roles(role)
 
     @commands.Cog.listener()
     async def on_user_update(self, before: DiscordUser, after: DiscordUser):
