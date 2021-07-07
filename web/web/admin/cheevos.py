@@ -3,6 +3,7 @@ from quart_discord import requires_authorization
 
 from admin.admin import auth, save_image
 from inject import get_achievements
+from webclient import bot_request
 from util.db import database
 
 # Create app blueprint
@@ -95,6 +96,10 @@ async def cheevos(alias: str):
         filename = form['%d-image' % index]
         imgdata = form['%d-imgdata' % index]
         await save_image('cheevos', alias, filename, imgdata)
+
+        # Send insert request to bot just to clear
+        # mastered statuses from players.
+        await bot_request('insert', alias=alias)
     
     # Fetch cheevos again to display page correctly on POST
     cheevos = await get_achievements(alias)

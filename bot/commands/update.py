@@ -29,6 +29,14 @@ async def insert(request):
     completed_role = get(guild.roles, name=result['completed_role'])
     mastered_role = get(guild.roles, name=result['mastered_role'])
 
+    async def clear_mastered():
+        '''Remove mastered roles from respective members
+        and swap 💎 back to 🏅.'''
+        for member in guild.members:
+            if mastered_role in member.roles:
+                await member.remove_roles(mastered_role)
+                await update_nickname(member, '🏅')
+
     async def add(level: dict):
         '''Add guild channels and roles.'''
         
@@ -92,8 +100,6 @@ async def insert(request):
                     if not completed_role in member.roles:
                         continue
                     await member.remove_roles(completed_role)
-                    if mastered_role in member.roles:
-                        await member.remove_roles(mastered_role)
                     await member.add_roles(last_reached)
                     await update_nickname(member, '[%s]' % last_level['name'])
         
@@ -117,11 +123,14 @@ async def insert(request):
             await channel.set_permissions(reached, read_messages=True)
             await channel.set_permissions(solved, read_messages=True)
 
-            # Remove mastered roles from such members and swap 💎 back to 🏅
-            for member in guild.members:
-                if mastered_role in member.roles:
-                    await member.remove_roles(mastered_role)
-                    await update_nickname(member, '🏅')
+            # No more masters since max score was increased
+            await clear_mastered()
+    
+    # If no levels to be added, then it's a request related to new cheevos.
+    # So just clear mastered statuses and that's it.
+    if not 'levels' in data:
+        await clear_mastered()
+        return web.Response(status=200)
 
     # Add level channels and roles to the guild
     levels = json.loads(data['levels'])
