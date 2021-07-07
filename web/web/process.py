@@ -98,14 +98,22 @@ class _PathHandler:
         @param user: Discord user object for logged in player
         @param path: raw URL sent by the extension'''
 
-        # Exclude potential "www." from URL
-        url = url.replace('www.', '')
+        # Exclude protocol and potential "www." from URL
+        base_url = url.replace('https://', 'http://') \
+                .replace('http://', '').replace('www.', '')
 
         # Retrieve riddle info from database
-        query = 'SELECT * FROM riddles ' \
-                'WHERE LOCATE(root_path, :url)'
-        values = {'url': url}
-        riddle = await database.fetch_one(query, values)
+        # (https root_path is searched first, and then http)
+        riddle = None
+        for protocol in ('https://', 'http://'):
+            url = protocol + base_url
+            query = 'SELECT * FROM riddles ' \
+                    'WHERE LOCATE(root_path, :url)'
+            values = {'url': url}
+            riddle = await database.fetch_one(query, values)
+            if riddle:
+                break
+            
         if not riddle:
             # Page outside of levels, like forum and admin ones
             return False, None
