@@ -1,0 +1,10 @@
+{% extends 'layout.htm' %}
+{% set country = get_user_country(username, disc) %}
+{% block title %}{{ get_emoji_flag(country) }} {{ username }} | Profile{% endblock %}
+{% block content %}
+    {% set avatar_url = get_avatar_url(username, disc) %}
+    <main>
+      <h1>{{ get_emoji_flag(country) }} {{ username }}</h1>
+      <img class="avatar" src="{{ avatar_url }}">
+    </main>
+{% endblock %}

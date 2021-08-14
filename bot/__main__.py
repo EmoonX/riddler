@@ -4,7 +4,6 @@ import logging
 
 from dotenv import load_dotenv
 from cogwatch import Watcher
-from discord.utils import get
 
 # Allow util folder to be visible
 sys.path.append('..')
@@ -28,7 +27,7 @@ async def on_ready():
     # Start cogwatch on commands folder
     watcher = Watcher(bot, path='commands', preload=True)
     await watcher.start()
-    
+
     # Build riddles dict
     await build_riddles()
     

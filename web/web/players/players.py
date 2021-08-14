@@ -9,7 +9,7 @@ players = Blueprint('players', __name__)
 
 @players.route('/')
 @players.route('/players')
-@players.route('/players/<country>')
+@players.route('/countries/<country>/players')
 async def global_list(country: str = None):
     '''Global (and by country) players list.'''
 

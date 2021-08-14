@@ -1,6 +1,5 @@
 from quart import Blueprint, render_template
 
-from webclient import bot_request
 from util.db import database
 
 # Create app blueprint

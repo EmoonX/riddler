@@ -186,12 +186,16 @@ async def context_processor():
         countries.sort()
         return countries
     
-    async def get_user_country():
-        '''Ǵet current user's country code.'''
-        user = await discord.get_user()
+    async def get_user_country(username: str = None, disc: str = None):
+        '''Ǵet user's country code.
+        If no username or disc is given, use current user.'''
+        if not username:
+            user = await discord.get_user()
+            username = user.name
+            disc = user.discriminator
         query = 'SELECT * FROM accounts ' \
                 'WHERE username = :name AND discriminator = :disc'
-        values = {'name': user.name, 'disc': user.discriminator}
+        values = {'name': username, 'disc': disc}
         result = await database.fetch_one(query, values)
         country = result['country']
         return country
