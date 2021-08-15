@@ -198,17 +198,29 @@ class _PathHandler:
         if is_page:
             await self._update_counters()
 
-        # Get current level info from DB
+        # Search for unlocked and unbeaten levels on DB
         current_name = self.riddle_account['current_level']
-        query = 'SELECT * FROM levels ' \
-                'WHERE riddle = :riddle AND name = :name'
-        values = {'riddle': self.riddle_alias, 'name': current_name}
-        current_level = await database.fetch_one(query, values)
+        query = 'SELECT is_secret, `index`, name, latin_name, ' \
+                    'requirements, answer, `rank` FROM user_levels ' \
+                'INNER JOIN levels ' \
+                    'ON levels.riddle = user_levels.riddle ' \
+                        'AND levels.name = user_levels.level_name ' \
+                'WHERE user_levels.riddle = :riddle ' \
+                    'AND username = :name AND discriminator = :disc ' \
+                    'AND completion_time IS NULL'
+        values = {'riddle': self.riddle_alias,
+                'name': self.username, 'disc': self.disc}
+        current_levels = await database.fetch_all(query, values)
 
-        if current_level and self.path == current_level['answer']:
-            # If user entered a correct and new answer, register completion
-            lh = _NormalLevelHandler(current_level, self)
-            await lh.register_completion()
+        # Check if path is answer to any of the found levels
+        current_level = None
+        for level in current_levels:
+            if self.path == level['answer']:
+                # If user entered the correct answer, register completion
+                lh = _NormalLevelHandler(level, self)
+                await lh.register_completion()
+                current_level = level
+                break            
         
         # Check if path corresponds to a valid page (non 404)
         query = 'SELECT * FROM level_pages ' \
