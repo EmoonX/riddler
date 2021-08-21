@@ -73,16 +73,31 @@ async def insert(request):
             
             # Set read permissions to completed role
             await channel.set_permissions(completed_role, read_messages=True)
+
+            # Build set of ancestor levels (just Discord names)
+            # by applying a reverse BFS in requirement DAG
+            ancestor_levels = set()
+            queue = [level]
+            while queue:
+                level = queue.pop(0)
+                ancestor_levels.add(level['discord_name'])
+                query = 'SELECT * FROM level_requirements ' \
+                        'WHERE riddle = :riddle AND level_name = :name'
+                values = {'riddle': data['alias'], 'name': level['name']}
+                result = await database.fetch_all(query, values)
+                for row in result:
+                    query = 'SELECT * FROM levels ' \
+                            'WHERE riddle = :riddle and name = :name'
+                    values['name'] = row['requires']
+                    level = await database.fetch_one(query, values)
+                    if level['discord_name'] not in ancestor_levels:
+                        queue.append(dict(level))
             
             # Set read permission to current roles for 
-            # this channel and every other level channel before it
+            # this channel and every other ancestor level channel
             for channel in guild.channels:
-                other_level = None
-                for other in riddle.levels.values():
-                    if other['discord_name'] == channel.name:
-                        other_level = other
-                        break
-                if other_level and other_level['index'] <= level['index']:
+                if channel.name in ancestor_levels:
+                    logging.info(channel.name)
                     await channel.set_permissions(reached, read_messages=True)
 
             # Swap "completed" and "mastered" roles
