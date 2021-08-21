@@ -2,7 +2,7 @@
   <div class="name">
     <label class="key" title="ℹ️ UTF-8 level name that'll appear almost everywhere.">
       Level
-      <input type="text" name="{{ index }}-name" size="2" value="{{ level['name'] }}" required>
+      <input type="text" name="{{ index }}-name" size="8" value="{{ level['name'] }}" required>
     </label>
     <div class="menu-button" title="ℹ️ File explorer&#10;&#10;Add or remove files from level by clicking on them. Highlighted ones are marked as part of the current one. Navigation can be made by double-clicking on folders and using the &quot;folder up&quot; button. First clicked file will automatically fill the &quot;Front page path&quot; field.">☰</div>
   </div>
@@ -13,9 +13,9 @@
     <input type="hidden" name="{{ index }}-imgdata">
   </div>
   <div>
-    <label title="ℹ️ Path corresponding to the level's front page; generally the first non-redirecting one and that also contains level's front image.&#10;&#10;(automatically filled in when clicking the first file on level's file explorer)">
+    <label title="ℹ️ Path corresponding to the level's front page; generally the first non-redirecting one and that also contains level's front image.&#10;&#10;(double click a page in level's file explorer to change it)">
       Front page path
-      <input type="text" class="front-path" name="{{ index }}-path" size="15" value="{{ level['path'] }}" required>
+      <input type="text" class="front-path" name="{{ index }}-path" size="15" value="{{ level['path'] }}" required disabled>
     </label>
     <label title="ℹ️ Path corresponding to the first non-redirecting page after entering current level's answer (which can be answer's page itself).">
       Answer path
@@ -43,7 +43,7 @@
     </label>
     <label title="ℹ️ Name to be used on Discord channel and role(s). ASCII, can only contain lowercase letters and hyphens (-); it's generally intended to be the same (or to have the same pronunciation) as the level name.">
       Discord name
-      <input type="text" name="{{ index }}-discord_name" size="6" value="{{ level['discord_name'] }}" required>
+      <input type="text" name="{{ index }}-discord_name" size="8" value="{{ level['discord_name'] }}" required>
     </label>
   </div>
 </div>

@@ -114,7 +114,7 @@ async def riddle_list(alias: str, country: str = None):
                 'ON result.username = acc.username ' \
                     'AND result.discriminator = acc.discriminator ' + \
             ('%s' % cond) + \
-            'ORDER BY `index` DESC, score DESC LIMIT 1000 '
+            'ORDER BY score DESC, `index` DESC LIMIT 1000 '
     result = await database.fetch_all(query, {'riddle': alias})
     accounts = [dict(account) for account in result]
 
