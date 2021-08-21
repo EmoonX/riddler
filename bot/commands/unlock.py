@@ -4,7 +4,7 @@ from discord import Guild, Member, File
 from discord.utils import get
 from discord.errors import Forbidden
 
-from riddle import riddles
+from riddle import riddles, get_ancestor_levels
 from util.db import database
 
 
@@ -93,17 +93,12 @@ class UnlockHandler:
         '''Advance to further level when player arrives at a level front page.
         "reached" role is granted to user and thus given access to channel(s).'''
 
-        # Remove old "reached" role from user
-        for role in self.member.roles:
-            if not 'reached-' in role.name:
-                continue
-            old_name = role.name.replace('reached-', '')
-            old_level = None
-            for other in self.levels.values():
-                if other['discord_name'] == old_name:
-                    old_level = other
-                    break
-            if old_level:
+        # Remove ancestors' "reached" role from user
+        ancestor_levels = await get_ancestor_levels(self.alias, level)
+        for level_name in ancestor_levels:
+            role_name = 'reached-' + level_name
+            role = get(self.member.roles, name=role_name)
+            if role:
                 await self.member.remove_roles(role)
 
         # Add "reached" role to member

@@ -55,3 +55,26 @@ async def build_riddles():
         secret_levels = await database.fetch_all(query, values)
         riddle = Riddle(row, levels, secret_levels)
         riddles[row['alias']] = riddle
+
+async def get_ancestor_levels(riddle: str, level: dict):
+    '''Build set of ancestor levels (just Discord names)
+    by applying a reverse BFS in requirements DAG.'''
+
+    ancestor_levels = set()
+    queue = [level]
+    while queue:
+        level = queue.pop(0)
+        ancestor_levels.add(level['discord_name'])
+        query = 'SELECT * FROM level_requirements ' \
+                'WHERE riddle = :riddle AND level_name = :name'
+        values = {'riddle': riddle, 'name': level['name']}
+        result = await database.fetch_all(query, values)
+        for row in result:
+            query = 'SELECT * FROM levels ' \
+                    'WHERE riddle = :riddle and name = :name'
+            values['name'] = row['requires']
+            level = await database.fetch_one(query, values)
+            if level['discord_name'] not in ancestor_levels:
+                queue.append(dict(level))
+    
+    return ancestor_levels

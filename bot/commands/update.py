@@ -7,7 +7,7 @@ import discord
 from discord.utils import get
 
 from bot import bot
-from riddle import riddles
+from riddle import riddles, get_ancestor_levels
 from commands.unlock import update_nickname
 from util.db import database
 
@@ -73,28 +73,10 @@ async def insert(request):
             
             # Set read permissions to completed role
             await channel.set_permissions(completed_role, read_messages=True)
-
-            # Build set of ancestor levels (just Discord names)
-            # by applying a reverse BFS in requirement DAG
-            ancestor_levels = set()
-            queue = [level]
-            while queue:
-                level = queue.pop(0)
-                ancestor_levels.add(level['discord_name'])
-                query = 'SELECT * FROM level_requirements ' \
-                        'WHERE riddle = :riddle AND level_name = :name'
-                values = {'riddle': data['alias'], 'name': level['name']}
-                result = await database.fetch_all(query, values)
-                for row in result:
-                    query = 'SELECT * FROM levels ' \
-                            'WHERE riddle = :riddle and name = :name'
-                    values['name'] = row['requires']
-                    level = await database.fetch_one(query, values)
-                    if level['discord_name'] not in ancestor_levels:
-                        queue.append(dict(level))
             
             # Set read permission to current roles for 
             # this channel and every other ancestor level channel
+            ancestor_levels = await get_ancestor_levels(data['alias'], level)
             for channel in guild.channels:
                 if channel.name in ancestor_levels:
                     logging.info(channel.name)
@@ -176,7 +158,7 @@ async def update(request):
     
     # Update channel name
     data = request.rel_url.query
-    guild = get(bot.guilds, name=int(data['guild_id']))
+    guild = get(bot.guilds, id=int(data['guild_id']))
     channel = get(guild.channels, name=data['old_name'])
     await channel.edit(name=data['new_name'])
     

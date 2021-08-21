@@ -238,7 +238,7 @@ class _PathHandler:
         page_level = await database.fetch_one(query, values)
                   
         if current_name != '🏅':
-            if self.riddle_alias != 'genius' or self.username != 'Emoon':
+            if self.riddle_alias != 'genius':
                 # Find if current level is solved (either beforehand or not)
                 query = 'SELECT * FROM user_levels ' \
                         'WHERE riddle = :riddle ' \
@@ -628,28 +628,31 @@ class _NormalLevelHandler(_LevelHandler):
                 username=self.username, disc=self.disc,
                 first_to_solve=first_to_solve, milestone=milestone)
     
-        # Get next level (if any)
-        index = self.level['index'] + 1
-        query = 'SELECT * FROM levels ' \
-                'WHERE riddle = :riddle ' \
-                    'AND is_secret IS FALSE AND `index` = :index'
-        values = {'riddle': self.riddle_alias, 'index': index}
-        next_level = await database.fetch_one(query, values)
-        
-        if not next_level:
-            # Player has just completed the game :)
-            query = 'UPDATE riddle_accounts ' \
-                'SET current_level = "🏅" ' \
-                'WHERE riddle = :riddle AND ' \
-                    'username = :name AND discriminator = :disc'
-            values = {'riddle': self.riddle_alias,
-                    'name': self.username, 'disc': self.disc}
-            await database.execute(query, values)
+        if self.riddle_alias != 'genius':
+            # Get next level (if any)
+            index = self.level['index'] + 1
+            query = 'SELECT * FROM levels ' \
+                    'WHERE riddle = :riddle ' \
+                        'AND is_secret IS FALSE AND `index` = :index'
+            values = {'riddle': self.riddle_alias, 'index': index}
+            next_level = await database.fetch_one(query, values)
             
-            # Bot game finish procedures
-            await bot_request('unlock', method='game_completed',
-                    alias=self.riddle_alias,
-                    username=self.username, disc=self.disc)
+            if not next_level:
+                # Player has just completed the game :)
+                query = 'UPDATE riddle_accounts ' \
+                    'SET current_level = "🏅" ' \
+                    'WHERE riddle = :riddle AND ' \
+                        'username = :name AND discriminator = :disc'
+                values = {'riddle': self.riddle_alias,
+                        'name': self.username, 'disc': self.disc}
+                await database.execute(query, values)
+                
+                # Bot game finish procedures
+                await bot_request('unlock', method='game_completed',
+                        alias=self.riddle_alias,
+                        username=self.username, disc=self.disc)
+        else:
+            pass
 
 
 class _SecretLevelHandler(_LevelHandler):
