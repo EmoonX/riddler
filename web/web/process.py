@@ -201,7 +201,7 @@ class _PathHandler:
         # Search for unlocked and unbeaten levels on DB
         current_name = self.riddle_account['current_level']
         query = 'SELECT is_secret, `index`, name, latin_name, ' \
-                    'requirements, answer, `rank` FROM user_levels ' \
+                    'answer, `rank` FROM user_levels ' \
                 'INNER JOIN levels ' \
                     'ON levels.riddle = user_levels.riddle ' \
                         'AND levels.name = user_levels.level_name ' \
@@ -238,7 +238,7 @@ class _PathHandler:
         page_level = await database.fetch_one(query, values)
                   
         if current_name != '🏅':
-            if self.riddle_alias != 'genius':
+            if self.riddle_alias != 'genius' or self.username != 'Emoon':
                 # Find if current level is solved (either beforehand or not)
                 query = 'SELECT * FROM user_levels ' \
                         'WHERE riddle = :riddle ' \
@@ -285,10 +285,12 @@ class _PathHandler:
                     already_unlocked = await database.fetch_one(query, values)
                     if not already_unlocked:
                         # Check if all required levels are already beaten
-                        if level['requirements']:
-                            level_requirements = level['requirements'].split(',')
-                        else:
-                            level_requirements = []
+                        query = 'SELECT * FROM level_requirements ' \
+                                'WHERE riddle = :riddle AND level_name = :name'
+                        other_values = {'riddle': self.riddle_alias,
+                                'name': level['name']}
+                        result = await database.fetch_all(query, other_values)
+                        level_requirements = [row['requires'] for row in result]
                         can_unlock = True
                         for req in level_requirements:
                             query = 'SELECT * FROM user_levels ' \
