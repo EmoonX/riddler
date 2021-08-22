@@ -108,8 +108,31 @@ class UnlockHandler:
         role = get(self.guild.roles, name=('reached-%s' % name))
         await self.member.add_roles(role)
 
-        # Change nickname to current level
-        s = '[%s]' % level['name']
+        # Show current level(s) in nickname
+        if self.alias == 'genius':
+            query = 'DROP TABLE IF EXISTS lv; ' \
+                    'CREATE TEMPORARY TABLE IF NOT EXISTS lv AS ( ' \
+                        'SELECT lv.* FROM user_levels AS ulv ' \
+                        'INNER JOIN levels AS lv ' \
+                            'ON ulv.riddle = lv.riddle ' \
+                                'AND ulv.level_name = lv.`name` ' \
+                        'WHERE lv.riddle = :riddle ' \
+                            'AND ulv.username = :username ' \
+                    ')'
+            values = {'riddle': self.alias,
+                    'username': self.member.name}
+            await database.execute(query, values)
+            query = 'SELECT l1.* FROM lv AS l1 ' \
+                    'LEFT JOIN lv AS l2 ' \
+                        'ON l1.riddle = l2.riddle ' \
+                            'AND l1.level_set = l2.level_set ' \
+                            'AND l1.`index` < l2.`index` ' \
+                    'WHERE l2.`index` IS NULL'
+            result = await database.fetch_all(query)
+            current_levels = [row['name'] for row in result]
+            s = '[' + ', '.join(current_levels) + ']'
+        else:
+            s = '[%s]' % level['name']
         await update_nickname(self.member, s)
 
     async def secret_found(self, level: dict):
