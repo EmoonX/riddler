@@ -148,11 +148,18 @@ class UnlockHandler:
                 level_set = level_set_emoji[set_name]
                 emoji = level_set['emoji']
                 name = level['name'].replace((set_name + ' '), emoji)
+                for digit in '0123456789':
+                    # Replace numerical digits by their
+                    # smaller Unicode variants
+                    if digit in name:
+                        value = ord(digit) - 0x30 + 0x2080
+                        small_digit = chr(value)
+                        name = name.replace(digit, small_digit)
                 index = level_set['index']
                 level_names[index] = name
             aux = sorted(level_names.items())
             level_names = [level for _, level in aux]
-            s = '[' + ', '.join(level_names) + ']'
+            s = '[' + ' '.join(level_names) + ']'
 
         else:
             s = '[%s]' % level['name']
