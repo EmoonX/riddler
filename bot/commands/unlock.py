@@ -108,8 +108,8 @@ class UnlockHandler:
         role = get(self.guild.roles, name=('reached-%s' % name))
         await self.member.add_roles(role)
 
-        # Show current level(s) in nickname
         if self.alias == 'genius':
+            # Create a temporary reusable table for easing queries
             query = 'DROP TABLE IF EXISTS lv; ' \
                     'CREATE TEMPORARY TABLE IF NOT EXISTS lv AS ( ' \
                         'SELECT lv.* FROM user_levels AS ulv ' \
@@ -122,17 +122,42 @@ class UnlockHandler:
             values = {'riddle': self.alias,
                     'username': self.member.name}
             await database.execute(query, values)
+
+            # Get list of farthest reached unlocked levels
             query = 'SELECT l1.* FROM lv AS l1 ' \
                     'LEFT JOIN lv AS l2 ' \
                         'ON l1.riddle = l2.riddle ' \
                             'AND l1.level_set = l2.level_set ' \
                             'AND l1.`index` < l2.`index` ' \
                     'WHERE l2.`index` IS NULL'
-            result = await database.fetch_all(query)
-            current_levels = [row['name'] for row in result]
-            s = '[' + ', '.join(current_levels) + ']'
+            current_levels = await database.fetch_all(query)
+
+            # Get dict of level sets' emoji
+            query = 'SELECT * FROM level_set_emoji ' \
+                    'WHERE riddle = :riddle '
+            values = {'riddle': self.alias}
+            result = await database.fetch_all(query, values)
+            level_set_emoji = {
+                row['level_set']: row for row in result
+            }
+            # Replace explicit set name in level
+            # names with short emoji form
+            level_names = {}
+            for level in current_levels:
+                set_name = level['level_set']
+                level_set = level_set_emoji[set_name]
+                emoji = level_set['emoji']
+                name = level['name'].replace((set_name + ' '), emoji)
+                index = level_set['index']
+                level_names[index] = name
+            aux = sorted(level_names.items())
+            level_names = [level for _, level in aux]
+            s = '[' + ', '.join(level_names) + ']'
+
         else:
             s = '[%s]' % level['name']
+        
+        # Show current level(s) in nickname
         await update_nickname(self.member, s)
 
     async def secret_found(self, level: dict):
