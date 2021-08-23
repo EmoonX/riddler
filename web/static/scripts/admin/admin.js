@@ -48,27 +48,32 @@ function changeCheevoRank() {
   thumb.addClass([rank + '-rank', 'thumb', 'cheevo']);
 }
 
-function clickIcon() {
+function toggleFile(file, highlighted) {
   // Mark/unmark file/page as belonging to current level
 
+  // Do nothing if state isn't going to be changed
+  if (file.hasClass('current') == highlighted) {
+    return;
+  }
   // Check if page is indeed a file; ignore folders
-  const page = $(this).find('figcaption').text();
+  const page = file.find('figcaption').text();
   const j = page.lastIndexOf('.');
   if (j == -1) {
     return;
   }
   // Change file state
-  $(this).toggleClass('current');
+  file.toggleClass('current');
   
   // Get level and folder info
-  const explorer = $(this).parents('.page-explorer');
+  const explorer = file.parents('.page-explorer');
   const index = explorer.attr('id');
   const levelName = explorer.prev().find('.key > input').val();
   const folderPath = explorer.find('.path').text();
   const folder = getFolderEntry(folderPath, '', true)
   const row = folder['children'][page];
 
-  if ($(this).hasClass('current')) {
+  console.log(file.hasClass('current'))
+  if (file.hasClass('current')) {
     // File was highlighted
     const frontPath = explorer.prev().find('.front-path');
     if (! frontPath.val()) {
@@ -99,7 +104,7 @@ function clickIcon() {
   var parent = pages['/'];
   segments.forEach(seg => {
     const folder = parent['children'][seg];
-    if ($(this).hasClass('current')) {
+    if (file.hasClass('current')) {
       if (! folder['levels'][levelName]) {
         folder['levels'][levelName] = 0;
       }
@@ -111,6 +116,12 @@ function clickIcon() {
   });
 }
 
+function clickIcon() {
+  // Change file highlighted state
+  const newState = ! $(this).hasClass('current');
+  toggleFile($(this), newState);
+}
+
 function doubleClickIcon() {
   // Action to be taken upon double-clicking icon
   const explorer = $(this).parents('.page-explorer');
@@ -120,7 +131,7 @@ function doubleClickIcon() {
     // Register file path as level front's one
     if (! $(this).hasClass('current')) {
       // Highlight file beforehand if necessary
-      $(this).trigger('click');
+      toggleFile($(this), true);
     }
     const frontPath = explorer.prev().find('.front-path')
     const path = explorer.find('.path').text() +
