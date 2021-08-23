@@ -32,16 +32,6 @@ async def on_ready():
     await build_riddles()
 
     from discord.utils import get
-    guild = get(bot.guilds, name='Cipher: Crack the Code')
-    winners = get(guild.roles, name='Codebreakers')
-    hope = get(guild.roles, name='A New Hope')
-    for member in winners.members:
-        try:
-            logging.info(member.name)
-            await member.add_roles(hope)
-        except:
-            pass
-
     # Create a temporary reusable table for easing queries
     # from util.db import database
     # guild = get(bot.guilds, name='Genius Riddle')

@@ -94,12 +94,25 @@ class UnlockHandler:
         "reached" role is granted to user and thus given access to channel(s).'''
 
         # Remove ancestors' "reached" role from user
-        ancestor_levels = await get_ancestor_levels(self.alias, level)
-        for level_name in ancestor_levels:
-            role_name = 'reached-' + level_name
-            role = get(self.member.roles, name=role_name)
-            if role:
-                await self.member.remove_roles(role)
+        if self.alias == 'genius':
+            ancestor_levels = await get_ancestor_levels(self.alias, level)
+            for level_name in ancestor_levels:
+                role_name = 'reached-' + level_name
+                role = get(self.member.roles, name=role_name)
+                if role:
+                    await self.member.remove_roles(role)
+        else:
+            for role in self.member.roles:
+                if not 'reached-' in role.name:
+                    continue
+                old_name = role.name.replace('reached-', '')
+                old_level = None
+                for other in self.levels.values():
+                    if other['discord_name'] == old_name:
+                        old_level = other
+                        break
+                if old_level:
+                    await self.member.remove_roles(role)
 
         # Add "reached" role to member
         name = level['discord_name']

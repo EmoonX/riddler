@@ -28,20 +28,26 @@ for rank, pair in level_ranks.items():
 
 
 @process.route('/process', methods=['POST', 'OPTIONS'])
-async def process_url():
+async def process_url(username=None, disc=None, path=None):
     '''Process an URL sent by browser extension.'''
 
-    if not await discord.authorized:
+    if not path and not await discord.authorized:
         # Not logged in, return status 401
         status = 401 if request.method == 'POST' else 200
         return 'Not logged in', status
     
-    if request.method =='POST':
+    if path or request.method =='POST':
         # Receive path from request
-        path = (await request.data).decode('utf-8')
+        if not path:
+            path = (await request.data).decode('utf-8')
 
         # Create path handler object and build player data
-        user = await discord.get_user()
+        if not username:
+            user = await discord.get_user()
+        else:
+            user = lambda: None
+            setattr(user, 'name', username)
+            setattr(user, 'discriminator', disc)
         ph = _PathHandler()
         ok, invite_code = await ph.build_handler(user, path)
         if not ok:
@@ -134,7 +140,7 @@ class _PathHandler:
         self.unlisted = bool(riddle['unlisted'])
         
         # Save basic user info
-        self.username = user.username
+        self.username = user.name
         self.disc = user.discriminator
 
         # Get relative path by removing root portion (and "www.", if present)
@@ -253,12 +259,15 @@ class _PathHandler:
   
                 if not current_name or current_solved:
                     # Get next level name
-                    query = 'SELECT * FROM levels ' \
-                            'WHERE riddle = :riddle AND name = :level_name'
-                    values = {'riddle': self.riddle_alias,
-                            'level_name': result['level_name']}
-                    current_level = await database.fetch_one(query, values)
-                    index = current_level['index'] + 1 if current_level else 1
+                    if result:
+                        query = 'SELECT * FROM levels ' \
+                                'WHERE riddle = :riddle AND name = :level_name'
+                        values = {'riddle': self.riddle_alias,
+                                'level_name': result['level_name']}
+                        current_level = await database.fetch_one(query, values)
+                        index = current_level['index'] + 1
+                    else:
+                        index = 1
                     query = 'SELECT * FROM levels ' \
                             'WHERE riddle = :riddle ' \
                                 'AND is_secret IS FALSE AND `index` = :index'

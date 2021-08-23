@@ -123,6 +123,7 @@ async def levels(alias: str):
                 values = {'riddle': alias, 'level': form['%s-name' % index]}
                 await database.execute(query, values)
 
+            levels = []
             for i in range(len(levels_before) + 1, len(levels_after) + 1):
                 index = str(i) if not is_secret else 's%d' % i
                 
