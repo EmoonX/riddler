@@ -56,6 +56,7 @@ async def build_riddles():
         riddle = Riddle(row, levels, secret_levels)
         riddles[row['alias']] = riddle
 
+
 async def get_ancestor_levels(riddle: str, level: dict):
     '''Build set of ancestor levels (just Discord names)
     by applying a reverse BFS in requirements DAG.'''

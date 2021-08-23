@@ -9,7 +9,7 @@ players = Blueprint('players', __name__)
 
 @players.route('/')
 @players.route('/players')
-@players.route('/countries/<country>/players')
+@players.route('/players/<country>')
 async def global_list(country: str = None):
     '''Global (and by country) players list.'''
 
@@ -25,7 +25,7 @@ async def global_list(country: str = None):
                 'WHERE riddle = :riddle'
         values = {'riddle': riddle['alias']}
         result = await database.fetch_one(query, values)
-        riddle['cheevo_count'] = result['count'];
+        riddle['cheevo_count'] = result['count']
     
     # Get players data from database
     cond = ('country = "%s" AND' % country) if country else ''
@@ -39,7 +39,8 @@ async def global_list(country: str = None):
         # Build list of riddles player has honors for
         account['created_riddles'] = []
         account['mastered_riddles'] = []
-        account['completed_riddles'] = []      
+        account['completed_riddles'] = []
+        account['other_riddles'] = []
         for riddle in riddles:
             # Check if player is creator of current riddle
             if riddle['creator_username'] == account['username'] \
@@ -47,14 +48,19 @@ async def global_list(country: str = None):
                 account['created_riddles'].append(riddle)
                 continue
 
-            # Check riddle completion
+            # Search for riddles already played
             query = 'SELECT * FROM riddle_accounts ' \
                     'WHERE riddle = :riddle ' \
-                        'AND username = :name AND discriminator = :disc ' \
-                        'AND current_level = "🏅"'
+                        'AND username = :name AND discriminator = :disc '
             values = {'riddle': riddle['alias'],
-                    'name': account['username'], 'disc': account['discriminator']}
-            completed = await database.fetch_one(query, values)
+                    'name': account['username'],
+                    'disc': account['discriminator']}
+            played = await database.fetch_one(query, values)
+            if not played:
+                continue
+
+            # Check completion
+            completed = (played['current_level'] == "🏅")
             if completed:
                 # Get number of achievements user has gotten on riddle
                 query = 'SELECT COUNT(*) as count FROM user_achievements ' \
@@ -67,6 +73,8 @@ async def global_list(country: str = None):
                     account['mastered_riddles'].append(riddle)
                 else:
                     account['completed_riddles'].append(riddle)
+            else:
+                account['other_riddles'].append(riddle)
 
     # Render page with account info
     return await render_template('players/list.htm',

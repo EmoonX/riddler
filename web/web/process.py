@@ -253,6 +253,11 @@ class _PathHandler:
   
                 if not current_name or current_solved:
                     # Get next level name
+                    query = 'SELECT * FROM levels ' \
+                            'WHERE riddle = :riddle AND name = :level_name'
+                    values = {'riddle': self.riddle_alias,
+                            'level_name': result['level_name']}
+                    current_level = await database.fetch_one(query, values)
                     index = current_level['index'] + 1 if current_level else 1
                     query = 'SELECT * FROM levels ' \
                             'WHERE riddle = :riddle ' \
@@ -348,14 +353,18 @@ class _PathHandler:
                 or page_level['index'] <= current_level['index'] + 1 \
                 or page_level['is_secret']):
             tnow = datetime.utcnow()
-            query = 'INSERT IGNORE INTO user_pages ' \
-                    'VALUES (:riddle, :username, :disc, ' \
-                        ':level_name, :path, :time)'
-            values = {'riddle': self.riddle_alias,
-                    'username': self.username, 'disc': self.disc,
-                    'level_name': page['level_name'],
-                    'path': self.path, 'time': tnow}
-            await database.execute(query, values)
+            try:
+                query = 'INSERT INTO user_pages ' \
+                        'VALUES (:riddle, :username, :disc, ' \
+                            ':level_name, :path, :time)'
+                values = {'riddle': self.riddle_alias,
+                        'username': self.username, 'disc': self.disc,
+                        'level_name': page['level_name'],
+                        'path': self.path, 'time': tnow}
+                await database.execute(query, values)
+            except IntegrityError:
+                # Ignore already visited pages
+                pass
 
             # Check and possibly grant an achievement
             await self._process_cheevo()
@@ -424,7 +433,6 @@ class _PathHandler:
                     (self.riddle_alias, self.username,
                         self.disc, cheevo['title']))
         except IntegrityError:
-            print('Duplicate cheevo!')
             return
 
         # Also Update user and global scores

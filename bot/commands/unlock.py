@@ -132,29 +132,53 @@ class UnlockHandler:
                     'WHERE l2.`index` IS NULL'
             current_levels = await database.fetch_all(query)
 
-            # Get dict of level sets' emoji
-            query = 'SELECT * FROM level_set_emoji ' \
+            # Get dict of level sets
+            query = 'SELECT * FROM level_sets ' \
                     'WHERE riddle = :riddle '
             values = {'riddle': self.alias}
             result = await database.fetch_all(query, values)
-            level_set_emoji = {
-                row['level_set']: row for row in result
+            level_sets = {
+                row['set_name']: row for row in result
             }
             # Replace explicit set name in level
             # names with short emoji form
             level_names = {}
             for level in current_levels:
                 set_name = level['level_set']
-                level_set = level_set_emoji[set_name]
-                emoji = level_set['emoji']
-                name = level['name'].replace((set_name + ' '), emoji)
-                for digit in '0123456789':
-                    # Replace numerical digits by their
-                    # smaller Unicode variants
-                    if digit in name:
-                        value = ord(digit) - 0x30 + 0x2080
-                        small_digit = chr(value)
-                        name = name.replace(digit, small_digit)
+                if not set_name in level_sets:
+                    continue
+                level_set = level_sets[set_name]
+                query =  \
+                    'SELECT l1.* FROM levels AS l1 ' \
+                    'LEFT JOIN levels as l2 ' \
+                        'ON l1.level_set = l2.level_set ' \
+                            'AND l1.`index` < l2.`index` ' \
+                    'WHERE l1.level_set = :set_name ' \
+                        'AND l1.name IN ( ' \
+                            'SELECT level_name AS name FROM user_levels ' \
+                            'WHERE riddle = :riddle ' \
+                                'AND username = :name ' \
+                                'AND discriminator = :disc ' \
+                                'AND completion_time IS NOT NULL ' \
+                        ') ' \
+                    'AND l2.`index` IS NULL'
+                values = {'riddle': self.alias, 'set_name': set_name,
+                        'name': self.member.name,
+                        'disc': self.member.discriminator}
+                set_completed = await database.fetch_one(query, values)
+                if not set_completed:
+                    short_name = level_set['short_name']
+                    name = level['name'].replace((set_name + ' '), short_name)
+                    for digit in '0123456789':
+                        # Replace numerical digits by their
+                        # smaller Unicode variants
+                        if digit in name:
+                            value = ord(digit) - 0x30 + 0x2080
+                            small_digit = chr(value)
+                            name = name.replace(digit, small_digit)
+                else:
+                    name = level['emoji']
+                
                 index = level_set['index']
                 level_names[index] = name
             aux = sorted(level_names.items())

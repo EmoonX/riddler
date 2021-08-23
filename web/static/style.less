@@ -140,7 +140,6 @@ header > nav {
 }
 
 img.riddle-icon {
-  margin-left: -20px;
   width: 60px;
   border-radius: 25%;
 }
@@ -839,22 +838,25 @@ section.list.players > .row {
   > .honors {
     width: 450px;
     flex-direction: row;
-    justify-content: space-evenly;
+    justify-content: flex-start;
 
     > .honor {
       position: relative;
       z-index: 0;
-      text-align: left;
+      width: 60px;
+      margin-right: 15px;
+      text-align: center;
       text-decoration: none;
 
       &::before {
         position: absolute;
         z-index: 1000;
-        margin-left: -25px;
-        font-size: 1em;
+        margin: -5px;
+        font-size: 0.9em;
       }
       > img.riddle-icon {
-        width: 50px;
+        width: 45px;
+        vertical-align: middle;
       }
       &.created::before {
         content: '👑';
@@ -867,6 +869,15 @@ section.list.players > .row {
       &.completed::before {
         content: '🏅';
         text-shadow: 0 0 0.4em crimson, 0 0 0.8em crimson;
+      }
+      &.other > img.riddle-icon {
+        opacity: 0.2;
+        width: 40px;
+        transition: opacity 0.2s;
+
+        &:hover {
+          opacity: 1;
+        }
       }
     }
   }
