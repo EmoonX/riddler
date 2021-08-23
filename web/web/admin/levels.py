@@ -122,13 +122,6 @@ async def levels(alias: str):
                         'WHERE riddle = :riddle AND current_level = "🏅"'
                 values = {'riddle': alias, 'level': form['%s-name' % index]}
                 await database.execute(query, values)
-            
-            levels = []
-            for x, y in form.items():
-                if '33' in x:
-                    print(x)
-                    if (len(y) < 1000):
-                        print(y)
 
             for i in range(len(levels_before) + 1, len(levels_after) + 1):
                 index = str(i) if not is_secret else 's%d' % i
@@ -310,14 +303,24 @@ async def update_pages(alias: str):
     data = filter(None, data.replace('\r', '').split('\n'))
 
     for page in data:
-        try:
+        # Check if page is already in database, either as
+        # part of a level or not
+        query = 'SELECT riddle, `path` FROM level_pages ' \
+                'WHERE riddle = :riddle AND `path` = :path ' \
+                'UNION ALL ' \
+                'SELECT riddle, `path` FROM level_pages_null ' \
+                'WHERE riddle = :riddle AND `path` = :path'
+        values = {'riddle': alias, 'path': page}
+        already_exists = await database.fetch_one(query, values)
+        if not already_exists:
+            # Add page to riddle database
             query = 'INSERT INTO level_pages_null ' \
                 'VALUES (:riddle, :path)'
-            values = {'riddle': alias, 'path': page}
             await database.execute(query, values)
             print(('> \033[1m[%s]\033[0m Added page \033[1m%s\033[0m ' \
                     'to database!') % (alias, page))
-        except IntegrityError:
+        else:
+            # Page already present, so nothing to do
             print('> \033[1m[%s]\033[0m Skipping page \033[1m%s\033[0m... ' \
                     % (alias, page))
             
