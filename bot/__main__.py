@@ -31,7 +31,27 @@ async def on_ready():
     # Build riddles dict
     await build_riddles()
 
-    from discord.utils import get
+    # try:
+    #     from discord.utils import get
+    #     for guild in bot.guilds:
+    #         member = guild.get_member(491949328202465282)
+    #         if not member or not member.nick:
+    #             continue
+    #         old_nick = member.nick
+    #         idx = old_nick.rfind('[')
+    #         progress_string = old_nick[idx:]
+    #         try:
+    #             await update_nickname(member, progress_string)
+    #             logging.info('[%s] Nickname "%s" changed to "%s"'
+    #                     % (guild.name, old_nick, member.nick))
+    #         except:
+    #             logging.info('[%s] (403) Can\'t change nick of "%s"'
+    #                     % (guild.name, member.name))
+    # except:
+    #     import traceback
+    #     tb = traceback.format_exc()
+    #     logging.error(tb)   
+
     # Create a temporary reusable table for easing queries
     # from util.db import database
     # guild = get(bot.guilds, name='Genius Riddle')

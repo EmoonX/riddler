@@ -182,9 +182,10 @@ class UnlockHandler:
                 if not set_completed:
                     short_name = level_set['short_name']
                     name = level['name'].replace((set_name + ' '), short_name)
+
+                    # Replace numerical digits with their
+                    # smaller Unicode variants
                     for digit in '0123456789':
-                        # Replace numerical digits by their
-                        # smaller Unicode variants
                         if digit in name:
                             value = ord(digit) - 0x30 + 0x2080
                             small_digit = chr(value)
@@ -193,10 +194,11 @@ class UnlockHandler:
                     name = level['emoji']
                 
                 index = level_set['index']
-                level_names[index] = name
-            aux = sorted(level_names.items())
-            level_names = [level for _, level in aux]
-            s = '[' + ' '.join(level_names) + ']'
+                set_progress[index] = name
+
+            aux = sorted(set_progress.items())
+            set_progress = [progress for _, progress in aux]
+            s = '[' + ' '.join(set_progress) + ']'
 
         else:
             s = '[%s]' % level['name']

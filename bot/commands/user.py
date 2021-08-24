@@ -5,7 +5,7 @@ from discord import User as DiscordUser, Member
 from discord.utils import get
 from discord.errors import Forbidden
 
-from commands.unlock import UnlockHandler
+from commands.unlock import UnlockHandler, update_nickname
 from util.db import database
 
 
@@ -76,16 +76,16 @@ class User(commands.Cog):
                 member = guild.get_member(before.id)
                 if not member or not member.nick:
                     continue
-                # (just replace first ocurrence to avoid nonsense)
-                nick_old = member.nick
-                nick_new = nick_old.replace(before.name, after.name, 1)
+                old_nick = member.nick
+                idx = old_nick.rfind('[')
+                progress_string = old_nick[idx:]
                 try:
-                    await member.edit(nick=nick_new)
+                    await update_nickname(member, progress_string)
                     logging.info('[%s] Nickname "%s" changed to "%s"'
-                            % (guild.name, nick_old, nick_new))
+                            % (guild.name, old_nick, member.nick))
                 except Forbidden:
                     logging.info('[%s] (403) Can\'t change nick of "%s"'
-                            % (guild.name, nick_old))
+                            % (guild.name, member.name))
         
         if before.name != after.name \
                 or before.discriminator != after.discriminator:
