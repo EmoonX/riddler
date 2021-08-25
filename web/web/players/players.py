@@ -1,3 +1,5 @@
+from functools import cmp_to_key
+
 from quart import Blueprint, render_template
 
 from webclient import bot_request
@@ -104,7 +106,7 @@ async def riddle_list(alias: str, country: str = None):
     riddle['cheevo_count'] = result['count'];
     
     # Get players data from database
-    cond = ('WHERE country = "%s" ' % country) if country else ''
+    cond = ('AND country = "%s" ' % country) if country else ''
     query = 'SELECT * FROM (' \
             '(SELECT *, 999999 AS `index`, ' \
                     '2 AS filter FROM riddle_accounts ' \
@@ -120,9 +122,10 @@ async def riddle_list(alias: str, country: str = None):
             ') AS result ' \
             'INNER JOIN accounts AS acc ' \
                 'ON result.username = acc.username ' \
-                    'AND result.discriminator = acc.discriminator ' + \
-            ('%s' % cond) + \
-            'ORDER BY score DESC, `index` DESC LIMIT 1000 '
+                    'AND result.discriminator = acc.discriminator ' \
+            'WHERE score > 0 ' + \
+                ('%s' % cond) + \
+            'ORDER BY score DESC LIMIT 1000 '
     result = await database.fetch_all(query, {'riddle': alias})
     accounts = [dict(account) for account in result]
 
@@ -166,6 +169,16 @@ async def riddle_list(alias: str, country: str = None):
             creator_account = account
             accounts.pop(i)
             break
+    
+    def _account_cmp(a, b):
+        '''Compare accounts first by score and then page count.'''
+        if a['score'] == b['score']:
+            return 1 if a['page_count'] < b['page_count'] else -1
+        return 1 if a['score'] < b['score'] else -1
+
+    # Sort account list using custom key above
+    cmp_key = cmp_to_key(_account_cmp)
+    accounts.sort(key=cmp_key)
 
     # Render page with account info
     return await render_template('players/riddle/list.htm',

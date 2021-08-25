@@ -155,7 +155,7 @@ class UnlockHandler:
             }
             # Replace explicit set name in level
             # names with short emoji form
-            level_names = {}
+            set_progress = {}
             for level in current_levels:
                 set_name = level['level_set']
                 if not set_name in level_sets:
