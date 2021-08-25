@@ -358,9 +358,41 @@ class _PathHandler:
         current_level = await database.fetch_one(query, values)
 
         # Register into database new page access (if applicable)
-        if current_name and (current_name == '🏅' \
-                or page_level['index'] <= current_level['index'] + 1 \
-                or page_level['is_secret']):
+        if self.riddle_alias == 'genius':
+            query = 'SELECT * FROM user_levels ' \
+                    'WHERE riddle = :riddle ' \
+                        'AND username = :username AND discriminator = :disc ' \
+                        'AND level_name = :level_name AND find_time IS NOT NULL'
+            values = {'riddle': self.riddle_alias,
+                    'username': self.username, 'disc': self.disc,
+                    'level_name': page_level['name']}
+            cond = await database.fetch_one(query, values)
+            if not cond:
+                query = 'SELECT COUNT(*) AS count FROM user_levels ' \
+                        'WHERE riddle = :riddle ' \
+                            'AND username = :username AND discriminator = :disc ' \
+                            'AND level_name IN (' \
+                                'SELECT requires FROM level_requirements ' \
+                                'WHERE riddle = :riddle ' \
+                                    'AND level_name = :level_name ' \
+                                ') ' \
+                            'AND completion_time IS NOT NULL'
+                result = await database.fetch_one(query, values)
+                count_user = result['count'] if result else 0
+                query = 'SELECT COUNT(*) AS count FROM level_requirements ' \
+                        'WHERE riddle = :riddle AND level_name = :level_name ' \
+                        'GROUP BY level_name'
+                values = {'riddle': self.riddle_alias,
+                        'level_name': page_level['name']}
+                result = await database.fetch_one(query, values)
+                count_req = result['count'] if result else 0
+                cond = (count_user == count_req)          
+        else:
+            cond = (current_name and (current_name == '🏅' \
+                    or page_level['index'] <= current_level['index'] + 1 \
+                    or page_level['is_secret']))
+
+        if cond:
             tnow = datetime.utcnow()
             try:
                 query = 'INSERT INTO user_pages ' \
