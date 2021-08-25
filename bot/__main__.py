@@ -31,8 +31,8 @@ async def on_ready():
     # Build riddles dict
     await build_riddles()
 
+    from discord.utils import get
     # try:
-    #     from discord.utils import get
     #     for guild in bot.guilds:
     #         member = guild.get_member(491949328202465282)
     #         if not member or not member.nick:
@@ -52,7 +52,6 @@ async def on_ready():
     #     tb = traceback.format_exc()
     #     logging.error(tb)   
 
-    # Create a temporary reusable table for easing queries
     # from util.db import database
     # guild = get(bot.guilds, name='Genius Riddle')
     # for member in guild.members:

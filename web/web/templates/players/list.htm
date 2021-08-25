@@ -12,6 +12,7 @@
         {% set avatar_urls = fetch_avatar_urls() %}
         {% set riddles = fetch_riddles() %}
         {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
+        {% set badges = {'created': '👑', 'mastered': '💎', 'completed': '🏅'} %}
       {% for player in accounts %}
         <div class="row">
           <div class="rank">
@@ -49,8 +50,10 @@
             {% set title = riddle['full_name'] %}
             {% if honor != 'other' %}
               {% set title = '%s (%s)' % (title, honor.upper()) %}
+              {% set badge = badges[honor] %}
             {% endif %}
             <a class="honor {{ honor }}" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" title="{{ title }}">
+              <span class='badge'>{{ badge }}</span>
               <img class="riddle-icon" src="{{ icon_url }}">
             </a>
           {% endfor %}
