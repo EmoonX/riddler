@@ -73,7 +73,7 @@ async def unlock(request):
         args = (params['level'], params['points'],
                 params['first_to_solve'])
     elif params['method'] == 'cheevo_found':
-        args = (params['cheevo'], params['points'])
+        args = (params['cheevo'], params['points'], params['page'])
 
     # Call unlocking method by name with correct number of args
     try:

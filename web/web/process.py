@@ -464,7 +464,7 @@ class _PathHandler:
         await bot_request('unlock', method='cheevo_found',
                 alias=self.riddle_alias,
                 username=self.username, disc=self.disc,
-                cheevo=dict(cheevo), points=points)
+                cheevo=dict(cheevo), points=points, page=self.path)
 
 
 class _LevelHandler:

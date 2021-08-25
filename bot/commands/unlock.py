@@ -271,7 +271,7 @@ class UnlockHandler:
             if achievements:
                 await achievements.send(text)
 
-    async def cheevo_found(self, cheevo: dict, points: int):
+    async def cheevo_found(self, cheevo: dict, points: int, path: str):
         '''Congratulations upon achievement being found.'''
         
         # Log and send congratulatory message
@@ -279,9 +279,9 @@ class UnlockHandler:
                 'got cheevo \033[1m%s\033[0m!') %
                 (self.guild.name, self.member.name,
                     self.member.discriminator, cheevo['title']))
-        text = ('**[%s]** You have found achievement **_%s_** '
-                'and won **%d** points!\n') \
-                % (self.guild.name, cheevo['title'], points)
+        text = ('**[%s]** You have found achievement **_%s_**  '
+                'in page `%s` and won **%d** points!\n') \
+                % (self.guild.name, cheevo['title'], path, points)
         await self._send(text)
         
         # Get cheevo thumb image from path
@@ -360,7 +360,7 @@ class UnlockHandler:
                     self.member.name, self.member.discriminator))
         text = '**[%s] 💎 GAME MASTERED 💎**\n' % self.guild.name
         text += 'You have beaten all levels, found all achievements ' \
-                'and scored every single possible point on the game! ' \
+                'and scored every single possible point in the game! ' \
                 '**Outstanding!**'
         await self._send(text)
 
