@@ -28,7 +28,8 @@
           <div class="player">
             <a href="#">
               {% set tag = player['username'] + '#' + player['discriminator'] %}
-              <img class="avatar" src="{{ avatar_urls[tag] }}">
+              {% set url = avatar_urls[tag] if tag in avatar_urls else '/static/images/locked.png' %}
+              <img class="avatar" src="{{ url }}">
             </a>
             <div>
               {% set country_name = country_names[player['country']] %}

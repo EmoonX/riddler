@@ -61,7 +61,7 @@ async def fetch_riddle_icon_urls(request):
 
 
 async def get_avatar_url(request):
-    '''Get avatar URL from a user by their DiscordTag.'''
+    '''Get avatar URL from a user by their Discord handle.'''
     members = bot.get_all_members()
     username = request.rel_url.query['username']
     disc = request.rel_url.query['disc']

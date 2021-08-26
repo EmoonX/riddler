@@ -30,15 +30,26 @@ async def global_list(country: str = None):
         riddle['cheevo_count'] = result['count']
     
     # Get players data from database
-    cond = ('AND country = "%s" ' % country) if country else ''
+    cond_country = ('AND country = "%s" ' % country) if country else ''
     query = 'SELECT * FROM accounts ' \
-            'WHERE global_score > 0 AND hidden IS NOT TRUE ' + \
-                cond + \
+            'WHERE global_score > 0 ' + cond_country + \
             'ORDER BY global_score DESC'
     result = await database.fetch_all(query)
     accounts = [dict(account) for account in result]
+
+    from auth import discord
+    user = await discord.fetch_user() \
+            if discord.user_id else None
     
     for account in accounts:
+        # Hide username, country and riddles for `hidden` players
+        if account['hidden']:        
+            if not (user and account['username'] == user.username
+                    and account['discriminator'] == user.discriminator):
+                account['username'] = 'Anonymous'
+                account['country'] = 'ZZ'
+                continue
+
         # Build list of riddles player has honors for
         account['created_riddles'] = []
         account['mastered_riddles'] = []
@@ -124,7 +135,7 @@ async def riddle_list(alias: str, country: str = None):
             'INNER JOIN accounts AS acc ' \
                 'ON result.username = acc.username ' \
                     'AND result.discriminator = acc.discriminator ' \
-            'WHERE score > 0 AND hidden IS NOT TRUE ' + \
+            'WHERE score > 0 ' + \
                 ('%s' % cond) + \
             'ORDER BY score DESC LIMIT 1000 '
     result = await database.fetch_all(query, {'riddle': alias})
@@ -174,7 +185,9 @@ async def riddle_list(alias: str, country: str = None):
     def _account_cmp(a, b):
         '''Compare accounts first by score and then page count.'''
         if a['score'] == b['score']:
-            return 1 if a['page_count'] < b['page_count'] else -1
+            a_count = a['page_count'] if 'page_count' in a else 0
+            b_count = b['page_count'] if 'page_count' in b else 0
+            return 1 if a_count < b_count else -1
         return 1 if a['score'] < b['score'] else -1
 
     # Sort account list using custom key above
