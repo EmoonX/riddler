@@ -207,7 +207,7 @@ class _PathHandler:
         # Search for unlocked and unbeaten levels on DB
         current_name = self.riddle_account['current_level']
         query = 'SELECT is_secret, `index`, name, latin_name, ' \
-                    'answer, `rank` FROM user_levels ' \
+                    'answer, `rank`, discord_name FROM user_levels ' \
                 'INNER JOIN levels ' \
                     'ON levels.riddle = user_levels.riddle ' \
                         'AND levels.name = user_levels.level_name ' \

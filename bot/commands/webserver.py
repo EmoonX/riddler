@@ -92,12 +92,12 @@ async def unlock(request):
         # Check if player completed all levels
         query = 'SELECT * FROM levels ' \
                 'WHERE riddle = :riddle AND name NOT IN ' \
-                    '(SELECT name FROM user_levels ' \
+                    '(SELECT level_name FROM user_levels ' \
                     'WHERE riddle = :riddle ' \
-                        'AND username = :name AND discriminator = :disc ' \
+                        'AND username = :username AND discriminator = :disc ' \
                         'AND completion_time IS NOT NULL)'
         values = {'riddle': alias,
-                'name': data['username'], 'disc': data['disc']}
+                'username': data['username'], 'disc': data['disc']}
         result_levels = await database.fetch_one(query, values)
 
         # Check if player unlocked all achievements
@@ -105,7 +105,7 @@ async def unlock(request):
                 'WHERE riddle = :riddle AND title NOT IN ' \
                     '(SELECT title FROM user_achievements ' \
                     'WHERE riddle = :riddle ' \
-                        'AND username = :name AND discriminator = :disc)'
+                        'AND username = :username AND discriminator = :disc)'
         result_cheevos = await database.fetch_one(query, values)
 
         # If nothing was found, then player got everything
