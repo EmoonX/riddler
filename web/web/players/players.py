@@ -30,9 +30,10 @@ async def global_list(country: str = None):
         riddle['cheevo_count'] = result['count']
     
     # Get players data from database
-    cond = ('country = "%s" AND' % country) if country else ''
-    query = 'SELECT * FROM accounts ' + \
-            ('WHERE %s global_score > 0 ' % cond) + \
+    cond = ('AND country = "%s" ' % country) if country else ''
+    query = 'SELECT * FROM accounts ' \
+            'WHERE global_score > 0 AND hidden IS NOT TRUE ' + \
+                cond + \
             'ORDER BY global_score DESC'
     result = await database.fetch_all(query)
     accounts = [dict(account) for account in result]
@@ -123,7 +124,7 @@ async def riddle_list(alias: str, country: str = None):
             'INNER JOIN accounts AS acc ' \
                 'ON result.username = acc.username ' \
                     'AND result.discriminator = acc.discriminator ' \
-            'WHERE score > 0 ' + \
+            'WHERE score > 0 AND hidden IS NOT TRUE ' + \
                 ('%s' % cond) + \
             'ORDER BY score DESC LIMIT 1000 '
     result = await database.fetch_all(query, {'riddle': alias})
