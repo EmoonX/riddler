@@ -33,9 +33,13 @@ async def global_list(country: str = None):
     
     # Get players data from database
     cond_country = ('AND country = "%s" ' % country) if country else ''
-    query = 'SELECT * FROM accounts ' \
+    query = 'SELECT *, COUNT(*) AS page_count FROM accounts AS acc ' \
+            'INNER JOIN user_pages AS up ' \
+                'ON acc.username = up.username ' \
+                    'AND acc.discriminator = up.discriminator ' \
             'WHERE global_score > 0 ' + cond_country + \
-            'ORDER BY global_score DESC'
+            'GROUP BY acc.username, acc.discriminator ' \
+            'ORDER BY global_score DESC, page_count DESC'
     result = await database.fetch_all(query)
     accounts = [dict(account) for account in result]
 
