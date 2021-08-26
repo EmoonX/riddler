@@ -2,6 +2,8 @@ from functools import cmp_to_key
 
 from quart import Blueprint, render_template
 
+from auth import discord
+from admin import admin
 from webclient import bot_request
 from util.db import database
 
@@ -37,16 +39,17 @@ async def global_list(country: str = None):
     result = await database.fetch_all(query)
     accounts = [dict(account) for account in result]
 
-    from auth import discord
-    user = await discord.fetch_user() \
-            if discord.user_id else None
+    # Get session user, if any
+    user = await discord.fetch_user() if discord.user_id else None
     
     for account in accounts:
-        # Hide username, country and riddles for `hidden` players
+        # Hide username, country and riddles for
+        # non logged-in `hidden` players
         if account['hidden']:        
             if not (user and account['username'] == user.username
                     and account['discriminator'] == user.discriminator):
                 account['username'] = 'Anonymous'
+                account['discriminator'] = '0000'
                 account['country'] = 'ZZ'
                 continue
 
@@ -118,7 +121,7 @@ async def riddle_list(alias: str, country: str = None):
     riddle['cheevo_count'] = result['count'];
     
     # Get players data from database
-    cond = ('AND country = "%s" ' % country) if country else ''
+    cond_country = ('AND country = "%s" ' % country) if country else ''
     query = 'SELECT * FROM (' \
             '(SELECT *, 999999 AS `index`, ' \
                     '2 AS filter FROM riddle_accounts ' \
@@ -135,11 +138,19 @@ async def riddle_list(alias: str, country: str = None):
             'INNER JOIN accounts AS acc ' \
                 'ON result.username = acc.username ' \
                     'AND result.discriminator = acc.discriminator ' \
-            'WHERE score > 0 ' + \
-                ('%s' % cond) + \
+            'WHERE score > 0 ' + cond_country + \
             'ORDER BY score DESC LIMIT 1000 '
     result = await database.fetch_all(query, {'riddle': alias})
     accounts = [dict(account) for account in result]
+
+    # Get session user, if any
+    user = await discord.fetch_user() if discord.user_id else None
+    riddle_admin = False
+    if user:
+        _, status = await admin.auth(alias)
+        if status == 200:
+            # Logged user is respective riddle's admin
+            riddle_admin = True
 
     for account in accounts:
         # Get player country
@@ -172,6 +183,17 @@ async def riddle_list(alias: str, country: str = None):
             result = await database.fetch_one(query, values)
             if result['count'] == riddle['cheevo_count']:
                 account['current_level'] = '💎'
+        
+        # Hide username and country for non logged-in `hidden` players
+        # (ignored if current player is respective riddle's admin)
+        if account['hidden']:        
+            if not riddle_admin and \
+                    not (user and account['username'] == user.username
+                    and account['discriminator'] == user.discriminator):
+                account['username'] = 'Anonymous'
+                account['discriminator'] = '0000'
+                account['country'] = 'ZZ'
+
     
     # Pluck creator account from main list to show it separately 👑
     creator_account = None
