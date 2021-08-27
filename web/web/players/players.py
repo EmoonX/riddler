@@ -62,6 +62,7 @@ async def global_list(country: str = None):
         account['mastered_riddles'] = []
         account['completed_riddles'] = []
         account['other_riddles'] = []
+        account['riddle_progress'] = {}
         for riddle in riddles:
             # Check if player is creator of current riddle
             if riddle['creator_username'] == account['username'] \
@@ -96,6 +97,7 @@ async def global_list(country: str = None):
                     account['completed_riddles'].append(riddle)
             else:
                 account['other_riddles'].append(riddle)
+                account['riddle_progress'][riddle['alias']] = played['current_level']
 
     # Render page with account info
     return await render_template('players/list.htm',

@@ -48,10 +48,13 @@
           {% set honor_set = honor + '_riddles' %}
           {% for riddle in player[honor_set] %}
             {% set icon_url = riddles[riddle['alias']]['icon_url'] %}
-            {% set title = riddle['full_name'] %}
+            {% set title = '%s&#10;↳'|safe % riddle['full_name'] %}
             {% if honor != 'other' %}
-              {% set title = '%s (%s)' % (title, honor.upper()) %}
+              {% set s = honor.upper() if honor != 'created' else 'CREATOR' %}
+              {% set title = '%s %s'|safe % (title, s) %}
               {% set badge = badges[honor] %}
+            {% else %}
+              {% set title = '%s currently on %s'|safe % (title, player['riddle_progress'][riddle['alias']]) %}
             {% endif %}
             <a class="honor {{ honor }}" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" title="{{ title }}">
               <span class='badge'>{{ badge }}</span>
