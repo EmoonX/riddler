@@ -20,14 +20,14 @@ async def global_list():
             'FROM accounts ' \
             'WHERE global_score > 1000 ' \
             'GROUP BY country ' \
-            'ORDER BY avg_score DESC'
-    result = await database.fetch_all(query)
+            'ORDER BY total_score DESC, avg_score DESC, player_count ASC'
+    countries = await database.fetch_all(query)
     
     # Build list of countries, removing ones with fewer than 2 players
-    countries = []
-    for row in result:
-        if row['player_count'] >= 2:
-            countries.append(row)
+    # countries = []
+    # for row in result:
+    #     if row['player_count'] >= 2:
+    #         countries.append(row)
 
     # Render page with countries info
     return await render_template('countries/global.htm',
@@ -46,17 +46,17 @@ async def riddle_list(alias: str):
                 'INNER JOIN accounts AS acc ' \
                 'ON r_acc.username = acc.username ' \
                     'AND r_acc.discriminator = acc.discriminator ' \
-            'WHERE riddle = :riddle AND score > 1000 ' \
+            'WHERE riddle = :riddle ' \
             'GROUP BY country ' \
-            'ORDER BY avg_score DESC'
+            'ORDER BY total_score DESC, avg_score DESC, player_count ASC'
     values = {'riddle': alias}
-    result = await database.fetch_all(query, values)
+    countries = await database.fetch_all(query, values)
     
     # Build list of countries, removing ones with fewer than 2 players
-    countries = []
-    for row in result:
-        if row['player_count'] >= 2:
-            countries.append(row)
+    # countries = []
+    # for row in result:
+    #     if row['player_count'] >= 2:
+    #         countries.append(row)
 
     # Render page with countries info
     return await render_template('countries/riddle.htm',

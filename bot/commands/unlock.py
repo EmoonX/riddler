@@ -48,6 +48,14 @@ class UnlockHandler:
             first_to_solve: bool, milestone: str):
         '''Procedures upon player having beaten a level.'''
         
+        # Check if Riddler DMs are silenced by player 
+        query = 'SELECT * FROM accounts ' \
+                'WHERE username = :username AND discriminator = :disc'
+        values = {'username': self.member.name,
+                'disc': self.member.discriminator}
+        result = await database.fetch_one(query, values)
+        silent = result['silence_notifs']
+
         # Send congratulatory message
         n = 'DCBAS'.find(level['rank']) + 1
         stars = '★' * n
@@ -58,13 +66,14 @@ class UnlockHandler:
                 'has beaten level \033[1m%s\033[0m') \
                 % (self.guild.name, self.member.name,
                     self.member.discriminator, name))
-        text = ('**[%s]** You have solved level **%s** [%s] ' \
-                    'and won **%d** points!\n') \
-                % (self.guild.name, name, stars, points)
-        await self._send(text)
+        if not silent:
+            text = ('**[%s]** You have solved level **%s** [%s] ' \
+                        'and won **%d** points!\n') \
+                    % (self.guild.name, name, stars, points)
+            await self._send(text)
         
         # Send also to channels if first to solve level
-        if first_to_solve:
+        if first_to_solve and not silent:
             text = '**🏅 FIRST TO SOLVE 🏅**\n'
             text += ('**<@!%d>** has completed level **%s**! ' \
                     'Congratulations!') % (self.member.id, name)
@@ -78,9 +87,10 @@ class UnlockHandler:
         if milestone:
             role = get(self.guild.roles, name=milestone)
             await self.member.add_roles(role)
-            text = '**[%s] 🗿 MILESTONE REACHED 🗿**\n' % self.guild.name
-            text += 'You have unlocked special role **@%s**!' % milestone
-            await self._send(text)
+            if not silent:
+                text = '**[%s] 🗿 MILESTONE REACHED 🗿**\n' % self.guild.name
+                text += 'You have unlocked special role **@%s**!' % milestone
+                await self._send(text)
             
             # Congratulate milestone reached on respective channel
             channel = get(self.guild.channels, name=level['discord_name'])
@@ -89,7 +99,7 @@ class UnlockHandler:
                     % (self.member.id, name, role.name)
             await channel.send(text)
 
-    async def advance(self, level: dict):
+    async def advance(self, level: dict, silent=False):
         '''Advance to further level when player arrives at a level front page.
         "reached" role is granted to user and thus given access to channel(s).'''
 
