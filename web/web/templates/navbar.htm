@@ -24,7 +24,8 @@
         <div>
        {% for riddle in riddles %}
           {% set riddle = get_riddle(riddle['alias']) %}
-          <a href="{{ url_for('levels.level_list', alias=riddle['alias']) }}" class="nav-button riddle">
+          {% set page = 'levels.level_list' if is_authorized() else 'players.riddle_list' %}
+          <a href="{{ url_for(page, alias=riddle['alias']) }}" class="nav-button riddle">
             <img class="icon" src="{{ riddle['icon_url'] }}">{{ riddle['full_name'] }}
           </a>
         {% endfor %}

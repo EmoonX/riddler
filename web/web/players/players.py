@@ -44,7 +44,7 @@ async def global_list(country: str = None):
     accounts = [dict(account) for account in result]
 
     # Get session user, if any
-    user = await discord.fetch_user() if discord.user_id else None
+    user = await discord.get_user() if discord.user_id else None
     
     for account in accounts:
         # Hide username, country and riddles for
@@ -148,7 +148,7 @@ async def riddle_list(alias: str, country: str = None):
     accounts = [dict(account) for account in result]
 
     # Get session user, if any
-    user = await discord.fetch_user() if discord.user_id else None
+    user = await discord.get_user() if discord.user_id else None
     riddle_admin = False
     if user:
         _, status = await admin.auth(alias)

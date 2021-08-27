@@ -191,7 +191,7 @@ class UnlockHandler:
                             small_digit = chr(value)
                             name = name.replace(digit, small_digit)
                 else:
-                    name = level['emoji']
+                    name = level_set['emoji']
                 
                 index = level_set['index']
                 set_progress[index] = name

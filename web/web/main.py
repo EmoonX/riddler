@@ -75,7 +75,7 @@ async def before():
 @app.after_request
 async def cookies(response):
     '''Set session cookie to be valid accross sites (SameSite=None)
-    and also to expire only after a week of inactivity.'''
+    and also to expire only after some (or a long) time of inactivity.'''
     value = session_cookie.dumps(dict(session))
     dt = datetime.utcnow() + timedelta(days=365)
     if 'Set-Cookie' in response.headers:
