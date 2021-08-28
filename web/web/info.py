@@ -11,8 +11,8 @@ async def about():
 
 @info.route('/thedudedude')
 async def thedude():
-    username = 'NinthLyfe'
-    disc = '3735'
+    username = '????'
+    disc = '????'
     from process import process_url
     from util.db import database
     first = 1

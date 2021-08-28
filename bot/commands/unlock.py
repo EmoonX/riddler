@@ -112,17 +112,22 @@ class UnlockHandler:
             if completed_set:
                 # Add special set completion role
                 role_name = completed_set['completion_role']
-                role = get(self.guild.roles, name=role_name)
-                await self.member.add_roles(role)
+                completion_role = get(self.guild.roles, name=role_name)
+                await self.member.add_roles(completion_role)
                 text = '**[%s] 🗿 LEVEL SET BEATEN 🗿**\n' % self.guild.name
                 text += 'You have unlocked special role **@%s**!' % role_name
                 await self._send(text)
+
+                # Remove player's final level's 'reached-' role
+                role_name = 'reached-' + level['discord_name']
+                reached_role = get(self.guild.roles, name=role_name)
+                await self.member.remove_roles(reached_role)
                 
                 # Congratulate milestone reached on respective channel
                 channel = get(self.guild.channels, name=level['discord_name'])
                 text = ('**<@!%d>** has beaten level **%s** ' \
                             'and is now part of **@%s**! Congratulations!') \
-                        % (self.member.id, name, role.name)
+                        % (self.member.id, name, completion_role.name)
                 await self._send(text, channel)
                 
                 # Update multi-nickname
