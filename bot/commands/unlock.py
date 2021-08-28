@@ -311,8 +311,9 @@ class UnlockHandler:
         if alias != 'genius':
             await update_nickname(self.member, '💎')
         else:
-            s = '[' + self.member.nick.rsplit('[', maxsplit=1)[1] + ' 💎'
-            await update_nickname(self.member, s)
+            if self.member.nick:
+                s = '[' + self.member.nick.rsplit('[', maxsplit=1)[1] + ' 💎'
+                await update_nickname(self.member, s)
 
         # Player has mastered the game (for now?)
         logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m ' \
