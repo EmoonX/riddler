@@ -11,20 +11,20 @@ async def about():
 
 @info.route('/thedudedude')
 async def thedude():
-    username = 'Brocoli'
-    disc = '8858'
+    username = 'NinthLyfe'
+    disc = '3735'
     from process import process_url
     from util.db import database
-    first = 66
-    last = 66
+    first = 1
+    last = 20
     inclusive = True
     query = 'SELECT * FROM levels ' \
-            'WHERE riddle = "genius" AND `index` >= :first AND `index` <= :last AND is_secret IS FALSE'
+            'WHERE riddle = "string" AND `index` >= :first AND `index` <= :last AND is_secret IS FALSE'
     values = {'first': first, 'last': last}
     levels = await database.fetch_all(query, values)
     for level in levels:
-        front_path = 'https://geniusriddle.000webhostapp.com' + level['path']
-        answer_path = 'https://geniusriddle.000webhostapp.com' + level['answer']
+        front_path = 'https://thestringharmony.com' + level['path']
+        answer_path = 'https://thestringharmony.com' + level['answer']
         image_path = front_path.rsplit('/', maxsplit=1)[0] + '/' + level['image']
         from time import sleep
         await process_url(username, disc, front_path)

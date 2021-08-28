@@ -1,6 +1,6 @@
 import logging
 
-from discord import Guild, Member, File
+from discord import abc, Guild, Member, File
 from discord.utils import get
 from discord.errors import Forbidden
 
@@ -33,11 +33,26 @@ class UnlockHandler:
         self.member = get(riddle.guild.members,
                 name=username, discriminator=disc)
     
-    async def _send(self, text: str):
-        '''Try to send a message to member.
-        If they don't accept DMs from bot, ignore.'''
+    async def _send(self, text: str,
+            channel: abc.Messageable = None, **kwargs):
+        '''Try to send a message to member/channel.
+        If they/it do(es)n't accept DMs from bot, ignore.'''
+
+        # Check if Riddler DMs are silenced by player 
+        query = 'SELECT * FROM accounts ' \
+                'WHERE username = :username AND discriminator = :disc'
+        values = {'username': self.member.name,
+                'disc': self.member.discriminator}
+        result = await database.fetch_one(query, values)
+        silent = result['silence_notifs']
+        if silent:
+            return
+
+        # Try to send message to member (default) or channel
+        if not channel:
+            channel = self.member
         try:
-            await self.member.send(text)
+            await channel.send(text)
         except Forbidden:
             logging.info(('\033[1m[%s]\033[0m ' \
                     'Can\'t send messages  to \033[1m%s#%s\033[0m ')
@@ -47,14 +62,6 @@ class UnlockHandler:
     async def beat(self, level: dict, points: int,
             first_to_solve: bool, milestone: str):
         '''Procedures upon player having beaten a level.'''
-        
-        # Check if Riddler DMs are silenced by player 
-        query = 'SELECT * FROM accounts ' \
-                'WHERE username = :username AND discriminator = :disc'
-        values = {'username': self.member.name,
-                'disc': self.member.discriminator}
-        result = await database.fetch_one(query, values)
-        silent = result['silence_notifs']
 
         # Send congratulatory message
         n = 'DCBAS'.find(level['rank']) + 1
@@ -66,14 +73,13 @@ class UnlockHandler:
                 'has beaten level \033[1m%s\033[0m') \
                 % (self.guild.name, self.member.name,
                     self.member.discriminator, name))
-        if not silent:
-            text = ('**[%s]** You have solved level **%s** [%s] ' \
-                        'and won **%d** points!\n') \
-                    % (self.guild.name, name, stars, points)
-            await self._send(text)
+        text = ('**[%s]** You have solved level **%s** [%s] ' \
+                    'and won **%d** points!\n') \
+                % (self.guild.name, name, stars, points)
+        await self._send(text)
         
         # Send also to channels if first to solve level
-        if first_to_solve and not silent:
+        if first_to_solve:
             text = '**🏅 FIRST TO SOLVE 🏅**\n'
             text += ('**<@!%d>** has completed level **%s**! ' \
                     'Congratulations!') % (self.member.id, name)
@@ -81,23 +87,22 @@ class UnlockHandler:
             await channel.send(text)
             achievements = get(self.guild.channels, name='achievements')
             if achievements:
-                await achievements.send(text)
+                await self._send(text, achievements)
         
         if milestone:
             # Add special milestone role if one was reached
             role = get(self.guild.roles, name=milestone)
             await self.member.add_roles(role)
-            if not silent:
-                text = '**[%s] 🗿 MILESTONE REACHED 🗿**\n' % self.guild.name
-                text += 'You have unlocked special role **@%s**!' % milestone
-                await self._send(text)
+            text = '**[%s] 🗿 MILESTONE REACHED 🗿**\n' % self.guild.name
+            text += 'You have unlocked special role **@%s**!' % milestone
+            await self._send(text)
             
             # Congratulate milestone reached on respective channel
             channel = get(self.guild.channels, name=level['discord_name'])
             text = ('**<@!%d>** has beaten level **%s** ' \
                         'and is now part of **@%s**! Congratulations!') \
                     % (self.member.id, name, role.name)
-            await channel.send(text)
+            await self._send(text, channel)
 
         elif self.alias == 'genius':
             query = 'SELECT * FROM level_sets ' \
@@ -109,23 +114,22 @@ class UnlockHandler:
                 role_name = completed_set['completion_role']
                 role = get(self.guild.roles, name=role_name)
                 await self.member.add_roles(role)
-                if not silent:
-                    text = '**[%s] 🗿 LEVEL SET BEATEN 🗿**\n' % self.guild.name
-                    text += 'You have unlocked special role **@%s**!' % role_name
-                    await self._send(text)
+                text = '**[%s] 🗿 LEVEL SET BEATEN 🗿**\n' % self.guild.name
+                text += 'You have unlocked special role **@%s**!' % role_name
+                await self._send(text)
                 
                 # Congratulate milestone reached on respective channel
                 channel = get(self.guild.channels, name=level['discord_name'])
                 text = ('**<@!%d>** has beaten level **%s** ' \
                             'and is now part of **@%s**! Congratulations!') \
                         % (self.member.id, name, role.name)
-                await channel.send(text)
+                await self._send(text, channel)
                 
                 # Update multi-nickname
                 await _multi_update_nickname(self.alias, self.member)
 
 
-    async def advance(self, level: dict, silent=False):
+    async def advance(self, level: dict):
         '''Advance to further level when player arrives at a level front page.
         "reached" role is granted to user and thus given access to channel(s).'''
 
@@ -166,6 +170,14 @@ class UnlockHandler:
 
     async def secret_found(self, level: dict):
         '''Grant access to secret channel.'''
+
+        # Check if Riddler DMs are silenced by player 
+        query = 'SELECT * FROM accounts ' \
+                'WHERE username = :username AND discriminator = :disc'
+        values = {'username': self.member.name,
+                'disc': self.member.discriminator}
+        result = await database.fetch_one(query, values)
+        silent = result['silence_notifs']
         
         # Grant "reached" role
         discord_name = level['discord_name']
@@ -182,13 +194,22 @@ class UnlockHandler:
                 'has found secret level \033[1m%s\033[0m') \
                 % (self.guild.name, self.member.name,
                     self.member.discriminator, name))
-        text = '**[%s]** You have found secret level **%s**. Congratulations!' \
+        text = ('**[%s]** You have found secret level **%s**. ' \
+                'Congratulations!') \
                 % (self.guild.name, name)
         await self._send(text)
 
     async def secret_solve(self, level: dict, points: int,
             first_to_solve=False):
         '''Solve secret level and grant special colored role.'''
+
+        # Check if Riddler DMs are silenced by player 
+        query = 'SELECT * FROM accounts ' \
+                'WHERE username = :username AND discriminator = :disc'
+        values = {'username': self.member.name,
+                'disc': self.member.discriminator}
+        result = await database.fetch_one(query, values)
+        silent = result['silence_notifs']
         
         # Get roles from guild
         discord_name = level['discord_name']
@@ -223,11 +244,11 @@ class UnlockHandler:
             text = '**🏅 FIRST TO SOLVE 🏅**\n'
         text += ('**<@!%d>** has completed secret level **%s**! ' \
                 'Congratulations!') % (self.member.id, name)
-        await channel.send(text)
+        await self._send(text, channel)
         if first_to_solve:
             achievements = get(self.guild.channels, name='achievements')
             if achievements:
-                await achievements.send(text)
+                await self._send(text, achievements)
 
     async def cheevo_found(self, cheevo: dict, points: int, path: str):
         '''Congratulations upon achievement being found.'''
@@ -251,10 +272,18 @@ class UnlockHandler:
             
             # send flavor message with description and image
             description = '_"%s"_' % cheevo['description']
-            await self.member.send(description, file=image)
+            await self._send(description, file=image)
 
     async def game_completed(self):
         '''Do the honors upon player completing game.'''
+
+        # Check if Riddler DMs are silenced by player 
+        query = 'SELECT * FROM accounts ' \
+                'WHERE username = :username AND discriminator = :disc'
+        values = {'username': self.member.name,
+                'disc': self.member.discriminator}
+        result = await database.fetch_one(query, values)
+        silent = result['silence_notifs']
 
         # Get completed role name from DB    
         query = 'SELECT * FROM riddles ' \
@@ -291,10 +320,18 @@ class UnlockHandler:
         text = '**[%s] 🏅 GAME COMPLETED 🏅**\n' % self.guild.name
         text += 'You just completed the game! **Congratulations!**'
         await self._send(text)
-    
+
     async def game_mastered(self, alias: str):
         '''Do the honors upon player mastering game,
         i.e beating all levels and finding all achievements.'''
+
+        # Check if Riddler DMs are silenced by player 
+        query = 'SELECT * FROM accounts ' \
+                'WHERE username = :username AND discriminator = :disc'
+        values = {'username': self.member.name,
+                'disc': self.member.discriminator}
+        result = await database.fetch_one(query, values)
+        silent = result['silence_notifs']
 
         # Get mastered role name from DB    
         query = 'SELECT * FROM riddles ' \

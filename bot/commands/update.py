@@ -30,6 +30,16 @@ async def insert(request):
     completed_role = get(guild.roles, name=result['completed_role'])
     mastered_role = get(guild.roles, name=result['mastered_role'])
 
+    # Build dict of set completion r0les
+    query = 'SELECT * FROM level_sets ' \
+            'WHERE riddle = :alias'
+    result = await database.fetch_all(query, values)
+    set_completion_roles = {}
+    for row in result:
+        role_name = row['completion_role']
+        completion_role = get(guild.roles, name=role_name)
+        set_completion_roles[row['name']] = completion_role
+
     async def clear_mastered():
         '''Remove mastered roles and 💎 in nick from respective members.'''
         for member in guild.members:
@@ -79,15 +89,16 @@ async def insert(request):
             # Add new level immediately to riddle's level list
             riddle.levels[level['name']] = level
             
-            # Set read permissions to completed role
+            # Set read permissions to completed and set completion roles
+            set_role = set_completion_roles[level['discord_category']]
             await channel.set_permissions(completed_role, read_messages=True)
+            await channel.set_permissions(set_role, read_messages=True)
             
             # Set read permission to current roles for 
             # this channel and every other ancestor level channel
             ancestor_levels = await get_ancestor_levels(data['alias'], level)
             for channel in guild.channels:
                 if channel.name in ancestor_levels:
-                    logging.info(channel.name)
                     await channel.set_permissions(reached, read_messages=True)
 
             if alias != 'genius':

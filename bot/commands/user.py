@@ -22,6 +22,9 @@ class User(commands.Cog):
                 'WHERE guild_id = :id'
         values = {'id': member.guild.id}
         result = await database.fetch_one(query, values)
+        if not result:
+            # Nothing to do in e.g Wonderland
+            return
         alias = result['alias']
 
         # Get player riddle account
