@@ -11,20 +11,20 @@ async def about():
 
 @info.route('/thedudedude')
 async def thedude():
-    username = '????'
-    disc = '????'
+    username = 'Brocoli'
+    disc = '8858'
     from process import process_url
     from util.db import database
-    first = 1
-    last = 42
-    inclusive = False
+    first = 66
+    last = 66
+    inclusive = True
     query = 'SELECT * FROM levels ' \
-            'WHERE riddle = "string" AND `index` >= :first AND `index` <= :last AND is_secret IS FALSE'
+            'WHERE riddle = "genius" AND `index` >= :first AND `index` <= :last AND is_secret IS FALSE'
     values = {'first': first, 'last': last}
     levels = await database.fetch_all(query, values)
     for level in levels:
-        front_path = 'https://thestringharmony.com' + level['path']
-        answer_path = 'https://thestringharmony.com' + level['answer']
+        front_path = 'https://geniusriddle.000webhostapp.com' + level['path']
+        answer_path = 'https://geniusriddle.000webhostapp.com' + level['answer']
         image_path = front_path.rsplit('/', maxsplit=1)[0] + '/' + level['image']
         from time import sleep
         await process_url(username, disc, front_path)
@@ -34,5 +34,23 @@ async def thedude():
             break
         await process_url(username, disc, answer_path)
         sleep(2)
+    
+    return 'SUCCESS!', 200
+
+
+@info.route('/theladylady')
+async def thelady():
+    username = 'Brocoli'
+    disc = '8858'
+    from process import process_url
+    from util.db import database
+    query = 'SELECT * FROM level_pages ' \
+            'WHERE riddle = "genius"'
+    pages = await database.fetch_all(query)
+    for page in pages:
+        path = 'https://geniusriddle.000webhostapp.com' + page['path']
+        await process_url(username, disc, path)
+        from time import sleep
+        sleep(0.1)
     
     return 'SUCCESS!', 200

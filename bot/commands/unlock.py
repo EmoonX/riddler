@@ -83,8 +83,8 @@ class UnlockHandler:
             if achievements:
                 await achievements.send(text)
         
-        # Add special milestone role if one was reached
         if milestone:
+            # Add special milestone role if one was reached
             role = get(self.guild.roles, name=milestone)
             await self.member.add_roles(role)
             if not silent:
@@ -98,6 +98,32 @@ class UnlockHandler:
                         'and is now part of **@%s**! Congratulations!') \
                     % (self.member.id, name, role.name)
             await channel.send(text)
+
+        elif self.alias == 'genius':
+            query = 'SELECT * FROM level_sets ' \
+                    'WHERE riddle = :riddle AND final_level = :level_name'
+            values = {'riddle': self.alias, 'level_name': level['name']}
+            completed_set = await database.fetch_one(query, values)
+            if completed_set:
+                # Add special set completion role
+                role_name = completed_set['completion_role']
+                role = get(self.guild.roles, name=role_name)
+                await self.member.add_roles(role)
+                if not silent:
+                    text = '**[%s] 🗿 LEVEL SET BEATEN 🗿**\n' % self.guild.name
+                    text += 'You have unlocked special role **@%s**!' % role_name
+                    await self._send(text)
+                
+                # Congratulate milestone reached on respective channel
+                channel = get(self.guild.channels, name=level['discord_name'])
+                text = ('**<@!%d>** has beaten level **%s** ' \
+                            'and is now part of **@%s**! Congratulations!') \
+                        % (self.member.id, name, role.name)
+                await channel.send(text)
+                
+                # Update multi-nickname
+                await _multi_update_nickname(self.alias, self.member)
+
 
     async def advance(self, level: dict, silent=False):
         '''Advance to further level when player arrives at a level front page.
@@ -131,90 +157,12 @@ class UnlockHandler:
         role = get(self.guild.roles, name=('reached-%s' % name))
         await self.member.add_roles(role)
 
+        # Show current level(s) in nickname
         if self.alias == 'genius':
-            # Create a temporary reusable table for easing queries
-            query = 'DROP TABLE IF EXISTS lv; ' \
-                    'CREATE TEMPORARY TABLE IF NOT EXISTS lv AS ( ' \
-                        'SELECT lv.* FROM user_levels AS ulv ' \
-                        'INNER JOIN levels AS lv ' \
-                            'ON ulv.riddle = lv.riddle ' \
-                                'AND ulv.level_name = lv.`name` ' \
-                        'WHERE lv.riddle = :riddle ' \
-                            'AND ulv.username = :username ' \
-                    ')'
-            values = {'riddle': self.alias,
-                    'username': self.member.name}
-            await database.execute(query, values)
-
-            # Get list of farthest reached unlocked levels
-            query = 'SELECT l1.* FROM lv AS l1 ' \
-                    'LEFT JOIN lv AS l2 ' \
-                        'ON l1.riddle = l2.riddle ' \
-                            'AND l1.level_set = l2.level_set ' \
-                            'AND l1.`index` < l2.`index` ' \
-                    'WHERE l2.`index` IS NULL'
-            current_levels = await database.fetch_all(query)
-
-            # Get dict of level sets
-            query = 'SELECT * FROM level_sets ' \
-                    'WHERE riddle = :riddle '
-            values = {'riddle': self.alias}
-            result = await database.fetch_all(query, values)
-            level_sets = {
-                row['set_name']: row for row in result
-            }
-            # Replace explicit set name in level
-            # names with short emoji form
-            set_progress = {}
-            for level in current_levels:
-                set_name = level['level_set']
-                if not set_name in level_sets:
-                    continue
-                level_set = level_sets[set_name]
-                query =  \
-                    'SELECT l1.* FROM levels AS l1 ' \
-                    'LEFT JOIN levels as l2 ' \
-                        'ON l1.level_set = l2.level_set ' \
-                            'AND l1.`index` < l2.`index` ' \
-                    'WHERE l1.level_set = :set_name ' \
-                        'AND l1.name IN ( ' \
-                            'SELECT level_name AS name FROM user_levels ' \
-                            'WHERE riddle = :riddle ' \
-                                'AND username = :name ' \
-                                'AND discriminator = :disc ' \
-                                'AND completion_time IS NOT NULL ' \
-                        ') ' \
-                    'AND l2.`index` IS NULL'
-                values = {'riddle': self.alias, 'set_name': set_name,
-                        'name': self.member.name,
-                        'disc': self.member.discriminator}
-                set_completed = await database.fetch_one(query, values)
-                if not set_completed:
-                    short_name = level_set['short_name']
-                    name = level['name'].replace((set_name + ' '), short_name)
-
-                    # Replace numerical digits with their
-                    # smaller Unicode variants
-                    for digit in '0123456789':
-                        if digit in name:
-                            value = ord(digit) - 0x30 + 0x2080
-                            small_digit = chr(value)
-                            name = name.replace(digit, small_digit)
-                else:
-                    name = level_set['emoji']
-                
-                index = level_set['index']
-                set_progress[index] = name
-
-            aux = sorted(set_progress.items())
-            set_progress = [progress for _, progress in aux]
-            s = '[' + ' '.join(set_progress) + ']'
-
+            await _multi_update_nickname(self.alias, self.member)
         else:
             s = '[%s]' % level['name']
-        
-        # Show current level(s) in nickname
-        await update_nickname(self.member, s)
+            await update_nickname(self.member, s)        
 
     async def secret_found(self, level: dict):
         '''Grant access to secret channel.'''
@@ -306,7 +254,7 @@ class UnlockHandler:
             await self.member.send(description, file=image)
 
     async def game_completed(self):
-        '''Do the honors upon user completing game.'''
+        '''Do the honors upon player completing game.'''
 
         # Get completed role name from DB    
         query = 'SELECT * FROM riddles ' \
@@ -327,7 +275,6 @@ class UnlockHandler:
                     break
             if old_level:
                 await self.member.remove_roles(role)
-                break
 
         # Get completed role and add it to player
         completed_role = get(self.guild.roles, name=completed_name)
@@ -346,7 +293,7 @@ class UnlockHandler:
         await self._send(text)
     
     async def game_mastered(self, alias: str):
-        '''Do the honors upon user mastering game,
+        '''Do the honors upon player mastering game,
         i.e beating all levels and finding all achievements.'''
 
         # Get mastered role name from DB    
@@ -361,7 +308,11 @@ class UnlockHandler:
         await self.member.add_roles(mastered_role)
 
         # Update nickname with shiny 💎
-        await update_nickname(self.member, '💎')
+        if alias != 'genius':
+            await update_nickname(self.member, '💎')
+        else:
+            s = '[' + self.member.nick.rsplit('[', maxsplit=1)[1] + ' 💎'
+            await update_nickname(self.member, s)
 
         # Player has mastered the game (for now?)
         logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m ' \
@@ -388,6 +339,72 @@ async def update_nickname(member: Member, s: str):
         await member.edit(nick=nick)
     except:
         pass
+
+
+async def _multi_update_nickname(riddle: str, member: Member):
+    '''Update complete nickname
+    (for riddles which use the sets system).'''
+
+    # Get level sets from DB
+    query = 'SELECT * FROM level_sets ' \
+            'WHERE riddle = :riddle '
+    values = {'riddle': riddle}
+    level_sets = await database.fetch_all(query, values)
+
+    set_progress = {}
+    for level_set in level_sets:
+        # Check if current set was completed
+        set_name = level_set['name']
+        query = 'SELECT * FROM level_sets ' \
+                'WHERE riddle = :riddle AND name = :set_name ' \
+                    'AND final_level IN (' \
+                        'SELECT level_name FROM user_levels ' \
+                        'WHERE riddle = :riddle ' \
+                            'AND username = :username ' \
+                            'AND discriminator = :disc ' \
+                            'AND completion_time IS NOT NULL)'
+        values = {'riddle': riddle, 'set_name': set_name,
+                'username': member.name, 'disc': member.discriminator}
+        set_completed = await database.fetch_one(query, values)
+        if not set_completed:
+            # Get current last (found but not completed) level
+            query = 'SELECT * FROM user_levels ' \
+                    'WHERE riddle = :riddle ' \
+                        'AND username = :username ' \
+                        'AND discriminator = :disc ' \
+                        'AND level_name IN (' \
+                            'SELECT name FROM levels ' \
+                            'WHERE riddle = :riddle ' \
+                                'AND level_set = :set_name) '
+            unlocked_levels = await database.fetch_all(query, values)
+            if not unlocked_levels:
+                # Player haven't played set yet
+                continue
+            level = unlocked_levels[-1]
+
+            # Replace explicit set name with short name
+            short_name = level_set['short_name']
+            name = level['level_name'].replace((set_name + ' '), short_name)
+
+            # Replace numerical digits with their
+            # smaller Unicode variants
+            for digit in '0123456789':
+                if digit in name:
+                    value = ord(digit) - 0x30 + 0x2080
+                    small_digit = chr(value)
+                    name = name.replace(digit, small_digit)
+        else:
+            # Just use an emoji for completed sets :)
+            name = level_set['emoji']
+        
+        index = level_set['index']
+        set_progress[index] = name
+
+    # Join list of set progress strings and update nickname
+    aux = sorted(set_progress.items())
+    set_progress = [progress for _, progress in aux]
+    s = '[' + ' '.join(set_progress) + ']'
+    await update_nickname(member, s)
 
 
 def setup(_):

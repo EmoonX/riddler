@@ -18,7 +18,7 @@ async def global_list():
                 'SUM(global_score) AS total_score, ' \
                 'AVG(global_score) AS avg_score ' \
             'FROM accounts ' \
-            'WHERE global_score > 1000 ' \
+            'WHERE global_score > 2000 ' \
             'GROUP BY country ' \
             'ORDER BY total_score DESC, avg_score DESC, player_count ASC'
     countries = await database.fetch_all(query)
@@ -46,7 +46,7 @@ async def riddle_list(alias: str):
                 'INNER JOIN accounts AS acc ' \
                 'ON r_acc.username = acc.username ' \
                     'AND r_acc.discriminator = acc.discriminator ' \
-            'WHERE riddle = :riddle ' \
+            'WHERE riddle = :riddle AND score > 1000 ' \
             'GROUP BY country ' \
             'ORDER BY total_score DESC, avg_score DESC, player_count ASC'
     values = {'riddle': alias}

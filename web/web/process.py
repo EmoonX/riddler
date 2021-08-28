@@ -677,31 +677,27 @@ class _NormalLevelHandler(_LevelHandler):
                 username=self.username, disc=self.disc,
                 first_to_solve=first_to_solve, milestone=milestone)
     
-        if self.riddle_alias != 'genius':
-            # Get next level (if any)
-            index = self.level['index'] + 1
-            query = 'SELECT * FROM levels ' \
-                    'WHERE riddle = :riddle ' \
-                        'AND is_secret IS FALSE AND `index` = :index'
-            values = {'riddle': self.riddle_alias, 'index': index}
-            next_level = await database.fetch_one(query, values)
-            
-            if not next_level:
-                # Player has just completed the game :)
+        if self.riddle_alias == 'genius':
+            query = 'SELECT * FROM level_sets ' \
+                    'WHERE riddle = :riddle AND final_level NOT IN (' \
+                        'SELECT level_name FROM user_levels ' \
+                        'WHERE riddle = :riddle ' \
+                            'AND username = :username AND discriminator = :disc)'
+            values = {'riddle': self.riddle_alias,
+                    'username': self.username, 'disc': self.disc}
+            remaining_set = await database.fetch_one(query, values)
+            if not remaining_set:
+                 # Player has just completed the game :)
                 query = 'UPDATE riddle_accounts ' \
-                    'SET current_level = "🏅" ' \
-                    'WHERE riddle = :riddle AND ' \
-                        'username = :name AND discriminator = :disc'
-                values = {'riddle': self.riddle_alias,
-                        'name': self.username, 'disc': self.disc}
+                        'SET current_level = "🏅" ' \
+                        'WHERE riddle = :riddle ' \
+                            'AND username = :username AND discriminator = :disc'
                 await database.execute(query, values)
                 
                 # Bot game finish procedures
                 await bot_request('unlock', method='game_completed',
                         alias=self.riddle_alias,
                         username=self.username, disc=self.disc)
-        else:
-            pass
 
 
 class _SecretLevelHandler(_LevelHandler):

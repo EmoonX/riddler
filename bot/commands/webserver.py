@@ -87,30 +87,40 @@ async def unlock(request):
     
     # If player has gotten max score,
     # give him mastered special role and 💎 on nick 
-    methods = ('cheevo_found', 'secret_solve', 'game_completed')
+    methods = ['cheevo_found', 'secret_solve', 'game_completed']
+    if alias == 'genius':
+        methods.append('beat')
     if params['method'] in methods:
         # Check if player completed all levels
-        query = 'SELECT * FROM levels ' \
-                'WHERE riddle = :riddle AND name NOT IN ' \
-                    '(SELECT level_name FROM user_levels ' \
-                    'WHERE riddle = :riddle ' \
-                        'AND username = :username AND discriminator = :disc ' \
-                        'AND completion_time IS NOT NULL)'
+        query = 'SELECT COUNT(*) AS cnt FROM levels ' \
+                'WHERE riddle = :riddle '
+        values = {'riddle': alias}
+        result = await database.fetch_one(query, values)
+        total_level_count = result['cnt']
+        query = 'SELECT COUNT(*) AS cnt FROM user_levels ' \
+                'WHERE riddle = :riddle ' \
+                    'AND username = :username AND discriminator = :disc ' \
+                    'AND completion_time IS NOT NULL'
         values = {'riddle': alias,
                 'username': data['username'], 'disc': data['disc']}
-        result_levels = await database.fetch_one(query, values)
+        result = await database.fetch_one(query, values)
+        user_completed_count = result['cnt']
+        logging.info(total_level_count)
+        logging.info(user_completed_count)
+        if total_level_count == user_completed_count:
+            # Check if player unlocked all achievements
+            query = 'SELECT * FROM achievements ' \
+                    'WHERE riddle = :riddle AND title NOT IN (' \
+                        'SELECT title FROM user_achievements ' \
+                        'WHERE riddle = :riddle ' \
+                            'AND username = :username ' \
+                            'AND discriminator = :disc)'
+            has_unfound_cheevos = await database.fetch_one(query, values)
+            logging.info(has_unfound_cheevos)
 
-        # Check if player unlocked all achievements
-        query = 'SELECT * FROM achievements ' \
-                'WHERE riddle = :riddle AND title NOT IN ' \
-                    '(SELECT title FROM user_achievements ' \
-                    'WHERE riddle = :riddle ' \
-                        'AND username = :username AND discriminator = :disc)'
-        result_cheevos = await database.fetch_one(query, values)
-
-        # If nothing was found, then player got everything
-        if not result_levels and not result_cheevos:
-            await uh.game_mastered(alias)        
+            # If nothing was found, then player got everything
+            if not has_unfound_cheevos:
+                await uh.game_mastered(alias)        
     
     return web.Response(status=200)
 
