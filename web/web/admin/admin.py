@@ -94,13 +94,13 @@ async def update_all_riddles():
 @admin.route('/admin/<alias>/update-all', methods=['GET'])
 @requires_authorization
 async def update_all(alias: str):
-    '''Wildcard route for running all update ones above.'''
+    '''Wildcard route for running all update routines below.'''
     update_methods = \
         (update_scores, update_completion_count, update_ratings)
     for update in update_methods:
         response = await update(alias)
         if response[1] != 200:
-            return response      
+            return response
     return 'SUCCESS :)', 200
 
 
@@ -158,7 +158,7 @@ async def update_scores(alias: str):
         values = {'score': new_score, **values}
         await database.execute(query, values)
         
-        # If riddle is listed, pdate player's global score
+        # If riddle is listed, update player's global score
         query = 'SELECT * FROM riddles ' \
                 'WHERE alias = :alias'
         values = {'alias': alias}
@@ -206,7 +206,7 @@ async def update_completion_count(alias: str):
 @admin.route('/admin/<alias>/update-ratings', methods=['GET'])
 @requires_authorization
 async def update_ratings(alias: str):
-    '''Úpdates riddle level ratings upon admin request.'''    
+    '''Úpdates riddle levels' user ratings.'''    
     
     # Check for admin permissions
     msg, status = await auth(alias)
@@ -242,7 +242,7 @@ async def update_ratings(alias: str):
     
 async def save_image(folder: str, alias: str,
         filename: str, imgdata: str, prev_filename=''):
-    '''Create a image from base64 string and 
+    '''Create a image from a base64 string and 
     save it on riddle's thumbs folder.'''
     
     # Get pure base64 data from URL and convert it to image
