@@ -122,6 +122,7 @@ async def unlock(request):
             if not has_unfound_cheevos:
                 await uh.game_mastered(alias)
         
+    if 'points' in params:
         # Update Wonderland guild score-based role, if the case
         await update_score_role(uh.member)
     

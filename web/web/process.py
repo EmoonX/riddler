@@ -211,6 +211,7 @@ class _PathHandler:
                 'INNER JOIN levels ' \
                     'ON levels.riddle = user_levels.riddle ' \
                         'AND levels.name = user_levels.level_name ' \
+                        'AND is_secret IS FALSE ' \
                 'WHERE user_levels.riddle = :riddle ' \
                     'AND username = :name AND discriminator = :disc ' \
                     'AND completion_time IS NULL'

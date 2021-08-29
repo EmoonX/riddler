@@ -8,7 +8,7 @@ from discord.utils import get
 
 from bot import bot
 from riddle import riddles, get_ancestor_levels
-from commands.unlock import update_nickname
+from commands.unlock import update_nickname, multi_update_nickname
 from util.db import database
 
 
@@ -51,9 +51,8 @@ async def insert(request):
                     # Swap 💎 back for 🏅
                     await update_nickname(member, '🏅')
                 else:
-                    # Just remove 💎 from nick's end
-                    s = '[' + member.nick.rsplit('[', maxsplit=1)[1][:-2]
-                    await update_nickname(member, s)
+                    # Swap 💎 for set progress
+                    await multi_update_nickname(alias, member)
 
     async def add(level: dict):
         '''Add guild channels and roles.'''

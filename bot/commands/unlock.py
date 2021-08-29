@@ -38,6 +38,16 @@ class UnlockHandler:
         '''Try to send a message to member/channel.
         If they/it do(es)n't accept DMs from bot, ignore.'''
 
+         # Check if Riddler DMs are silenced by player 
+        query = 'SELECT * FROM accounts ' \
+                'WHERE username = :username AND discriminator = :disc'
+        values = {'username': self.member.name,
+                'disc': self.member.discriminator}
+        result = await database.fetch_one(query, values)
+        silent = result['silence_notifs']
+        if silent:
+            return
+
         # Try to send message to member (default) or channel
         if not channel:
             channel = self.member
@@ -121,7 +131,7 @@ class UnlockHandler:
                 await self._send(text, channel)
                 
                 # Update multi-nickname
-                await _multi_update_nickname(self.alias, self.member)
+                await multi_update_nickname(self.alias, self.member)
 
 
     async def advance(self, level: dict):
@@ -158,7 +168,7 @@ class UnlockHandler:
 
         # Show current level(s) in nickname
         if self.alias == 'genius':
-            await _multi_update_nickname(self.alias, self.member)
+            await multi_update_nickname(self.alias, self.member)
         else:
             s = '[%s]' % level['name']
             await update_nickname(self.member, s)        
@@ -308,13 +318,8 @@ class UnlockHandler:
         await self.member.add_roles(mastered_role)
 
         # Update nickname with shiny 💎
-        if alias != 'genius':
-            await update_nickname(self.member, '💎')
-        else:
-            if self.member.nick:
-                s = '[' + self.member.nick.rsplit('[', maxsplit=1)[1] + ' 💎'
-                await update_nickname(self.member, s)
-
+        await update_nickname(self.member, '💎')
+        
         # Player has mastered the game (for now?)
         logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m ' \
                 'has mastered the game!') \
@@ -342,7 +347,7 @@ async def update_nickname(member: Member, s: str):
         pass
 
 
-async def _multi_update_nickname(riddle: str, member: Member):
+async def multi_update_nickname(riddle: str, member: Member):
     '''Update complete nickname
     (for riddles which use the sets system).'''
 
