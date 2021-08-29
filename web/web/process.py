@@ -194,15 +194,7 @@ class _PathHandler:
     async def process(self):
         '''Process level path.
         
-        @path: a level path in the current riddle domain'''            
-        
-        # Check if it's not an txt/image/video/etc
-        dot_index = self.path.rfind('.')
-        extension = self.path[(dot_index + 1):]
-        is_page = 'htm' in extension or 'php' in extension
-
-        if is_page:
-            await self._update_counters()
+        @path: a level path in the current riddle domain'''
 
         # Search for unlocked and unbeaten levels on DB
         current_name = self.riddle_account['current_level']
@@ -227,7 +219,7 @@ class _PathHandler:
                 lh = _NormalLevelHandler(level, self)
                 await lh.register_completion()
                 current_level = level
-                break            
+                break
         
         # Check if path corresponds to a valid page (non 404)
         query = 'SELECT * FROM level_pages ' \
@@ -235,15 +227,16 @@ class _PathHandler:
         values = {'riddle': self.riddle_alias, 'path': self.path}
         page = await database.fetch_one(query, values)
         if not page or not page['level_name']:
-            # Page not found!
-            return False
+            # Nothing more to do if not part of a level
+            return
         
         # Get requested page's level info from DB
         query = 'SELECT * FROM levels ' \
                 'WHERE riddle = :riddle AND name = :name'
         values = {'riddle': self.riddle_alias, 'name': page['level_name']}
         page_level = await database.fetch_one(query, values)
-                  
+        
+        current_solved = False
         if current_name != '🏅':
             if self.riddle_alias != 'genius':
                 # Find if current level is solved (either beforehand or not)
@@ -257,7 +250,7 @@ class _PathHandler:
                         'level': current_name}
                 result = await database.fetch_one(query, values)
                 current_solved = (result is not None)
-  
+
                 if not current_name or current_solved:
                     # Get next level name
                     if result:
@@ -346,6 +339,34 @@ class _PathHandler:
         if secret:
             sh = _SecretLevelHandler(secret, self)
             await sh.register_completion()
+    
+        # If the currently level being visited was not unlocked
+        # yet, ignore it for access counting purposes.
+        query = 'SELECT * FROM user_levels ' \
+                'WHERE riddle = :riddle ' \
+                    'AND username = :username AND discriminator = :disc ' \
+                    'AND level_name = :level_name '
+        values = {'riddle': self.riddle_alias,
+                'username': self.username, 'disc': self.disc,
+                'level_name': page['level_name']}
+        is_unlocked = await database.fetch_one(query, values)
+        if not is_unlocked:
+            values['level_name'] = None
+
+        # Mark level currently being visited in `last_visited_level` field
+        query = 'UPDATE riddle_accounts ' \
+                'SET last_visited_level = :level_name ' \
+                'WHERE riddle = :riddle ' \
+                    'AND username = :username AND discriminator = :disc '
+        await database.execute(query, values)
+        
+        # Check if page is  normal one (i.e not txt/image/video/etc)
+        # If positive, update all needed hit counters
+        dot_index = self.path.rfind('.')
+        extension = self.path[(dot_index + 1):]
+        is_normal_page = 'htm' in extension or 'php' in extension
+        if is_normal_page:
+            await self._update_hit_counters()
 
         # if not has_access():
         #     # Forbid user from accessing any level further than permitted
@@ -375,8 +396,7 @@ class _PathHandler:
                             'AND level_name IN (' \
                                 'SELECT requires FROM level_requirements ' \
                                 'WHERE riddle = :riddle ' \
-                                    'AND level_name = :level_name ' \
-                                ') ' \
+                                    'AND level_name = :level_name) ' \
                             'AND completion_time IS NOT NULL'
                 result = await database.fetch_one(query, values)
                 count_user = result['count'] if result else 0
@@ -392,6 +412,13 @@ class _PathHandler:
             cond = (current_name and (current_name == '🏅' \
                     or page_level['index'] <= current_level['index'] + 1 \
                     or page_level['is_secret']))
+            if cond:
+                # Can only access next level pages
+                # if current one was indeed completed
+                if current_name != '🏅' and \
+                        page_level['index'] == current_level['index'] + 1 \
+                        and not current_solved:
+                    cond = False
 
         if cond:
             tnow = datetime.utcnow()
@@ -413,23 +440,42 @@ class _PathHandler:
         
         return True
     
-    async def _update_counters(self):
-        '''Update player and riddle hit counters.'''
+    async def _update_hit_counters(self):
+        '''Update player's, riddle's and level's hit counters.'''
 
-        # If a normal page, increment player's current hit counter
+        # Update player/riddle hit counters
         query = 'UPDATE riddle_accounts ' \
-                'SET cur_hit_counter = cur_hit_counter + 1 ' \
+                'SET hit_counter = hit_counter + 1 ' \
                 'WHERE riddle = :riddle ' \
                     'AND username = :name AND discriminator = :disc'
         values = {'riddle': self.riddle_alias,
                 'name': self.username, 'disc': self.disc}
         await database.execute(query, values)
-
-        # Also update riddle global hit counter
         query = 'UPDATE riddles ' \
                 'SET hit_counter = hit_counter + 1 ' \
                 'WHERE alias = :alias '
         await database.execute(query, {'alias': self.riddle_alias})
+
+        # Check last level visited by player (which can be the current).
+        # All subsequent 404 pages are counted as part of such level,
+        # until player visits a new valid level page.
+        query = 'SELECT * FROM riddle_accounts ' \
+                'WHERE riddle = :riddle ' \
+                    'AND username = :name AND discriminator = :disc'
+        result = await database.fetch_one(query, values)
+        last_visited_level = result['last_visited_level']
+        if last_visited_level:
+            # Increment completion access count for unbeaten levels.
+            # Notice that nothing happens if leavel was already completed.
+            query = 'UPDATE user_levels ' \
+                    'SET completion_hit_counter = ' \
+                        'completion_hit_counter + 1 ' \
+                    'WHERE riddle = :riddle ' \
+                        'AND username = :name AND discriminator = :disc ' \
+                        'AND level_name = :level_name ' \
+                        'AND completion_time IS NULL '
+            values['level_name'] = last_visited_level
+            await database.execute(query, values)
     
     async def _process_cheevo(self):
         '''Grant cheevo and awards if page is an achievement one.'''
@@ -628,7 +674,7 @@ class _NormalLevelHandler(_LevelHandler):
         
         # Update player's current_level and reset their page count
         query = 'UPDATE riddle_accounts ' \
-                'SET current_level = :name_next, cur_hit_counter = 0 ' \
+                'SET current_level = :name_next ' \
                 'WHERE riddle = :riddle AND ' \
                     'username = :name AND discriminator = :disc'
         values = {'name_next': self.level['name'], 'riddle': self.riddle_alias,
@@ -660,15 +706,14 @@ class _NormalLevelHandler(_LevelHandler):
         
         # Register level completion in designated table
         time = datetime.utcnow()
-        count = self.riddle_account['cur_hit_counter']
         query = 'UPDATE user_levels ' \
-                'SET completion_time = :time, page_count = :count ' \
+                'SET completion_time = :time ' \
                 'WHERE riddle = :riddle ' \
                     'AND username = :name AND discriminator = :disc ' \
                     'AND level_name = :level'
         values = {'riddle': self.riddle_alias,
                 'name': self.username, 'disc': self.disc,
-                'level': self.level['name'], 'time': time, 'count': count}
+                'level': self.level['name'], 'time': time}
         await database.execute(query, values)
     
         # Bot level beat procedures

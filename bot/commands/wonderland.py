@@ -16,9 +16,8 @@ class Wonderland(commands.Cog):
     async def on_member_join(self, member: Member):
         '''Grant (global) score-based role upon player joining Wonderland.'''
         guild = member.guild
-        if guild.name != 'Riddler\'s Wonderland II':
-            return
-        await update_score_role(member)        
+        if guild.name == 'Riddler\'s Wonderland II':
+            await update_score_role(member)        
 
 
 async def update_score_role(member: Member):
@@ -40,10 +39,10 @@ async def update_score_role(member: Member):
 
     # Find old score role of user, if any
     roles = ('Master Riddlers', 'Expert Riddlers',
-        'Seasoned Ridders', 'Beginner Riddlers')
+        'Seasoned Riddlers', 'Beginner Riddlers')
     old_role = None
     for role_name in roles:
-        role = get(wonderland.roles, name=role_name)
+        role = get(member.roles, name=role_name)
         if role:
             old_role = role
             break
@@ -61,7 +60,8 @@ async def update_score_role(member: Member):
     # Do role swap, but only if a role change indeed occurred
     if role != old_role:
         await member.add_roles(role)
-        await member.remove_roles(old_role)
+        if old_role:
+            await member.remove_roles(old_role)
 
 
 def setup(bot: commands.Bot):
