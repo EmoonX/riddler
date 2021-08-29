@@ -38,16 +38,6 @@ class UnlockHandler:
         '''Try to send a message to member/channel.
         If they/it do(es)n't accept DMs from bot, ignore.'''
 
-        # Check if Riddler DMs are silenced by player 
-        query = 'SELECT * FROM accounts ' \
-                'WHERE username = :username AND discriminator = :disc'
-        values = {'username': self.member.name,
-                'disc': self.member.discriminator}
-        result = await database.fetch_one(query, values)
-        silent = result['silence_notifs']
-        if silent:
-            return
-
         # Try to send message to member (default) or channel
         if not channel:
             channel = self.member
@@ -84,7 +74,7 @@ class UnlockHandler:
             text += ('**<@!%d>** has completed level **%s**! ' \
                     'Congratulations!') % (self.member.id, name)
             channel = get(self.guild.channels, name=level['discord_name'])
-            await channel.send(text)
+            await self._send(text, channel)
             achievements = get(self.guild.channels, name='achievements')
             if achievements:
                 await self._send(text, achievements)
@@ -175,14 +165,6 @@ class UnlockHandler:
 
     async def secret_found(self, level: dict):
         '''Grant access to secret channel.'''
-
-        # Check if Riddler DMs are silenced by player 
-        query = 'SELECT * FROM accounts ' \
-                'WHERE username = :username AND discriminator = :disc'
-        values = {'username': self.member.name,
-                'disc': self.member.discriminator}
-        result = await database.fetch_one(query, values)
-        silent = result['silence_notifs']
         
         # Grant "reached" role
         discord_name = level['discord_name']
@@ -207,14 +189,6 @@ class UnlockHandler:
     async def secret_solve(self, level: dict, points: int,
             first_to_solve=False):
         '''Solve secret level and grant special colored role.'''
-
-        # Check if Riddler DMs are silenced by player 
-        query = 'SELECT * FROM accounts ' \
-                'WHERE username = :username AND discriminator = :disc'
-        values = {'username': self.member.name,
-                'disc': self.member.discriminator}
-        result = await database.fetch_one(query, values)
-        silent = result['silence_notifs']
         
         # Get roles from guild
         discord_name = level['discord_name']
@@ -282,14 +256,6 @@ class UnlockHandler:
     async def game_completed(self):
         '''Do the honors upon player completing game.'''
 
-        # Check if Riddler DMs are silenced by player 
-        query = 'SELECT * FROM accounts ' \
-                'WHERE username = :username AND discriminator = :disc'
-        values = {'username': self.member.name,
-                'disc': self.member.discriminator}
-        result = await database.fetch_one(query, values)
-        silent = result['silence_notifs']
-
         # Get completed role name from DB    
         query = 'SELECT * FROM riddles ' \
                 'WHERE alias = :alias'
@@ -329,14 +295,6 @@ class UnlockHandler:
     async def game_mastered(self, alias: str):
         '''Do the honors upon player mastering game,
         i.e beating all levels and finding all achievements.'''
-
-        # Check if Riddler DMs are silenced by player 
-        query = 'SELECT * FROM accounts ' \
-                'WHERE username = :username AND discriminator = :disc'
-        values = {'username': self.member.name,
-                'disc': self.member.discriminator}
-        result = await database.fetch_one(query, values)
-        silent = result['silence_notifs']
 
         # Get mastered role name from DB    
         query = 'SELECT * FROM riddles ' \

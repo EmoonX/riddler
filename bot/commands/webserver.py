@@ -12,6 +12,7 @@ from commands.get import is_member_of_guild, \
         get_avatar_url, fetch_avatar_urls
 from commands.update import insert, update
 from commands.unlock import UnlockHandler
+from commands.wonderland import update_score_role
 from util.db import database
 
       
@@ -85,8 +86,7 @@ async def unlock(request):
         logging.error(tb)
         return web.Response(status=500)
     
-    # If player has gotten max score,
-    # give him mastered special role and 💎 on nick 
+    # Special procedures to be done upon score increase 
     methods = ['cheevo_found', 'secret_solve', 'game_completed']
     if alias == 'genius':
         methods.append('beat')
@@ -120,7 +120,10 @@ async def unlock(request):
 
             # If nothing was found, then player got everything
             if not has_unfound_cheevos:
-                await uh.game_mastered(alias)        
+                await uh.game_mastered(alias)
+        
+        # Update Wonderland guild score-based role, if the case
+        await update_score_role(uh.member)
     
     return web.Response(status=200)
 
