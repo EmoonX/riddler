@@ -36,10 +36,15 @@ async def process_url(username=None, disc=None, path=None):
         status = 401 if request.method == 'POST' else 200
         return 'Not logged in', status
     
-    if path or request.method =='POST':
+    if path or request.method == 'POST':
         # Receive path from request
         if not path:
             path = (await request.data).decode('utf-8')
+        
+        # Get status code from request header, if any
+        status_code = request.headers.get('Statuscode')
+        if status_code:
+            status_code = int(status_code)
 
         # Create path handler object and build player data
         if not username:
@@ -49,7 +54,7 @@ async def process_url(username=None, disc=None, path=None):
             setattr(user, 'name', username)
             setattr(user, 'discriminator', disc)
         ph = _PathHandler()
-        ok, invite_code = await ph.build_handler(user, path)
+        ok, invite_code = await ph.build_handler(user, path, status_code)
         if not ok:
             if not invite_code:
                 # Page is not inside root path (like forum or admin pages)
@@ -63,8 +68,13 @@ async def process_url(username=None, disc=None, path=None):
         # Process received path
         ok = await ph.process()
         if not ok:
-            # Page inside root path, but nevertheless not a level one
-            return 'Not a level page', 404
+            # Page is inside root path, yet something is wrong
+            if status_code == 404:
+                # Received page doesn't exist
+                return 'Page not found', 404
+            else:
+                # Page exists, but is not a level one
+                return 'Not a level page', 412
 
         # Log received path with timestamp
         tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -98,7 +108,10 @@ class _PathHandler:
     path: str
     '''Path to be processed by handler'''
 
-    async def build_handler(self, user: User, url: str):
+    status_code: int
+    '''Real status code of requested page (either 200 or 404)'''
+
+    async def build_handler(self, user: User, url: str, status_code: str):
         '''Get path from raw URL and get user info from DB.
         
         @param user: Discord user object for logged in player
@@ -160,6 +173,9 @@ class _PathHandler:
             if not has_dot:
                 self.path += '.htm'
         
+        # Save requesting status code too
+        self.status_code = status_code
+        
         return ok, invite_code
     
     async def build_player_riddle_data(self):
@@ -220,6 +236,11 @@ class _PathHandler:
                 await lh.register_completion()
                 current_level = level
                 break
+
+        # Check if page is a normal one (i.e not txt/image/video/etc)
+        dot_index = self.path.rfind('.')
+        extension = self.path[(dot_index + 1):]
+        is_normal_page = 'htm' in extension or 'php' in extension
         
         # Check if path corresponds to a valid page (non 404)
         query = 'SELECT * FROM level_pages ' \
@@ -227,8 +248,13 @@ class _PathHandler:
         values = {'riddle': self.riddle_alias, 'path': self.path}
         page = await database.fetch_one(query, values)
         if not page or not page['level_name']:
+            if self.status_code == 404 and is_normal_page:
+                # If page comes from a real 404 (and not a non level page),
+                # then it should still increment all hit counters.
+                await self._update_hit_counters()
+            
             # Nothing more to do if not part of a level
-            return
+            return False
         
         # Get requested page's level info from DB
         query = 'SELECT * FROM levels ' \
@@ -359,12 +385,8 @@ class _PathHandler:
                 'WHERE riddle = :riddle ' \
                     'AND username = :username AND discriminator = :disc '
         await database.execute(query, values)
-        
-        # Check if page is  normal one (i.e not txt/image/video/etc)
-        # If positive, update all needed hit counters
-        dot_index = self.path.rfind('.')
-        extension = self.path[(dot_index + 1):]
-        is_normal_page = 'htm' in extension or 'php' in extension
+
+        # If a normal page, update all hit counters
         if is_normal_page:
             await self._update_hit_counters()
 

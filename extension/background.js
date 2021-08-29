@@ -1,7 +1,7 @@
 // Time of last login request
 var t0;
 
-function sendToServer(url) {
+function sendToServer(url, statusCode) {
   // Base URL to where requests will be sent to
   const SERVER_URL = 'https://riddler.emoon.dev';
 
@@ -18,7 +18,8 @@ function sendToServer(url) {
       credentials: 'include',
       headers: {
         'Content-Type': 'text/uri-list',
-        'Cookie': cookie.name + '=' + cookie.value
+        'Cookie': cookie.name + '=' + cookie.value,
+        'Statuscode': statusCode,
       },
       body: url
     };
@@ -70,7 +71,7 @@ chrome.webRequest.onHeadersReceived.addListener(function (details) {
     return;
   }
   console.log(details.url, details.statusCode);
-  if (details.statusCode == 200) { 
-    sendToServer(details.url);
+  if ([200, 404].indexOf(details.statusCode) !== -1) { 
+    sendToServer(details.url, details.statusCode);
   }  
 }, filter);
