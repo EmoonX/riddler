@@ -73,21 +73,31 @@ async def global_list(country: str = None):
             # Search for riddles already played
             query = 'SELECT * FROM riddle_accounts ' \
                     'WHERE riddle = :riddle ' \
-                        'AND username = :name AND discriminator = :disc '
+                        'AND username = :username AND discriminator = :disc'
             values = {'riddle': riddle['alias'],
-                    'name': account['username'],
+                    'username': account['username'],
                     'disc': account['discriminator']}
             played = await database.fetch_one(query, values)
             if not played:
                 continue
 
             # Check completion
-            completed = (played['current_level'] == "🏅")
+            query = 'SELECT * FROM levels ' \
+                    'WHERE riddle = :riddle ' \
+                        'AND is_secret IS FALSE AND `name` NOT IN ( ' \
+                            'SELECT level_name FROM user_levels ' \
+                            'WHERE riddle = :riddle ' \
+                                'AND username = :username ' \
+                                'AND discriminator = :disc ' \
+                                'AND completion_time IS NOT NULL)'
+            result = await database.fetch_one(query, values)
+            completed = (result is None)
             if completed:
                 # Get number of achievements user has gotten on riddle
                 query = 'SELECT COUNT(*) as count FROM user_achievements ' \
                         'WHERE riddle = :riddle ' \
-                            'AND username = :name AND discriminator = :disc '
+                            'AND username = :username ' \
+                            'AND discriminator = :disc '
                 result = await database.fetch_one(query, values)
                 
                 # Append riddle to list of mastered or completed ones
