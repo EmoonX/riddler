@@ -346,9 +346,10 @@ class _PathHandler:
                             await lh.register_finding()                
             
         # Check for secret level pages
+        # (also check for phony JSON of multi-front levels)
         query = 'SELECT * FROM levels ' \
                 'WHERE riddle = :riddle AND is_secret IS TRUE ' \
-                'AND path = :path'
+                    'AND (`path` = :path OR `path` LIKE "%\":path\"%")'
         values = {'riddle': self.riddle_alias, 'path': self.path}
         secret = await database.fetch_one(query, values)
         if secret:
@@ -359,7 +360,7 @@ class _PathHandler:
         # Check if a secret level was beaten
         query = 'SELECT * FROM levels ' \
                 'WHERE riddle = :riddle AND is_secret IS TRUE ' \
-                'AND answer = :answer'
+                    'AND answer = :answer'
         values = {'riddle': self.riddle_alias, 'answer': self.path}
         secret = await database.fetch_one(query, values)
         if secret:

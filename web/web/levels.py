@@ -19,7 +19,7 @@ async def level_list(alias: str):
     
     user = await discord.get_user()
     base_values = {'riddle': alias,
-            'name': user.name, 'disc': user.discriminator}
+            'username': user.name, 'disc': user.discriminator}
 
     # Get level dict (and mark them as unlocked and/or beaten appropriately)
     query = 'SELECT * FROM levels WHERE riddle = :riddle ' \
@@ -33,7 +33,7 @@ async def level_list(alias: str):
             query = 'SELECT username, rating_given, completion_time ' \
                         'FROM user_levels ' \
                     'WHERE riddle = :riddle ' \
-                        'AND username = :name AND discriminator = :disc ' \
+                        'AND username = :username AND discriminator = :disc ' \
                         'AND level_name = :level_name'
             values = {**base_values, 'level_name': level['name']}
             result = await database.fetch_one(query, values)
@@ -51,13 +51,22 @@ async def level_list(alias: str):
                 level['unlocked'] = level['beaten']
 
                 if not level['beaten']:
-                    # Level appears on list iff user reached its front page
-                    query = 'SELECT username FROM user_pages ' \
-                            'WHERE riddle = :riddle AND username = :name ' \
-                                'AND discriminator = :disc AND path = :path'
-                    values = {**base_values, 'path': level['path']}
-                    result = await database.fetch_one(query, values)
+                    # Level appears on list iff user reached its front page(s)
+                    query = 'SET @path = ( ' \
+                                'SELECT `path` FROM levels ' \
+                                'WHERE riddle = :riddle ' \
+                                    'AND name = :level_name)'
+                    values = {'riddle': alias, 'level_name': level['name']}
+                    await database.execute(query, values)
+                    query = 'SELECT * FROM user_pages ' \
+                            'WHERE riddle = :riddle ' \
+                                'AND username = :username ' \
+                                'AND discriminator = :disc ' \
+                                'AND (@path = `path` ' \
+                                    'OR @path LIKE CONCAT(\'%\', `path`, \'%\'))'
+                    result = await database.fetch_one(query, base_values)
                     level['unlocked'] = (result is not None)
+                    #level['unlocked'] = False;
                 else:
                     # Get level rating:
                     level['rating_given'] = result['rating_given']
@@ -73,7 +82,8 @@ async def level_list(alias: str):
                 if level['unlocked']:
                     # Get playe's current found files count for level
                     query = 'SELECT COUNT(*) AS count FROM user_pages ' \
-                            'WHERE riddle = :riddle AND username = :name ' \
+                            'WHERE riddle = :riddle ' \
+                                'AND username = :username ' \
                                 'AND discriminator = :disc ' \
                                 'AND level_name = :level ' \
                             'GROUP BY riddle, username, ' \
@@ -110,9 +120,9 @@ async def get_pages(alias: str) -> str:
     user = await discord.get_user()
     query = 'SELECT level_name, path FROM user_pages ' \
             'WHERE riddle = :riddle ' \
-                'AND username = :name AND discriminator = :disc'
+                'AND username = :username AND discriminator = :disc'
     values = {'riddle': alias,
-            'name': user.name, 'disc': user.discriminator}
+            'username': user.name, 'disc': user.discriminator}
     result = await database.fetch_all(query, values)
     paths = {}
     for row in result:
@@ -208,10 +218,11 @@ async def rate(alias: str, level_name: str, rating: int):
     # Get user's previous rating
     query = 'SELECT * FROM user_levels ' \
             'WHERE riddle = :riddle ' \
-                'AND username = :name AND discriminator = :disc ' \
+                'AND username = :username AND discriminator = :disc ' \
                 'AND level_name = :level_name'
-    values = {'riddle': alias, 'name': user.name,
-            'disc': user.discriminator, 'level_name': level_name}
+    values = {'riddle': alias,
+            'username': user.name, 'disc': user.discriminator,
+            'level_name': level_name}
     result = await database.fetch_one(query, values)
     if not result or not result['completion_time']:
         return 'Unauthorized', 401
@@ -219,8 +230,8 @@ async def rate(alias: str, level_name: str, rating: int):
 
     # Get level's overall rating info
     query = 'SELECT * FROM levels ' \
-            'WHERE riddle = :riddle and name = :name'
-    values = {'riddle': alias, 'name': level_name}
+            'WHERE riddle = :riddle and name = :level_name'
+    values = {'riddle': alias, 'level_name': level_name}
     level = await database.fetch_one(query, values)
 
     # Calculate new average and count
@@ -247,16 +258,17 @@ async def rate(alias: str, level_name: str, rating: int):
     query = 'UPDATE user_levels ' \
             'SET rating_given = :rating ' \
             'WHERE riddle = :riddle ' \
-                'AND username = :name AND discriminator = :disc ' \
+                'AND username = :username AND discriminator = :disc ' \
                 'AND level_name = :level_name'
     values = {'rating': rating, 'riddle': alias,
-            'name': user.name, 'disc': user.discriminator,
+            'username': user.name, 'disc': user.discriminator,
             'level_name': level_name}
     await database.execute(query, values)
-    query = 'UPDATE levels SET rating_avg = :average, rating_count = :count ' \
-            'WHERE riddle = :riddle AND name = :name'
+    query = 'UPDATE levels ' \
+            'SET rating_avg = :average, rating_count = :count ' \
+            'WHERE riddle = :riddle AND name = :level_name'
     values = {'average': average, 'count': count,
-            'riddle': alias, 'name': level_name}
+            'riddle': alias, 'level_name': level_name}
     await database.execute(query, values)
 
     # Return new rating data
