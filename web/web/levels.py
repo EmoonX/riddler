@@ -52,21 +52,20 @@ async def level_list(alias: str):
 
                 if not level['beaten']:
                     # Level appears on list iff user reached its front page(s)
-                    query = 'SET @path = ( ' \
-                                'SELECT `path` FROM levels ' \
-                                'WHERE riddle = :riddle ' \
-                                    'AND name = :level_name)'
+                    query = 'SELECT * FROM levels ' \
+                                'WHERE riddle = :riddle AND name = :level_name'
                     values = {'riddle': alias, 'level_name': level['name']}
-                    await database.execute(query, values)
+                    result = await database.fetch_one(query, values)
+                    path = result['path']
                     query = 'SELECT * FROM user_pages ' \
                             'WHERE riddle = :riddle ' \
                                 'AND username = :username ' \
                                 'AND discriminator = :disc ' \
-                                'AND (@path = `path` ' \
-                                    'OR @path LIKE CONCAT(\'%\', `path`, \'%\'))'
-                    result = await database.fetch_one(query, base_values)
+                                'AND (:path = `path` ' \
+                                    'OR :path LIKE CONCAT(\'%\', `path`, \'%\'))'
+                    values = {**base_values, 'path': path}
+                    result = await database.fetch_one(query, values)
                     level['unlocked'] = (result is not None)
-                    #level['unlocked'] = False;
                 else:
                     # Get level rating:
                     level['rating_given'] = result['rating_given']
