@@ -23,7 +23,7 @@ async def global_list(country: str = None):
     result = await database.fetch_all(query)
     riddles = [dict(riddle) for riddle in result]
 
-    for riddle in riddles:   
+    for riddle in riddles:
         # Get total number of riddle achievements
         query = 'SELECT COUNT(*) as count FROM achievements ' \
                 'WHERE riddle = :riddle'
