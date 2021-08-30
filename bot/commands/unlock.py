@@ -124,6 +124,8 @@ class UnlockHandler:
                 await self.member.remove_roles(reached_role)
                 
                 # Congratulate milestone reached on respective channel
+                if self.member == self.guild.owner:
+                    return
                 channel = get(self.guild.channels, name=level['discord_name'])
                 text = ('**<@!%d>** has beaten level **%s** ' \
                             'and is now part of **@%s**! Congratulations!') \
@@ -227,6 +229,8 @@ class UnlockHandler:
         await self._send(text)
         
         # Send congratulations message to channel (and cheevos one) :)
+        if self.member == self.guild.owner:
+            return
         channel = get(self.guild.channels, name=discord_name)
         text = ''
         if first_to_solve:
