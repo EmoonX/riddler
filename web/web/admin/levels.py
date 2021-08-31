@@ -208,13 +208,19 @@ async def levels(alias: str):
 
 
 async def _fetch_levels(alias: str, is_secret=False):
-    '''Fetch guild levels info from database.'''
+    '''Fetch guild levels info from database as an indexed dict.'''
     query = 'SELECT * FROM levels ' \
             'WHERE riddle = :riddle AND is_secret = :is_secret ' \
             'ORDER BY `index`'
     values = {'riddle': alias, 'is_secret': is_secret}
     result = await database.fetch_all(query, values)
-    levels = {level['index']: dict(level) for level in result}
+    levels = {}
+    for row in result:
+        level = dict(row)
+        if level['path'][0] == '[':
+            # Use first available path for multi-front levels
+            level['path'] = level['path'].split('"')[1]
+        levels[level['index']] = level
     return levels
 
 
