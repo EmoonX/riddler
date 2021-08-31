@@ -52,7 +52,7 @@ class UnlockHandler:
         if not channel:
             channel = self.member
         try:
-            await channel.send(text)
+            await channel.send(text, **kwargs)
         except Forbidden:
             logging.info(('\033[1m[%s]\033[0m ' \
                     'Can\'t send messages  to \033[1m%s#%s\033[0m ')
