@@ -79,6 +79,23 @@ async def level_list(alias: str):
                     level['pages_total'] = result['count']
                 
                 if level['unlocked']:
+                    if level['path'][0] == '[':
+                        # If a multi-front level, pick up the first found
+                        # front path for player purposes (like the image link)
+                        query = 'SELECT * FROM user_pages ' \
+                                'WHERE riddle = :riddle ' \
+                                    'AND username = :username ' \
+                                    'AND discriminator = :disc ' \
+                                    'AND level_name = :level_name'
+                        values = {**base_values, 'level_name': level['name']}
+                        result = await database.fetch_all(query, values)
+                        found_paths = set([row['path'] for row in result])
+                        paths = level['path'].split('"')[1::2]
+                        for path in paths:
+                            if path in found_paths:
+                                level['path'] = path
+                                break
+
                     # Get playe's current found files count for level
                     query = 'SELECT COUNT(*) AS count FROM user_pages ' \
                             'WHERE riddle = :riddle ' \

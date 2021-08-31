@@ -398,8 +398,8 @@ class _PathHandler:
         # Get new current level info from DB
         current_name = self.riddle_account['current_level']
         query = 'SELECT * FROM levels ' \
-                'WHERE riddle = :riddle AND name = :name'
-        values = {'riddle': self.riddle_alias, 'name': current_name}
+                'WHERE riddle = :riddle AND name = :level_name'
+        values = {'riddle': self.riddle_alias, 'level_name': current_name}
         current_level = await database.fetch_one(query, values)
 
         # Register into database new page access (if applicable)

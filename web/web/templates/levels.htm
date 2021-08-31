@@ -135,10 +135,6 @@
       {% if level['unlocked'] %}
         <div class="page-explorer">
           {% set path = level['path'] %}
-          {% if level['path'][0] == '[' %} 
-            {# In case of multi-front levels, pick up just the first path #}
-            {% set path = path.split('"', maxsplit=2)[1] %}
-          {% endif %}
           {% set aux = path.split('/') %}
           {% set folder = '/'.join(aux[:-1]) + '/' %}
           <nav>
