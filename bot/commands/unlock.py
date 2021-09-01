@@ -193,7 +193,7 @@ class UnlockHandler:
                 'has found secret level \033[1m%s\033[0m') \
                 % (self.guild.name, self.member.name,
                     self.member.discriminator, name))
-        text = ('**[%s]** You have found secret level **%s**. ' \
+        text = ('**[%s]** You found secret level **%s**. ' \
                 'Congratulations!') \
                 % (self.guild.name, name)
         await self._send(text)
@@ -223,7 +223,7 @@ class UnlockHandler:
                 'has completed secret level \033[1m%s\033[0m') 
                 % (self.guild.name, self.member.name,
                     self.member.discriminator, name))
-        text = ('**[%s]** You have solved secret level **%s** [%s] ' \
+        text = ('**[%s]** You solved secret level **%s** [%s] ' \
                     'and won **%d** points!\n') \
                 % (self.guild.name, name, stars, points)
         await self._send(text)
@@ -251,7 +251,7 @@ class UnlockHandler:
                 'got cheevo \033[1m%s\033[0m!') %
                 (self.guild.name, self.member.name,
                     self.member.discriminator, cheevo['title']))
-        text = ('**[%s]** You have found achievement **_%s_**  '
+        text = ('**[%s]** You unlocked achievement **_%s_**  '
                 'in page `%s` and won **%d** points!\n') \
                 % (self.guild.name, cheevo['title'], path, points)
         await self._send(text)
