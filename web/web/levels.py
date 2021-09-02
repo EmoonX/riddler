@@ -95,6 +95,8 @@ async def level_list(alias: str):
                             if path in found_paths:
                                 level['path'] = path
                                 break
+                        if level['path'][0] == '[':
+                            level['path'] = ''  # safeguard
 
                     # Get playe's current found files count for level
                     query = 'SELECT COUNT(*) AS count FROM user_pages ' \
