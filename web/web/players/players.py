@@ -137,7 +137,7 @@ async def riddle_list(alias: str, country: str = None):
     riddle['cheevo_count'] = result['count'];
     
     # Get players data from database
-    cond_country = ('AND country = "%s" ' % country) if country else ''
+    cond_country = ('WHERE country = "%s" ' % country) if country else ''
     query = 'SELECT * FROM (' \
             '(SELECT *, 999999 AS `index`, ' \
                     '2 AS filter FROM riddle_accounts ' \
@@ -154,7 +154,7 @@ async def riddle_list(alias: str, country: str = None):
             'INNER JOIN accounts AS acc ' \
                 'ON result.username = acc.username ' \
                     'AND result.discriminator = acc.discriminator ' \
-            'WHERE score > 0 ' + cond_country + \
+            + cond_country + \
             'ORDER BY score DESC LIMIT 1000 '
     result = await database.fetch_all(query, {'riddle': alias})
     accounts = [dict(account) for account in result]
@@ -212,13 +212,16 @@ async def riddle_list(alias: str, country: str = None):
 
     
     # Pluck creator account from main list to show it separately 👑
+    # Also, remove 0-score accounts.
     creator_account = None
-    for i, account in enumerate(accounts):
+    aux = []
+    for account in accounts:
         if account['username'] == riddle['creator_username'] \
                 and account['discriminator'] == riddle['creator_disc']:
             creator_account = account
-            accounts.pop(i)
-            break
+        elif account['score'] > 0:
+            aux.append(account)
+    accounts = aux
     
     def _account_cmp(a, b):
         '''Compare accounts first by score and then page count.'''
