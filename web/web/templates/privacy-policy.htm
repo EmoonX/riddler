@@ -1,0 +1,20 @@
+{% extends 'layout.htm' %}
+{% block title %}Privacy Policy{% endblock %}
+{% block content %}
+    <main>
+      <h1>Privacy Policy</h1>
+      
+      <p>This is nothing more than a simple page to disclose extension/website privacy policies to everyone including Google, the biggest tracking company in the world. In other words, it's here to guarantee that neither the extension nor the website collects more data from you than what's needed. You can pretty much ignore it if you're <s>anybody but Google bots</s> a player. <em>All hail Google!</em></p>
+
+      <h2>Browser extension</h2>
+      <p>Riddler collects accessed pages's URL as they are visited by players, but <em>only on riddle sites</em>. That's done by having <code>webRequest</code> permission work only on catalogued domains, granted by clicking the <strong>Update hosts</strong> button in extension's popup. Such action has to be done by a so-called "user gesture", since it's the only way Chrome allows granting of optional permissions to extensions.</p>
+      
+      <h2>Discord OAuth2</h2>
+      <p>The only OAuth2 system scope requested is <code>identity</code>, which grants access to the logged user's Discord handle (<code>username#discriminator</code>) and avatar. Such info is needed for identifying which user is logged in, and thus applying needed processing and database changes to them (and only them).</p>
+
+      <hr>
+
+      <p>By using Riddler, extension and website, you hereby consent to the aforementioned Privacy Policy and Riddler's (small) usage of your data.</p>
+      <p style="text-align: right">― Emoon, 2021</p>
+    </main>
+{% endblock %}

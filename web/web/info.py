@@ -1,12 +1,14 @@
-from quart import Blueprint, render_template
+from quart import Blueprint, request, render_template
 
 # Create app blueprint
 info = Blueprint('info', __name__)
 
 
 @info.route('/about')
+@info.route('/privacy-policy')
 async def about():
-    return await render_template('about.htm')
+    page = request.url.rsplit('/', maxsplit=1)[1] + '.htm'
+    return await render_template(page)
 
 
 @info.route('/thedudedude')
@@ -15,16 +17,16 @@ async def thedude():
     disc = '????'
     from process import process_url
     from util.db import database
-    first = 1
-    last = 50
-    inclusive = True
+    first = 56
+    last = 60
+    inclusive = False
     query = 'SELECT * FROM levels ' \
-            'WHERE riddle = "string" AND `index` >= :first AND `index` <= :last AND is_secret IS FALSE'
+            'WHERE riddle = "zed" AND `index` >= :first AND `index` <= :last AND is_secret IS FALSE'
     values = {'first': first, 'last': last}
     levels = await database.fetch_all(query, values)
     for level in levels:
-        front_path = 'https://thestringharmony.com' + level['path']
-        answer_path = 'https://thestringharmony.com' + level['answer']
+        front_path = 'https://zedpuzzle.neocities.org' + level['path']
+        answer_path = 'https://zedpuzzle.neocities.org' + level['answer']
         image_path = front_path.rsplit('/', maxsplit=1)[0] + '/' + level['image']
         from time import sleep
         await process_url(username, disc, front_path)
