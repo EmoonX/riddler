@@ -67,20 +67,23 @@ async def process_url(username=None, disc=None, path=None):
 
         # Process received path
         ok = await ph.process()
-        if not ok:
-            # Page is inside root path, yet something is wrong
-            if status_code == 404:
-                # Received page doesn't exist
-                return 'Page not found', 404
-            else:
-                # Page exists, but is not a level one
-                return 'Not a level page', 412
+        if not ok and status_code != 404:
+            # Page exists, but it's not a level one
+            return 'Not a level page', 412
 
         # Log received path with timestamp
         tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-        print(('\033[1m[%s]\033[0m Received path \033[1m%s\033[0m '
-                'from \033[1m%s\033[0m#\033[1m%s\033[0m (%s)')
-                % (ph.riddle_alias, ph.path, ph.username, ph.disc, tnow))
+        if status_code != 404: 
+            print(('\033[1m[%s]\033[0m Received path ' \
+                    '\033[3m\033[1m%s\033[0m\033[0m ' \
+                    'from \033[1m%s\033[0m#\033[1m%s\033[0m (%s)')
+                    % (ph.riddle_alias, ph.path, ph.username, ph.disc, tnow))
+        else:
+            print(('\033[1m[%s]\033[0m Received path ' \
+                    '\033[3m\033[9m%s\033[0m\033[0m ' \
+                    'from \033[1m%s\033[0m#\033[1m%s\033[0m (%s)')
+                    % (ph.riddle_alias, ph.path, ph.username, ph.disc, tnow))
+            return 'Page not found', 404
     
     # Everything's good
     return 'Success!', 200
