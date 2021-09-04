@@ -127,7 +127,8 @@
             {% set player = accounts[user['username']] %}
             <a href="#" title="{{ player['username'] }}">
               {% set tag = player['username'] + '#' + player['discriminator'] %}
-              <img width="50" height="50" class="avatar-small" src="{{ avatar_urls[tag] }}">
+              {% set url = avatar_urls[tag] if tag in avatar_urls else '/static/images/locked.png' %}
+              <img width="50" height="50" class="avatar-small" src="{{ url }}">
             </a>
           {% endfor %}
           </div>
