@@ -1,14 +1,19 @@
-from quart import Blueprint, request, render_template
+from quart import Blueprint, request, render_template, abort
+from jinja2.exceptions import TemplateNotFound
 
 # Create app blueprint
 info = Blueprint('info', __name__)
 
 
-@info.route('/about')
-@info.route('/privacy-policy')
-async def about():
-    page = request.url.rsplit('/', maxsplit=1)[1] + '.htm'
-    return await render_template(page)
+@info.route('/<page>')
+async def info_page(page: str):
+    '''Simply show a info page by rendering its immediate template.
+    Throws 404 if such template doesn't exist.'''
+    page += '.htm'
+    try:
+        return await render_template(page)
+    except TemplateNotFound:
+        abort(404)
 
 
 @info.route('/thedudedude')
