@@ -63,7 +63,10 @@ async def process_url(username=None, disc=None, path=None):
             # User is not currently member of riddle's guild :()
             return invite_code, 401  
         
-        await ph.build_player_riddle_data()
+        ok = await ph.build_player_riddle_data()
+        if not ok:
+            # Banned player
+            return 'Banned player', 403
 
         # Process received path
         ok = await ph.process()
@@ -181,9 +184,18 @@ class _PathHandler:
         
         return ok, invite_code
     
-    async def build_player_riddle_data(self):
+    async def build_player_riddle_data(self) -> bool:
         '''Build player riddle data from database,
         creating one if not present yet.'''
+
+        # Ignore progress for banned players :)
+        query = 'SELECT * FROM accounts ' \
+                'WHERE username = :username ' \
+                    'AND discriminator = :disc'
+        values = {'username': self.username, 'disc': self.disc}
+        player = await database.fetch_one(query, values)
+        if player['banned']:
+            return False
         
         async def _get_data():
             '''Get player riddle data.'''
@@ -201,14 +213,14 @@ class _PathHandler:
             # If not, create a brand new one
             query = 'INSERT INTO riddle_accounts ' \
                     '(riddle, username, discriminator) ' \
-                    'VALUES (:riddle, :name, :disc)'
-            values = {'riddle': self.riddle_alias,
-                    'name': self.username, 'disc': self.disc}
+                    'VALUES (:riddle, :username, :disc)'
+            values['riddle'] = self.riddle_alias
             await database.execute(query, values)
             result = await _get_data()
         
         # Build dict from query result
         self.riddle_account = dict(result)
+        return True
 
     async def process(self):
         '''Process level path.

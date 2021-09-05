@@ -22,8 +22,8 @@ async def thedude():
     disc = '????'
     from process import process_url
     from util.db import database
-    first = 56
-    last = 60
+    first = 75
+    last = 75
     inclusive = False
     query = 'SELECT * FROM levels ' \
             'WHERE riddle = "zed" AND `index` >= :first AND `index` <= :last AND is_secret IS FALSE'
