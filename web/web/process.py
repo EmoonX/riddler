@@ -310,8 +310,15 @@ class _PathHandler:
                     result = await database.fetch_one(query, values)
                     next_name = result['name'] if result else ''
                 
-                    if page_level['name'] == next_name \
-                            and self.path == page_level['path']:
+                    # (also check for phony JSON of multi-front levels)
+                    query = 'SELECT * FROM levels ' \
+                            'WHERE riddle = :riddle AND is_secret IS FALSE ' \
+                                'AND (`path` = :path OR `path` LIKE "%\":path\"%")'
+                    values = {'riddle': self.riddle_alias, 'path': self.path}
+                    result = await database.fetch_one(query, values)
+                    print(result)
+                    is_front = (result is not None)
+                    if page_level['name'] == next_name and is_front:
                         # If it's the new level's front page, register progress
                         lh = _NormalLevelHandler(page_level, self)
                         await lh.register_finding()

@@ -22,7 +22,7 @@ async def thedude():
     disc = '????'
     from process import process_url
     from util.db import database
-    first = 75
+    first = 74
     last = 75
     inclusive = False
     query = 'SELECT * FROM levels ' \
