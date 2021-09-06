@@ -164,12 +164,9 @@ async def levels(alias: str):
         if aux:
             removed_pages = json.loads(aux)
             for page in removed_pages:
-                query = 'DELETE FROM level_pages ' + \
+                query = 'UPDATE level_pages ' \
+                        'SET level_name = NULL ' \
                         'WHERE riddle = :riddle AND `path` = :path'
-                values = {'riddle': alias, 'path': page}
-                await database.execute(query, values)
-                query = 'INSERT IGNORE INTO level_pages_null ' + \
-                        'VALUES (:riddle, :path)'
                 await database.execute(query, values)
 
         # Update pages data to changed or new levels
@@ -180,17 +177,11 @@ async def levels(alias: str):
                 continue
             added_pages = json.loads(aux)
             for page in added_pages:
-                # Delete page from old table, whichever it is
-                for table in ('level_pages', 'level_pages_null'):
-                    query = ('DELETE FROM %s ' % table) + \
-                            'WHERE riddle = :riddle AND path = :path'
-                    values = {'riddle': alias, 'path': page}
-                    await database.execute(query, values)
-
-                # Insert new page into table
+                # Update path level on table
                 level_to = form['%s-name' % index]
-                query = 'INSERT INTO level_pages ' \
-                        'VALUES (:riddle, :path, :level_name)'
+                query = 'UPDATE level_pages ' \
+                        'SET level_name = :level_name ' \
+                        'WHERE riddle = :riddle AND `path` = :path'
                 values = {'riddle': alias, 'path': page,
                         'level_name': level_to}
                 await database.execute(query, values)
@@ -235,10 +226,7 @@ async def get_pages(alias: str) -> str:
         return msg, status
     
     # Build list of paths from database data
-    query = 'SELECT riddle, path, level_name FROM level_pages ' \
-            'WHERE riddle = :riddle ' \
-            'UNION ' \
-            'SELECT riddle, path, NULL FROM level_pages_null ' \
+    query = 'SELECT * FROM level_pages ' \
             'WHERE riddle = :riddle ' \
             'ORDER BY `path`'
     values = {'riddle': alias}
@@ -310,23 +298,15 @@ async def update_pages(alias: str):
     data = filter(None, data.replace('\r', '').split('\n'))
 
     for page in data:
-        # Check if page is already in database, either as
-        # part of a level or not
-        query = 'SELECT riddle, `path` FROM level_pages ' \
-                'WHERE riddle = :riddle AND `path` = :path ' \
-                'UNION ALL ' \
-                'SELECT riddle, `path` FROM level_pages_null ' \
-                'WHERE riddle = :riddle AND `path` = :path'
-        values = {'riddle': alias, 'path': page}
-        already_exists = await database.fetch_one(query, values)
-        if not already_exists:
+        try:
             # Add page to riddle database
-            query = 'INSERT INTO level_pages_null ' \
-                'VALUES (:riddle, :path)'
+            query = 'INSERT INTO level_pages (`riddle`, `path`) ' \
+                    'VALUES (:riddle, :path)'
+            values = {'riddle': alias, 'path': page}
             await database.execute(query, values)
             print(('> \033[1m[%s]\033[0m Added page \033[1m%s\033[0m ' \
                     'to database!') % (alias, page))
-        else:
+        except IntegrityError:
             # Page already present, so nothing to do
             print('> \033[1m[%s]\033[0m Skipping page \033[1m%s\033[0m... ' \
                     % (alias, page))
