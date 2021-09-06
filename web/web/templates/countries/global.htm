@@ -24,22 +24,27 @@
             </a>
             <div class="name">{{ name }}</div>
           </div>
+          <figure class="honors" style="width: 200px">
+            {% set count = country['honors'] %}
+            <var class='count'>{{ count }}</var>
+            <figcaption>🏅 honor(s) received</figcaption>
+          </figure>
           <figure class="player-count">
             {% set count = country['player_count'] %}
             <var class='count'>{{ count }}</var>
             <figcaption>certified player(s)</figcaption>
+          </figure>
+          <figure class="score average">
+            {% set average = country['average_score']|round %}
+            {% set zeroes = '0' * 6 %}
+            <var class="points"><var class="zeroes">{{ zeroes }}</var>{{ average }}</var>
+            <figcaption>average score</figcaption>
           </figure>
           <figure class="score">
             {% set score = country['total_score'] %}
             {% set zeroes = '0' * 6 %}
             <var class="points"><var class="zeroes">{{ zeroes }}</var>{{ score }}</var>
             <figcaption>total points</figcaption>
-          </figure>
-          <figure class="score average">
-            {% set average = country['avg_score']|round %}
-            {% set zeroes = '0' * 6 %}
-            <var class="points"><var class="zeroes">{{ zeroes }}</var>{{ average }}</var>
-            <figcaption>average score</figcaption>
           </figure>
         </div>
       {% endfor %}

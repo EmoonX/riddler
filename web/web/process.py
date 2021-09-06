@@ -316,7 +316,6 @@ class _PathHandler:
                                 'AND (`path` = :path OR `path` LIKE "%\":path\"%")'
                     values = {'riddle': self.riddle_alias, 'path': self.path}
                     result = await database.fetch_one(query, values)
-                    print(result)
                     is_front = (result is not None)
                     if page_level['name'] == next_name and is_front:
                         # If it's the new level's front page, register progress
