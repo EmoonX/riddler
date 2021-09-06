@@ -13,35 +13,30 @@ country_names = {}
 async def global_list():
     '''Global countries list.'''
 
-    # Get countries data (player count and score) from DB
-    query = 'SELECT * FROM accounts ' \
-            'WHERE global_score > 0 '
-    players = await database.fetch_all(query)
-
-    # Check completion
-    query = 'SELECT country, COUNT(*) AS count ' \
-                'FROM riddle_accounts AS racc ' \
+    # Get player (+ riddle account) data from DB
+    query = 'SELECT racc.*, acc.country FROM riddle_accounts AS racc ' \
             'INNER JOIN accounts AS acc ' \
                 'ON racc.username = acc.username ' \
                     'AND racc.discriminator = acc.discriminator ' \
-            'WHERE current_level = "🏅" ' \
-            'GROUP BY racc.username, racc.discriminator '
-    result = await database.fetch_all(query)
-    honors = {row['country']: row['count'] for row in result}   
+            'WHERE score > 0 '
+    riddle_accounts = await database.fetch_all(query)
 
     countries = {}
-    for player in players:
-        country = player['country']
+    for racc in riddle_accounts:
+        country = racc['country']
         if not country in countries:
             countries[country] = {
-                'honors': 0, 'player_count': 0, 'total_score': 0
+                'honors': 0, 'players': set(), 'total_score': 0
             }
-        if country in honors:
-            countries[country]['honors'] += honors[country]
-        countries[country]['player_count'] += 1
-        countries[country]['total_score'] += player['global_score']
+        discord_handle = '%s#%s' \
+                % (racc['username'], racc['discriminator'])
+        if racc['current_level'] == '🏅':
+            countries[country]['honors'] += 1
+        countries[country]['players'].add(discord_handle)
+        countries[country]['total_score'] += racc['score']
     
     for country in countries.values():
+        country['player_count'] = len(country['players'])
         country['average_score'] = \
                 int(country['total_score'] / country['player_count'])
     
