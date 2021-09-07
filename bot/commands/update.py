@@ -2,9 +2,10 @@ import json
 import logging
 import traceback
 
-from aiohttp import web
 import discord
 from discord.utils import get
+from discord.errors import Forbidden
+from aiohttp import web
 
 from bot import bot
 from riddle import riddles, get_ancestor_levels
@@ -43,16 +44,19 @@ async def insert(request):
     async def clear_mastered():
         '''Remove mastered roles and 💎 in nick from respective members.'''
         for member in guild.members:
-            if mastered_role in member.roles:
-                await member.remove_roles(mastered_role)
-                if not member.nick:
-                    continue
+            if not mastered_role in member.roles:
+                continue
+            await member.remove_roles(mastered_role)
+            try:
                 if alias != 'genius':
                     # Swap 💎 back for 🏅
                     await update_nickname(member, '🏅')
                 else:
                     # Swap 💎 for set progress
                     await multi_update_nickname(alias, member)
+            except Forbidden:
+                pass
+
 
     async def add(level: dict):
         '''Add guild channels and roles.'''
@@ -119,9 +123,9 @@ async def insert(request):
                         await member.remove_roles(completed_role)
                         await member.add_roles(last_reached)
                         await update_nickname(member, '[%s]' % last_level['name'])
-            else:
-                # Just removed "mastered" status from respective members
-                await clear_mastered()
+
+            # Just removed "mastered" status from respective members
+            await clear_mastered()
         
         else:
             # Add new level immediately to riddle's level list
