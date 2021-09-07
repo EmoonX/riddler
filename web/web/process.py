@@ -78,9 +78,10 @@ async def process_url(username=None, disc=None, path=None):
         tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         if status_code != 404: 
             print(('\033[1m[%s]\033[0m Received path ' \
-                    '\033[3m\033[1m%s\033[0m\033[0m ' \
+                    '\033[3m\033[1m%s\033[0m \033[1m(%s)\033[0m ' \
                     'from \033[1m%s\033[0m#\033[1m%s\033[0m (%s)')
-                    % (ph.riddle_alias, ph.path, ph.username, ph.disc, tnow))
+                    % (ph.riddle_alias, ph.path, ph.path_level,
+                        ph.username, ph.disc, tnow))
         else:
             print(('\033[1m[%s]\033[0m Received path ' \
                     '\033[3m\033[9m%s\033[0m\033[0m ' \
@@ -113,6 +114,9 @@ class _PathHandler:
 
     path: str
     '''Path to be processed by handler'''
+
+    path_level: str
+    '''The level path corresponds to, or `None` if not part of any'''
 
     status_code: int
     '''Real status code of requested page (either 200 or 404)'''
@@ -272,9 +276,10 @@ class _PathHandler:
             return False
         
         # Get requested page's level info from DB
+        self.path_level = page['level_name']
         query = 'SELECT * FROM levels ' \
                 'WHERE riddle = :riddle AND name = :name'
-        values = {'riddle': self.riddle_alias, 'name': page['level_name']}
+        values = {'riddle': self.riddle_alias, 'name': self.path_level}
         page_level = await database.fetch_one(query, values)
         
         current_solved = False
@@ -396,7 +401,7 @@ class _PathHandler:
                     'AND level_name = :level_name '
         values = {'riddle': self.riddle_alias,
                 'username': self.username, 'disc': self.disc,
-                'level_name': page['level_name']}
+                'level_name': self.path_level}
         is_unlocked = await database.fetch_one(query, values)
         if not is_unlocked:
             values['level_name'] = None
@@ -472,7 +477,7 @@ class _PathHandler:
                             ':level_name, :path, :time)'
                 values = {'riddle': self.riddle_alias,
                         'username': self.username, 'disc': self.disc,
-                        'level_name': page['level_name'],
+                        'level_name': self.path_level,
                         'path': self.path, 'time': tnow}
                 await database.execute(query, values)
             except IntegrityError:
