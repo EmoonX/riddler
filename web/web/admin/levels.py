@@ -159,7 +159,7 @@ async def levels(alias: str):
             # Update Discord guild channels and roles with new levels info
             await bot_request('insert', alias=alias, levels=levels)
         
-        # Delete removed pages from main table and insert them into null one
+        # Update removed pages `level_name` field with NULL value
         aux = form['removed-pages']
         if aux:
             removed_pages = json.loads(aux)
@@ -292,23 +292,40 @@ async def level_row():
 async def update_pages(alias: str):
     '''Update pages list with data sent by admin in text format.'''
     
-    # Decode received text data and split into list (ignore empty)
+    # Decode received text data and split into list (ignore empty).
+    # Also get rid of "carriage hellturns", swap `\` for `/``,
+    # and ignore non-file paths.
     data = await request.data
     data = data.decode('utf-8')
-    data = filter(None, data.replace('\r', '').split('\n'))
+    data = list(filter(None, data.replace('\r', '').replace('\\', '/').split('\n')))
+    data = [path for path in sorted(data) if ('/' in path and '.' in path[-5:])]
 
-    for page in data:
+    # Find the longest common prefix amongst all paths
+    longest_prefix = data[0]
+    for path in data[1:]:
+        k = min(len(longest_prefix), len(path))
+        for i in range(k):
+            if path[i] != longest_prefix[i]:
+                longest_prefix = longest_prefix[:i]
+                break
+    
+    # Remove the useless prefix from paths,
+    # guaranteeing they start with a `/`
+    data = ['/' + path.replace(longest_prefix, '', 1)
+            for path in data]
+
+    for path in data:
+        # Add page to riddle database
+        query = 'INSERT INTO level_pages (`riddle`, `path`) ' \
+                'VALUES (:riddle, :path)'
+        values = {'riddle': alias, 'path': path}
         try:
-            # Add page to riddle database
-            query = 'INSERT INTO level_pages (`riddle`, `path`) ' \
-                    'VALUES (:riddle, :path)'
-            values = {'riddle': alias, 'path': page}
             await database.execute(query, values)
             print(('> \033[1m[%s]\033[0m Added page \033[1m%s\033[0m ' \
-                    'to database!') % (alias, page))
+                    'to database!') % (alias, path))
         except IntegrityError:
             # Page already present, so nothing to do
             print('> \033[1m[%s]\033[0m Skipping page \033[1m%s\033[0m... ' \
-                    % (alias, page))
+                    % (alias, path))
             
     return 'OK', 200
