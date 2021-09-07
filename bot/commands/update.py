@@ -89,9 +89,10 @@ async def insert(request):
             riddle.levels[level['name']] = level
             
             # Set read permissions to completed and set completion roles
-            set_role = set_completion_roles[level['discord_category']]
             await channel.set_permissions(completed_role, read_messages=True)
-            await channel.set_permissions(set_role, read_messages=True)
+            if alias == 'genius':
+                set_role = set_completion_roles[level['discord_category']]
+                await channel.set_permissions(set_role, read_messages=True)
             
             # Set read permission to current roles for 
             # this channel and every other ancestor level channel

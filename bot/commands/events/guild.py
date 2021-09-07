@@ -23,12 +23,9 @@ class Guild(commands.Cog):
 
         # Pick up honor and milestone role names from DB
         query = 'SELECT * FROM riddles ' \
-                'INNER JOIN milestones ' \
-                    'ON riddles.alias = milestones.riddle ' \
                 'WHERE guild_id = :guild_id'
         values = {'guild_id': before.guild.id}
-        result = await database.fetch_all(query, values)
-        riddle = result[0]
+        riddle = await database.fetch_one(query, values)
 
         query = None
         values = {'riddle': riddle['alias'], 'new_name': after.name}
@@ -43,7 +40,11 @@ class Guild(commands.Cog):
                         'WHERE alias = :riddle'
         if not query:
             # Otherwise, check if milestone role was changed
-            milestones = [row['role'] for row in result]
+            query = 'SELECT * FROM milestones ' \
+                    'WHERE riddle = :riddle'
+            result = await database.fetch_all(query,
+                    {'riddle': riddle['alias']})
+            milestones = set(row['role'] for row in result)
             if before.name in milestones:
                 query = 'UPDATE milestones ' \
                         'SET role = :new_name ' \
