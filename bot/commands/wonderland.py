@@ -1,6 +1,8 @@
 from discord.ext import commands
 from discord import Member
 from discord.utils import get
+from discord.errors import Forbidden
+from flag import flag
 
 from bot import bot
 from util.db import database
@@ -14,10 +16,30 @@ class Wonderland(commands.Cog):
     
     @commands.Cog.listener()
     async def on_member_join(self, member: Member):
-        '''Grant (global) score-based role upon player joining Wonderland.'''
+        '''Do some member procedures upon joining Wonderland.'''
         guild = member.guild
         if guild.name == 'Riddler\'s Wonderland II':
-            await update_score_role(member)        
+            await update_country_nick(member)
+            await update_score_role(member)
+
+
+async def update_country_nick(member: Member):
+    '''Add emoji flag (for player's country) to member's nickname.'''
+
+    # Get player's country from DB
+    query = 'SELECT * FROM accounts ' \
+            'WHERE username = :username AND discriminator = :disc'
+    values = {'username': member.name, 'disc': member.discriminator}
+    result = await database.fetch_one(query, values)
+    country = result['country']
+
+    # Update member's nickname
+    emoji_flag = flag(country)
+    nick = member.name + (' %s' % emoji_flag)
+    try:
+        await member.edit(nick=nick)
+    except Forbidden:
+        pass
 
 
 async def update_score_role(member: Member):
