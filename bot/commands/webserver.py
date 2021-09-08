@@ -105,8 +105,6 @@ async def unlock(request):
                 'username': data['username'], 'disc': data['disc']}
         result = await database.fetch_one(query, values)
         user_completed_count = result['cnt']
-        logging.info(total_level_count)
-        logging.info(user_completed_count)
         if total_level_count == user_completed_count:
             # Check if player unlocked all achievements
             query = 'SELECT * FROM achievements ' \

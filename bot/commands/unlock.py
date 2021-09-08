@@ -43,7 +43,6 @@ class UnlockHandler:
             self.member = get(wonderland.members,
                     name=username, discriminator=disc)
                         
-    
     async def _send(self, text: str,
             channel: abc.Messageable = None, **kwargs):
         '''Try to send a message to member/channel.
@@ -156,7 +155,6 @@ class UnlockHandler:
                 
                 # Update multi-nickname
                 await multi_update_nickname(self.alias, self.member)
-
 
     async def advance(self, level: dict):
         '''Advance to further level when player arrives at a level front page.
