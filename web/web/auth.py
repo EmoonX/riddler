@@ -130,5 +130,5 @@ async def logout():
     if 'user' in session:
         session.pop('user')
 
-    # Return something
-    return 'Logged out. :('
+    # Redirect to front page
+    return redirect(url_for('players.global_list'))
