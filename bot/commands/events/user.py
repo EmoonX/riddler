@@ -21,18 +21,18 @@ class User(commands.Cog):
         query = 'SELECT * FROM riddles ' \
                 'WHERE guild_id = :id'
         values = {'id': member.guild.id}
-        result = await database.fetch_one(query, values)
-        if not result:
+        riddle = await database.fetch_one(query, values)
+        if not riddle:
             # Nothing to do in e.g Wonderland
             return
-        alias = result['alias']
+        alias = riddle['alias']
 
         # Get player riddle account
         query = 'SELECT * FROM riddle_accounts ' \
-                'WHERE riddle = :alias ' \
-                    'AND username = :name AND discriminator = :disc'
-        values = {'alias': alias,
-                'name': member.name, 'disc': member.discriminator}
+                'WHERE riddle = :riddle ' \
+                    'AND username = :username AND discriminator = :disc'
+        values = {'riddle': alias,
+                'username': member.name, 'disc': member.discriminator}
         account = await database.fetch_one(query, values)
         if not account:
             # Member still hasn't started riddle, so nothing to do
@@ -41,14 +41,34 @@ class User(commands.Cog):
         # Build UnlockHandler object for unlocking procedures
         uh = UnlockHandler(alias, member.name, member.discriminator)
         
-        # Advance member's progress to current reached normal level
         current_level = account['current_level']
         if current_level != '🏅':
+            # Advance member's progress to current reached normal level
             query = 'SELECT * FROM levels ' \
-                    'WHERE riddle = :alias AND name = :level_name'
-            values = {'alias': alias, 'level_name': current_level}
+                    'WHERE riddle = :riddle AND name = :level_name'
+            values = {'riddle': alias, 'level_name': current_level}
             level = await database.fetch_one(query, values)
             await uh.advance(level)
+        else:
+            # Grant completed (and possibly mastered) honor(s)
+            completed_role = get(member.guild.roles,
+                    name=riddle['completed_role'])
+            await member.add_roles(completed_role)
+            query = 'SELECT * FROM achievements ' \
+                    'WHERE riddle = :riddle AND `title` NOT IN (' \
+                        'SELECT `title` FROM user_achievements ' \
+                        'WHERE riddle = :riddle ' \
+                            'AND username = :username ' \
+                            'AND discriminator = :disc)'
+            has_locked_cheevo = await database.fetch_one(query, values)
+            if has_locked_cheevo:
+                await update_nickname(member, '🏅')
+            else:
+                mastered_role = get(member.guild.roles,
+                        name=riddle['mastered_role'])
+                await member.add_roles(mastered_role)
+                await update_nickname(member, '💎')
+
         
         # Search for reached/solved secret levels and grant roles to member
         query = 'SELECT * FROM user_levels ' \
