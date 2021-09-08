@@ -59,8 +59,18 @@ async def register():
         return render_template('players/register.htm',
                 user=user, msg=msg)
     
-    # Render registration page on GET
+    # Get authenticated Discord user
     user = await discord.get_user()
+
+    # If account was already created, nothing to do here
+    query = 'SELECT * FROM accounts ' \
+            'WHERE username = :username AND discriminator = :disc'
+    values = {'username': user.name, 'disc': user.discriminator}
+    already_exists = await database.fetch_one(query, values)
+    if already_exists:
+        return redirect(url_for('info.about'))
+    
+    # Render registration page on GET
     if request.method == 'GET':
         return await r('')
     
@@ -73,9 +83,8 @@ async def register():
     # Insert value on accounts table
     query = 'INSERT INTO accounts ' \
             '(username, discriminator, country) ' \
-            'VALUES (:name, :disc, :country)'
-    values = {'name': user.name, 'disc': user.discriminator,
-            'country': form['country']}
+            'VALUES (:username, :disc, :country)'
+    values['country'] = form['country']
     await database.execute(query, values)
 
     # Redirect to post-registration page
