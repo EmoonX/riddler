@@ -4,6 +4,7 @@ from discord import abc, Guild, Member, File
 from discord.utils import get
 from discord.errors import Forbidden
 
+from bot import bot
 from riddle import riddles, get_ancestor_levels
 from util.db import database
 
@@ -24,6 +25,9 @@ class UnlockHandler:
     member: Member
     '''Discord guild member, the one to unlock things for'''
 
+    in_riddle_guild: bool
+    '''Player is member of the riddle guild per se'''
+
     def __init__(self, alias: str, username: str, disc: str):
         '''Build handler for guild `alias` and member `username#disc`.'''
         self.alias = alias
@@ -32,6 +36,13 @@ class UnlockHandler:
         self.levels = riddle.levels
         self.member = get(riddle.guild.members,
                 name=username, discriminator=disc)
+        self.in_riddle_guild = (self.member is not None)
+        if not self.in_riddle_guild:
+            # Not a member of riddle guild, so use Wonderland instead
+            wonderland = get(bot.guilds, name='Riddler\'s Wonderland II')
+            self.member = get(wonderland.members,
+                    name=username, discriminator=disc)
+                        
     
     async def _send(self, text: str,
             channel: abc.Messageable = None, **kwargs):
@@ -47,10 +58,16 @@ class UnlockHandler:
         silent = result['silence_notifs']
         if silent:
             return
+        
+        if channel:
+            # If not a member of riddle guild, no guild messages to send
+            if not self.in_riddle_guild:
+                return
+        else:
+            # Message is a DM to member
+            channel = self.member
 
         # Try to send message to member (default) or channel
-        if not channel:
-            channel = self.member
         try:
             await channel.send(text, **kwargs)
         except Forbidden:
@@ -79,7 +96,7 @@ class UnlockHandler:
         await self._send(text)
         
         # Send also to channels if first to solve level
-        if first_to_solve:
+        if first_to_solve and self.in_riddle_guild:
             text = '**🏅 FIRST TO SOLVE 🏅**\n'
             text += ('**<@!%d>** has completed level **%s**! ' \
                     'Congratulations!') % (self.member.id, name)
@@ -90,14 +107,16 @@ class UnlockHandler:
                 await self._send(text, achievements)
         
         if milestone:
-            # Add special milestone role if one was reached
+            # Congratulatory DM
+            text = '**[%s] 🗿 MILESTONE REACHED 🗿**\n' % self.guild.name
+            text += 'You have reached milestone **@%s**!' % milestone
+            await self._send(text)
+            if not self.in_riddle_guild:
+                return
+            
+            # Add special milestone role and congratulate in channel
             role = get(self.guild.roles, name=milestone)
             await self.member.add_roles(role)
-            text = '**[%s] 🗿 MILESTONE REACHED 🗿**\n' % self.guild.name
-            text += 'You have unlocked special role **@%s**!' % milestone
-            await self._send(text)
-            
-            # Congratulate milestone reached on respective channel
             channel = get(self.guild.channels, name=level['discord_name'])
             text = ('**<@!%d>** has beaten level **%s** ' \
                         'and is now part of **@%s**! Congratulations!') \
@@ -110,15 +129,18 @@ class UnlockHandler:
             values = {'riddle': self.alias, 'level_name': level['name']}
             completed_set = await database.fetch_one(query, values)
             if completed_set:
-                # Add special set completion role
+                # Congratulatory DM
                 role_name = completed_set['completion_role']
+                text = '**[%s] 🗿 LEVEL SET BEATEN 🗿**\n' % self.guild.name
+                text += 'You have unlocked special title **@%s**!' % role_name
+                await self._send(text)
+                if not self.in_riddle_guild:
+                    return
+
+                # Add special set completion role and remove
+                # player's final level's 'reached-' role
                 completion_role = get(self.guild.roles, name=role_name)
                 await self.member.add_roles(completion_role)
-                text = '**[%s] 🗿 LEVEL SET BEATEN 🗿**\n' % self.guild.name
-                text += 'You have unlocked special role **@%s**!' % role_name
-                await self._send(text)
-
-                # Remove player's final level's 'reached-' role
                 role_name = 'reached-' + level['discord_name']
                 reached_role = get(self.guild.roles, name=role_name)
                 await self.member.remove_roles(reached_role)
@@ -139,6 +161,10 @@ class UnlockHandler:
     async def advance(self, level: dict):
         '''Advance to further level when player arrives at a level front page.
         "reached" role is granted to user and thus given access to channel(s).'''
+
+        if not self.in_riddle_guild:
+            # All procedures here are guild-related
+            return
 
         # Remove ancestors' "reached" role from user
         if self.alias == 'genius':
@@ -178,13 +204,6 @@ class UnlockHandler:
     async def secret_found(self, level: dict):
         '''Grant access to secret channel.'''
         
-        # Grant "reached" role
-        discord_name = level['discord_name']
-        if not discord_name:
-            discord_name = level['name']
-        reached = get(self.guild.roles, name=('reached-%s' % discord_name))
-        await self.member.add_roles(reached)
-        
         # Log reaching secret and send message to member
         name = level['name']
         if level['latin_name']:
@@ -197,22 +216,20 @@ class UnlockHandler:
                 'Congratulations!') \
                 % (self.guild.name, name)
         await self._send(text)
+        if not self.in_riddle_guild:
+            return
+
+        # Grant "reached" role
+        discord_name = level['discord_name']
+        if not discord_name:
+            discord_name = level['name']
+        reached = get(self.guild.roles, name=('reached-%s' % discord_name))
+        await self.member.add_roles(reached)
 
     async def secret_solve(self, level: dict, points: int,
             first_to_solve=False):
         '''Solve secret level and grant special colored role.'''
         
-        # Get roles from guild
-        discord_name = level['discord_name']
-        if not discord_name:
-            discord_name = level['name']
-        reached = get(self.guild.roles, name=('reached-%s' % discord_name))
-        solved = get(self.guild.roles, name=('solved-%s' % discord_name))
-        
-        # Remove old "reached" role and add "solved" role to member
-        await self.member.remove_roles(reached)
-        await self.member.add_roles(solved)
-
         # Log solving procedure and send message to member
         n = 'DCBAS'.find(level['rank']) + 1
         stars = '★' * n
@@ -227,8 +244,21 @@ class UnlockHandler:
                     'and won **%d** points!\n') \
                 % (self.guild.name, name, stars, points)
         await self._send(text)
+        if not self.in_riddle_guild:
+            return
+
+        # Get roles from guild
+        discord_name = level['discord_name']
+        if not discord_name:
+            discord_name = level['name']
+        reached = get(self.guild.roles, name=('reached-%s' % discord_name))
+        solved = get(self.guild.roles, name=('solved-%s' % discord_name))
         
-        # Send congratulations message to channel (and cheevos one) :)
+        # Remove old "reached" role and add "solved" role to member
+        await self.member.remove_roles(reached)
+        await self.member.add_roles(solved)
+        
+        # Send congratulations message to channel (and cheevos one?) :)
         if self.member == self.guild.owner:
             return
         channel = get(self.guild.channels, name=discord_name)
@@ -270,6 +300,17 @@ class UnlockHandler:
     async def game_completed(self):
         '''Do the honors upon player completing game.'''
 
+        # Player has completed the game (for now?)
+        logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m ' \
+                'has finished the game!') \
+                % (self.guild.name,
+                    self.member.name, self.member.discriminator))
+        text = '**[%s] 🏅 GAME COMPLETED 🏅**\n' % self.guild.name
+        text += 'You just completed the game! **Congratulations!**'
+        await self._send(text)
+        if not self.in_riddle_guild:
+            return
+
         # Get completed role name from DB    
         query = 'SELECT * FROM riddles ' \
                 'WHERE alias = :alias'
@@ -297,18 +338,22 @@ class UnlockHandler:
         # Update nickname with winner's badge
         await update_nickname(self.member, '🏅')
 
-        # Player has completed the game (for now?)
-        logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m ' \
-                'has finished the game!') \
-                % (self.guild.name,
-                    self.member.name, self.member.discriminator))
-        text = '**[%s] 🏅 GAME COMPLETED 🏅**\n' % self.guild.name
-        text += 'You just completed the game! **Congratulations!**'
-        await self._send(text)
-
     async def game_mastered(self, alias: str):
         '''Do the honors upon player mastering game,
         i.e beating all levels and finding all achievements.'''
+
+        # Player has mastered the game (for now?)
+        logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m ' \
+                'has mastered the game!') \
+                % (self.guild.name,
+                    self.member.name, self.member.discriminator))
+        text = '**[%s] 💎 GAME MASTERED 💎**\n' % self.guild.name
+        text += 'You have beaten all levels, found all achievements ' \
+                'and scored every single possible point in the game! ' \
+                '**Outstanding!**'
+        await self._send(text)
+        if not self.in_riddle_guild:
+            return
 
         # Get mastered role name from DB    
         query = 'SELECT * FROM riddles ' \
@@ -323,17 +368,6 @@ class UnlockHandler:
 
         # Update nickname with shiny 💎
         await update_nickname(self.member, '💎')
-        
-        # Player has mastered the game (for now?)
-        logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m ' \
-                'has mastered the game!') \
-                % (self.guild.name,
-                    self.member.name, self.member.discriminator))
-        text = '**[%s] 💎 GAME MASTERED 💎**\n' % self.guild.name
-        text += 'You have beaten all levels, found all achievements ' \
-                'and scored every single possible point in the game! ' \
-                '**Outstanding!**'
-        await self._send(text)
 
 
 async def update_nickname(member: Member, s: str):
