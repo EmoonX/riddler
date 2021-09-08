@@ -149,13 +149,13 @@ class _PathHandler:
 
         # Check if user is member of riddle guild
         is_member = await bot_request('is-member-of-guild',
-                guild_id=riddle['guild_id'],
+                guild_id=859797827554770955,
                 username=user.name, disc=user.discriminator)
         ok = True
         invite_code = None
         if is_member == 'False' and riddle['invite_code']:
             ok = False
-            invite_code = riddle['invite_code']
+            invite_code = 'ktaPPtnPSn'
 
         # Save basic riddle info
         self.riddle_alias = riddle['alias']
