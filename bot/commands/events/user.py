@@ -68,7 +68,6 @@ class User(commands.Cog):
                         name=riddle['mastered_role'])
                 await member.add_roles(mastered_role)
                 await update_nickname(member, '💎')
-
         
         # Search for reached/solved secret levels and grant roles to member
         query = 'SELECT * FROM user_levels ' \

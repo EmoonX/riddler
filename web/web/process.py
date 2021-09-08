@@ -36,6 +36,7 @@ async def process_url(username=None, disc=None, path=None):
         status = 401 if request.method == 'POST' else 200
         return 'Not logged in', status
     
+    message, status_code = 'Success!', 200
     if path or request.method == 'POST':
         # Receive path from request
         if not path:
@@ -63,7 +64,7 @@ async def process_url(username=None, disc=None, path=None):
             # User is not currently member of riddle's guild :()
             return invite_code, 401  
         
-        ok = await ph.build_player_riddle_data()
+        ok, invite_code = await ph.build_player_riddle_data()
         if not ok:
             # Banned player
             return 'Banned player', 403
@@ -72,25 +73,30 @@ async def process_url(username=None, disc=None, path=None):
         ok = await ph.process()
         if not ok and status_code != 404:
             # Page exists, but it's not a level one
-            return 'Not a level page', 412
+            message, status_code = 'Not a level page', 412
 
         # Log received path with timestamp
         tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-        if status_code != 404: 
+        if status_code not in (404, 412): 
             print(('\033[1m[%s]\033[0m Received path ' \
                     '\033[3m\033[1m%s\033[0m \033[1m(%s)\033[0m ' \
                     'from \033[1m%s\033[0m#\033[1m%s\033[0m (%s)')
                     % (ph.riddle_alias, ph.path, ph.path_level,
                         ph.username, ph.disc, tnow))
-        else:
+        elif status_code == 404:
             print(('\033[1m[%s]\033[0m Received path ' \
                     '\033[3m\033[9m%s\033[0m\033[0m ' \
                     'from \033[1m%s\033[0m#\033[1m%s\033[0m (%s)')
                     % (ph.riddle_alias, ph.path, ph.username, ph.disc, tnow))
-            return 'Page not found', 404
+            if status_code == 404:
+                message, status_code = 'Page not found', 404
+        
+        if invite_code:
+            # If starting a new riddle, return invite code to its guild
+            message, status_code = invite_code, 401
     
     # Everything's good
-    return 'Success!', 200
+    return message, status_code
 
 
 class _PathHandler:
@@ -151,11 +157,9 @@ class _PathHandler:
         is_member = await bot_request('is-member-of-guild',
                 guild_id=859797827554770955,
                 username=user.name, disc=user.discriminator)
-        ok = True
-        invite_code = None
-        if is_member == 'False' and riddle['invite_code']:
-            ok = False
-            invite_code = 'ktaPPtnPSn'
+        ok, invite_code = True, None
+        if is_member == 'False':
+            ok, invite_code = False, 'ktaPPtnPSn'
 
         # Save basic riddle info
         self.riddle_alias = riddle['alias']
@@ -188,7 +192,7 @@ class _PathHandler:
         
         return ok, invite_code
     
-    async def build_player_riddle_data(self) -> bool:
+    async def build_player_riddle_data(self) -> (bool, str):
         '''Build player riddle data from database,
         creating one if not present yet.'''
 
@@ -199,12 +203,12 @@ class _PathHandler:
         values = {'username': self.username, 'disc': self.disc}
         player = await database.fetch_one(query, values)
         if player['banned']:
-            return False
+            return False, None
         
         async def _get_data():
             '''Get player riddle data.'''
             query = 'SELECT * FROM riddle_accounts ' \
-                'WHERE riddle = :riddle AND ' \
+                    'WHERE riddle = :riddle AND ' \
                     'username = :name AND discriminator = :disc'
             values = {'riddle': self.riddle_alias,
                     'name': self.username, 'disc': self.disc}
@@ -212,19 +216,26 @@ class _PathHandler:
             return result
 
         # Check if player's riddle acount already exists
-        result = await _get_data()
-        if not result:
+        riddle_account = await _get_data()
+        invite_code = None
+        if not riddle_account:
             # If not, create a brand new one
             query = 'INSERT INTO riddle_accounts ' \
                     '(riddle, username, discriminator) ' \
                     'VALUES (:riddle, :username, :disc)'
             values['riddle'] = self.riddle_alias
             await database.execute(query, values)
-            result = await _get_data()
+            riddle_account = await _get_data()
+            
+            query = 'SELECT * FROM riddles ' \
+                    'WHERE alias = :riddle'
+            values = {'riddle': self.riddle_alias}
+            riddle = await database.fetch_one(query, values)
+            invite_code = riddle['invite_code']
         
         # Build dict from query result
-        self.riddle_account = dict(result)
-        return True
+        self.riddle_account = dict(riddle_account)
+        return True, invite_code
 
     async def process(self):
         '''Process level path.
