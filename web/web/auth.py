@@ -62,12 +62,12 @@ async def register():
     # Get authenticated Discord user
     user = await discord.get_user()
 
-    # If account was already created, nothing to do here
+    # If account has already been created, nothing to do here
     query = 'SELECT * FROM accounts ' \
             'WHERE username = :username AND discriminator = :disc'
     values = {'username': user.name, 'disc': user.discriminator}
-    already_exists = await database.fetch_one(query, values)
-    if already_exists:
+    already_created = await database.fetch_one(query, values)
+    if already_created:
         return redirect(url_for('info.about'))
     
     # Render registration page on GET

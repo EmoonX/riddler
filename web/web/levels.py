@@ -213,7 +213,7 @@ async def get_pages(alias: str) -> str:
 
 @levels.route('/<alias>/levels/get-root-path', methods=['GET'])
 async def get_root_path(alias: str):
-    '''Get riddles's root URL path from DB.'''
+    '''Get riddles' root URL path from DB.'''
     query = 'SELECT * FROM riddles ' \
             'WHERE alias = :alias'
     result = await database.fetch_one(query, {'alias': alias})

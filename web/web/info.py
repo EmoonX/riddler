@@ -9,29 +9,29 @@ info = Blueprint('info', __name__)
 async def info_page(page: str):
     '''Simply show a info page by rendering its immediate template.
     Throws 404 if such template doesn't exist.'''
-    page += '.htm'
+    path = 'info/%s.htm' % page
     try:
-        return await render_template(page)
+        return await render_template(path)
     except TemplateNotFound:
         abort(404)
 
 
 @info.route('/thedudedude')
 async def thedude():
-    username = '????'
-    disc = '????'
+    username = 'Broccoli'
+    disc = '8858'
     from process import process_url
     from util.db import database
-    first = 74
-    last = 75
-    inclusive = False
+    first = 65
+    last = 65
+    inclusive = True
     query = 'SELECT * FROM levels ' \
-            'WHERE riddle = "zed" AND `index` >= :first AND `index` <= :last AND is_secret IS FALSE'
+            'WHERE riddle = "cipher" AND `index` >= :first AND `index` <= :last AND is_secret IS FALSE'
     values = {'first': first, 'last': last}
     levels = await database.fetch_all(query, values)
     for level in levels:
-        front_path = 'https://zedpuzzle.neocities.org' + level['path']
-        answer_path = 'https://zedpuzzle.neocities.org' + level['answer']
+        front_path = 'http://gamemastertips.com/cipher' + level['path']
+        answer_path = 'http://gamemastertips.com/cipher' + level['answer']
         image_path = front_path.rsplit('/', maxsplit=1)[0] + '/' + level['image']
         from time import sleep
         await process_url(username, disc, front_path)
@@ -47,15 +47,15 @@ async def thedude():
 
 @info.route('/theladylady')
 async def thelady():
-    username = 'Brocoli'
+    username = 'Broccoli'
     disc = '8858'
     from process import process_url
     from util.db import database
     query = 'SELECT * FROM level_pages ' \
-            'WHERE riddle = "genius"'
+            'WHERE riddle = "cipher"'
     pages = await database.fetch_all(query)
     for page in pages:
-        path = 'https://geniusriddle.000webhostapp.com' + page['path']
+        path = 'http://gamemastertips.com/cipher' + page['path']
         await process_url(username, disc, path)
         from time import sleep
         sleep(0.1)
