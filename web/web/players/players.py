@@ -37,6 +37,7 @@ async def global_list(country: str = None):
             'INNER JOIN user_pages AS up ' \
                 'ON acc.username = up.username ' \
                     'AND acc.discriminator = up.discriminator ' \
+                    'AND level_name IS NOT NULL ' \
             'WHERE global_score > 0 ' + cond_country + \
             'GROUP BY acc.username, acc.discriminator ' \
             'ORDER BY global_score DESC, page_count DESC'
@@ -134,7 +135,7 @@ async def riddle_list(alias: str, country: str = None):
             'WHERE riddle = :riddle'
     values = {'riddle': riddle['alias']}
     result = await database.fetch_one(query, values)
-    riddle['cheevo_count'] = result['count'];
+    riddle['cheevo_count'] = result['count']
     
     # Get players data from database
     cond_country = ('WHERE country = "%s" ' % country) if country else ''
@@ -183,6 +184,7 @@ async def riddle_list(alias: str, country: str = None):
                 'FROM user_pages ' \
                 'WHERE riddle = :riddle ' \
                     'AND username = :name AND discriminator = :disc ' \
+                    'AND level_name IS NOT NULL ' \
                 'GROUP BY riddle, username, discriminator'
         values = {'riddle': alias, **values}
         result = await database.fetch_one(query, values)
