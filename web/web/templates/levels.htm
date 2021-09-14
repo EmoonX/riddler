@@ -125,10 +125,13 @@
           <div class="currently-in">
           {% for user in level['users'] %}
             {% set player = accounts[user['username']] %}
-            <a href="#" title="{{ player['username'] }}">
+            <a class="player" href="#">
               {% set tag = player['username'] + '#' + player['discriminator'] %}
               {% set url = avatar_urls[tag] if tag in avatar_urls else '/static/images/locked.png' %}
-              <img width="50" height="50" class="avatar-small" src="{{ url }}">
+              <figure>
+                <img width="50" height="50" class="avatar-small" src="{{ url }}">
+                <figcaption>{{ player['username'] }}</figcaption>
+              </figure>
             </a>
           {% endfor %}
           </div>

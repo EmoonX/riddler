@@ -422,7 +422,7 @@ input[type="checkbox"] {
 
 input[type="submit"] {
   margin: 2em;
-  font-size: 0.9em !important;
+  font-size: 0.8em !important;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -765,13 +765,13 @@ section.list.players > .row {
     font-size: 0.8em;
   }
   > .rank {
-    width: 80px;
+    width: 60px;
     font-size: 1.5em;
   }
   > .player {
     flex-direction: row;
     justify-content: left;
-    width: 320px;
+    width: 300px;
 
     img.avatar {
       width: 60px;
@@ -849,7 +849,7 @@ section.list.players > .row {
     }
   }
   > .honors {
-    width: 480px;
+    width: 520px;
     flex-direction: row;
     justify-content: flex-start;
 
@@ -1136,12 +1136,55 @@ section.list.levels > .row {
     }
   }
   > .currently-in {
-    width: 200px;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-rows: 33% 33% 33%;
+    grid-template-columns: 33% 33% 33%;
+    width: 250px;
+    margin: 15px 0;
 
-    > a {
+    > a.player {
+      position: relative;
       display: block;
-      margin: 10px;
+
+      > figure {
+        > img.avatar-small {
+          margin: 0;
+          transition: opacity 0.4s;
+        }
+        > figcaption {
+          position: absolute;
+          top: 0;
+          right: 0;
+          bottom: 0;
+          left: 0;
+          z-index: 100;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          opacity: 0;
+          font-size: 0;
+          font-style: normal;
+          text-shadow: 
+              4px 0 0 black, -4px 0 0 black,
+              0 4px 0 black, 0 -4px 0 black,
+              2px 2px 0 black, 2px -2px 0 black,
+              -2px 2px 0 black, -2px -2px 0 black;
+          transition: opacity 0.4s, font-size 0.4s;
+          white-space: nowrap;
+        }
+        &:hover {
+          > img.avatar-small {
+            opacity: 1;
+          }
+          > figcaption {
+            opacity: 1;
+            font-size: 0.8em;
+          }
+        }
+      }
+    }
+    &:hover img.avatar-small {
+      opacity: 0.3;
     }
   }
   &:hover .rank span {
