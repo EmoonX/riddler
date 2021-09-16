@@ -44,36 +44,36 @@ async def get_riddles(unlisted=False):
     return riddles
 
 
-async def get_achievements(alias: str, user: dict = None):
+async def get_achievements(alias: str, user: dict = None) -> dict:
     '''Get riddle achievements grouped by points.
     If user is specified, return only cheevos user has gotten'''
     
+    # Build dict of cheevos with titles as keys
+    query = 'SELECT * FROM achievements ' \
+            'WHERE riddle = :riddle'
+    values = {'riddle': alias}
+    result = await database.fetch_all(query, values)
+    cheevos = {row['title']: row for row in result}
+
     if not user:
         # Get riddle's achievement list
-        query = 'SELECT title FROM achievements ' \
+        query = 'SELECT * FROM achievements ' \
                 'WHERE riddle = :riddle '
-        values = {'riddle': alias}
     else:
         # Get user's riddle achievement list
-        query = 'SELECT title FROM user_achievements ' \
+        query = 'SELECT * FROM user_achievements ' \
                 'WHERE riddle = :riddle ' \
                     'AND username = :name AND discriminator = :disc'
         values = {'riddle': alias,
                 'name': user['username'], 'disc': user['discriminator']}
-    result = await database.fetch_all(query, values)
+    user_cheevos = await database.fetch_all(query, values)
     
     # Create dict of pairs (rank -> list of cheevos)
-    cheevos = {'C': [], 'B': [], 'A': [], 'S': []}
-    for row in result:
-        title = row['title']
-        query = 'SELECT * FROM achievements ' \
-                'WHERE riddle = :riddle AND title = :title'
-        values = {'riddle': alias, 'title': title}
-        cheevo = await database.fetch_one(query, values)
-        cheevo = dict(cheevo)
+    cheevos_by_rank = {'C': [], 'B': [], 'A': [], 'S': []}
+    for user_cheevo in user_cheevos:
+        cheevo = cheevos[user_cheevo['title']]
         rank = cheevo['rank']
-        cheevo['color'] = cheevo_ranks[rank]['color']
-        cheevos[rank].append(cheevo)
+        cheevos_by_rank[rank].append(cheevo)
     
     # # Ignore ranks without cheevos
     # erasable = []
@@ -83,7 +83,7 @@ async def get_achievements(alias: str, user: dict = None):
     # for key in erasable:
     #     cheevos.pop(key)
 
-    return cheevos
+    return cheevos_by_rank
     
 
 async def context_processor():

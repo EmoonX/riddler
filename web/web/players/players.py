@@ -4,6 +4,7 @@ from quart import Blueprint, render_template
 
 from auth import discord
 from admin import admin
+from inject import get_achievements
 from webclient import bot_request
 from util.db import database
 
@@ -171,33 +172,22 @@ async def riddle_list(alias: str, country: str = None):
 
     for account in accounts:
         # Get player country
-        query = 'SELECT * FROM accounts WHERE ' \
-                'username = :name AND discriminator = :disc'
-        values = {'name': account['username'],
+        query = 'SELECT * FROM accounts ' \
+                'WHERE username = :username AND discriminator = :disc'
+        values = {'username': account['username'],
                 'disc': account['discriminator']}
         result = await database.fetch_one(query, values)
         account['country'] = result['country']
-        
-        # Get found pages count
-        query = 'SELECT riddle, username, discriminator, ' \
-                    'COUNT(*) AS page_count ' \
-                'FROM user_pages ' \
-                'WHERE riddle = :riddle ' \
-                    'AND username = :name AND discriminator = :disc ' \
-                    'AND level_name IS NOT NULL ' \
-                'GROUP BY riddle, username, discriminator'
-        values = {'riddle': alias, **values}
-        result = await database.fetch_one(query, values)
-        try:
-            account['page_count'] = result['page_count']
-        except:
-            pass
+
+        # Fetch achievement dict
+        account['cheevos'] = await get_achievements(alias, account)
         
         if account['current_level'] == '🏅':
             # Show 💎 if player has gotten all possible cheevos on riddle
             query = 'SELECT COUNT(*) as count FROM user_achievements ' \
                     'WHERE riddle = :riddle ' \
-                    'AND username = :name AND discriminator = :disc '
+                    'AND username = :username AND discriminator = :disc '
+            values = {'riddle': alias, **values}
             result = await database.fetch_one(query, values)
             if result['count'] == riddle['cheevo_count']:
                 account['current_level'] = '💎'
@@ -212,7 +202,6 @@ async def riddle_list(alias: str, country: str = None):
                 account['discriminator'] = '0000'
                 account['country'] = 'ZZ'
 
-    
     # Pluck creator account from main list to show it separately 👑
     # Also, remove 0-score accounts.
     creator_account = None
