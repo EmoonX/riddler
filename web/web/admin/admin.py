@@ -107,7 +107,7 @@ async def update_all(alias: str):
 @admin.route('/admin/<alias>/update-scores', methods=['GET'])
 @requires_authorization
 async def update_scores(alias: str):
-    '''Úpdates riddle players' score upon admin request.'''    
+    '''Úpdates riddle players' score.'''    
     
     # Check for admin permissions
     msg, status = await auth(alias)
@@ -170,6 +170,41 @@ async def update_scores(alias: str):
             new_values = {'cur': cur_score, 'new': new_score,
                     'name': row['username'], 'disc': row['discriminator']}
             await database.execute(query, new_values)
+    
+    return 'SUCCESS :)', 200
+
+
+@admin.route('/admin/<alias>/update-page-count', methods=['GET'])
+@requires_authorization
+async def update_page_count(alias: str):
+    '''Úpdates riddle players' page count.'''
+    
+    # Check for admin permissions
+    msg, status = await auth(alias)
+    if status != 200:
+        return msg, status
+    
+    # Fetch page count for every riddle player
+    query = 'SELECT racc.username, racc.discriminator, ' \
+                'COUNT(level_name) AS page_count ' \
+            'FROM riddle_accounts AS racc ' \
+                'INNER JOIN user_pages AS up ' \
+                    'ON racc.username = up.username ' \
+                        'AND racc.discriminator = up.discriminator ' \
+            'WHERE up.riddle = :riddle ' \
+            'GROUP BY racc.riddle, racc.username, racc.discriminator'
+    accounts = await database.fetch_all(query, {'riddle': alias})
+    
+    # Update page count for each riddle account in DB
+    for account in accounts:
+        query = 'UPDATE riddle_accounts ' \
+                'SET page_count = :page_count ' \
+                'WHERE riddle = :riddle ' \
+                    'AND username = :username and discriminator = :disc'
+        values = {'riddle': alias, 'page_count': account['page_count'],
+                'username': account['username'],
+                'disc': account['discriminator']}
+        await database.execute(query, values)
     
     return 'SUCCESS :)', 200
 
