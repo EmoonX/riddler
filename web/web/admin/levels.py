@@ -19,9 +19,7 @@ async def levels(alias: str):
     '''Riddle level management.'''
     
     # Check for admin permissions
-    msg, status = await auth(alias)
-    if status != 200:
-        return msg, status
+    await auth(alias)
     
     async def r(levels: list, secret_levels: list, msg: str):
         '''Render page with correct data.'''
@@ -216,15 +214,13 @@ async def _fetch_levels(alias: str, is_secret=False):
     return levels
 
 
-@admin_levels.route('/admin/<alias>/levels/get-pages', methods=['GET'])
+@admin_levels.get('/admin/<alias>/levels/get-pages')
 @requires_authorization
 async def get_pages(alias: str) -> str:
     '''Return a recursive JSON of all riddle folders and pages.'''
     
     # Check for right permissions
-    msg, status = await auth(alias)
-    if status != 200:
-        return msg, status
+    await auth(alias)
     
     # Build list of paths from database data
     query = 'SELECT * FROM level_pages ' \
@@ -281,7 +277,7 @@ async def get_pages(alias: str) -> str:
     return json.dumps(pages)
 
 
-@admin_levels.route('/admin/level-row', methods=['GET'])
+@admin_levels.get('/admin/level-row')
 async def level_row():
     '''Level row HTML code to be fetched by JS script.'''
     return await render_template('admin/level-row.htm',
@@ -289,7 +285,7 @@ async def level_row():
             image='/static/thumbs/locked.png')
 
 
-@admin_levels.route('/admin/<alias>/update-pages', methods=['POST'])
+@admin_levels.post('/admin/<alias>/update-pages')
 async def update_pages(alias: str):
     '''Update pages list with data sent by admin in text format.'''
     
@@ -302,7 +298,8 @@ async def update_pages(alias: str):
     data = [path for path in sorted(data) if ('/' in path and '.' in path[-5:])]
 
     # Find the longest common prefix amongst all paths
-    longest_prefix = data[0]
+    # longest_prefix = data[0] if len(data) > 1 else ''
+    longest_prefix = '/'
     for path in data[1:]:
         k = min(len(longest_prefix), len(path))
         for i in range(k):

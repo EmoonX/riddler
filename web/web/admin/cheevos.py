@@ -16,9 +16,7 @@ async def cheevos(alias: str):
     '''Riddle cheevos management.'''
     
     # Check for right permissions
-    msg, status = await auth(alias)
-    if status != 200:
-        return msg, status
+    await auth(alias)
     
     def r(msg: str):
         '''Render page with correct data.'''
@@ -112,7 +110,7 @@ async def cheevos(alias: str):
     return await r('Guild info updated successfully!')
 
 
-@admin_cheevos.route('/admin/cheevo-row', methods=['GET'])
+@admin_cheevos.get('/admin/cheevo-row')
 async def cheevo_row():
     '''Çheevo row HTML code to be fetched by JS script.'''
     return await render_template('admin/cheevo-row.htm',

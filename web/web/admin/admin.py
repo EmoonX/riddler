@@ -2,7 +2,7 @@ import os
 from base64 import b64decode
 from io import BytesIO
 
-from quart import Blueprint
+from quart import Blueprint, abort
 from quart_discord import requires_authorization
 from PIL import Image
 
@@ -31,24 +31,22 @@ async def auth(alias: str):
     result = await database.fetch_one(query, {'alias': alias})
     if not result:
         # Invalid alias...
-        return 'Riddle not found!', 404
+        abort(404)
     
     # Big boss can access everything 8)
     user = await discord.get_user()
     if user.id == 315940379553955844:
-        return 'OK', 200
+        return
     
     # Check if user has enough permissions in given guild
     ok = await bot_request('is-member-and-has-permissions',
             guild_id=result['guild_id'],
             username=user.name, disc=user.discriminator)
     if ok != "True":
-        return 'Unauthorized', 401
-    
-    return 'OK', 200
+        abort(401)
 
 
-@admin.route('/admin/update-all-riddles', methods=['GET'])
+@admin.get('/admin/update-all-riddles')
 @requires_authorization
 async def update_all_riddles():
     '''Update everything on every single riddle.'''
@@ -56,7 +54,7 @@ async def update_all_riddles():
     # Only root can do it!
     ok = await root_auth()
     if not ok:
-        return 'Unauthorized', 401
+        abort(401)
     
     # Get all riddle aliases from DB
     query = 'SELECT * FROM riddles'
@@ -91,12 +89,13 @@ async def update_all_riddles():
     return 'SUCCESS :)', 200
 
 
-@admin.route('/admin/<alias>/update-all', methods=['GET'])
+@admin.get('/admin/<alias>/update-all')
 @requires_authorization
 async def update_all(alias: str):
     '''Wildcard route for running all update routines below.'''
     update_methods = \
-        (update_scores, update_completion_count, update_ratings)
+        (update_scores, update_page_count,
+        update_completion_count, update_ratings)
     for update in update_methods:
         response = await update(alias)
         if response[1] != 200:
@@ -104,15 +103,13 @@ async def update_all(alias: str):
     return 'SUCCESS :)', 200
 
 
-@admin.route('/admin/<alias>/update-scores', methods=['GET'])
+@admin.get('/admin/<alias>/update-scores')
 @requires_authorization
 async def update_scores(alias: str):
     '''Úpdates riddle players' score.'''    
     
     # Check for admin permissions
-    msg, status = await auth(alias)
-    if status != 200:
-        return msg, status
+    await auth(alias)
     
     # Iterate over riddle accounts
     query = 'SELECT * FROM riddle_accounts ' \
@@ -174,15 +171,13 @@ async def update_scores(alias: str):
     return 'SUCCESS :)', 200
 
 
-@admin.route('/admin/<alias>/update-page-count', methods=['GET'])
+@admin.get('/admin/<alias>/update-page-count')
 @requires_authorization
 async def update_page_count(alias: str):
     '''Úpdates riddle players' page count.'''
     
     # Check for admin permissions
-    msg, status = await auth(alias)
-    if status != 200:
-        return msg, status
+    await auth(alias)
     
     # Fetch page count for every riddle player
     query = 'SELECT racc.username, racc.discriminator, ' \
@@ -209,15 +204,13 @@ async def update_page_count(alias: str):
     return 'SUCCESS :)', 200
 
 
-@admin.route('/admin/<alias>/update-completion', methods=['GET'])
+@admin.get('/admin/<alias>/update-completion')
 @requires_authorization
 async def update_completion_count(alias: str):
     '''Úpdates riddle levelś' completion count.'''    
     
     # Check for admin permissions
-    msg, status = await auth(alias)
-    if status != 200:
-        return msg, status
+    await auth(alias)
     
     # Get list of levels and completion counts
     query = 'SELECT level_name, COUNT(*) AS count ' \
@@ -238,15 +231,13 @@ async def update_completion_count(alias: str):
     return 'SUCCESS :)', 200
 
 
-@admin.route('/admin/<alias>/update-ratings', methods=['GET'])
+@admin.get('/admin/<alias>/update-ratings')
 @requires_authorization
 async def update_ratings(alias: str):
     '''Úpdates riddle levels' user ratings.'''    
     
     # Check for admin permissions
-    msg, status = await auth(alias)
-    if status != 200:
-        return msg, status
+    await auth(alias)
     
     # Iterate over levels
     query = 'SELECT * FROM levels ' \
@@ -323,4 +314,3 @@ async def save_image(folder: str, alias: str,
     img.save(path)
     print('[%s] Image %s successfully saved'
             % (alias, filename))
-        
