@@ -165,8 +165,9 @@ async def riddle_list(alias: str, country: str = None):
     user = await discord.get_user() if discord.user_id else None
     riddle_admin = False
     if user:
-        _, status = await admin.auth(alias)
-        if status == 200:
+        # _, status = await admin.auth(alias)
+        # if status == 200:
+        if False:
             # Logged user is respective riddle's admin
             riddle_admin = True
 
