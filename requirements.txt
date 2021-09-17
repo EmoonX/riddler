@@ -1,4 +1,4 @@
-Quart==0.14.1
+Quart==0.15.1
 country-converter==0.7.3
 pycountry==20.7.3
 Quart_Discord==2.1.4
