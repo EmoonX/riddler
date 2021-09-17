@@ -5,26 +5,29 @@ from jinja2.exceptions import TemplateNotFound
 info = Blueprint('info', __name__)
 
 
-@info.route('/<page>')
+@info.get('/<page>')
 async def info_page(page: str):
     '''Simply show a info page by rendering its immediate template.
-    Throws 404 if such template doesn't exist.'''
+    Throws 404/405 if such template doesn't exist.'''
     path = 'info/%s.htm' % page
     try:
         return await render_template(path)
     except TemplateNotFound:
-        abort(404)
+        if page == 'process':
+            abort(405)
+        else:
+            abort(404)
 
 
-@info.route('/thedudedude')
+@info.get('/thedudedude')
 async def thedude():
-    username = 'Broccoli'
-    disc = '8858'
+    username = '????'
+    disc = '????'
     from process import process_url
     from util.db import database
-    first = 65
-    last = 65
-    inclusive = True
+    first = 1
+    last = 49
+    inclusive = False
     query = 'SELECT * FROM levels ' \
             'WHERE riddle = "cipher" AND `index` >= :first AND `index` <= :last AND is_secret IS FALSE'
     values = {'first': first, 'last': last}
@@ -45,7 +48,7 @@ async def thedude():
     return 'SUCCESS!', 200
 
 
-@info.route('/theladylady')
+@info.get('/theladylady')
 async def thelady():
     username = 'Broccoli'
     disc = '8858'
@@ -61,3 +64,108 @@ async def thelady():
         sleep(0.1)
     
     return 'SUCCESS!', 200
+
+
+from util.db import database
+from auth import discord
+@info.route('/qwerty')
+async def global_list(country: str = None):
+    '''Global (and by country) players list.'''
+
+    # Get riddles data from database
+    query = 'SELECT * from riddles ' \
+            'WHERE unlisted IS FALSE'
+    result = await database.fetch_all(query)
+    riddles = [dict(riddle) for riddle in result]
+
+    for riddle in riddles:
+        # Get total number of riddle achievements
+        query = 'SELECT COUNT(*) as count FROM achievements ' \
+                'WHERE riddle = :riddle'
+        values = {'riddle': riddle['alias']}
+        result = await database.fetch_one(query, values)
+        riddle['cheevo_count'] = result['count']
+    
+    # Get players data from database
+    cond_country = ('AND country = "%s" ' % country) if country else ''
+    print(cond_country)
+    query = 'SELECT *, TIMESTAMPDIFF(SECOND, MIN(completion_time), MAX(completion_time)) / (24 * 3600) AS page_count FROM accounts AS acc ' \
+            'INNER JOIN user_levels AS ul ' \
+                'ON acc.username = ul.username ' \
+            'WHERE global_score > 0 ' + cond_country + \
+            'GROUP BY acc.username, acc.discriminator ' \
+            'ORDER BY page_count DESC, global_score DESC, page_count DESC'
+    result = await database.fetch_all(query)
+    accounts = [dict(account) for account in result]
+
+    # Get session user, if any
+    user = await discord.get_user() if discord.user_id else None
+    
+    for account in accounts:
+        # Hide username, country and riddles for
+        # non logged-in `hidden` players
+        if account['hidden']:        
+            if not (user and account['username'] == user.username
+                    and account['discriminator'] == user.discriminator):
+                account['username'] = 'Anonymous'
+                account['discriminator'] = '0000'
+                account['country'] = 'ZZ'
+                continue
+
+        # Build list of riddles player has honors for
+        account['created_riddles'] = []
+        account['mastered_riddles'] = []
+        account['completed_riddles'] = []
+        account['other_riddles'] = []
+        account['riddle_progress'] = {}
+        for riddle in riddles:
+            # Check if player is creator of current riddle
+            if riddle['creator_username'] == account['username'] \
+                    and riddle['creator_disc'] == account['discriminator']:
+                account['created_riddles'].append(riddle)
+                continue
+            
+            account['global_score'] = account['page_count']
+
+            # Search for riddles already played
+            query = 'SELECT * FROM riddle_accounts ' \
+                    'WHERE riddle = :riddle ' \
+                        'AND username = :username AND discriminator = :disc'
+            values = {'riddle': riddle['alias'],
+                    'username': account['username'],
+                    'disc': account['discriminator']}
+            played = await database.fetch_one(query, values)
+            if not played:
+                continue
+
+            # Check completion
+            query = 'SELECT * FROM levels ' \
+                    'WHERE riddle = :riddle ' \
+                        'AND is_secret IS FALSE AND `name` NOT IN ( ' \
+                            'SELECT level_name FROM user_levels ' \
+                            'WHERE riddle = :riddle ' \
+                                'AND username = :username ' \
+                                'AND discriminator = :disc ' \
+                                'AND completion_time IS NOT NULL)'
+            result = await database.fetch_one(query, values)
+            completed = (result is None)
+            if completed:
+                # Get number of achievements user has gotten on riddle
+                query = 'SELECT COUNT(*) as count FROM user_achievements ' \
+                        'WHERE riddle = :riddle ' \
+                            'AND username = :username ' \
+                            'AND discriminator = :disc '
+                result = await database.fetch_one(query, values)
+                
+                # Append riddle to list of mastered or completed ones
+                if result['count'] == riddle['cheevo_count']:
+                    account['mastered_riddles'].append(riddle)
+                else:
+                    account['completed_riddles'].append(riddle)
+            else:
+                account['other_riddles'].append(riddle)
+                account['riddle_progress'][riddle['alias']] = played['current_level']
+
+    # Render page with account info
+    return await render_template('players/list.htm',
+            accounts=accounts, riddles=riddles, country=country)
