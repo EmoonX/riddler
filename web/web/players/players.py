@@ -18,102 +18,127 @@ players = Blueprint('players', __name__)
 async def global_list(country: str = None):
     '''Global (and by country) players list.'''
 
-    # Get riddles data from database
-    query = 'SELECT * from riddles ' \
-            'WHERE unlisted IS FALSE'
-    result = await database.fetch_all(query)
-    riddles = [dict(riddle) for riddle in result]
+    from datetime import datetime
+    t0 = datetime.utcnow()
 
-    for riddle in riddles:
-        # Get total number of riddle achievements
-        query = 'SELECT COUNT(*) as count FROM achievements ' \
-                'WHERE riddle = :riddle'
-        values = {'riddle': riddle['alias']}
-        result = await database.fetch_one(query, values)
-        riddle['cheevo_count'] = result['count']
-    
+    # Get riddle data from database (minus unlisted ones) as a dict
+    query = 'SELECT * FROM riddles ' \
+            'WHERE unlisted IS FALSE '
+    result = await database.fetch_all(query)
+    riddles = {riddle['alias']: dict(riddle) for riddle in result}
+
+    # Fetch riddles' (main) level and cheevo counts and add them to dict
+    query = 'SELECT riddle, COUNT(*) as level_count ' \
+            'FROM levels ' \
+            'WHERE is_secret IS NOT TRUE ' \
+            'GROUP BY riddle'
+    level_counts = await database.fetch_all(query)
+    for row in level_counts:
+        alias = row['riddle']
+        if alias not in riddles:
+            continue
+        riddles[alias]['level_count'] = row['level_count']
+    query = 'SELECT riddle, COUNT(*) as cheevo_count ' \
+            'FROM achievements ' \
+            'GROUP BY riddle'
+    cheevo_counts = await database.fetch_all(query)
+    for row in cheevo_counts:
+        alias = row['riddle']
+        if alias not in riddles:
+            continue
+        riddles[alias]['cheevo_count'] = row['cheevo_count']
+
     # Get players data from database
     cond_country = ('AND country = "%s" ' % country) if country else ''
-    query = 'SELECT *, COUNT(*) AS page_count FROM accounts AS acc ' \
-            'INNER JOIN user_pages AS up ' \
-                'ON acc.username = up.username ' \
-                    'AND acc.discriminator = up.discriminator ' \
-                    'AND level_name IS NOT NULL ' \
+    query = 'SELECT *, SUM(page_count) ' \
+            'FROM accounts AS acc INNER JOIN riddle_accounts AS racc ' \
+                'ON acc.username = racc.username ' \
+                    'AND acc.discriminator = racc.discriminator ' \
             'WHERE global_score > 0 ' + cond_country + \
             'GROUP BY acc.username, acc.discriminator ' \
             'ORDER BY global_score DESC, page_count DESC'
     result = await database.fetch_all(query)
-    accounts = [dict(account) for account in result]
+
+    # Init dict of (handle -> player info)
+    players = {}
+    for row in result:
+        handle = '%s#%s' % (row['username'], row['discriminator'])
+        player = dict(row) | {'completion_count': {}, 'cheevo_count': {}}
+        players[handle] = player
+
+    # Fetch players' level completion and cheevo counts and add them to dict
+    query = 'SELECT riddle, username, discriminator, ' \
+                'COUNT(*) as completion_count ' \
+            'FROM user_levels ' \
+            'WHERE completion_time IS NOT NULL ' \
+            'GROUP BY riddle, username, discriminator'
+    player_completion_counts = await database.fetch_all(query)
+    for row in player_completion_counts:
+        handle = '%s#%s' % (row['username'], row['discriminator'])
+        riddle = row['riddle']
+        players[handle]['completion_count'][riddle] = \
+                row['completion_count']
+    query = 'SELECT riddle, username, discriminator, ' \
+                'COUNT(*) as cheevo_count ' \
+            'FROM user_achievements ' \
+            'GROUP BY riddle, username, discriminator'
+    player_cheevo_counts = await database.fetch_all(query)
+    for row in player_cheevo_counts:
+        handle = '%s#%s' % (row['username'], row['discriminator'])
+        riddle = row['riddle']
+        players[handle]['cheevo_count'][riddle] = \
+                row['cheevo_count']
 
     # Get session user, if any
     user = await discord.get_user() if discord.user_id else None
-    
-    for account in accounts:
+
+    for handle, player in players.items():
         # Hide username, country and riddles for
         # non logged-in `hidden` players
-        if account['hidden']:        
-            if not (user and account['username'] == user.username
-                    and account['discriminator'] == user.discriminator):
-                account['username'] = 'Anonymous'
-                account['discriminator'] = '0000'
-                account['country'] = 'ZZ'
+        if player['hidden']:        
+            if not (user and player['username'] == user.username
+                    and player['discriminator'] == user.discriminator):
+                player['username'] = 'Anonymous'
+                player['discriminator'] = '0000'
+                player['country'] = 'ZZ'
                 continue
 
         # Build list of riddles player has honors for
-        account['created_riddles'] = []
-        account['mastered_riddles'] = []
-        account['completed_riddles'] = []
-        account['other_riddles'] = []
-        account['riddle_progress'] = {}
-        for riddle in riddles:
+        player['created_riddles'] = []
+        player['mastered_riddles'] = []
+        player['completed_riddles'] = []
+        player['other_riddles'] = []
+        player['riddle_progress'] = {}
+        for alias, riddle in riddles.items():
             # Check if player is creator of current riddle
-            if riddle['creator_username'] == account['username'] \
-                    and riddle['creator_disc'] == account['discriminator']:
-                account['created_riddles'].append(riddle)
+            if riddle['creator_username'] == player['username'] \
+                    and riddle['creator_disc'] == player['discriminator']:
+                player['created_riddles'].append(riddle)
                 continue
 
-            # Search for riddles already played
-            query = 'SELECT * FROM riddle_accounts ' \
-                    'WHERE riddle = :riddle ' \
-                        'AND username = :username AND discriminator = :disc'
-            values = {'riddle': riddle['alias'],
-                    'username': account['username'],
-                    'disc': account['discriminator']}
-            played = await database.fetch_one(query, values)
+            # Check ir player played such riddle
+            played = alias in player['completion_count']
             if not played:
                 continue
 
             # Check completion
-            query = 'SELECT * FROM levels ' \
-                    'WHERE riddle = :riddle ' \
-                        'AND is_secret IS FALSE AND `name` NOT IN ( ' \
-                            'SELECT level_name FROM user_levels ' \
-                            'WHERE riddle = :riddle ' \
-                                'AND username = :username ' \
-                                'AND discriminator = :disc ' \
-                                'AND completion_time IS NOT NULL)'
-            result = await database.fetch_one(query, values)
-            completed = (result is None)
-            if completed:
-                # Get number of achievements user has gotten on riddle
-                query = 'SELECT COUNT(*) as count FROM user_achievements ' \
-                        'WHERE riddle = :riddle ' \
-                            'AND username = :username ' \
-                            'AND discriminator = :disc '
-                result = await database.fetch_one(query, values)
-                
+            completed = player['completion_count'][alias] \
+                    == riddle['level_count']
+            if completed:                
                 # Append riddle to list of mastered or completed ones
-                if result['count'] == riddle['cheevo_count']:
-                    account['mastered_riddles'].append(riddle)
+                mastered = player['cheevo_count'][alias] \
+                        == riddle['cheevo_count']
+                if mastered:
+                    player['mastered_riddles'].append(riddle)
                 else:
-                    account['completed_riddles'].append(riddle)
+                    player['completed_riddles'].append(riddle)
             else:
-                account['other_riddles'].append(riddle)
-                account['riddle_progress'][riddle['alias']] = played['current_level']
+                player['other_riddles'].append(riddle)
+                player['riddle_progress'][alias] = 'TODO'
 
     # Render page with account info
     return await render_template('players/list.htm',
-            accounts=accounts, riddles=riddles, country=country)
+            players=players.values(), riddles=riddles, country=country)
 
 
 @players.route('/<alias>/players')

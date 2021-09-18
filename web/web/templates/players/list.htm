@@ -13,7 +13,7 @@
         {% set riddles = fetch_riddles() %}
         {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
         {% set badges = {'created': '👑', 'mastered': '💎', 'completed': '🏅'} %}
-      {% for player in accounts %}
+      {% for player in players %}
         <div class="row">
           <div class="rank">
             {% if loop.index <= 3 %}
