@@ -54,7 +54,7 @@
               {% set title = '%s %s'|safe % (title, s) %}
               {% set badge = badges[honor] %}
             {% else %}
-              {% set title = '%s currently on %s'|safe % (title, player['riddle_progress'][riddle['alias']]) %}
+              {% set title = '%s currently on %s'|safe % (title, player['last_level'][riddle['alias']]) %}
             {% endif %}
             <a class="honor {{ honor }}" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" title="{{ title }}">
               <span class='badge'>{{ badge }}</span>
