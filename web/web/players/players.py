@@ -88,7 +88,7 @@ async def global_list(country: str = None):
         if not handle in players:
             continue
         alias = row['riddle']
-        players[handle]['last_level'][alias] = row['level_name']
+        players[handle]['last_level'][alias] = row
     
     # Fetch players' cheevo counts and add them to dict
     query = 'SELECT riddle, username, discriminator, ' \
@@ -135,7 +135,9 @@ async def global_list(country: str = None):
                 continue
 
             # Check completion
-            completed = player['last_level'][alias] == riddle['last_level']
+            last_level = player['last_level'][alias]
+            completed = last_level['level_name'] == riddle['last_level'] \
+                    and last_level['completion_time']
             if completed:                
                 # Append riddle to list of mastered or completed ones
                 mastered = player['cheevo_count'][alias] \
