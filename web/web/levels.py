@@ -62,7 +62,7 @@ async def level_list(alias: str):
                                 'AND username = :username ' \
                                 'AND discriminator = :disc ' \
                                 'AND (:path = `path` ' \
-                                    'OR :path LIKE CONCAT(\'%\', `path`, \'%\'))'
+                                    'OR :path LIKE CONCAT(\'%"\', `path`, \'"%\'))'
                     values = {**base_values, 'path': path}
                     result = await database.fetch_one(query, values)
                     level['unlocked'] = (result is not None)
