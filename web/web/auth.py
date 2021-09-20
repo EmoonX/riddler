@@ -88,7 +88,7 @@ async def register():
     await database.execute(query, values)
 
     # Redirect to post-registration page
-    return redirect(url_for('info.about'))
+    return redirect(url_for('info.info_page', page='about'))
 
 
 @auth.route('/login', methods=['GET'])

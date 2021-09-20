@@ -74,14 +74,6 @@ async def get_achievements(alias: str, user: dict = None) -> dict:
         cheevo = cheevos[user_cheevo['title']]
         rank = cheevo['rank']
         cheevos_by_rank[rank].append(cheevo)
-    
-    # # Ignore ranks without cheevos
-    # erasable = []
-    # for key, value in cheevos.items():
-    #     if not value:
-    #         erasable.append(key)
-    # for key in erasable:
-    #     cheevos.pop(key)
 
     return cheevos_by_rank
     
@@ -215,4 +207,4 @@ async def context_processor():
         'pycountries': pycountry.countries
     }
     # Return concatenated dict with pairs ("var" -> var_value)
-    return {**locals(), **extra}
+    return locals() | extra

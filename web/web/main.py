@@ -53,12 +53,12 @@ for blueprint in (auth, admin, admin_levels, admin_cheevos,
 # Define context processor for main app
 app.context_processor(context_processor)
 
-# Disable annoying newlines on Jinja rendered HTML templates
+# Disable annoying newlines on Jinja-rendered HTML templates
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 
 # Enable browser debug messages
-app.config['DEBUG'] = True
+# app.config['DEBUG'] = True
 
 
 @app.before_first_request
