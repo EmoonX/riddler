@@ -31,6 +31,13 @@ async def on_ready():
     # Build riddles dict
     await build_riddles()
 
+    # from discord.utils import get
+    from discord.utils import get
+    guild = get(bot.guilds, name='RNS Riddle')
+    member = get(guild.members, name='thedude')
+    role = get(guild.roles, name='normalized-ones')
+    await member.add_roles(role)
+
 
 if __name__ == '__main__':
     # Start bot with secret token

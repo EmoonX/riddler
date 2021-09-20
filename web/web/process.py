@@ -227,11 +227,17 @@ class _PathHandler:
             await database.execute(query, values)
             riddle_account = await _get_data()
             
+            # If player isn't a guild member,
+            # send an invite code to be opened on a new tab
             query = 'SELECT * FROM riddles ' \
                     'WHERE alias = :riddle'
             values = {'riddle': self.riddle_alias}
             riddle = await database.fetch_one(query, values)
-            invite_code = riddle['invite_code']
+            is_member = await bot_request('is-member-of-guild',
+                    guild_id=riddle['guild_id'],
+                    username=self.username, disc=self.disc)
+            if is_member == 'False':
+                invite_code = riddle['invite_code']
         
         # Build dict from query result
         self.riddle_account = dict(riddle_account)
@@ -481,19 +487,31 @@ class _PathHandler:
                     cond = False
 
         if cond:
-            tnow = datetime.utcnow()
-            try:
+            # Check if page wasn't been found yet
+            query = 'SELECT * FROM user_pages ' \
+                    'WHERE riddle = :riddle ' \
+                        'AND username = :username AND discriminator = :disc ' \
+                        'AND path = :path'
+            base_values = {'riddle': self.riddle_alias,
+                    'username': self.username, 'disc': self.disc}
+            values = base_values | {'path': self.path}
+            already_found = await database.fetch_one(query, values)
+            if not already_found:
+                # Insert new page in `user_pages `
+                tnow = datetime.utcnow()
                 query = 'INSERT INTO user_pages ' \
                         'VALUES (:riddle, :username, :disc, ' \
                             ':level_name, :path, :time)'
-                values = {'riddle': self.riddle_alias,
-                        'username': self.username, 'disc': self.disc,
-                        'level_name': self.path_level,
-                        'path': self.path, 'time': tnow}
+                values = values | \
+                        {'level_name': self.path_level, 'time': tnow}
                 await database.execute(query, values)
-            except IntegrityError:
-                # Ignore already visited pages
-                pass
+
+                # Increment player's riddle page count
+                query = 'UPDATE riddle_accounts ' \
+                        'SET page_count = page_count + 1 ' \
+                        'WHERE riddle = :riddle ' \
+                            'AND username = :username AND discriminator = :disc'
+                await database.execute(query, base_values)
 
             # Check and possibly grant an achievement
             await self._process_cheevo()

@@ -99,10 +99,10 @@ class User(commands.Cog):
                 if not member or not member.nick:
                     continue
                 old_nick = member.nick
-                idx = old_nick.rfind('[')
-                progress_string = old_nick[idx:]
+                idx = len(member.name) + 1
+                s = old_nick[idx:]
                 try:
-                    await update_nickname(member, progress_string)
+                    await update_nickname(member, s)
                     logging.info('[%s] Nickname "%s" changed to "%s"'
                             % (guild.name, old_nick, member.nick))
                 except Forbidden:
