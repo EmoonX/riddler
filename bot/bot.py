@@ -1,3 +1,6 @@
+import os, glob
+import logging
+
 from discord import Intents
 from discord.ext import commands
 from discord_slash import SlashCommand
@@ -17,9 +20,19 @@ class Bot(commands.Bot):
         intents.members = True
         super().__init__(command_prefix='/', intents=intents)
         
-        # Init Slash Commands object
-        self.slash = SlashCommand(self, override_type=True)
-        
+        # Create Slash Commands object
+        self.slash = SlashCommand(self)
+
 
 # Global bot object to be used on other modules
 bot: commands.Bot = Bot()
+
+# Iterate through command modules and automatically load extensions
+commands_dir = os.getcwd() + '/commands'
+os.chdir(commands_dir)
+for path in glob.glob('**/*.py', recursive=True):
+    if path.endswith('.py'):
+        name = path.removesuffix('.py').replace('/', '.')
+        name = 'commands.' + name
+        logging.info('Loading extension %s...' % name)
+        bot.load_extension(name)

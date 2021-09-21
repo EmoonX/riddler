@@ -99,7 +99,7 @@ class User(commands.Cog):
                 if not member or not member.nick:
                     continue
                 old_nick = member.nick
-                idx = len(member.name) + 1
+                idx = len(before.name) + 1
                 s = old_nick[idx:]
                 try:
                     await update_nickname(member, s)
