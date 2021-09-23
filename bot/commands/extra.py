@@ -12,7 +12,6 @@ class Extra(commands.Cog):
     async def ping(self, ctx: SlashContext):
         '''Ping-pong with measurable latency.'''
         latency = 1000 * self.bot.latency
-        await ctx.respond()
         await ctx.send('Pong! (%dms)' % latency)
 
     @cog_ext.cog_slash(name='balthify')
@@ -29,9 +28,11 @@ class Extra(commands.Cog):
                 text[i] = ''
         text = ''.join(text)
 
-        # Send message
-        await ctx.respond()
+        # Send message (or placeholder)
+        if not text:
+            text = '_This message was intentionally left blank._'
         await ctx.send(text)
+
 
 def setup(bot: commands.Bot):
     '''Add cog every time extension (module) is (re)loaded.'''
