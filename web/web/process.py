@@ -133,18 +133,19 @@ class _PathHandler:
         @param user: Discord user object for logged in player
         @param path: raw URL sent by the extension'''
 
-        # Exclude protocol and potential "www." from URL
-        base_url = url.replace('https://', 'http://') \
-                .replace('http://', '').replace('www.', '')
+        # Exclude protocol from URL
+        base_url = url.replace('https://', 'http://').replace('http://', '')
 
         # Retrieve riddle info from database
         # (https root_path is searched first, and then http)
         riddle = None
         for protocol in ('https://', 'http://'):
             url = protocol + base_url
+            url_without_www = url.replace('//www.', '//')
             query = 'SELECT * FROM riddles ' \
-                    'WHERE LOCATE(root_path, :url)'
-            values = {'url': url}
+                    'WHERE LOCATE(root_path, :url) ' \
+                        'OR LOCATE(root_path, :url_without_www)'
+            values = {'url': url, 'url_without_www': url_without_www}
             riddle = await database.fetch_one(query, values)
             if riddle:
                 break
@@ -152,6 +153,10 @@ class _PathHandler:
         if not riddle:
             # Page outside of levels, like forum and admin ones
             return False, None
+        
+        # Remove potential "www." from URL, if not required
+        if not '//www.' in riddle['root_path']:
+            url = url.replace('//www.', '//')
 
         # Check if user is member of riddle guild
         is_member = await bot_request('is-member-of-guild',
@@ -170,8 +175,8 @@ class _PathHandler:
         self.username = user.name
         self.disc = user.discriminator
 
-        # Get relative path by removing root portion (and "www.", if present)
-        self.path = url.replace('www.', '').replace(root_path, '')
+        # Get relative path by removing root portion
+        self.path = url.removeprefix(root_path)
 
         # Ignore occurrences of consecutive slashes and trailing #
         self.path = re.sub('/{2,}', '/', self.path)
