@@ -18,7 +18,8 @@ class Bot(commands.Bot):
         # Bot building
         intents = Intents.default()
         intents.members = True
-        super().__init__(command_prefix='/', intents=intents)
+        super().__init__(command_prefix='/',
+                help_command=None, intents=intents)
         
         # Create Slash Commands object
         self.slash = SlashCommand(self)
