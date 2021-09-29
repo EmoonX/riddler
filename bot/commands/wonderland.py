@@ -5,6 +5,7 @@ from discord.errors import Forbidden
 from flag import flag
 
 from bot import bot
+from commands.unlock import update_nickname
 from util.db import database
 
 
@@ -35,9 +36,8 @@ async def update_country_nick(member: Member):
 
     # Update member's nickname
     emoji_flag = flag(country)
-    nick = member.name + (' %s' % emoji_flag)
     try:
-        await member.edit(nick=nick)
+        await update_nickname(member, emoji_flag)
     except Forbidden:
         pass
 
