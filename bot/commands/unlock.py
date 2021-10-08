@@ -77,7 +77,7 @@ class UnlockHandler:
 
     async def beat(self, level: dict, points: int,
             first_to_solve: bool, milestone: str):
-        '''Procedures upon player having beaten a level.'''
+        '''Procedures to be done when level is beaten.'''
 
         # Send congratulatory message
         n = 'DCBAS'.find(level['rank']) + 1
@@ -285,7 +285,7 @@ class UnlockHandler:
         await self._send(text)
         
         # Get cheevo thumb image from path
-        image_path = '../web/static/cheevos/%s/%s' \
+        image_path = '../../web/static/cheevos/%s/%s' \
                 % (cheevo['riddle'], cheevo['image'])
         with open(image_path, 'rb') as fp:
             # Create image object
