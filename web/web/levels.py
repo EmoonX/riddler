@@ -98,17 +98,28 @@ async def level_list(alias: str):
                         if level['path'][0] == '[':
                             level['path'] = ''  # safeguard
 
-                    # Get playe's current found files count for level
-                    query = 'SELECT COUNT(*) AS count FROM user_pages ' \
+                    # Get playe's current found pages count for level
+                    query = 'SELECT `path` FROM user_pages ' \
                             'WHERE riddle = :riddle ' \
                                 'AND username = :username ' \
                                 'AND discriminator = :disc ' \
-                                'AND level_name = :level ' \
-                            'GROUP BY riddle, username, ' \
-                                'discriminator, level_name'
+                                'AND level_name = :level '
                     values = {**base_values, 'level': level['name']}
-                    result = await database.fetch_one(query, values)
-                    level['pages_found'] = result['count'] if result else 0
+                    result = await database.fetch_all(query, values)
+                    found_pages = [row['path'] for row in result]
+                    level['pages_found'] = len(found_pages)
+
+                    # Get topmost folder by longest
+                    # common prefix of all found level pages
+                    longest_prefix = '%s/' % found_pages[0].rsplit('/', 1)[0]
+                    for path in found_pages[1:]:
+                        k = min(len(path), len(longest_prefix))
+                        for i in range(k):
+                            if path[i] != longest_prefix[i]:
+                                longest_prefix = longest_prefix[:i]
+                                break
+                    level['topmost_folder'] = longest_prefix
+                    
         else:
             level['beaten'] = False
             level['unlocked'] = False
@@ -190,25 +201,6 @@ async def get_pages(alias: str) -> str:
                 # Avoid registering locked folders/pages
                 break                
             parent = parent['children'][seg]
-    
-    # def _extension_cmp(row: dict):
-    #     '''Compare pages based firstly on their extension.
-    #     Order is: folders first, then .htm, then the rest.'''
-    #     page = row['page']
-    #     index = page.rfind('.')
-    #     if index == -1:
-    #         return 'aaa' + page
-    #     if page[index:] in ('.htm', '.html'):
-    #         return 'aab' + page
-    #     return 'zzz' + page[-3:]
-
-    # # Sort pages from each folder
-    # for folder in folders.values():
-    #     folder['files'].sort(key=_extension_cmp)
-    
-    # # Save number of pages/files in folder
-    # for folder in folders.values():
-    #     folder['files_total'] = len(folder['files'])
     
     # Return JSON dump
     return json.dumps(pages)

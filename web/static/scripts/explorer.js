@@ -35,11 +35,11 @@ export function getFolderEntry(path, level, admin) {
   // Get pages dictionary entry corresponding to bottom folder in path
   const segments = path.split('/').slice(1, -1);
   var folder;
-  if (!admin) {
-    folder = pages[level]['/'];
-  } else {
+  if (admin) {
     // Admin
     folder = pages['/'];
+  } else {
+    folder = pages[level]['/'];
   }
   segments.forEach(seg => {
     folder = folder['children'][seg];

@@ -142,9 +142,7 @@
         </div>
       {% if level['unlocked'] %}
         <div class="page-explorer">
-          {% set path = level['path'] %}
-          {% set aux = path.split('/') %}
-          {% set folder = '/'.join(aux[:-1]) + '/' %}
+          {% set folder = level['topmost_folder'] %}
           <nav>
             <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">{{ folder }}</div>
           {% if level['beaten'] %}

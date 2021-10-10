@@ -53,7 +53,7 @@ async def get_achievements(alias: str, user: dict = None) -> dict:
             'WHERE riddle = :riddle'
     values = {'riddle': alias}
     result = await database.fetch_all(query, values)
-    cheevos = {row['title']: row for row in result}
+    cheevos = {row['title']: dict(row) for row in result}
 
     if not user:
         # Get riddle's achievement list
