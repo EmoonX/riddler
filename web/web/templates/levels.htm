@@ -83,7 +83,11 @@
           {% if level['beaten'] %}
             <figure class="rating">
               <div class="data">
-                {% if not level['rating_given'] %}
+                {% set is_creator = (
+                    user['username'] == riddle['creator_username']
+                      and user['discriminator'] == riddle['creator_disc'])
+                %}
+                {% if not level['rating_given'] and not is_creator %}
                   {% set average = '??' %}
                   {% set unrated = 'unrated' %}
                 {% else %}
@@ -102,7 +106,7 @@
                 {% endif %}
                 <div class='hearts {{ unrated }}'>
                 {% for i in range(5) %}
-                  {% if level ['rating_given'] %}
+                  {% if level ['rating_given'] or is_creator %}
                     {% if (i+1) <= rating %}
                       {% set s = 'full' %}
                     {% elif (i+1) - rating == 0.5 %}
