@@ -136,7 +136,7 @@ async def get_pages(alias: str) -> str:
     
     # Build dict of (level -> paths) from user database data
     user = await discord.get_user()
-    query = 'SELECT level_name, path FROM user_pages ' \
+    query = 'SELECT level_name, path, access_time FROM user_pages ' \
             'WHERE riddle = :riddle ' \
                 'AND username = :username AND discriminator = :disc ' \
             'ORDER BY SUBSTRING_INDEX(`path`, ".", -1)'
@@ -148,6 +148,8 @@ async def get_pages(alias: str) -> str:
         row = dict(row)
         row['page'] = row['path'].rsplit('/', 1)[-1]
         row['folder'] = 0
+        row['access_time'] = row['access_time'] \
+                .strftime('%Y/%b/%d at %H:%M (UTC)')
         level = row['level_name']
         if not level in paths:
             paths[level] = []

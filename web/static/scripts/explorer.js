@@ -89,9 +89,11 @@ export function changeDir(explorer, folderPath, admin) {
       }
     }
     const path = row['path'];
+    const accessTime = row['access_time']
     const img = `<img src="/static/icons/extensions/${name}.png">`;
     const fc = `<figcaption>${page}</figcaption>`;
-    const figure = `<figure ${current} title="${path}">${img}${fc}</figure>`;
+    const figure = `<figure ${current} 
+        title="${path}&#10;↳ found on ${accessTime}">${img}${fc}</figure>`;
     
     // Append current level files in correct order
     // (current folders -> other folders -> current files -> other files)
