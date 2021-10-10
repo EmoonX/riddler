@@ -138,7 +138,8 @@ async def get_pages(alias: str) -> str:
     user = await discord.get_user()
     query = 'SELECT level_name, path FROM user_pages ' \
             'WHERE riddle = :riddle ' \
-                'AND username = :username AND discriminator = :disc'
+                'AND username = :username AND discriminator = :disc ' \
+            'ORDER BY SUBSTRING_INDEX(`path`, ".", -1)'
     values = {'riddle': alias,
             'username': user.name, 'disc': user.discriminator}
     result = await database.fetch_all(query, values)
