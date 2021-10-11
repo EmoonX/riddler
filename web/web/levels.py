@@ -193,14 +193,17 @@ async def get_pages(alias: str) -> str:
         level = row['level_name']
         if not level or level not in pages:
             continue
+        path = ''
         parent = pages[level]['/']
         segments = row['path'].split('/')[1:]
         for seg in segments:
             parent['files_total'] += 1
             if not seg in parent['children']:
                 # Avoid registering locked folders/pages
-                break                
+                break
             parent = parent['children'][seg]
+            path = '%s/%s' % (path, seg)
+            parent['path'] = path
     
     # Return JSON dump
     return json.dumps(pages)
