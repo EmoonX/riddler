@@ -69,7 +69,7 @@
           <div>
             <!--<a href="#" class="nav-button">Public info</a>-->
             <a href="{{ url_for('account.settings') }}" class="nav-button">Settings</a>
-            <a href="{{ url_for('players_auth.logout') }}" class="nav-button">Logout</a>
+            <a href="{{ url_for('players_auth.logout', current_url=(request.url)) }}" class="nav-button">Logout</a>
           </div>
         </nav>
       {% endif %}

@@ -68,7 +68,7 @@ async def register():
     values = {'username': user.name, 'disc': user.discriminator}
     already_created = await database.fetch_one(query, values)
     if already_created:
-        return redirect(url_for('info.about'))
+        return redirect(url_for('info.info_page', page='about'))
     
     # Render registration page on GET
     if request.method == 'GET':
@@ -139,5 +139,6 @@ async def logout():
     if 'user' in session:
         session.pop('user')
 
-    # Redirect to front page
-    return redirect(url_for('players.global_list'))
+    # Redirect to last page user was in (if any)
+    url = request.args.get('current_url', '/')
+    return redirect(url)
