@@ -91,20 +91,22 @@ async def register():
     return redirect(url_for('info.info_page', page='about'))
 
 
-@auth.route('/login', methods=['GET'])
+@auth.get('/login')
 async def login():
     '''Create Discord session and redirect to callback URL.'''
     scope = ['identify']
-    return await discord.create_session(scope=scope)
+    url = request.args.get('redirect_url', '/')
+    return await discord.create_session(
+            scope=scope, data={'redirect_url': url})
 
 
-@auth.route('/callback')
+@auth.get('/callback')
 async def callback():
     '''Callback for OAuth2 authentication.'''
 
     # Execute the callback
     try:
-        await discord.callback()
+        data = await discord.callback()
     except exceptions.AccessDenied:
         return 'Unauthorized', 401
 
@@ -125,10 +127,11 @@ async def callback():
     session['country'] = result['country']
 
     # Otherwise, redirect to post-login page
-    return redirect(url_for('players.global_list'))
+    url = data.get('redirect_url', '/')
+    return redirect(url)
 
 
-@auth.route('/logout')
+@auth.get('/logout')
 async def logout():
     '''Revoke credentials and logs user out of application.'''
 
@@ -140,5 +143,5 @@ async def logout():
         session.pop('user')
 
     # Redirect to last page user was in (if any)
-    url = request.args.get('current_url', '/')
+    url = request.args.get('redirect_url', '/')
     return redirect(url)
