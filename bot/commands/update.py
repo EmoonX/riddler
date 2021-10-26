@@ -70,7 +70,7 @@ async def insert(request):
                 # Create category if nonexistent
                 category = await guild.create_category(name=level['discord_category'])
 
-            # Create text channel inside category    
+            # Create text channel inside category
             channel = await category.create_text_channel(name)
 
         # Set read permission for Riddler role
@@ -98,7 +98,7 @@ async def insert(request):
                 set_role = set_completion_roles[level['discord_category']]
                 await channel.set_permissions(set_role, read_messages=True)
             
-            # Set read permission to current roles for 
+            # Set read permission to current roles for
             # this channel and every other ancestor level channel
             ancestor_levels = await get_ancestor_levels(data['alias'], level)
             for channel in guild.channels:
@@ -122,7 +122,12 @@ async def insert(request):
                             continue
                         await member.remove_roles(completed_role)
                         await member.add_roles(last_reached)
-                        await update_nickname(member, '[%s]' % last_level['name'])
+                        await update_nickname(member,
+                            '[%s]' % last_level['name'])
+            else:
+                for member in guild.members:
+                    await member.remove_roles(completed_role)
+                    await multi_update_nickname(alias, member)
 
             # Just removed "mastered" status from respective members
             await clear_mastered()
