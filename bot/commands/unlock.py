@@ -424,21 +424,35 @@ async def multi_update_nickname(riddle: str, member: Member):
                 continue
             level = unlocked_levels[-1]
 
-            # Replace explicit set name with short name, if any
             name = level['level_name']
             short_name = level_set['short_name']
             if short_name:
+                # Replace explicit set name with short name, if any
                 name = name.replace((set_name + ' '), short_name)
 
-            # Replace numerical digits with their
-            # smaller Unicode variants
-            for digit in '0123456789':
-                if digit in name:
-                    value = ord(digit) - 0x30 + 0x2080
-                    small_digit = chr(value)
-                    name = name.replace(digit, small_digit)
+                # Replace numerical digits with their
+                # smaller Unicode variants
+                for digit in '0123456789':
+                    if digit in name:
+                        value = ord(digit) - 0x30 + 0x2080
+                        small_digit = chr(value)
+                        name = name.replace(digit, small_digit)
         else:
-            # Just use an emoji for completed sets :)
+            # Ignore completed set if player progressed further than it
+            final_level = level_set['final_level']
+            query = '''SELECT * FROM level_requirements AS reqs
+                WHERE requires = :level_name AND level_name IN (
+                    SELECT level_name FROM user_levels AS ul
+                    WHERE riddle = :riddle
+                        AND username = :username AND discriminator = :disc
+                        AND reqs.level_name = ul.level_name)'''
+            values.pop('set_name')
+            values['level_name'] = final_level
+            reached_further_level = await database.fetch_one(query, values)
+            if reached_further_level:
+                continue
+
+            # Otherwise, just use an emoji for it :)
             name = level_set['emoji']
         
         index = level_set['index']
