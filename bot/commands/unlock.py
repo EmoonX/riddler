@@ -424,9 +424,11 @@ async def multi_update_nickname(riddle: str, member: Member):
                 continue
             level = unlocked_levels[-1]
 
-            # Replace explicit set name with short name
+            # Replace explicit set name with short name, if any
+            name = level['level_name']
             short_name = level_set['short_name']
-            name = level['level_name'].replace((set_name + ' '), short_name)
+            if short_name:
+                name = name.replace((set_name + ' '), short_name)
 
             # Replace numerical digits with their
             # smaller Unicode variants
@@ -443,9 +445,11 @@ async def multi_update_nickname(riddle: str, member: Member):
         set_progress[index] = name
 
     # Join list of set progress strings and update nickname
-    aux = sorted(set_progress.items())
-    set_progress = [progress for _, progress in aux]
-    s = '[' + ' '.join(set_progress) + ']'
+    s = ''
+    if set_progress:
+        aux = sorted(set_progress.items())
+        set_progress = [progress for _, progress in aux]
+        s = '[' + ' '.join(set_progress) + ']'
     await update_nickname(member, s)
 
 
