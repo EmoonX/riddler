@@ -357,48 +357,48 @@ class _PathHandler:
                             # A new level has been found!
                             lh = _NormalLevelHandler(page_level, self)
                             await lh.register_finding()
-                else:
-                    # Find if current level is solved (either beforehand or not)
-                    query = 'SELECT * FROM user_levels ' \
-                            'WHERE riddle = :riddle ' \
-                                'AND username = :name AND discriminator = :disc ' \
-                                'AND level_name = :level ' \
-                                'AND completion_time IS NOT NULL'
-                    values = {'riddle': self.riddle_alias, 
-                            'name': self.username, 'disc': self.disc,
-                            'level': current_name}
-                    result = await database.fetch_one(query, values)
-                    current_solved = (result is not None)
+            else:
+                # Find if current level is solved (either beforehand or not)
+                query = 'SELECT * FROM user_levels ' \
+                        'WHERE riddle = :riddle ' \
+                            'AND username = :name AND discriminator = :disc ' \
+                            'AND level_name = :level ' \
+                            'AND completion_time IS NOT NULL'
+                values = {'riddle': self.riddle_alias, 
+                        'name': self.username, 'disc': self.disc,
+                        'level': current_name}
+                result = await database.fetch_one(query, values)
+                current_solved = (result is not None)
 
-                    if not current_name or current_solved:
-                        # Get next level name
-                        if result:
-                            query = 'SELECT * FROM levels ' \
-                                    'WHERE riddle = :riddle AND name = :level_name'
-                            values = {'riddle': self.riddle_alias,
-                                    'level_name': result['level_name']}
-                            current_level = await database.fetch_one(query, values)
-                            index = current_level['index'] + 1
-                        else:
-                            index = 1
+                if not current_name or current_solved:
+                    # Get next level name
+                    if result:
                         query = 'SELECT * FROM levels ' \
-                                'WHERE riddle = :riddle ' \
-                                    'AND is_secret IS FALSE AND `index` = :index'
-                        values = {'riddle': self.riddle_alias, 'index': index}
-                        result = await database.fetch_one(query, values)
-                        next_name = result['name'] if result else ''
-                    
-                        # (also check for phony JSON of multi-front levels)
-                        query = 'SELECT * FROM levels ' \
-                                'WHERE riddle = :riddle AND is_secret IS FALSE ' \
-                                    'AND (`path` = :path OR `path` LIKE "%\":path\"%")'
-                        values = {'riddle': self.riddle_alias, 'path': self.path}
-                        result = await database.fetch_one(query, values)
-                        is_front = (result is not None)
-                        if page_level['name'] == next_name and is_front:
-                            # If it's the new level's front page, register progress
-                            lh = _NormalLevelHandler(page_level, self)
-                            await lh.register_finding()
+                                'WHERE riddle = :riddle AND name = :level_name'
+                        values = {'riddle': self.riddle_alias,
+                                'level_name': result['level_name']}
+                        current_level = await database.fetch_one(query, values)
+                        index = current_level['index'] + 1
+                    else:
+                        index = 1
+                    query = 'SELECT * FROM levels ' \
+                            'WHERE riddle = :riddle ' \
+                                'AND is_secret IS FALSE AND `index` = :index'
+                    values = {'riddle': self.riddle_alias, 'index': index}
+                    result = await database.fetch_one(query, values)
+                    next_name = result['name'] if result else ''
+
+                    # (also check for phony JSON of multi-front levels)
+                    query = 'SELECT * FROM levels ' \
+                            'WHERE riddle = :riddle AND is_secret IS FALSE ' \
+                                'AND (`path` = :path OR `path` LIKE "%\":path\"%")'
+                    values = {'riddle': self.riddle_alias, 'path': self.path}
+                    result = await database.fetch_one(query, values)
+                    is_front = (result is not None)
+                    if page_level['name'] == next_name and is_front:
+                        # If it's the new level's front page, register progress
+                        lh = _NormalLevelHandler(page_level, self)
+                        await lh.register_finding()
             
         # Check for secret level pages
         # (also check for phony JSON of multi-front levels)
