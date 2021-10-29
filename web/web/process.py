@@ -31,31 +31,35 @@ for rank, pair in level_ranks.items():
 async def process_url(username=None, disc=None, path=None):
     '''Process an URL sent by browser extension.'''
 
-    if not path and not await discord.authorized:
+    # Mark function call as automated or not
+    auto = (path is not None)
+
+    if not auto and not await discord.authorized:
         # Not logged in, return status 401
         status = 401 if request.method == 'POST' else 200
         return 'Not logged in', status
     
     message, status_code = 'Success!', 200
-    if path or request.method == 'POST':
+    if auto or request.method == 'POST':
         # Receive path from request
-        if not path:
+        if not auto:
             path = (await request.data).decode('utf-8')
         
-        # Get status code from request header, if any
-        status_code = request.headers.get('Statuscode')
+        # Get status code from request header (or 200 if not present)
+        status_code = request.headers.get('Statuscode', 200)
         if status_code:
             status_code = int(status_code)
 
         # Create path handler object and build player data
-        if not username:
+        if not auto:
             user = await discord.get_user()
         else:
             user = lambda: None
             setattr(user, 'name', username)
             setattr(user, 'discriminator', disc)
         ph = _PathHandler()
-        ok, invite_code = await ph.build_handler(user, path, status_code)
+        ok, invite_code = \
+                await ph.build_handler(user, path, status_code, auto)
         if not ok:
             if not invite_code:
                 # Page is not inside root path (like forum or admin pages)
@@ -127,11 +131,14 @@ class _PathHandler:
     status_code: int
     '''Real status code of requested page (either 200 or 404)'''
 
-    async def build_handler(self, user: User, url: str, status_code: str):
+    async def build_handler(self, user: User,
+            url: str, status_code: str, auto: bool):
         '''Get path from raw URL and get user info from DB.
         
         @param user: Discord user object for logged in player
-        @param path: raw URL sent by the extension'''
+        @param url: raw URL sent by the extension
+        @param status_code: status code of the user-accessed page
+        #param auto: if `process_url` have been called automatically'''
 
         # Exclude protocol from URL
         base_url = url.replace('https://', 'http://').replace('http://', '')
@@ -159,12 +166,13 @@ class _PathHandler:
             url = url.replace('//www.', '//')
 
         # Check if user is member of riddle guild
-        is_member = await bot_request('is-member-of-guild',
-                guild_id=859797827554770955,
-                username=user.name, disc=user.discriminator)
         ok, invite_code = True, None
-        if is_member == 'False':
-            ok, invite_code = False, 'ktaPPtnPSn'
+        if not auto:
+            is_member = await bot_request('is-member-of-guild',
+                    guild_id=859797827554770955,
+                    username=user.name, disc=user.discriminator)
+            if is_member == 'False':
+                ok, invite_code = False, 'ktaPPtnPSn'
 
         # Save basic riddle info
         self.riddle_alias = riddle['alias']
@@ -306,50 +314,7 @@ class _PathHandler:
         
         current_solved = False
         if current_name != '🏅':
-            if self.riddle_alias != 'genius':
-                # Find if current level is solved (either beforehand or not)
-                query = 'SELECT * FROM user_levels ' \
-                        'WHERE riddle = :riddle ' \
-                            'AND username = :name AND discriminator = :disc ' \
-                            'AND level_name = :level ' \
-                            'AND completion_time IS NOT NULL'
-                values = {'riddle': self.riddle_alias, 
-                        'name': self.username, 'disc': self.disc,
-                        'level': current_name}
-                result = await database.fetch_one(query, values)
-                current_solved = (result is not None)
-
-                if not current_name or current_solved:
-                    # Get next level name
-                    if result:
-                        query = 'SELECT * FROM levels ' \
-                                'WHERE riddle = :riddle AND name = :level_name'
-                        values = {'riddle': self.riddle_alias,
-                                'level_name': result['level_name']}
-                        current_level = await database.fetch_one(query, values)
-                        index = current_level['index'] + 1
-                    else:
-                        index = 1
-                    query = 'SELECT * FROM levels ' \
-                            'WHERE riddle = :riddle ' \
-                                'AND is_secret IS FALSE AND `index` = :index'
-                    values = {'riddle': self.riddle_alias, 'index': index}
-                    result = await database.fetch_one(query, values)
-                    next_name = result['name'] if result else ''
-                
-                    # (also check for phony JSON of multi-front levels)
-                    query = 'SELECT * FROM levels ' \
-                            'WHERE riddle = :riddle AND is_secret IS FALSE ' \
-                                'AND (`path` = :path OR `path` LIKE "%\":path\"%")'
-                    values = {'riddle': self.riddle_alias, 'path': self.path}
-                    result = await database.fetch_one(query, values)
-                    is_front = (result is not None)
-                    if page_level['name'] == next_name and is_front:
-                        # If it's the new level's front page, register progress
-                        lh = _NormalLevelHandler(page_level, self)
-                        await lh.register_finding()
-            
-            else:
+            if self.riddle_alias in ('genius', 'zed'):
                 # Search for some level which have the current path as front
                 query = 'SELECT * FROM levels ' \
                         'WHERE riddle = :riddle AND `path` = :path'
@@ -391,7 +356,49 @@ class _PathHandler:
                         if can_unlock:
                             # A new level has been found!
                             lh = _NormalLevelHandler(page_level, self)
-                            await lh.register_finding()                
+                            await lh.register_finding()
+                else:
+                    # Find if current level is solved (either beforehand or not)
+                    query = 'SELECT * FROM user_levels ' \
+                            'WHERE riddle = :riddle ' \
+                                'AND username = :name AND discriminator = :disc ' \
+                                'AND level_name = :level ' \
+                                'AND completion_time IS NOT NULL'
+                    values = {'riddle': self.riddle_alias, 
+                            'name': self.username, 'disc': self.disc,
+                            'level': current_name}
+                    result = await database.fetch_one(query, values)
+                    current_solved = (result is not None)
+
+                    if not current_name or current_solved:
+                        # Get next level name
+                        if result:
+                            query = 'SELECT * FROM levels ' \
+                                    'WHERE riddle = :riddle AND name = :level_name'
+                            values = {'riddle': self.riddle_alias,
+                                    'level_name': result['level_name']}
+                            current_level = await database.fetch_one(query, values)
+                            index = current_level['index'] + 1
+                        else:
+                            index = 1
+                        query = 'SELECT * FROM levels ' \
+                                'WHERE riddle = :riddle ' \
+                                    'AND is_secret IS FALSE AND `index` = :index'
+                        values = {'riddle': self.riddle_alias, 'index': index}
+                        result = await database.fetch_one(query, values)
+                        next_name = result['name'] if result else ''
+                    
+                        # (also check for phony JSON of multi-front levels)
+                        query = 'SELECT * FROM levels ' \
+                                'WHERE riddle = :riddle AND is_secret IS FALSE ' \
+                                    'AND (`path` = :path OR `path` LIKE "%\":path\"%")'
+                        values = {'riddle': self.riddle_alias, 'path': self.path}
+                        result = await database.fetch_one(query, values)
+                        is_front = (result is not None)
+                        if page_level['name'] == next_name and is_front:
+                            # If it's the new level's front page, register progress
+                            lh = _NormalLevelHandler(page_level, self)
+                            await lh.register_finding()
             
         # Check for secret level pages
         # (also check for phony JSON of multi-front levels)
@@ -451,7 +458,7 @@ class _PathHandler:
         current_level = await database.fetch_one(query, values)
 
         # Register into database new page access (if applicable)
-        if self.riddle_alias == 'genius':
+        if self.riddle_alias in ('genius', 'zed'):
             query = 'SELECT * FROM user_levels ' \
                     'WHERE riddle = :riddle ' \
                         'AND username = :username AND discriminator = :disc ' \
@@ -806,7 +813,7 @@ class _NormalLevelHandler(_LevelHandler):
                 username=self.username, disc=self.disc,
                 first_to_solve=first_to_solve, milestone=milestone)
     
-        if self.riddle_alias == 'genius':
+        if self.riddle_alias in ('genius', 'zed'):
             query = 'SELECT * FROM level_sets ' \
                     'WHERE riddle = :riddle AND final_level NOT IN (' \
                         'SELECT level_name FROM user_levels ' \

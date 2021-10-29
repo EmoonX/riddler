@@ -7,12 +7,13 @@ from aiohttp import web
 from discord.ext import commands
 
 from commands.get import is_member_of_guild, \
-        is_member_and_has_permissions, \
-        get_riddle_icon_url, fetch_riddle_icon_urls, \
-        get_avatar_url, fetch_avatar_urls
+    is_member_and_has_permissions, \
+    get_riddle_icon_url, fetch_riddle_icon_urls, \
+    get_avatar_url, fetch_avatar_urls
 from commands.update import insert, update
 from commands.unlock import UnlockHandler
-from commands.wonderland import update_score_role
+from commands.wonderland import \
+    update_country_nick, update_score_role
 from util.db import database
 
       
@@ -88,7 +89,7 @@ async def unlock(request):
     
     # Special procedures to be done upon score increase 
     methods = ['cheevo_found', 'secret_solve', 'game_completed']
-    if alias == 'genius':
+    if alias in ('genius', 'zed'):
         methods.append('beat')
     if params['method'] in methods:
         # Check if player completed all levels

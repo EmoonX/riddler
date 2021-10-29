@@ -122,7 +122,7 @@ class UnlockHandler:
                     % (self.member.id, name, role.name)
             await self._send(text, channel)
 
-        elif self.alias == 'genius':
+        elif self.alias in ('genius', 'zed'):
             query = 'SELECT * FROM level_sets ' \
                     'WHERE riddle = :riddle AND final_level = :level_name'
             values = {'riddle': self.alias, 'level_name': level['name']}
@@ -165,7 +165,7 @@ class UnlockHandler:
             return
 
         # Remove ancestors' "reached" role from user
-        if self.alias == 'genius':
+        if self.alias in ('genius', 'zed'):
             ancestor_levels = await get_ancestor_levels(self.alias, level)
             for level_name in ancestor_levels:
                 role_name = 'reached-' + level_name
@@ -193,7 +193,7 @@ class UnlockHandler:
         await self.member.add_roles(role)
 
         # Show current level(s) in nickname
-        if self.alias == 'genius':
+        if self.alias in ('genius', 'zed'):
             await multi_update_nickname(self.alias, self.member)
         else:
             s = '[%s]' % level['name']
@@ -463,7 +463,8 @@ async def multi_update_nickname(riddle: str, member: Member):
     if set_progress:
         aux = sorted(set_progress.items())
         set_progress = [progress for _, progress in aux]
-        s = '[' + ' '.join(set_progress) + ']'
+        sep = ', ' if len(set_progress) <= 2 else ' '
+        s = '[' + sep.join(set_progress) + ']'
     await update_nickname(member, s)
 
 

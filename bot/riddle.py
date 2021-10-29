@@ -64,16 +64,26 @@ async def get_ancestor_levels(riddle: str, level: dict):
     ancestor_levels = set()
     queue = [level]
     while queue:
+        # Add level to set
         level = queue.pop(0)
         ancestor_levels.add(level['discord_name'])
-        query = 'SELECT * FROM level_requirements ' \
-                'WHERE riddle = :riddle AND level_name = :name'
-        values = {'riddle': riddle, 'name': level['name']}
+
+        # Don't search node's children if level is final in set
+        query = '''SELECT * FROM level_sets
+            WHERE riddle = :riddle AND final_level = :level_name'''
+        values = {'riddle': riddle, 'level_name': level['name']}
+        is_final_in_set = await database.fetch_one(query, values)
+        if is_final_in_set:
+            continue
+
+        # Fetch level requirements and add unseen ones to queue
+        query = '''SELECT * FROM level_requirements
+            WHERE riddle = :riddle AND level_name = :level_name'''
         result = await database.fetch_all(query, values)
         for row in result:
-            query = 'SELECT * FROM levels ' \
-                    'WHERE riddle = :riddle and name = :name'
-            values['name'] = row['requires']
+            query = '''SELECT * FROM levels
+                WHERE riddle = :riddle and name = :level_name'''
+            values['level_name'] = row['requires']
             level = await database.fetch_one(query, values)
             if level['discord_name'] not in ancestor_levels:
                 queue.append(dict(level))

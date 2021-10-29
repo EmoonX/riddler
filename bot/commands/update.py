@@ -48,12 +48,12 @@ async def insert(request):
                 continue
             await member.remove_roles(mastered_role)
             try:
-                if alias != 'genius':
-                    # Swap 💎 back for 🏅
-                    await update_nickname(member, '🏅')
-                else:
+                if alias in ('genius', 'zed'):
                     # Swap 💎 for set progress
                     await multi_update_nickname(alias, member)
+                else:
+                    # Swap 💎 back for 🏅
+                    await update_nickname(member, '🏅')
             except Forbidden:
                 pass
 
@@ -94,7 +94,7 @@ async def insert(request):
             
             # Set read permissions to completed and set completion roles
             await channel.set_permissions(completed_role, read_messages=True)
-            if alias == 'genius':
+            if alias in ('genius', 'zed'):
                 set_role = set_completion_roles[level['discord_category']]
                 await channel.set_permissions(set_role, read_messages=True)
             
@@ -105,7 +105,11 @@ async def insert(request):
                 if channel.name in ancestor_levels:
                     await channel.set_permissions(reached, read_messages=True)
 
-            if alias != 'genius':
+            if alias in ('genius', 'zed'):
+                for member in guild.members:
+                    await member.remove_roles(completed_role)
+                    await multi_update_nickname(alias, member)
+            else:
                 # Swap "completed" and "mastered" roles
                 # for last "reached" level role
                 last_index = level['index'] - 1
@@ -124,10 +128,6 @@ async def insert(request):
                         await member.add_roles(last_reached)
                         await update_nickname(member,
                             '[%s]' % last_level['name'])
-            else:
-                for member in guild.members:
-                    await member.remove_roles(completed_role)
-                    await multi_update_nickname(alias, member)
 
             # Just removed "mastered" status from respective members
             await clear_mastered()
