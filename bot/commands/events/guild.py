@@ -32,30 +32,34 @@ class Guild(commands.Cog):
 
         # Check if an honor role was changed
         honor_roles = ('completed_role', 'mastered_role')
+        honor_changed = False
         for role in honor_roles:
             role_name = riddle[role]
             if before.name == role_name:
                 query = 'UPDATE riddles ' + \
                         ('SET %s = :new_name ' % role) + \
                         'WHERE alias = :riddle'
-        if not query:
-            # Otherwise, check if milestone role was changed
-            query = 'SELECT * FROM milestones ' \
-                    'WHERE riddle = :riddle'
-            result = await database.fetch_all(query,
-                    {'riddle': riddle['alias']})
-            milestones = set(row['role'] for row in result)
-            if before.name in milestones:
-                query = 'UPDATE milestones ' \
-                        'SET role = :new_name ' \
-                        'WHERE riddle = :riddle AND role = :old_name '
-                values['old_name'] = before.name
-            else:
-                # Change happened on irrelevant role
-                return
+                await database.execute(query, values)
+                honor_changed = True
+                break
+
+        # Otherwise, check if milestone role was changed
+        query = 'SELECT * FROM milestones ' \
+                'WHERE riddle = :riddle'
+        result = await database.fetch_all(query,
+                {'riddle': riddle['alias']})
+        milestones = set(row['role'] for row in result)
+        if before.name in milestones:
+            query = 'UPDATE milestones ' \
+                    'SET role = :new_name ' \
+                    'WHERE riddle = :riddle AND role = :old_name '
+            values['old_name'] = before.name
+            await database.execute(query, values)
+        elif not honor_changed:
+            # Change happened on irrelevant role
+            return
         
-        # Update respective DB table
-        await database.execute(query, values)
+        # Log role name change
         logging.info(('\033[1m[%s]\033[0m Role \033[1m@%s\033[0m ' \
                 'changed to \033[1m@%s\033[0m')
                 % (before.guild.name, before.name, after.name))

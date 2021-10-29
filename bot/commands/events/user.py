@@ -34,7 +34,7 @@ class User(commands.Cog):
         values = {'riddle': alias,
                 'username': member.name, 'disc': member.discriminator}
         account = await database.fetch_one(query, values)
-        if not account:
+        if not account or not account['current_level']:
             # Member still hasn't started riddle, so nothing to do
             return
 

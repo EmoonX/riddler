@@ -22,7 +22,7 @@ class Bot(commands.Bot):
                 help_command=None, intents=intents)
         
         # Create Slash Commands object
-        self.slash = SlashCommand(self)
+        self.slash = SlashCommand(self, sync_commands=True)
 
 
 # Global bot object to be used on other modules
@@ -35,5 +35,5 @@ for path in glob.glob('**/*.py', recursive=True):
     if path.endswith('.py'):
         name = path.removesuffix('.py').replace('/', '.')
         name = 'commands.' + name
-        logging.info('Loading extension %s...' % name)
+        logging.info('Loading extension %s...', name)
         bot.load_extension(name)

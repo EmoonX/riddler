@@ -96,7 +96,7 @@ function updateRating() {
       console.log('[Rating] Error updating rating for level ${levelName}...')
       if (response.status == 401) {
         // Go back to login page if trying to rate while not logged in
-        location.replace('/login');
+        location.replace(`/login?redirect_url{location.href}`);
         return;
       }
     }
@@ -125,7 +125,6 @@ $(_ => {
       }
     });
   });
-
   // Register events
   $('.list.levels .rating img.heart').on('mouseenter', heartMouseEnter);
   $('.list.levels .rating .hearts').on('mouseleave', heartsMouseLeave);

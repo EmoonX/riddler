@@ -106,19 +106,21 @@ async def level_list(alias: str):
                                 'AND level_name = :level '
                     values = {**base_values, 'level': level['name']}
                     result = await database.fetch_all(query, values)
-                    found_pages = [row['path'] for row in result]
-                    level['pages_found'] = len(found_pages)
+                    if result:
+                        found_pages = [row['path'] for row in result]
+                        level['pages_found'] = len(found_pages)
 
-                    # Get topmost folder by longest
-                    # common prefix of all found level pages
-                    longest_prefix = '%s/' % found_pages[0].rsplit('/', 1)[0]
-                    for path in found_pages[1:]:
-                        k = min(len(path), len(longest_prefix))
-                        for i in range(k):
-                            if path[i] != longest_prefix[i]:
-                                longest_prefix = longest_prefix[:i]
-                                break
-                    level['topmost_folder'] = longest_prefix
+                        # Get topmost folder by longest
+                        # common prefix of all found level pages
+                        longest_prefix = '%s/' % \
+                                found_pages[0].rsplit('/', 1)[0]
+                        for path in found_pages[1:]:
+                            k = min(len(path), len(longest_prefix))
+                            for i in range(k):
+                                if path[i] != longest_prefix[i]:
+                                    longest_prefix = longest_prefix[:i]
+                                    break
+                        level['topmost_folder'] = longest_prefix
                     
         else:
             level['beaten'] = False
