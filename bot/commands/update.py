@@ -57,7 +57,6 @@ async def insert(request):
             except Forbidden:
                 pass
 
-
     async def add(level: dict):
         '''Add guild channels and roles.'''
         

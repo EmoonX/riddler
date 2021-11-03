@@ -17,20 +17,24 @@ class User(commands.Cog):
     
     @commands.Cog.listener()
     async def on_member_join(self, member: Member):
+        '''Procedures upon players joining riddle guilds.'''
+
         # Get riddle alias from guild ID
+        guild = member.guild
         query = 'SELECT * FROM riddles ' \
                 'WHERE guild_id = :id'
-        values = {'id': member.guild.id}
+        values = {'id': guild.id}
         riddle = await database.fetch_one(query, values)
         if not riddle:
-            # Nothing to do in e.g Wonderland
+            # Nothing to do (e.g Wonderland)
             return
         alias = riddle['alias']
 
         # Get player riddle account
-        query = 'SELECT * FROM riddle_accounts ' \
-                'WHERE riddle = :riddle ' \
-                    'AND username = :username AND discriminator = :disc'
+        query = '''SELECT * FROM riddle_accounts as racc
+            WHERE riddle = :riddle
+                AND racc.username = :username
+                AND racc.discriminator = :disc'''
         values = {'riddle': alias,
                 'username': member.name, 'disc': member.discriminator}
         account = await database.fetch_one(query, values)
@@ -51,7 +55,7 @@ class User(commands.Cog):
             await uh.advance(level)
         else:
             # Grant completed (and possibly mastered) honor(s)
-            completed_role = get(member.guild.roles,
+            completed_role = get(guild.roles,
                     name=riddle['completed_role'])
             await member.add_roles(completed_role)
             query = 'SELECT * FROM achievements ' \
@@ -64,7 +68,7 @@ class User(commands.Cog):
             if has_locked_cheevo:
                 await update_nickname(member, '🏅')
             else:
-                mastered_role = get(member.guild.roles,
+                mastered_role = get(guild.roles,
                         name=riddle['mastered_role'])
                 await member.add_roles(mastered_role)
                 await update_nickname(member, '💎')
@@ -85,6 +89,11 @@ class User(commands.Cog):
             role_name += level['discord_name']
             role = get(member.guild.roles, name=role_name)
             await member.add_roles(role)
+        
+        # Grant muted role for player if (sadly) necessary
+        if account['muted']:
+            muted = get(guild.roles, name='Muted')
+            await member.add_roles(muted)
 
     @commands.Cog.listener()
     async def on_user_update(self, before: DiscordUser, after: DiscordUser):
