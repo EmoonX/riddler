@@ -31,6 +31,7 @@ from auth import auth, session_cookie
 from admin.admin import admin
 from admin.levels import admin_levels
 from admin.cheevos import admin_cheevos
+from admin.deltas import admin_deltas
 from players.players import players
 from players.account import account
 from players.profile import profile
@@ -42,8 +43,10 @@ from get import get
 from util.db import database
 from inject import context_processor
 
-for blueprint in (auth, admin, admin_levels, admin_cheevos,
-        players, account, profile, countries, process, levels, info, get):
+for blueprint in (auth, admin,
+        admin_levels, admin_cheevos, admin_deltas,
+        players, account, profile, countries,
+        process, levels, info, get):
     # Register app blueprint to allow other modules
     app.register_blueprint(blueprint)
 
