@@ -24,7 +24,7 @@ level_ranks = {
     'S': (1000, 'lightcyan')
 }
 for rank, pair in level_ranks.items():
-    level_ranks[rank] = {'points': pair[0], 'color': pair[1]}    
+    level_ranks[rank] = {'points': pair[0], 'color': pair[1]}
 
 
 @process.route('/process', methods=['POST', 'OPTIONS'])
@@ -106,7 +106,7 @@ async def process_url(username=None, disc=None, path=None):
 class _PathHandler:
     '''Handler for processing level paths.
 
-    Updates the needed tables on database and request 
+    Updates the needed tables on database and request
     guild changes to be done by bot.'''
 
     riddle_alias: str
@@ -567,6 +567,26 @@ class _PathHandler:
             values['level_name'] = last_visited_level
             await database.execute(query, values)
     
+    async def update_score(self, points: int):
+        '''Record player score increase, by given points, in DB.'''
+
+        # Increase player's riddle score
+        query = '''UPDATE riddle_accounts
+            SET score = score + :points
+            WHERE riddle = :riddle
+                AND username = :name AND discriminator = :disc'''
+        values = {'points': points, 'riddle': self.riddle_alias,
+            'name': self.username, 'disc': self.disc}
+        await database.execute(query, values)
+
+        # Increase global score (unless riddle is unlisted)
+        if not self.unlisted:
+            query = '''UPDATE accounts
+                SET global_score = global_score + :points
+                WHERE username = :name AND discriminator = :disc'''
+            values.pop('riddle')
+            await database.execute(query, values)
+    
     async def _process_cheevo(self):
         '''Grant cheevo and awards if page is an achievement one.'''
 
@@ -615,19 +635,7 @@ class _PathHandler:
 
         # Also Update user and global scores
         points = cheevo_ranks[cheevo['rank']]['points']
-        query = 'UPDATE riddle_accounts ' \
-                'SET score = score + :points ' \
-                'WHERE riddle = :riddle ' \
-                    'AND username = :name AND discriminator = :disc'
-        values = {'points': points, 'riddle': self.riddle_alias,
-                'name': self.username, 'disc': self.disc}
-        await database.execute(query, values)
-        if not self.unlisted:
-            query = 'UPDATE accounts ' \
-                    'SET global_score = global_score + :points ' \
-                    'WHERE username = :name AND discriminator = :disc'
-            values.pop('riddle')
-            await database.execute(query, values)
+        await self.update_score(points)
 
         # Send request to bot to congratulate member
         await bot_request('unlock', method='cheevo_found',
@@ -639,11 +647,14 @@ class _PathHandler:
 class _LevelHandler:
     '''Handler base class for processing levels.'''
     
-    # Dict containing level DB data
     level: dict
+    '''Dict containing level DB data'''
     
-    # Points awarded upon level completion
     points: int
+    '''Points awarded upon level completion'''
+
+    ph: _PathHandler
+    '''Reference to parent caller PH'''
     
     def __init__(self, level: dict, ph: _PathHandler):
         '''Register level DB data and points,
@@ -657,6 +668,7 @@ class _LevelHandler:
         self.points = level_ranks[rank]['points']
         
         # Set some attributes from parent caller PH for easier access
+        self.ph = ph
         for name in ('riddle_alias', 'unlisted',
                 'username', 'disc', 'riddle_account'):
             attr = getattr(ph, name)
@@ -732,20 +744,7 @@ class _LevelHandler:
         await database.execute(query, values)
 
         # Update user and global scores
-        query = 'UPDATE riddle_accounts ' \
-                'SET score = score + :points ' \
-                'WHERE riddle = :riddle ' \
-                    'AND username = :name AND discriminator = :disc'
-        values = {'points': self.points, 'riddle': self.riddle_alias,
-                'name': self.username, 'disc': self.disc}
-        await database.execute(query, values)
-        if not self.unlisted:
-            query = 'UPDATE accounts ' \
-                    'SET global_score = global_score + :points ' \
-                    'WHERE username = :name AND discriminator = :disc'
-            values = {'points': self.points,
-                    'name': self.username, 'disc': self.disc}
-            await database.execute(query, values)
+        await ph.update_score(self.points)
 
 
 class _NormalLevelHandler(_LevelHandler):

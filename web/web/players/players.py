@@ -187,7 +187,7 @@ async def riddle_list(alias: str, country: str = None):
             '(SELECT riddle_accounts.*, levels.`index`, ' \
                     '1 AS filter FROM riddle_accounts ' \
                 'INNER JOIN levels ' \
-                'ON current_level = levels.name ' \
+                    'ON current_level = levels.name ' \
                 'WHERE riddle_accounts.riddle = :riddle ' \
                     'AND levels.riddle = :riddle) ' \
             ') AS result ' \
