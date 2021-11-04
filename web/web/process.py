@@ -572,7 +572,8 @@ class _PathHandler:
 
         # Increase player's riddle score
         query = '''UPDATE riddle_accounts
-            SET score = score + :points
+            SET score = score + :points,
+                recent_score = recent_score + :points
             WHERE riddle = :riddle
                 AND username = :name AND discriminator = :disc'''
         values = {'points': points, 'riddle': self.riddle_alias,
@@ -582,7 +583,8 @@ class _PathHandler:
         # Increase global score (unless riddle is unlisted)
         if not self.unlisted:
             query = '''UPDATE accounts
-                SET global_score = global_score + :points
+                SET global_score = global_score + :points,
+                    recent_score = recent_score + :points
                 WHERE username = :name AND discriminator = :disc'''
             values.pop('riddle')
             await database.execute(query, values)
@@ -744,7 +746,7 @@ class _LevelHandler:
         await database.execute(query, values)
 
         # Update user and global scores
-        await ph.update_score(self.points)
+        await self.ph.update_score(self.points)
 
 
 class _NormalLevelHandler(_LevelHandler):
