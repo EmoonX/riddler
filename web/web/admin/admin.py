@@ -46,7 +46,7 @@ async def auth(alias: str):
         abort(401)
 
 
-@admin.get('/admin/update-all-riddles')
+@admin.post('/admin/update-all-riddles')
 @requires_authorization
 async def update_all_riddles():
     '''Update everything on every single riddle.'''
@@ -89,7 +89,7 @@ async def update_all_riddles():
     return 'SUCCESS :)', 200
 
 
-@admin.get('/admin/<alias>/update-all')
+@admin.post('/admin/<alias>/update-all')
 @requires_authorization
 async def update_all(alias: str):
     '''Wildcard route for running all update routines below.'''
@@ -103,7 +103,7 @@ async def update_all(alias: str):
     return 'SUCCESS :)', 200
 
 
-@admin.get('/admin/<alias>/update-scores')
+@admin.post('/admin/<alias>/update-scores')
 @requires_authorization
 async def update_scores(alias: str):
     '''Úpdates riddle players' score.'''    
@@ -171,7 +171,7 @@ async def update_scores(alias: str):
     return 'SUCCESS :)', 200
 
 
-@admin.get('/admin/<alias>/update-page-count')
+@admin.post('/admin/<alias>/update-page-count')
 @requires_authorization
 async def update_page_count(alias: str):
     '''Úpdates riddle players' page count.'''
@@ -204,7 +204,7 @@ async def update_page_count(alias: str):
     return 'SUCCESS :)', 200
 
 
-@admin.get('/admin/<alias>/update-completion')
+@admin.post('/admin/<alias>/update-completion')
 @requires_authorization
 async def update_completion_count(alias: str):
     '''Úpdates riddle levelś' completion count.'''    
@@ -231,7 +231,7 @@ async def update_completion_count(alias: str):
     return 'SUCCESS :)', 200
 
 
-@admin.get('/admin/<alias>/update-ratings')
+@admin.post('/admin/<alias>/update-ratings')
 @requires_authorization
 async def update_ratings(alias: str):
     '''Úpdates riddle levels' user ratings.'''    
