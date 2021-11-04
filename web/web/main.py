@@ -31,7 +31,7 @@ from auth import auth, session_cookie
 from admin.admin import admin
 from admin.levels import admin_levels
 from admin.cheevos import admin_cheevos
-from admin.deltas import admin_deltas
+from admin.recent import admin_recent
 from players.players import players
 from players.account import account
 from players.profile import profile
@@ -44,7 +44,7 @@ from util.db import database
 from inject import context_processor
 
 for blueprint in (auth, admin,
-        admin_levels, admin_cheevos, admin_deltas,
+        admin_levels, admin_cheevos, admin_recent,
         players, account, profile, countries,
         process, levels, info, get):
     # Register app blueprint to allow other modules
