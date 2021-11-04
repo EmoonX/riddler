@@ -50,7 +50,7 @@ async def global_list(country: str = None):
 
     # Get players data from database
     cond_country = ('AND country = "%s" ' % country) if country else ''
-    query = 'SELECT *, SUM(page_count) ' \
+    query = 'SELECT *, acc.recent_score, SUM(page_count) ' \
             'FROM accounts AS acc INNER JOIN riddle_accounts AS racc ' \
                 'ON acc.username = racc.username ' \
                     'AND acc.discriminator = racc.discriminator ' \

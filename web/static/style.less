@@ -817,9 +817,24 @@ section.list.players > .row {
       }
     }
     &.score {
+      position: relative;
       align-items: flex-end;
       width: 120px;
 
+      > .recent-score {
+        @keyframes glow {
+          from { opacity: 1; }
+          to { opacity: 0.5; }
+        }
+        position: absolute;
+        top: 0.15em;
+        right: 0.25em;
+        font-size: 1.1em;
+        font-style: italic;
+        color: aliceblue;
+        text-shadow: 0 0 0.4em crimson, 0 0 0.8em crimson;
+        animation: glow 1s ease-in infinite alternate;
+      }
       var {
         margin: 0;
         text-shadow: 0 0 8px green, 0 0 16px green, 0 0 24px green;
@@ -831,7 +846,7 @@ section.list.players > .row {
           align-items: center;
           width: 100%;
           font-family: digital-mono;
-          font-size: 1.6em;
+          font-size: 1.5em;
         }
         > var.zeroes {
           position: absolute;
