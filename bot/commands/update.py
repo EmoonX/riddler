@@ -177,7 +177,8 @@ async def insert(request):
             logging.error(tb)   
 
     # Send success message to guild admins
-    text = '**[%s]** Channel and roles building complete :)' % guild.name
+    text = ('**[%s]** ✨ Channel(s) and role(s) '
+        'have been successfully built! ✨') % guild.name
     for member in guild.members:
         if member.guild_permissions.administrator and not member.bot:
             await member.send(text)
