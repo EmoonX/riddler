@@ -92,10 +92,11 @@ async def insert(request):
             riddle.levels[level['name']] = level
             
             # Set read permissions to completed and set completion roles
-            await channel.set_permissions(completed_role, read_messages=True)
             if alias in ('genius', 'zed'):
                 set_role = set_completion_roles[level['discord_category']]
                 await channel.set_permissions(set_role, read_messages=True)
+            else:
+                await channel.set_permissions(completed_role, read_messages=True)
             
             # Set read permission to current roles for
             # this channel and every other ancestor level channel
@@ -107,7 +108,7 @@ async def insert(request):
             if alias in ('genius', 'zed'):
                 for member in guild.members:
                     await member.remove_roles(completed_role)
-                    await multi_update_nickname(alias, member)
+                    #await multi_update_nickname(alias, member)
             else:
                 # Swap "completed" and "mastered" roles
                 # for last "reached" level role
@@ -129,7 +130,7 @@ async def insert(request):
                             '[%s]' % last_level['name'])
 
             # Just removed "mastered" status from respective members
-            await clear_mastered()
+            #await clear_mastered()
         
         else:
             # Add new level immediately to riddle's level list

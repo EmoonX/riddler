@@ -410,21 +410,22 @@ async def multi_update_nickname(riddle: str, member: Member):
         set_completed = await database.fetch_one(query, values)
         if not set_completed:
             # Get current last (found but not completed) level
-            query = 'SELECT * FROM user_levels ' \
-                    'WHERE riddle = :riddle ' \
-                        'AND username = :username ' \
-                        'AND discriminator = :disc ' \
-                        'AND level_name IN (' \
-                            'SELECT name FROM levels ' \
-                            'WHERE riddle = :riddle ' \
-                                'AND level_set = :set_name) '
-            unlocked_levels = await database.fetch_all(query, values)
-            if not unlocked_levels:
+            query = '''SELECT * FROM levels AS lv
+                WHERE riddle = :riddle
+                    AND level_set = :set_name
+                    AND name IN (
+                        SELECT level_name FROM user_levels AS ul
+                        WHERE riddle = :riddle
+                            AND username = :username AND discriminator = :disc
+                            AND completion_time IS NULL
+                    )
+                ORDER BY `index` DESC'''
+            level = await database.fetch_one(query, values)
+            if not level:
                 # Player haven't played set yet
                 continue
-            level = unlocked_levels[-1]
 
-            name = level['level_name']
+            name = level['name']
             short_name = level_set['short_name']
             if short_name:
                 # Replace explicit set name with short name, if any
@@ -460,11 +461,14 @@ async def multi_update_nickname(riddle: str, member: Member):
 
     # Join list of set progress strings and update nickname
     s = ''
-    if set_progress:
-        aux = sorted(set_progress.items())
-        set_progress = [progress for _, progress in aux]
+    aux = sorted(set_progress.items())
+    set_progress = [progress
+        for _, progress in aux if progress]
+    if set_progress:        
         sep = ', ' if len(set_progress) <= 2 else ' '
-        s = '[' + sep.join(set_progress) + ']'
+        s = sep.join(set_progress)
+        if s != '🏅':
+            s = '[%s]' % s
     await update_nickname(member, s)
 
 
