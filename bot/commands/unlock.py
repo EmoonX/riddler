@@ -334,7 +334,8 @@ class UnlockHandler:
         await self.member.add_roles(completed_role)
 
         # Update nickname with winner's badge
-        await update_nickname(self.member, '🏅')
+        if self.alias not in ('genius', 'zed'):
+            await update_nickname(self.member, '🏅')
 
     async def game_mastered(self, alias: str):
         '''Do the honors upon player mastering game,

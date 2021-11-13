@@ -108,7 +108,7 @@ async def insert(request):
             if alias in ('genius', 'zed'):
                 for member in guild.members:
                     await member.remove_roles(completed_role)
-                    #await multi_update_nickname(alias, member)
+                    await multi_update_nickname(alias, member)
             else:
                 # Swap "completed" and "mastered" roles
                 # for last "reached" level role
@@ -130,7 +130,7 @@ async def insert(request):
                             '[%s]' % last_level['name'])
 
             # Just removed "mastered" status from respective members
-            #await clear_mastered()
+            await clear_mastered()
         
         else:
             # Add new level immediately to riddle's level list

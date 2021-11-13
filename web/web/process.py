@@ -316,8 +316,9 @@ class _PathHandler:
         if current_name != '🏅':
             if self.riddle_alias in ('genius', 'zed'):
                 # Search for some level which have the current path as front
-                query = 'SELECT * FROM levels ' \
-                        'WHERE riddle = :riddle AND `path` = :path'
+                query = '''SELECT * FROM levels
+                    WHERE riddle = :riddle AND is_secret IS FALSE
+                        AND (`path` = :path OR `path` LIKE "%\":path\"%")'''
                 values = {'riddle': self.riddle_alias, 'path': self.path}
                 level = await database.fetch_one(query, values)
                 if level:
@@ -815,23 +816,12 @@ class _NormalLevelHandler(_LevelHandler):
                 first_to_solve=first_to_solve, milestone=milestone)
     
         if self.riddle_alias in ('genius', 'zed'):
-            query = 'SELECT * FROM level_sets ' \
-                    'WHERE riddle = :riddle AND final_level NOT IN (' \
-                        'SELECT level_name FROM user_levels ' \
-                        'WHERE riddle = :riddle ' \
-                            'AND username = :username AND discriminator = :disc)'
-            values = {'riddle': self.riddle_alias,
-                    'username': self.username, 'disc': self.disc}
-            remaining_set = await database.fetch_one(query, values)
-            if not remaining_set:
+            query = '''SELECT * FROM riddles
+                WHERE alias = :riddle'''
+            values = {'riddle': self.riddle_alias}
+            final_level = await database.fetch_val(query, values, 'final_level')
+            if self.level['name'] == final_level:
                  # Player has just completed the game :)
-                query = 'UPDATE riddle_accounts ' \
-                        'SET current_level = "🏅" ' \
-                        'WHERE riddle = :riddle ' \
-                            'AND username = :username AND discriminator = :disc'
-                await database.execute(query, values)
-                
-                # Bot game finish procedures
                 await bot_request('unlock', method='game_completed',
                         alias=self.riddle_alias,
                         username=self.username, disc=self.disc)
