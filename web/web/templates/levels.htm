@@ -30,10 +30,14 @@
           <div class="menu-button">☰</div>
         {% endif %}
           </div>
-        {% if level['unlocked'] and level['image'] %}
+        {% if level['unlocked'] %}
           <div class="thumb">
             <a href="{{ riddle['root_path'] }}{{ level['path'] }}" target="_blank">
+            {% if level['image'] %}
               <img class="level" src="/static/thumbs/{{ alias }}/{{ level['image'] }}">
+            {% else %}
+              <img class="level" width="100" height="100" src="/static/images/locked.png">
+            {% endif %}
             </a>
           </div>
         {% else %}

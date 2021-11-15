@@ -465,7 +465,7 @@ async def multi_update_nickname(riddle: str, member: Member):
     aux = sorted(set_progress.items())
     set_progress = [progress
         for _, progress in aux if progress]
-    if set_progress:        
+    if set_progress:
         sep = ', ' if len(set_progress) <= 2 else ' '
         s = sep.join(set_progress)
         if s != '🏅':
