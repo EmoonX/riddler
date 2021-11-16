@@ -1,0 +1,68 @@
+@font-face {
+  font-family: old-english;
+  src: url("fonts/old-english-text-mt.ttf");
+}
+@font-face {
+  font-family: standard-font;
+  src: url("fonts/standard.ttf");
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: center;
+  margin: 1em;
+  width: 200px;
+  background-color: #111;
+  color: #eee;
+}
+
+figure {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-evenly;
+  align-items: center;
+  width: 180px;  
+  padding-bottom: 1.5em;
+  border-bottom: 1px solid #999;
+}
+figcaption {
+  margin-top: 0.2em;
+  font-family: old-english;
+  font-size: 2.5em;
+}
+
+main {
+  display: flex;
+  flex-direction: column;
+  justify-content: stretch;
+  height: 100px;
+}
+
+button, form {
+  width: 200px;
+  height: 100%;
+}
+button {
+  display: flex;
+  align-items: center;
+  border: none;
+  border-radius: 10px;
+  background-color: #111;
+  text-align: left;
+  font-family: standard;
+  font-style: italic;
+  font-size: 1.8em;
+  color: #eee;
+  cursor: pointer;
+  transition: background-color 0.2s, color 0.2s;
+}
+button > img {
+  margin: 0 0.5em;
+  height: 24px;
+}
+button:hover {
+  background-color: #eee;
+  color: #111;
+}

@@ -2,12 +2,24 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <link rel="stylesheet" type="text/css" href="style.css">
+    <link rel="stylesheet" href="popup.css">
     <title>Riddler Settings</title>
     <script src="popup.js"></script>
   </head>
   <body>
-    <img src="images/riddler-48.png" alt="Riddler head">
-    <button type="button" name="update-hosts">Update hosts</button>
+    <figure>
+      <img src="images/riddler-48-cut.png" alt="Riddler head">
+      <figcaption>Riddler</figcaption>
+    </figure>
+    <main>
+      <button type="button" name="update-hosts">
+        <img src="images/refresh-icon.png" alt="Refresh icon">Update hosts
+      </button>
+      <form action="https://ko-fi.com/emoon" method="get" target="_blank">
+        <button type="submit" name="donate">
+          <img src="images/kofi-icon.png" alt="Ko-fi icon">Donate
+        </button>
+      </form>      
+    </main>
   </body>
 </html>
