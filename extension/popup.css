@@ -3,7 +3,7 @@
   src: url("fonts/old-english-text-mt.ttf");
 }
 @font-face {
-  font-family: standard-font;
+  font-family: standard;
   src: url("fonts/standard.ttf");
 }
 
@@ -12,34 +12,72 @@ body {
   flex-direction: column;
   justify-content: space-around;
   align-items: center;
-  margin: 1em;
+  margin: 15px 10px;
   width: 200px;
   background-color: #111;
+  font-family: standard;
   color: #eee;
 }
 
-figure {
+header {
   display: flex;
   flex-direction: row;
   justify-content: space-evenly;
   align-items: center;
-  width: 180px;  
-  padding-bottom: 1.5em;
+  width: 180px;
+  height: 60px;
+  padding-bottom: 10px;
   border-bottom: 1px solid #999;
 }
-figcaption {
-  margin-top: 0.2em;
+header > #riddler-title {
+  margin-top: 5px;
   font-family: old-english;
-  font-size: 2.5em;
+  font-size: 28px;
 }
 
 main {
   display: flex;
   flex-direction: column;
-  justify-content: stretch;
-  height: 100px;
+  margin-top: 5px;
 }
 
+section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 15px auto 0;
+  width: 180px;
+  text-align: center;
+}
+section:not(:last-of-type) {
+  padding-bottom: 5px;
+  border-bottom: 1px solid #999;
+}
+
+section#currently-playing > .label {
+  font-size: 15px;
+  font-style: italic;
+  color: #ffe;
+}
+section#currently-playing > figure {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+img#current-icon {
+  height: 40px;
+  margin-right: 10px;
+}
+figcaption#current-name {
+  text-align: center;
+  font-weight: bold;
+  font-size: 20px;
+}
+
+section#buttons {
+  height: 90px;
+}
 button, form {
   width: 200px;
   height: 100%;
@@ -53,13 +91,13 @@ button {
   text-align: left;
   font-family: standard;
   font-style: italic;
-  font-size: 1.8em;
+  font-size: 20px;
   color: #eee;
   cursor: pointer;
   transition: background-color 0.2s, color 0.2s;
 }
 button > img {
-  margin: 0 0.5em;
+  margin: 0 10px;
   height: 24px;
 }
 button:hover {

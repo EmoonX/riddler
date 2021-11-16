@@ -28,8 +28,11 @@ function sendToServer(url, statusCode) {
     fetch(urlTo, params)
       .then(res => {
         console.log(res);
-        if (res.status == 401) {
-          res.text().then(text => {
+        res.text().then(text => {
+          if (res.status == 200) {
+            console.log(text);
+          } 
+          else if (res.statys == 401) {
             // If current login request is less than 5 seconds
             // after marked one, don't open a new login tab.
             tNow = new Date();
@@ -51,8 +54,8 @@ function sendToServer(url, statusCode) {
               const invite = 'https://discord.gg/' + text;
               chrome.tabs.create({url: invite});
             }
-          });
-        }
+          }
+        });
       })
       .then(error => {console.log(error)})
     ;

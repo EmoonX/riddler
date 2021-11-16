@@ -7,19 +7,28 @@
     <script src="popup.js"></script>
   </head>
   <body>
-    <figure>
+    <header>
       <img src="images/riddler-48-cut.png" alt="Riddler head">
-      <figcaption>Riddler</figcaption>
-    </figure>
+      <div id="riddler-title">Riddler</span>
+    </header>
     <main>
-      <button type="button" name="update-hosts">
-        <img src="images/refresh-icon.png" alt="Refresh icon">Update hosts
-      </button>
-      <form action="https://ko-fi.com/emoon" method="get" target="_blank">
-        <button type="submit" name="donate">
-          <img src="images/kofi-icon.png" alt="Ko-fi icon">Donate
+      <section id="currently-playing">
+        <div class="label">Currently playing</div>
+        <figure>
+          <img id="current-icon" src="" alt="Riddle icon">
+          <figcaption id="current-name"></figcaption>
+        </figure>
+      </section>
+      <section id="buttons">
+        <button type="button" name="update-hosts">
+          <img src="images/refresh-icon.png" alt="Refresh icon">Update hosts
         </button>
-      </form>      
+        <form action="https://ko-fi.com/emoon" method="get" target="_blank">
+          <button type="submit" name="donate">
+            <img src="images/kofi-icon.png" alt="Ko-fi icon">Donate
+          </button>
+        </form>
+      </section>
     </main>
   </body>
 </html>
