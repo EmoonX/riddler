@@ -1,24 +1,20 @@
 {
   "manifest_version": 2,
   "name": "Riddler",
-  "version": "0.2.3",
-
-  "description": "Browser extension for the Riddler system.",
+  "version": "0.3",
+  "description": "Browser extension for Riddler, the online riddle enhancer.",
 
   "background": {
     "scripts": ["background.js"]
   },
-
   "permissions": [
     "webRequest",
     "cookies",
     "https://riddler.emoon.dev/process"
   ],
-
   "optional_permissions": [
     "*://*/*"
   ],
-
   "browser_action": {
     "default_icon": "images/letter-r-32.png",
     "default_title": "Riddler",

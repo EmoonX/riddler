@@ -80,20 +80,21 @@ async def process_url(username=None, disc=None, path=None):
             message, status_code = 'Not a level page', 412
 
         # Log received path with timestamp
-        tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-        if status_code not in (404, 412): 
+        tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")            
+        if status_code == 404:
             print(('\033[1m[%s]\033[0m Received path ' \
-                    '\033[3m\033[1m%s\033[0m \033[1m(%s)\033[0m ' \
-                    'from \033[1m%s\033[0m#\033[1m%s\033[0m (%s)')
-                    % (ph.riddle_alias, ph.path, ph.path_level,
-                        ph.username, ph.disc, tnow))
-        elif status_code == 404:
+                '\033[3m\033[9m%s\033[0m\033[0m ' \
+                'from \033[1m%s\033[0m#\033[1m%s\033[0m (%s)')
+                 % (ph.riddle_alias, ph.path,
+                    ph.username, ph.disc, tnow))
+            message, status_code = 'Page not found', 404
+        elif status_code != 412:
             print(('\033[1m[%s]\033[0m Received path ' \
-                    '\033[3m\033[9m%s\033[0m\033[0m ' \
-                    'from \033[1m%s\033[0m#\033[1m%s\033[0m (%s)')
-                    % (ph.riddle_alias, ph.path, ph.username, ph.disc, tnow))
-            if status_code == 404:
-                message, status_code = 'Page not found', 404
+                '\033[3m\033[1m%s\033[0m \033[1m(%s)\033[0m ' \
+                'from \033[1m%s\033[0m#\033[1m%s\033[0m (%s)')
+                % (ph.riddle_alias, ph.path, ph.path_level,
+                    ph.username, ph.disc, tnow))
+            message, status_code = ph.riddle_alias, 200
         
         if invite_code:
             # If starting a new riddle, return invite code to its guild
@@ -210,9 +211,9 @@ class _PathHandler:
         creating one if not present yet.'''
 
         # Ignore progress for banned players :)
-        query = 'SELECT * FROM accounts ' \
-                'WHERE username = :username ' \
-                    'AND discriminator = :disc'
+        query = '''SELECT * FROM accounts
+            WHERE username = :username
+                AND discriminator = :disc'''
         values = {'username': self.username, 'disc': self.disc}
         player = await database.fetch_one(query, values)
         if player['banned']:
@@ -220,37 +221,41 @@ class _PathHandler:
         
         async def _get_data():
             '''Get player riddle data.'''
-            query = 'SELECT * FROM riddle_accounts ' \
-                    'WHERE riddle = :riddle AND ' \
-                    'username = :name AND discriminator = :disc'
-            values = {'riddle': self.riddle_alias,
-                    'name': self.username, 'disc': self.disc}
+            query = '''SELECT * FROM riddle_accounts
+                WHERE riddle = :riddle
+                    AND username = :username AND discriminator = :disc'''
             result = await database.fetch_one(query, values)
             return result
 
         # Check if player's riddle acount already exists
+        values['riddle'] = self.riddle_alias
         riddle_account = await _get_data()
         invite_code = None
         if not riddle_account:
             # If not, create a brand new one
-            query = 'INSERT INTO riddle_accounts ' \
-                    '(riddle, username, discriminator) ' \
-                    'VALUES (:riddle, :username, :disc)'
-            values['riddle'] = self.riddle_alias
+            query = '''INSERT INTO riddle_accounts
+                    (riddle, username, discriminator)
+                VALUES (:riddle, :username, :disc)'''
             await database.execute(query, values)
             riddle_account = await _get_data()
             
             # If player isn't a guild member,
             # send an invite code to be opened on a new tab
-            query = 'SELECT * FROM riddles ' \
-                    'WHERE alias = :riddle'
-            values = {'riddle': self.riddle_alias}
-            riddle = await database.fetch_one(query, values)
+            query = '''SELECT * FROM riddles
+                WHERE alias = :riddle'''
+            riddle = await database.fetch_one(query,
+                {'riddle': self.riddle_alias})
             is_member = await bot_request('is-member-of-guild',
-                    guild_id=riddle['guild_id'],
-                    username=self.username, disc=self.disc)
+                guild_id=riddle['guild_id'],
+                username=self.username, disc=self.disc)
             if is_member == 'False':
                 invite_code = riddle['invite_code']
+        
+        # Update current riddle being played
+        query = '''UPDATE accounts
+            SET current_riddle = :riddle
+            WHERE username = :username AND discriminator = :disc'''
+        await database.execute(query, values)
         
         # Build dict from query result
         self.riddle_account = dict(riddle_account)
