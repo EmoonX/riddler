@@ -51,6 +51,8 @@ async def get_current_riddle_data():
         guild_id=riddle['guild_id'])
 
     # Create and return JSON dict with data
-    data = {'full_name': riddle['full_name'], 'icon_url': icon_url}
+    data = { 'alias': riddle['alias'],
+        'full_name': riddle['full_name'],
+        'icon_url': icon_url }
     data = json.dumps(data)
     return data

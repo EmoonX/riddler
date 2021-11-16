@@ -32,7 +32,7 @@ function sendToServer(url, statusCode) {
           if (res.status == 200) {
             console.log(text);
           } 
-          else if (res.statys == 401) {
+          else if (res.status == 401) {
             // If current login request is less than 5 seconds
             // after marked one, don't open a new login tab.
             tNow = new Date();
