@@ -1,14 +1,24 @@
-function getRiddleHosts() {
-  // Send synchronous GET request to retrieve riddle host domains
-  const hostsURL = 'https://riddler.emoon.dev/get-riddle-hosts';
+// Current riddle being played
+var currentRiddle;
+
+function request(url) {
+  // Send synchronous GET request to
+  // target URL and return response text
   const request = new XMLHttpRequest();
-  request.open('GET', hostsURL, false);
+  request.open('GET', url, false);
   request.send(null);
   if (request.status === 200) {
     const data = request.responseText;
-    const hosts = data.split(' ');
-    return hosts;
+    return data;
   }
+}
+
+function getRiddleHosts() {
+  // Retrieve riddle host domains
+  const HOSTS_URL = 'https://riddler.emoon.dev/get-riddle-hosts';
+  const data = request(HOSTS_URL);
+  const hosts = data.split(" ");
+  return hosts;
 }
 
 function updateHosts() {
@@ -26,7 +36,27 @@ function updateHosts() {
   });
 }
 
+function getCurrentRiddleData() {
+  // Retrieve current riddle data for authenticated user
+  const DATA_URL = 'https://riddler.emoon.dev/get-current-riddle-data';
+  const data = request(DATA_URL);
+  return data;
+}
+
 window.onload = (_ => {
+  // Set "Update hosts" button click event
   document.getElementsByName('update-hosts')[0]
-      .addEventListener('click', updateHosts);
+    .addEventListener('click', updateHosts);
+  
+  // Show current riddle info in extension's popup
+  const text = getCurrentRiddleData();
+  const data = JSON.parse(text);
+  const alias = data['alias'];
+  const currentIconTag = document.getElementById('current-icon');
+  const currentNameTag = document.getElementById('current-name');
+  const currentLinkTag = document.getElementById('current-link');
+  const explorerURL = `https://riddler.emoon.dev/${alias}/levels`;
+  currentIconTag.setAttribute('src', data['icon_url']);
+  currentNameTag.textContent = data['full_name'];
+  currentLinkTag.setAttribute('href', explorerURL);
 });
