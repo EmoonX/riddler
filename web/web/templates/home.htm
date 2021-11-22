@@ -6,5 +6,32 @@
       <p class='riddler-synopsis'>
         Enhancing the online riddle experience since 2021.
       </p>
+      <hr>
+      <h2>Recent progress</h2>
+      <section class="list players">
+        {% set avatar_urls = fetch_avatar_urls() %}
+        {% set riddles = fetch_riddles() %}
+      {% for player in recent_completion %}
+        <div class="row" style="height: 90px;">
+          <div class="completion-time">
+            {{ player['completion_time'] }}
+          </div>
+          <div class="player" style="width: 900px;">
+            <a href="#">
+              {% set tag = player['username'] + '#' + player['discriminator'] %}
+              {% set url = avatar_urls[tag] if tag in avatar_urls else '/static/images/locked.png' %}
+              <img class="avatar" style="width: 50px; margin: 10px;" src="{{ url }}">
+            </a>
+            <div>
+              <!-- {% set country_name = country_names[player['country']] %} -->
+              {% set riddle = riddles[player['riddle']] %}
+              {% set icon_url = riddle['icon_url'] %}
+              <a class="username" href="#">{{ player['username'] }}</a>
+                completed level <strong>{{ player['level_name'] }}</strong> in <em>{{ riddle['full_name'] }}</em>.
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+      </section>
     </main>
 {% endblock %}
