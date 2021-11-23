@@ -127,9 +127,10 @@ async def level_list(alias: str):
             level['unlocked'] = False
 
         # Register list of users currently working on level
-        query = 'SELECT * FROM user_levels ' \
-                'WHERE riddle = :riddle and level_name = :name ' \
-                    'AND completion_time IS NULL'
+        query = '''SELECT * FROM user_levels
+            WHERE riddle = :riddle and level_name = :name
+                AND completion_time IS NULL
+            ORDER BY find_time DESC'''
         values = {'riddle': alias, 'name': level['name']}
         result = await database.fetch_all(query, values)
         level['users'] = [dict(level) for level in result]

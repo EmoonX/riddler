@@ -143,9 +143,21 @@
               </figure>
             </a>
           {% else %}
-            {% set remaining_count = level['users']|length - 8 %}
-            <div class='remaining-count'>
-              (+{{ remaining_count }})
+            {% set rem_count = level['users']|length - 8 %}
+            {% set ns = namespace(rem_players='') %}
+            {% for other in level['users'][8:] %}
+              {% if not loop.first %}
+                {% if not loop.last %}
+                  {% set ns.rem_players = ns.rem_players + ', ' %}
+                {% else %}
+                  {% set ns.rem_players = ns.rem_players + ' and ' %}
+                {% endif %}
+              {% endif %}
+              {% set ns.rem_players = ns.rem_players + other['username'] %}
+            {% endfor %}
+            {% set ns.rem_players = '(also on level: %s)' % ns.rem_players %}
+            <div class='remaining-count' title="{{ ns.rem_players }}">
+              (+{{ rem_count }})
             </div>
           {% endif %}
         {% endfor %}

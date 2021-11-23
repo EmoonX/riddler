@@ -188,7 +188,7 @@ async def _update_levels(levels_before: dict,
             values['is_secret'] = is_secret
             levels.append(values)
         
-        if alias not in ('genius', 'zed') and not is_secret and int(index) > 1:
+        if alias not in ('enigmapedia', 'cipher', 'genius', 'string', 'zed') and not is_secret and int(index) > 1:
             # Insert level requirement to previous one (for linear riddles)
             index = int(index)
             query = 'INSERT INTO level_requirements ' \
