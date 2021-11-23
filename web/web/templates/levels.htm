@@ -131,7 +131,8 @@
           {% endif %}
           </div>
           <div class="currently-in">
-          {% for user in level['users'] %}
+        {% for user in level['users'][:9] %}
+          {% if loop.index < 9 or level['users']|length == 9 %}
             {% set player = accounts[user['username']] %}
             <a class="player" href="#">
               {% set tag = player['username'] + '#' + player['discriminator'] %}
@@ -141,7 +142,13 @@
                 <figcaption>{{ player['username'] }}</figcaption>
               </figure>
             </a>
-          {% endfor %}
+          {% else %}
+            {% set remaining_count = level['users']|length - 8 %}
+            <div class='remaining-count'>
+              (+{{ remaining_count }})
+            </div>
+          {% endif %}
+        {% endfor %}
           </div>
         </div>
       {% if level['unlocked'] %}

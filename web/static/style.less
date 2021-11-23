@@ -1180,10 +1180,10 @@ section.list.levels > .row {
           font-size: 0;
           font-style: normal;
           text-shadow: 
-              4px 0 0 black, -4px 0 0 black,
-              0 4px 0 black, 0 -4px 0 black,
-              2px 2px 0 black, 2px -2px 0 black,
-              -2px 2px 0 black, -2px -2px 0 black;
+            4px 0 0 black, -4px 0 0 black,
+            0 4px 0 black, 0 -4px 0 black,
+            2px 2px 0 black, 2px -2px 0 black,
+            -2px 2px 0 black, -2px -2px 0 black;
           transition: opacity 0.4s, font-size 0.4s;
           white-space: nowrap;
         }
@@ -1198,7 +1198,18 @@ section.list.levels > .row {
         }
       }
     }
-    &:hover img.avatar-small {
+    > .remaining-count {
+      height: 50px;
+      line-height: 50px;
+      font-style: italic;
+      cursor: help;
+      transition: opacity 0.4s;      
+
+      &:hover {
+        opacity: 1 !important;
+      }
+    }
+    &:hover img.avatar-small, &:hover > .remaining-count {
       opacity: 0.3;
     }
   }
