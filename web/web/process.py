@@ -740,12 +740,6 @@ class _NormalLevelHandler(_LevelHandler):
         result = await database.fetch_one(query, values)
         first_to_solve = (result is None)
         
-        # Check if beating level corresponds to a milestone
-        query = 'SELECT * FROM milestones ' \
-                'WHERE riddle = :riddle AND level_name = :level_name'
-        result = await database.fetch_one(query, values)
-        milestone = result['role'] if result else None
-        
         # Register level completion in designated table
         time = datetime.utcnow()
         query = 'UPDATE user_levels ' \
@@ -763,7 +757,7 @@ class _NormalLevelHandler(_LevelHandler):
                 alias=self.riddle_alias,
                 level=self.level, points=self.points,
                 username=self.username, disc=self.disc,
-                first_to_solve=first_to_solve, milestone=milestone)
+                first_to_solve=first_to_solve)
     
         # Check if level just completed in the final one
         query = '''SELECT * FROM riddles
