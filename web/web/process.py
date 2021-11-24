@@ -319,90 +319,47 @@ class _PathHandler:
         
         current_solved = False
         if current_name != '🏅':
-            if self.riddle_alias in ('genius', 'zed'):
-                # Search for some level which have the current path as front
-                query = '''SELECT * FROM levels
-                    WHERE riddle = :riddle AND is_secret IS FALSE
-                        AND (`path` = :path OR `path` LIKE "%\":path\"%")'''
-                values = {'riddle': self.riddle_alias, 'path': self.path}
-                level = await database.fetch_one(query, values)
-                if level:
-                    # Check if level has already been unlocked beforehand
-                    query = 'SELECT * FROM user_levels ' \
-                            'WHERE riddle = :riddle ' \
-                                'AND username = :name AND discriminator = :disc ' \
-                                'AND level_name = :level_name'
-                    values = {'riddle': self.riddle_alias,
-                            'name': self.username, 'disc': self.disc,
-                            'level_name': level['name']}
-                    already_unlocked = await database.fetch_one(query, values)
-                    if not already_unlocked:
-                        # Check if all required levels are already beaten
-                        query = 'SELECT * FROM level_requirements ' \
-                                'WHERE riddle = :riddle AND level_name = :name'
-                        other_values = {'riddle': self.riddle_alias,
-                                'name': level['name']}
-                        result = await database.fetch_all(query, other_values)
-                        level_requirements = [row['requires'] for row in result]
-                        can_unlock = True
-                        for req in level_requirements:
-                            query = 'SELECT * FROM user_levels ' \
-                                'WHERE riddle = :riddle ' \
-                                    'AND username = :name ' \
-                                    'AND discriminator = :disc ' \
-                                    'AND level_name = :level_name ' \
-                                    'AND completion_time IS NOT NULL'
-                            values['level_name'] = req
-                            req_satisfied = \
-                                    await database.fetch_one(query, values)
-                            if not req_satisfied:
-                                can_unlock = False
-                                break
-                        
-                        if can_unlock:
-                            # A new level has been found!
-                            lh = _NormalLevelHandler(page_level, self)
-                            await lh.register_finding()
-            else:
-                # Find if current level is solved (either beforehand or not)
+            # Search for some level which have the current path as front
+            query = '''SELECT * FROM levels
+                WHERE riddle = :riddle AND is_secret IS FALSE
+                    AND (`path` = :path OR `path` LIKE "%\":path\"%")'''
+            values = {'riddle': self.riddle_alias, 'path': self.path}
+            level = await database.fetch_one(query, values)
+            if level:
+                # Check if level has already been unlocked beforehand
                 query = 'SELECT * FROM user_levels ' \
                         'WHERE riddle = :riddle ' \
                             'AND username = :name AND discriminator = :disc ' \
-                            'AND level_name = :level ' \
-                            'AND completion_time IS NOT NULL'
-                values = {'riddle': self.riddle_alias, 
+                            'AND level_name = :level_name'
+                values = {'riddle': self.riddle_alias,
                         'name': self.username, 'disc': self.disc,
-                        'level': current_name}
-                result = await database.fetch_one(query, values)
-                current_solved = (result is not None)
-
-                if not current_name or current_solved:
-                    # Get next level name
-                    if result:
-                        query = 'SELECT * FROM levels ' \
-                                'WHERE riddle = :riddle AND name = :level_name'
-                        values = {'riddle': self.riddle_alias,
-                                'level_name': result['level_name']}
-                        current_level = await database.fetch_one(query, values)
-                        index = current_level['index'] + 1
-                    else:
-                        index = 1
-                    query = 'SELECT * FROM levels ' \
+                        'level_name': level['name']}
+                already_unlocked = await database.fetch_one(query, values)
+                if not already_unlocked:
+                    # Check if all required levels are already beaten
+                    query = 'SELECT * FROM level_requirements ' \
+                            'WHERE riddle = :riddle AND level_name = :name'
+                    other_values = {'riddle': self.riddle_alias,
+                            'name': level['name']}
+                    result = await database.fetch_all(query, other_values)
+                    level_requirements = [row['requires'] for row in result]
+                    can_unlock = True
+                    for req in level_requirements:
+                        query = 'SELECT * FROM user_levels ' \
                             'WHERE riddle = :riddle ' \
-                                'AND is_secret IS FALSE AND `index` = :index'
-                    values = {'riddle': self.riddle_alias, 'index': index}
-                    result = await database.fetch_one(query, values)
-                    next_name = result['name'] if result else ''
-
-                    # (also check for phony JSON of multi-front levels)
-                    query = 'SELECT * FROM levels ' \
-                            'WHERE riddle = :riddle AND is_secret IS FALSE ' \
-                                'AND (`path` = :path OR `path` LIKE "%\":path\"%")'
-                    values = {'riddle': self.riddle_alias, 'path': self.path}
-                    result = await database.fetch_one(query, values)
-                    is_front = (result is not None)
-                    if page_level['name'] == next_name and is_front:
-                        # If it's the new level's front page, register progress
+                                'AND username = :name ' \
+                                'AND discriminator = :disc ' \
+                                'AND level_name = :level_name ' \
+                                'AND completion_time IS NOT NULL'
+                        values['level_name'] = req
+                        req_satisfied = \
+                                await database.fetch_one(query, values)
+                        if not req_satisfied:
+                            can_unlock = False
+                            break
+                    
+                    if can_unlock:
+                        # A new level has been found!
                         lh = _NormalLevelHandler(page_level, self)
                         await lh.register_finding()
             
@@ -464,45 +421,33 @@ class _PathHandler:
         current_level = await database.fetch_one(query, values)
 
         # Register into database new page access (if applicable)
-        if self.riddle_alias in ('genius', 'zed'):
-            query = 'SELECT * FROM user_levels ' \
+        query = 'SELECT * FROM user_levels ' \
+                'WHERE riddle = :riddle ' \
+                    'AND username = :username AND discriminator = :disc ' \
+                    'AND level_name = :level_name AND find_time IS NOT NULL'
+        values = {'riddle': self.riddle_alias,
+                'username': self.username, 'disc': self.disc,
+                'level_name': page_level['name']}
+        cond = await database.fetch_one(query, values)
+        if not cond:
+            query = 'SELECT COUNT(*) AS count FROM user_levels ' \
                     'WHERE riddle = :riddle ' \
                         'AND username = :username AND discriminator = :disc ' \
-                        'AND level_name = :level_name AND find_time IS NOT NULL'
+                        'AND level_name IN (' \
+                            'SELECT requires FROM level_requirements ' \
+                            'WHERE riddle = :riddle ' \
+                                'AND level_name = :level_name) ' \
+                        'AND completion_time IS NOT NULL'
+            result = await database.fetch_one(query, values)
+            count_user = result['count'] if result else 0
+            query = 'SELECT COUNT(*) AS count FROM level_requirements ' \
+                    'WHERE riddle = :riddle AND level_name = :level_name ' \
+                    'GROUP BY level_name'
             values = {'riddle': self.riddle_alias,
-                    'username': self.username, 'disc': self.disc,
                     'level_name': page_level['name']}
-            cond = await database.fetch_one(query, values)
-            if not cond:
-                query = 'SELECT COUNT(*) AS count FROM user_levels ' \
-                        'WHERE riddle = :riddle ' \
-                            'AND username = :username AND discriminator = :disc ' \
-                            'AND level_name IN (' \
-                                'SELECT requires FROM level_requirements ' \
-                                'WHERE riddle = :riddle ' \
-                                    'AND level_name = :level_name) ' \
-                            'AND completion_time IS NOT NULL'
-                result = await database.fetch_one(query, values)
-                count_user = result['count'] if result else 0
-                query = 'SELECT COUNT(*) AS count FROM level_requirements ' \
-                        'WHERE riddle = :riddle AND level_name = :level_name ' \
-                        'GROUP BY level_name'
-                values = {'riddle': self.riddle_alias,
-                        'level_name': page_level['name']}
-                result = await database.fetch_one(query, values)
-                count_req = result['count'] if result else 0
-                cond = (count_user == count_req)          
-        else:
-            cond = (current_name and (current_name == '🏅' \
-                    or page_level['index'] <= current_level['index'] + 1 \
-                    or page_level['is_secret']))
-            if cond:
-                # Can only access next level pages
-                # if current one was indeed completed
-                if current_name != '🏅' and \
-                        page_level['index'] == current_level['index'] + 1 \
-                        and not current_solved:
-                    cond = False
+            result = await database.fetch_one(query, values)
+            count_req = result['count'] if result else 0
+            cond = (count_user == count_req)          
 
         if cond:
             # Check if page wasn't been found yet
@@ -820,39 +765,16 @@ class _NormalLevelHandler(_LevelHandler):
                 username=self.username, disc=self.disc,
                 first_to_solve=first_to_solve, milestone=milestone)
     
-        if self.riddle_alias in ('genius', 'zed'):
-            query = '''SELECT * FROM riddles
-                WHERE alias = :riddle'''
-            values = {'riddle': self.riddle_alias}
-            final_level = await database.fetch_val(query, values, 'final_level')
-            if self.level['name'] == final_level:
-                 # Player has just completed the game :)
-                await bot_request('unlock', method='game_completed',
-                        alias=self.riddle_alias,
-                        username=self.username, disc=self.disc)
-        else:
-            # Get next level (if any)
-            index = self.level['index'] + 1
-            query = 'SELECT * FROM levels ' \
-                    'WHERE riddle = :riddle ' \
-                        'AND is_secret IS FALSE AND `index` = :index'
-            values = {'riddle': self.riddle_alias, 'index': index}
-            next_level = await database.fetch_one(query, values)
-            
-            if not next_level:
-                # Player has just completed the game :)
-                query = 'UPDATE riddle_accounts ' \
-                    'SET current_level = "🏅" ' \
-                    'WHERE riddle = :riddle AND ' \
-                        'username = :name AND discriminator = :disc'
-                values = {'riddle': self.riddle_alias,
-                        'name': self.username, 'disc': self.disc}
-                await database.execute(query, values)
-                
-                # Bot game finish procedures
-                await bot_request('unlock', method='game_completed',
-                        alias=self.riddle_alias,
-                        username=self.username, disc=self.disc)
+        # Check if level just completed in the final one
+        query = '''SELECT * FROM riddles
+            WHERE alias = :riddle'''
+        values = {'riddle': self.riddle_alias}
+        final_level = await database.fetch_val(query, values, 'final_level')
+        if self.level['name'] == final_level:
+            # Player has just completed the game :)
+            await bot_request('unlock', method='game_completed',
+                    alias=self.riddle_alias,
+                    username=self.username, disc=self.disc)
 
 
 class _SecretLevelHandler(_LevelHandler):

@@ -57,23 +57,24 @@ async def build_riddles():
         riddles[row['alias']] = riddle
 
 
-async def get_ancestor_levels(riddle: str, level: dict):
+async def get_ancestor_levels(riddle: str, root_level: dict):
     '''Build set of ancestor levels (just Discord names)
     by applying a reverse BFS in requirements DAG.'''
 
     ancestor_levels = set()
-    queue = [level]
+    queue = [root_level]
     while queue:
         # Add level to set
         level = queue.pop(0)
         ancestor_levels.add(level['discord_name'])
 
         # Don't search node's children if level is final in set
+        # (except if this is the root level itself, of course)
         query = '''SELECT * FROM level_sets
             WHERE riddle = :riddle AND final_level = :level_name'''
         values = {'riddle': riddle, 'level_name': level['name']}
         is_final_in_set = await database.fetch_one(query, values)
-        if is_final_in_set:
+        if is_final_in_set and len(ancestor_levels) > 1:
             continue
 
         # Fetch level requirements and add unseen ones to queue

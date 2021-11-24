@@ -75,8 +75,7 @@ class UnlockHandler:
                     % (self.guild.name, self.member.name,
                         self.member.discriminator))
 
-    async def beat(self, level: dict, points: int,
-            first_to_solve: bool, milestone: str):
+    async def beat(self, level: dict, points: int, first_to_solve: bool):
         '''Procedures to be done when level is beaten.'''
 
         # Send congratulatory message
@@ -104,57 +103,40 @@ class UnlockHandler:
             achievements = get(self.guild.channels, name='achievements')
             if achievements:
                 await self._send(text, achievements)
-        
-        if milestone:
+
+        # Check for set completion
+        query = 'SELECT * FROM level_sets ' \
+                'WHERE riddle = :riddle AND final_level = :level_name'
+        values = {'riddle': self.alias, 'level_name': level['name']}
+        completed_set = await database.fetch_one(query, values)
+        if completed_set:
             # Congratulatory DM
-            text = '**[%s] 🗿 MILESTONE REACHED 🗿**\n' % self.guild.name
-            text += 'You have reached milestone **@%s**!' % milestone
+            role_name = completed_set['completion_role']
+            text = '**[%s] 🗿 LEVEL SET BEATEN 🗿**\n' % self.guild.name
+            text += 'You have unlocked special title **@%s**!' % role_name
             await self._send(text)
             if not self.in_riddle_guild:
                 return
+
+            # Add special set completion role and remove
+            # player's final level's 'reached-' role
+            completion_role = get(self.guild.roles, name=role_name)
+            await self.member.add_roles(completion_role)
+            role_name = 'reached-' + level['discord_name']
+            reached_role = get(self.guild.roles, name=role_name)
+            await self.member.remove_roles(reached_role)
             
-            # Add special milestone role and congratulate in channel
-            role = get(self.guild.roles, name=milestone)
-            await self.member.add_roles(role)
+            # Congratulate milestone reached on respective channel
+            if self.member == self.guild.owner:
+                return
             channel = get(self.guild.channels, name=level['discord_name'])
             text = ('**<@!%d>** has beaten level **%s** ' \
                         'and is now part of **@%s**! Congratulations!') \
-                    % (self.member.id, name, role.name)
+                    % (self.member.id, name, completion_role.name)
             await self._send(text, channel)
-
-        elif self.alias in ('genius', 'zed'):
-            query = 'SELECT * FROM level_sets ' \
-                    'WHERE riddle = :riddle AND final_level = :level_name'
-            values = {'riddle': self.alias, 'level_name': level['name']}
-            completed_set = await database.fetch_one(query, values)
-            if completed_set:
-                # Congratulatory DM
-                role_name = completed_set['completion_role']
-                text = '**[%s] 🗿 LEVEL SET BEATEN 🗿**\n' % self.guild.name
-                text += 'You have unlocked special title **@%s**!' % role_name
-                await self._send(text)
-                if not self.in_riddle_guild:
-                    return
-
-                # Add special set completion role and remove
-                # player's final level's 'reached-' role
-                completion_role = get(self.guild.roles, name=role_name)
-                await self.member.add_roles(completion_role)
-                role_name = 'reached-' + level['discord_name']
-                reached_role = get(self.guild.roles, name=role_name)
-                await self.member.remove_roles(reached_role)
-                
-                # Congratulate milestone reached on respective channel
-                if self.member == self.guild.owner:
-                    return
-                channel = get(self.guild.channels, name=level['discord_name'])
-                text = ('**<@!%d>** has beaten level **%s** ' \
-                            'and is now part of **@%s**! Congratulations!') \
-                        % (self.member.id, name, completion_role.name)
-                await self._send(text, channel)
-                
-                # Update multi-nickname
-                await multi_update_nickname(self.alias, self.member)
+            
+            # Update multi-nickname
+            await multi_update_nickname(self.alias, self.member)
 
     async def advance(self, level: dict):
         '''Advance to further level when player arrives at a level front page.
@@ -165,25 +147,12 @@ class UnlockHandler:
             return
 
         # Remove ancestors' "reached" role from user
-        if self.alias in ('genius', 'zed'):
-            ancestor_levels = await get_ancestor_levels(self.alias, level)
-            for level_name in ancestor_levels:
-                role_name = 'reached-' + level_name
-                role = get(self.member.roles, name=role_name)
-                if role:
-                    await self.member.remove_roles(role)
-        else:
-            for role in self.member.roles:
-                if not 'reached-' in role.name:
-                    continue
-                old_name = role.name.replace('reached-', '')
-                old_level = None
-                for other in self.levels.values():
-                    if other['discord_name'] == old_name:
-                        old_level = other
-                        break
-                if old_level:
-                    await self.member.remove_roles(role)
+        ancestor_levels = await get_ancestor_levels(self.alias, level)
+        for level_name in ancestor_levels:
+            role_name = 'reached-' + level_name
+            role = get(self.member.roles, name=role_name)
+            if role:
+                await self.member.remove_roles(role)
 
         # Add "reached" role to member
         name = level['discord_name']
@@ -193,11 +162,7 @@ class UnlockHandler:
         await self.member.add_roles(role)
 
         # Show current level(s) in nickname
-        if self.alias in ('genius', 'zed'):
-            await multi_update_nickname(self.alias, self.member)
-        else:
-            s = '[%s]' % level['name']
-            await update_nickname(self.member, s)        
+        await multi_update_nickname(self.alias, self.member)        
 
     async def secret_found(self, level: dict):
         '''Grant access to secret channel.'''
@@ -332,10 +297,6 @@ class UnlockHandler:
         # Get completed role and add it to player
         completed_role = get(self.guild.roles, name=completed_name)
         await self.member.add_roles(completed_role)
-
-        # Update nickname with winner's badge
-        if self.alias not in ('genius', 'zed'):
-            await update_nickname(self.member, '🏅')
 
     async def game_mastered(self, alias: str):
         '''Do the honors upon player mastering game,

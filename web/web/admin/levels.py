@@ -188,15 +188,15 @@ async def _update_levels(levels_before: dict,
             values['is_secret'] = is_secret
             levels.append(values)
         
-        if alias not in ('enigmapedia', 'cipher', 'genius', 'string', 'zed') and not is_secret and int(index) > 1:
-            # Insert level requirement to previous one (for linear riddles)
-            index = int(index)
-            query = 'INSERT INTO level_requirements ' \
-                    'VALUES (:riddle, :level, :level_prev, NULL)'
-            values = {'riddle': alias,
-                    'level': form['%s-name' % index],
-                    'level_prev': form['%s-name' % (index - 1)]}
-            await database.execute(query, values)
+        # if not is_secret and int(index) > 1:
+        #     # Insert level requirement to previous one (for linear riddles)
+        #     index = int(index)
+        #     query = 'INSERT INTO level_requirements ' \
+        #             'VALUES (:riddle, :level, :level_prev, NULL)'
+        #     values = {'riddle': alias,
+        #             'level': form['%s-name' % index],
+        #             'level_prev': form['%s-name' % (index - 1)]}
+        #     await database.execute(query, values)
 
         # Update Discord guild channels and roles with new levels info
         await bot_request('insert', alias=alias, levels=levels)

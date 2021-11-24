@@ -48,12 +48,8 @@ async def insert(request):
                 continue
             await member.remove_roles(mastered_role)
             try:
-                if alias in ('genius', 'zed'):
-                    # Swap 💎 for set progress
-                    await multi_update_nickname(alias, member)
-                else:
-                    # Swap 💎 back for 🏅
-                    await update_nickname(member, '🏅')
+                # Swap 💎 for set progress
+                await multi_update_nickname(alias, member)
             except Forbidden:
                 pass
 
@@ -92,11 +88,8 @@ async def insert(request):
             riddle.levels[level['name']] = level
             
             # Set read permissions to completed and set completion roles
-            if alias in ('genius', 'zed'):
-                set_role = set_completion_roles[level['discord_category']]
-                await channel.set_permissions(set_role, read_messages=True)
-            else:
-                await channel.set_permissions(completed_role, read_messages=True)
+            set_role = set_completion_roles[level['discord_category']]
+            await channel.set_permissions(set_role, read_messages=True)
             
             # Set read permission to current roles for
             # this channel and every other ancestor level channel
@@ -105,31 +98,12 @@ async def insert(request):
                 if channel.name in ancestor_levels:
                     await channel.set_permissions(reached, read_messages=True)
 
-            if alias in ('genius', 'zed'):
-                for member in guild.members:
-                    await member.remove_roles(completed_role)
-                    await multi_update_nickname(alias, member)
-            else:
-                # Swap "completed" and "mastered" roles
-                # for last "reached" level role
-                last_index = level['index'] - 1
-                last_level = None
-                for level in riddle.levels.values():
-                    if level['index'] == last_index:
-                        last_level = level
-                        break
-                if last_level:
-                    last_name = 'reached-' + last_level['discord_name']
-                    last_reached = get(guild.roles, name=last_name)
-                    for member in guild.members:
-                        if not completed_role in member.roles:
-                            continue
-                        await member.remove_roles(completed_role)
-                        await member.add_roles(last_reached)
-                        await update_nickname(member,
-                            '[%s]' % last_level['name'])
+            # Remove "completed" role from members
+            for member in guild.members:
+                await member.remove_roles(completed_role)
+                await multi_update_nickname(alias, member)
 
-            # Just removed "mastered" status from respective members
+            # Also remove "mastered" status
             await clear_mastered()
         
         else:
