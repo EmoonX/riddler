@@ -45,6 +45,8 @@ async def get_riddle_icon_url(request):
     '''Get riddle's icon URL from its guild ID.'''
     guild_id = int(request.rel_url.query['guild_id'])
     guild = get(bot.guilds, id=guild_id)
+    if not guild:
+        return web.Response(status=404)
     url = str(guild.icon_url)
     return web.Response(text=url)
 

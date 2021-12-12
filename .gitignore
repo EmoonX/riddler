@@ -134,9 +134,10 @@ dmypy.json
 # We don't want any answer files on the remote!
 levels.txt
 
-# Level thumbs folder subfolders
+# Site static image folders
 web/static/thumbs/*
 web/static/cheevos/*
+web/static/riddles/*
 
 # Less CSS: Use .less files that work like CSS (but better)
 style.css
