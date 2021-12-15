@@ -43,8 +43,9 @@ class User(commands.Cog):
         level_sets = await database.fetch_all(query, values)
         for level_set in level_sets:
             role_name = level_set['completion_role']
-            set_role = get(guild.roles, name=role_name)
-            await member.add_roles(set_role)
+            if role_name:
+                set_role = get(guild.roles, name=role_name)
+                await member.add_roles(set_role)
         
         # Grant current reached level role(s)
         query = '''SELECT * FROM user_levels AS ul
