@@ -5,7 +5,8 @@ from discord import User as DiscordUser, Member
 from discord.utils import get
 from discord.errors import Forbidden
 
-from commands.unlock import UnlockHandler, update_nickname
+from commands.unlock import UnlockHandler, \
+    update_nickname, multi_update_nickname
 from util.db import database
 
 
@@ -21,79 +22,91 @@ class User(commands.Cog):
 
         # Get riddle alias from guild ID
         guild = member.guild
-        query = 'SELECT * FROM riddles ' \
-                'WHERE guild_id = :id'
+        query = '''SELECT * FROM riddles
+            WHERE guild_id = :id'''
         values = {'id': guild.id}
         riddle = await database.fetch_one(query, values)
         if not riddle:
             # Nothing to do (e.g Wonderland)
             return
         alias = riddle['alias']
-
-        # Get player riddle account
-        query = '''SELECT * FROM riddle_accounts as racc
-            WHERE riddle = :riddle
-                AND racc.username = :username
-                AND racc.discriminator = :disc'''
+        
+        # Grant completed set roles
+        query = '''SELECT * FROM level_sets AS ls
+            INNER JOIN user_levels AS ul
+                ON ls.riddle = ul.riddle AND ls.final_level = ul.level_name
+            WHERE ls.riddle = :riddle
+                AND ul.username = :username AND ul.discriminator = :disc
+                AND ul.completion_time IS NOT NULL'''
         values = {'riddle': alias,
-                'username': member.name, 'disc': member.discriminator}
-        account = await database.fetch_one(query, values)
-        if not account or not account['current_level']:
-            # Member still hasn't started riddle, so nothing to do
-            return
+            'username': member.name, 'disc': member.discriminator}
+        level_sets = await database.fetch_all(query, values)
+        for level_set in level_sets:
+            role_name = level_set['completion_role']
+            set_role = get(guild.roles, name=role_name)
+            await member.add_roles(set_role)
+        
+        # Grant current reached level role(s)
+        query = '''SELECT * FROM user_levels AS ul
+            INNER JOIN levels AS lv
+                ON ul.riddle = lv.riddle AND ul.level_name = lv.name
+            WHERE ul.riddle = :riddle
+                AND ul.username = :username AND ul.discriminator = :disc
+                AND lv.is_Secret IS FALSE
+                AND ul.completion_time IS NULL'''
+        current_levels = await database.fetch_all(query, values)
+        for level in current_levels:
+            role_name = 'reached-%s' % level['discord_name']
+            level_role = get(guild.roles, name=role_name)
+            await member.add_roles(level_role)
 
-        # Build UnlockHandler object for unlocking procedures
-        uh = UnlockHandler(alias, member.name, member.discriminator)
-        
-        current_level = account['current_level']
-        if current_level != '🏅':
-            # Advance member's progress to current reached normal level
-            query = 'SELECT * FROM levels ' \
-                    'WHERE riddle = :riddle AND name = :level_name'
-            values = {'riddle': alias, 'level_name': current_level}
-            level = await database.fetch_one(query, values)
-            await uh.advance(level)
-        else:
-            # Grant completed (and possibly mastered) honor(s)
-            completed_role = get(guild.roles,
-                    name=riddle['completed_role'])
-            await member.add_roles(completed_role)
-            query = 'SELECT * FROM achievements ' \
-                    'WHERE riddle = :riddle AND `title` NOT IN (' \
-                        'SELECT `title` FROM user_achievements ' \
-                        'WHERE riddle = :riddle ' \
-                            'AND username = :username ' \
-                            'AND discriminator = :disc)'
-            has_locked_cheevo = await database.fetch_one(query, values)
-            if has_locked_cheevo:
-                await update_nickname(member, '🏅')
-            else:
-                mastered_role = get(guild.roles,
-                        name=riddle['mastered_role'])
-                await member.add_roles(mastered_role)
-                await update_nickname(member, '💎')
-        
-        # Search for reached/solved secret levels and grant roles to member
-        query = 'SELECT * FROM user_levels ' \
-                'INNER JOIN levels ' \
-                    'ON user_levels.riddle = levels.riddle ' \
-                        'AND user_levels.level_name = levels.name ' \
-                'WHERE levels.riddle = :alias AND is_secret IS TRUE ' \
-                    'AND username = :name AND discriminator = :disc'
-        values = {'alias': alias,
-                'name': member.name, 'disc': member.discriminator}
+        # Grant reached/solved roles for secret levels
+        query = '''SELECT * FROM user_levels AS ul
+            INNER JOIN levels AS lv
+                ON ul.riddle = lv.riddle AND ul.level_name = lv.name
+            WHERE ul.riddle = :riddle
+                AND ul.username = :username AND ul.discriminator = :disc
+                AND lv.is_secret IS TRUE'''
         secret_levels = await database.fetch_all(query, values)
         for level in secret_levels:
-            role_name = 'reached-' if not level['completion_time'] \
-                    else 'solved-'
-            role_name += level['discord_name']
+            role_name = 'solved' if level['completion_time'] else 'reached'
+            role_name += '-%s' % level['discord_name']
             role = get(member.guild.roles, name=role_name)
             await member.add_roles(role)
         
+        # Update nickname
+        await multi_update_nickname(alias, member)
+
+        # Check if player finished all levels (main and secret)
+        query = '''SELECT * FROM levels AS lv
+            WHERE riddle = :riddle AND `name` NOT IN (
+                SELECT level_name FROM user_levels AS ul
+                    WHERE riddle = :riddle
+                        AND username = :username AND discriminator = :disc
+                        AND completion_time IS NOT NULL
+                )'''
+        has_remaining_level = await database.fetch_one(query, values)
+        if not has_remaining_level:
+            # Check if player has gotten all achievements
+            query = '''SELECT * FROM achievements
+                WHERE riddle = :riddle AND `title` NOT IN (
+                    SELECT `title` FROM user_achievements
+                    WHERE riddle = :riddle
+                        AND username = :username AND discriminator = :disc
+                    )'''
+            values.pop('final_name')
+            has_locked_cheevo = await database.fetch_one(query, values)
+            if not has_locked_cheevo:
+                # Grant mastered honor and 💎 on nick
+                mastered_role = get(guild.roles,
+                    name=riddle['mastered_role'])
+                await member.add_roles(mastered_role)
+                await update_nickname(member, '💎')
+        
         # Grant muted role for player if (sadly) necessary
-        if account['muted']:
-            muted = get(guild.roles, name='Muted')
-            await member.add_roles(muted)
+        # if account['muted']:
+        #     muted = get(guild.roles, name='Muted')
+        #     await member.add_roles(muted)
 
     @commands.Cog.listener()
     async def on_user_update(self, before: DiscordUser, after: DiscordUser):
