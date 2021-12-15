@@ -58,15 +58,10 @@ async def process_url(username=None, disc=None, path=None):
             setattr(user, 'name', username)
             setattr(user, 'discriminator', disc)
         ph = _PathHandler()
-        ok, invite_code = \
-                await ph.build_handler(user, path, status_code, auto)
+        ok = await ph.build_handler(user, path, status_code, auto)
         if not ok:
-            if not invite_code:
-                # Page is not inside root path (like forum or admin pages)
-                return 'Not part of root path', 403
-
-            # User is not currently member of riddle's guild :()
-            return invite_code, 401  
+            # Page is not inside root path (like forum or admin pages)
+            return 'Not part of root path', 403
         
         ok, invite_code = await ph.build_player_riddle_data()
         if not ok:
@@ -160,20 +155,11 @@ class _PathHandler:
             
         if not riddle:
             # Page outside of levels, like forum and admin ones
-            return False, None
+            return False
         
         # Remove potential "www." from URL, if not required
         if not '//www.' in riddle['root_path']:
             url = url.replace('//www.', '//')
-
-        # Check if user is member of riddle guild
-        ok, invite_code = True, None
-        if not auto:
-            is_member = await bot_request('is-member-of-guild',
-                    guild_id=859797827554770955,
-                    username=user.name, disc=user.discriminator)
-            if is_member == 'False':
-                ok, invite_code = False, 'ktaPPtnPSn'
 
         # Save basic riddle info
         self.riddle_alias = riddle['alias']
@@ -204,7 +190,7 @@ class _PathHandler:
         # Save requesting status code too
         self.status_code = status_code
         
-        return ok, invite_code
+        return True
     
     async def build_player_riddle_data(self) -> (bool, str):
         '''Build player riddle data from database,

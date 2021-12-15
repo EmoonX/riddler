@@ -48,11 +48,6 @@ function sendToServer(url, statusCode) {
               console.log('401: Not logged in');
               const login = SERVER_URL + '/login';
               chrome.tabs.create({url: login});
-            } else {
-              // Not emmber of guild, so open Discord guild invite
-              console.log('401: Not member of Wonderland');
-              const invite = 'https://discord.gg/' + text;
-              chrome.tabs.create({url: invite});
             }
           }
         });
