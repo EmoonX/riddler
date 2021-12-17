@@ -12,6 +12,7 @@
 @font-face {
   font-family: calculator;
   src: url("/static/fonts/calculator.ttf");
+  unicode-range: U+00-B0, U+100-FFFF;
 }
 @font-face {
   font-family: digital-mono;
@@ -1062,6 +1063,7 @@ section.list.levels > .row {
       max-width: 100%;
 
       var.name {
+        font-family: calculator, standard-font;
         font-size: 1.5em;
       }
       var.latin-name {

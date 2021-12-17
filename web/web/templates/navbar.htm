@@ -58,7 +58,7 @@
     {% endif %}
       {# Verify if user is logged in #}
       {% if not is_authorized() %}
-        <a href="{{ url_for('players_auth.login', redirect_url=(request.url)) }}" class="nav-button">Login</a>
+        <a class="nav-button" href="{{ url_for('players_auth.login', redirect_url=(request.url)) }}">Login</a>
       {% else %}
         {% set user = get_session_user() %}
         <nav class="dropdown">
