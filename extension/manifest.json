@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Riddler",
-  "version": "0.3",
+  "version": "0.3.1",
   "description": "Browser extension for Riddler, the online riddle enhancer.",
 
   "background": {
@@ -10,7 +10,7 @@
   "permissions": [
     "webRequest",
     "cookies",
-    "https://riddler.emoon.dev/process"
+    "https://riddler.app/process"
   ],
   "optional_permissions": [
     "*://*/*"

@@ -93,7 +93,7 @@ async def context_processor():
             url = await bot_request('get-riddle-icon-url',
                 guild_id=riddle['guild_id'])
             if not url:
-                url = 'https://riddler.emoon.dev/static/riddles/%s.png' % alias
+                url = 'https://riddler.app/static/riddles/%s.png' % alias
             riddle = dict(riddle)
             riddle['icon_url'] = url
         
@@ -117,7 +117,7 @@ async def context_processor():
             guild_id = str(row['guild_id'])
             url = urls.get(guild_id)
             if not url:
-                url = 'https://riddler.emoon.dev/static/riddles/%s.png' \
+                url = 'https://riddler.app/static/riddles/%s.png' \
                     % row['alias']
             row['icon_url'] = url
             riddles[row['alias']] = row

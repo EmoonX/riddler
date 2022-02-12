@@ -168,7 +168,7 @@ async def riddle_list(alias: str, country: str = None):
     url = await bot_request('get-riddle-icon-url',
         guild_id=riddle['guild_id'])
     if not url:
-        url = 'https://riddler.emoon.dev/static/riddles/%s.png' % alias
+        url = 'https://riddler.app/static/riddles/%s.png' % alias
     riddle['icon_url'] = url
     
     # Get total number of riddle achievements

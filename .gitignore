@@ -142,5 +142,5 @@ web/static/riddles/*
 # Less CSS: Use .less files that work like CSS (but better)
 style.css
 
-# Firefox extensions
-#*.xpi
+# Environment variables
+.env

@@ -15,7 +15,7 @@ function request(url) {
 
 function getRiddleHosts() {
   // Retrieve riddle host domains
-  const HOSTS_URL = 'https://riddler.emoon.dev/get-riddle-hosts';
+  const HOSTS_URL = 'https://riddler.app/get-riddle-hosts';
   const data = request(HOSTS_URL);
   const hosts = data.split(" ");
   return hosts;
@@ -38,7 +38,7 @@ function updateHosts() {
 
 function getCurrentRiddleData() {
   // Retrieve current riddle data for authenticated user
-  const DATA_URL = 'https://riddler.emoon.dev/get-current-riddle-data';
+  const DATA_URL = 'https://riddler.app/get-current-riddle-data';
   const data = request(DATA_URL);
   return data;
 }
@@ -55,7 +55,7 @@ window.onload = (_ => {
   const currentIconTag = document.getElementById('current-icon');
   const currentNameTag = document.getElementById('current-name');
   const currentLinkTag = document.getElementById('current-link');
-  const explorerURL = `https://riddler.emoon.dev/${alias}/levels`;
+  const explorerURL = `https://riddler.app/${alias}/levels`;
   currentIconTag.setAttribute('src', data['icon_url']);
   currentNameTag.textContent = data['full_name'];
   currentLinkTag.setAttribute('href', explorerURL);

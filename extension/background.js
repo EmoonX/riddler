@@ -3,7 +3,7 @@ var t0;
 
 function sendToServer(url, statusCode) {
   // Base URL to where requests will be sent to
-  const SERVER_URL = 'https://riddler.emoon.dev';
+  const SERVER_URL = 'https://riddler.app';
 
   // Get session cookie from browser storage
   const details = {
@@ -65,7 +65,7 @@ const filter = {
 
 chrome.webRequest.onHeadersReceived.addListener(function (details) {
   // Send a process request to server whenever response is received
-  if (details.url.includes('riddler.emoon.dev')) {
+  if (details.url.includes('riddler.app')) {
     return;
   }
   console.log(details.url, details.statusCode);
