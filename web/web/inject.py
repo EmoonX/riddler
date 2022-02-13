@@ -117,7 +117,7 @@ async def context_processor():
             guild_id = str(row['guild_id'])
             url = urls.get(guild_id)
             if not url:
-                url = 'https://riddler.app/static/riddles/%s.png' \
+                url = 'htriddleriddler.app/static/riddles/%s.png' \
                     % row['alias']
             row['icon_url'] = url
             riddles[row['alias']] = row
@@ -196,11 +196,20 @@ async def context_processor():
         return country
     
     # Build dict of country names
+    # (also a separate loop for UK nations)
     cc = coco.CountryConverter()
     for country in pycountry.countries:
         alpha_2 = country.alpha_2
-        short_name = cc.convert(alpha_2, to='short_name')
-        country_names[alpha_2] = short_name
+        name = cc.convert(alpha_2, to='short_name')
+        country_names[alpha_2] = name
+    uk_nations = (
+        ('GB-ENG', 'England'), ('GB-SCT', 'Scotland'),
+        ('GB-WLS', 'Wales'), ('GB-NIR', 'Northern Ireland')
+    )
+    for country in uk_nations:
+        code = country[0]
+        name = 'United Kingdom (%s)' % country[1]
+        country_names[code] = name
 
     # Dict for extra variables
     extra = {
