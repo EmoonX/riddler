@@ -16,7 +16,7 @@
             </label>
             <label>Country
               <select name="country" required>
-                <option disabled>-- Choose your destiny --</option>
+                <option disabled>-- Choose your country --</option>
                 {% for short_name, alpha_2 in get_sorted_countries() %}
                 <option value="{{ alpha_2 }}">{{ short_name }}</option>
               {% endfor %}

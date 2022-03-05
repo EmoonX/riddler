@@ -82,7 +82,7 @@ figcaption#current-name {
 }
 
 section#buttons {
-  height: 90px;
+  height: 60px;
 }
 button, form {
   width: 200px;
@@ -93,7 +93,7 @@ button {
   align-items: center;
   border: none;
   border-radius: 10px;
-  background-color: #111;
+  background-color: #444;
   text-align: left;
   font-family: standard;
   font-style: italic;

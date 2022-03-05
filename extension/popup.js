@@ -56,7 +56,8 @@ window.onload = (_ => {
   const currentNameTag = document.getElementById('current-name');
   const currentLinkTag = document.getElementById('current-link');
   const explorerURL = `https://riddler.app/${alias}/levels`;
-  currentIconTag.setAttribute('src', data['icon_url']);
+  // currentIconTag.setAttribute('src', data['icon_url']);
+  currentIconTag.setAttribute('src', 'https://riddler.app/static/images/locked.png');
   currentNameTag.textContent = data['full_name'];
   currentLinkTag.setAttribute('href', explorerURL);
 });

@@ -59,6 +59,8 @@ class UnlockHandler:
             return
         
         if channel:
+            return
+
             # If not a member of riddle guild, no guild messages to send
             if not self.in_riddle_guild:
                 return

@@ -26,8 +26,9 @@ async def on_ready():
     # Build riddles dict
     await build_riddles()
 
-    from discord.utils import get
-    from util.db import database
+    import discord
+    await bot.change_presence(status=discord.Status.offline)
+    logging.info('> All clear.')
 
 
 if __name__ == '__main__':

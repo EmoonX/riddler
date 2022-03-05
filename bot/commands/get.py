@@ -47,23 +47,26 @@ async def get_riddle_icon_url(request):
     guild = get(bot.guilds, id=guild_id)
     if not guild:
         return web.Response(status=404)
-    url = str(guild.icon_url)
+    # url = str(guild.icon_url)
+    url = 'https://riddler.app/static/images/locked.png'
     return web.Response(text=url)
 
 
 async def fetch_riddle_icon_urls(request):
     '''Fetch all riddles' icon URLs,
     returning a JSON dict of pairs (guild ID -> url).'''
+    return web.Response(text='{}')
     urls = {}
     for guild in bot.guilds:
         url = str(guild.icon_url)
-        urls[guild.id] = url
+        # urls[guild.id] = url
     data = json.dumps(urls)
     return web.Response(text=data)
 
 
 async def get_avatar_url(request):
     '''Get avatar URL from a user by their Discord handle.'''
+    return web.Response(text='https://riddler.app/static/images/locked.png')
     members = bot.get_all_members()
     username = request.rel_url.query['username']
     disc = request.rel_url.query['disc']
@@ -77,6 +80,7 @@ async def fetch_avatar_urls(request):
     is given, fetch all user avatars from a given guild;
     otherwise, just fetch avatars from all guilds.'''
 
+    return web.Response(text='{}')
     guild_id = request.rel_url.query.get('guild_id')
     members = None
     if guild_id:
