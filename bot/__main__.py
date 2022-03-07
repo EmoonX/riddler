@@ -27,7 +27,7 @@ async def on_ready():
     await build_riddles()
 
     import discord
-    await bot.change_presence(status=discord.Status.offline)
+    await bot.change_presence(status=discord.Status.idle)
     logging.info('> All clear.')
 
 

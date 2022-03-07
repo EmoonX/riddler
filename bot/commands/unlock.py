@@ -16,6 +16,9 @@ class UnlockHandler:
     alias: str
     '''Unique identifier for riddle'''
 
+    full_name: str
+    '''Riddle's full name'''
+
     guild: Guild
     '''Guild where things will be unlocked'''
     
@@ -32,11 +35,14 @@ class UnlockHandler:
         '''Build handler for guild `alias` and member `username#disc`.'''
         self.alias = alias
         riddle = riddles[alias]
+        self.full_name = riddle.full_name
         self.guild = riddle.guild
         self.levels = riddle.levels
-        self.member = get(riddle.guild.members,
-                name=username, discriminator=disc)
-        self.in_riddle_guild = (self.member is not None)
+        self.in_riddle_guild = False
+        if riddle.guild:
+            self.member = get(riddle.guild.members,
+                    name=username, discriminator=disc)
+            self.in_riddle_guild = (self.member is not None)
         if not self.in_riddle_guild:
             # Not a member of riddle guild, so use Wonderland instead
             wonderland = get(bot.guilds, name='Riddler\'s Wonderland II')
@@ -74,7 +80,7 @@ class UnlockHandler:
         except Forbidden:
             logging.info(('\033[1m[%s]\033[0m ' \
                     'Can\'t send messages  to \033[1m%s#%s\033[0m ')
-                    % (self.guild.name, self.member.name,
+                    % (self.full_name, self.member.name,
                         self.member.discriminator))
 
     async def beat(self, level: dict, points: int, first_to_solve: bool):
@@ -88,11 +94,11 @@ class UnlockHandler:
             name += ' (%s)' % level['latin_name']
         logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
                 'has beaten level \033[1m%s\033[0m') \
-                % (self.guild.name, self.member.name,
+                % (self.full_name, self.member.name,
                     self.member.discriminator, name))
         text = ('**[%s]** You have solved level **%s** [%s] ' \
                     'and won **%d** points!\n') \
-                % (self.guild.name, name, stars, points)
+                % (self.full_name, name, stars, points)
         await self._send(text)
         
         # Send also to channels if first to solve level
@@ -114,7 +120,7 @@ class UnlockHandler:
         if completed_set:
             # Congratulatory DM
             role_name = completed_set['completion_role']
-            text = '**[%s] 🗿 LEVEL SET BEATEN 🗿**\n' % self.guild.name
+            text = '**[%s] 🗿 LEVEL SET BEATEN 🗿**\n' % self.full_name
             text += 'You have unlocked special title **@%s**!' % role_name
             await self._send(text)
             if not self.in_riddle_guild:
@@ -175,11 +181,11 @@ class UnlockHandler:
             name += ' (%s)' % level['latin_name']
         logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
                 'has found secret level \033[1m%s\033[0m') \
-                % (self.guild.name, self.member.name,
+                % (self.full_name, self.member.name,
                     self.member.discriminator, name))
         text = ('**[%s]** You found secret level **%s**. ' \
                 'Congratulations!') \
-                % (self.guild.name, name)
+                % (self.full_name, name)
         await self._send(text)
         if not self.in_riddle_guild:
             return
@@ -203,11 +209,11 @@ class UnlockHandler:
             name += ' (%s)' % level['latin_name']
         logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
                 'has completed secret level \033[1m%s\033[0m') 
-                % (self.guild.name, self.member.name,
+                % (self.full_name, self.member.name,
                     self.member.discriminator, name))
         text = ('**[%s]** You solved secret level **%s** [%s] ' \
                     'and won **%d** points!\n') \
-                % (self.guild.name, name, stars, points)
+                % (self.full_name, name, stars, points)
         await self._send(text)
         if not self.in_riddle_guild:
             return
@@ -244,11 +250,11 @@ class UnlockHandler:
         # Log and send congratulatory message
         logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m '
                 'got cheevo \033[1m%s\033[0m!') %
-                (self.guild.name, self.member.name,
+                (self.full_name, self.member.name,
                     self.member.discriminator, cheevo['title']))
         text = ('**[%s]** You unlocked achievement **_%s_**  '
                 'in page `%s` and won **%d** points!\n') \
-                % (self.guild.name, cheevo['title'], path, points)
+                % (self.full_name, cheevo['title'], path, points)
         await self._send(text)
         
         # Get cheevo thumb image from path
@@ -268,9 +274,9 @@ class UnlockHandler:
         # Player has completed the game (for now?)
         logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m ' \
                 'has finished the game!') \
-                % (self.guild.name,
+                % (self.full_name,
                     self.member.name, self.member.discriminator))
-        text = '**[%s] 🏅 GAME COMPLETED 🏅**\n' % self.guild.name
+        text = '**[%s] 🏅 GAME COMPLETED 🏅**\n' % self.full_name
         text += 'You just completed the game! **Congratulations!**'
         await self._send(text)
         if not self.in_riddle_guild:
@@ -307,9 +313,9 @@ class UnlockHandler:
         # Player has mastered the game (for now?)
         logging.info(('\033[1m[%s]\033[0m \033[1m%s#%s\033[0m ' \
                 'has mastered the game!') \
-                % (self.guild.name,
+                % (self.full_name,
                     self.member.name, self.member.discriminator))
-        text = '**[%s] 💎 GAME MASTERED 💎**\n' % self.guild.name
+        text = '**[%s] 💎 GAME MASTERED 💎**\n' % self.full_name
         text += 'You have beaten all levels, found all achievements ' \
                 'and scored every single possible point in the game! ' \
                 '**Outstanding!**'

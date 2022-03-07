@@ -10,6 +10,9 @@ from util.db import database
 class Riddle:
     '''Container for guild's riddle levels and info.'''
 
+    full_name: str
+    '''Riddle's full name'''
+
     guild: discord.Guild
     '''Discord guild object'''
 
@@ -23,6 +26,7 @@ class Riddle:
         '''Build riddle object by row extracted from database.'''
 
         # Get info from guild's database data
+        self.full_name = riddle['full_name']
         self.guild = get(bot.guilds, id=int(riddle['guild_id']))
 
         # Get riddle's level info from database query
