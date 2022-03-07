@@ -47,19 +47,17 @@ async def get_riddle_icon_url(request):
     guild = get(bot.guilds, id=guild_id)
     if not guild:
         return web.Response(status=404)
-    # url = str(guild.icon_url)
-    url = 'https://riddler.app/static/images/locked.png'
+    url = str(guild.icon_url)
     return web.Response(text=url)
 
 
 async def fetch_riddle_icon_urls(request):
     '''Fetch all riddles' icon URLs,
     returning a JSON dict of pairs (guild ID -> url).'''
-    return web.Response(text='{}')
     urls = {}
     for guild in bot.guilds:
         url = str(guild.icon_url)
-        # urls[guild.id] = url
+        urls[guild.id] = url
     data = json.dumps(urls)
     return web.Response(text=data)
 
