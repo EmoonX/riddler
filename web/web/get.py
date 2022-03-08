@@ -45,14 +45,16 @@ async def get_current_riddle_data():
     riddle = await database.fetch_one(query, values)
     if not riddle:
         return 'No riddle being played...', 404
+    alias = riddle['alias']
 
-    # Get guild icon URL by bot request
+    # Get guild icon URL by bot request (or static one)
     icon_url = await bot_request('get-riddle-icon-url',
         guild_id=riddle['guild_id'])
+    if not icon_url:
+        icon_url = 'https://riddler.app/static/riddles/%s.png' % alias
 
     # Create and return JSON dict with data
-    data = { 'alias': riddle['alias'],
-        'full_name': riddle['full_name'],
-        'icon_url': icon_url }
+    data = { 'alias': alias,
+        'full_name': riddle['full_name'], 'icon_url': icon_url }
     data = json.dumps(data)
     return data
