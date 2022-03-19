@@ -4,6 +4,7 @@ from aiohttp import web
 from discord.utils import get
 
 from bot import bot
+from util.db import database
 
 
 async def is_member_of_guild(request):
@@ -11,7 +12,7 @@ async def is_member_of_guild(request):
     data = request.rel_url.query
     guild = get(bot.guilds, id=int(data['guild_id']))
     member = get(guild.members,
-            name=data['username'], discriminator=data['disc'])
+        name=data['username'], discriminator=data['disc'])
     if not member:
         return web.Response(text="False")            
     return web.Response(text="True")
@@ -25,7 +26,7 @@ async def is_member_and_has_permissions(request):
     data = request.rel_url.query
     guild = get(bot.guilds, id=int(data['guild_id']))
     member = get(guild.members,
-            name=data['username'], discriminator=data['disc'])
+        name=data['username'], discriminator=data['disc'])
     
     # Check if it's a member of guild
     if not member:
@@ -64,12 +65,12 @@ async def fetch_riddle_icon_urls(request):
 
 async def get_avatar_url(request):
     '''Get avatar URL from a user by their Discord handle.'''
-    return web.Response(text='https://riddler.app/static/images/locked.png')
     members = bot.get_all_members()
     username = request.rel_url.query['username']
     disc = request.rel_url.query['disc']
     user = get(members, name=username, discriminator=disc)
-    url = str(user.avatar_url)
+    url = str(user.avatar_url) if user \
+        else 'https://riddler.app/static/images/locked.png'
     return web.Response(text=url)
 
 
@@ -78,7 +79,6 @@ async def fetch_avatar_urls(request):
     is given, fetch all user avatars from a given guild;
     otherwise, just fetch avatars from all guilds.'''
 
-    return web.Response(text='{}')
     guild_id = request.rel_url.query.get('guild_id')
     members = None
     if guild_id:
@@ -90,12 +90,22 @@ async def fetch_avatar_urls(request):
         # Get members from all guilds bot has access
         members = bot.get_all_members()
     
+    # Get list of recently active players (to restrict PFPs)
+    active_players = set()
+    query = '''SELECT * FROM accounts
+        WHERE current_riddle IS NOT NULL'''
+    result = await database.fetch_all(query)
+    for row in result:
+        tag = row['username'] + '#' + row['discriminator']
+        active_players.add(tag)
+    
     # Build dict of pairs (DiscordTag -> URL)
     urls = {}
     for member in members:
         tag = member.name + '#' + member.discriminator
-        url = str(member.avatar_url)
-        urls[tag] = url
+        if tag in active_players:
+            url = str(member.avatar_url)
+            urls[tag] = url
     
     # Convert dict to JSON format and return response with it
     data = json.dumps(urls)
