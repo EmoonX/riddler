@@ -37,11 +37,23 @@ async def auth(alias: str):
     user = await discord.get_user()
     if user.id == 315940379553955844:
         return
+
+    # Check if user is riddle's creator/admin
+    query = '''SELECT * FROM riddles
+        WHERE alias = :alias
+            AND creator_username = :username AND creator_disc = :disc'''
+    values = {'alias': alias,
+        'username': user.name, 'disc': user.discriminator}
+    is_creator = await database.fetch_one(query, values)
+    if is_creator:
+        return
     
-    # Check if user has enough permissions in given guild
-    ok = await bot_request('is-member-and-has-permissions',
-            guild_id=result['guild_id'],
-            username=user.name, disc=user.discriminator)
+    # Otherwise, check if user has enough permissions in given guild
+    ok = await bot_request(
+        'is-member-and-has-permissions',
+        guild_id=result['guild_id'],
+        username=user.name, disc=user.discriminator
+    )
     if ok != "True":
         abort(401)
 
