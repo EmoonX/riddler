@@ -22,7 +22,7 @@
         {% endif %}
           <div class="row">
             <div class="rank">
-              {% if loop.index <= 3 %}
+              {% if loop.index <= 3 and loop.index <= accounts|length %}
                 {% set rank = '🥇🥈🥉'[loop.index - 1] %}
                 {% set color = colors[loop.index - 1] %}
                 {% set style = 'style="text-shadow: 0 0 8px %(c)s, 0 0 16px %(c)s, 0 0 24px %(c)s"'|safe % {'c': color} %}
