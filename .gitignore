@@ -130,6 +130,7 @@ dmypy.json
 
 # VS Code things
 .vscode
+.VSCodeCounter
 
 # We don't want any answer files on the remote!
 levels.txt

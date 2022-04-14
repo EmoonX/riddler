@@ -11,7 +11,7 @@ admin_recent = Blueprint('admin_recent', __name__)
 @requires_authorization
 async def update_recent():
     '''Update players' last placements and recent scores.'''
-    
+
     ok = await root_auth()
     if not ok:
         abort(401)
@@ -21,9 +21,8 @@ async def update_recent():
     query = '''
         DROP TABLE IF EXISTS placements;
         CREATE TEMPORARY TABLE IF NOT EXISTS placements AS (
-            SELECT username, discriminator,
-                RANK() OVER w AS idx
-                FROM accounts
+            SELECT username, discriminator, RANK() OVER w AS idx
+            FROM accounts
             WHERE global_score > 0
             WINDOW w AS (ORDER BY global_score DESC)
         );        
@@ -33,16 +32,16 @@ async def update_recent():
             WHERE acc.username = plc.username
                 AND acc.discriminator = plc.discriminator
         )
-        WHERE global_score > 0;'''
+        WHERE global_score > 0;
+    '''
     await database.execute(query)
 
     # Update them also for individual riddles in `riddle_accounts`
     query = '''
         DROP TABLE IF EXISTS placements;
         CREATE TEMPORARY TABLE IF NOT EXISTS placements AS (
-            SELECT riddle, username, discriminator,
-                RANK() OVER w AS idx
-                FROM riddle_accounts
+            SELECT riddle, username, discriminator, RANK() OVER w AS idx
+            FROM riddle_accounts
             WHERE score > 0
             WINDOW w AS (
                 PARTITION BY riddle
@@ -56,7 +55,8 @@ async def update_recent():
                 AND racc.username = plc.username
                 AND racc.discriminator = plc.discriminator
         )
-        WHERE score > 0;'''
+        WHERE score > 0;
+    '''
     await database.execute(query)
 
     return 'SUCCESS :)', 200

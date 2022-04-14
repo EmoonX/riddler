@@ -1,10 +1,5 @@
-import os
-from base64 import b64decode
-from io import BytesIO
-
 from quart import Blueprint, abort
 from quart_discord import requires_authorization
-from PIL import Image
 
 from auth import discord
 from inject import level_ranks, cheevo_ranks
@@ -24,7 +19,7 @@ async def root_auth() -> bool:
 
 @requires_authorization
 async def auth(alias: str):
-    '''Check if alias is valid and user is admin of guild.'''
+    '''Check if alias is valid and user an admin of guild.'''
 
     # Get riddle/guild full name from database
     query = 'SELECT * FROM riddles WHERE alias = :alias'
@@ -39,11 +34,15 @@ async def auth(alias: str):
         return
 
     # Check if user is riddle's creator/admin
-    query = '''SELECT * FROM riddles
+    query = '''
+        SELECT * FROM riddles
         WHERE alias = :alias
-            AND creator_username = :username AND creator_disc = :disc'''
-    values = {'alias': alias,
-        'username': user.name, 'disc': user.discriminator}
+            AND creator_username = :username AND creator_disc = :disc
+    '''
+    values = {
+        'alias': alias,
+        'username': user.name, 'disc': user.discriminator
+    }
     is_creator = await database.fetch_one(query, values)
     if is_creator:
         return
@@ -80,9 +79,8 @@ async def update_all_riddles():
         if response[1] != 200:
             return response
 
-    # Update sepately players' global scores
-    query = 'UPDATE accounts ' \
-            'SET global_score = 0 '
+    # Update separately players' global scores
+    query = 'UPDATE accounts SET global_score = 0'
     await database.execute(query)
     query = 'SELECT * FROM riddle_accounts'
     riddle_accounts = await database.fetch_all(query)
@@ -91,11 +89,15 @@ async def update_all_riddles():
         if riddle['unlisted']:
             # Ignore unlisted riddles
             continue
-        query = 'UPDATE accounts ' \
-                'SET global_score = global_score + :score ' \
-                'WHERE username = :name AND discriminator = :disc'
-        values = {'score': row['score'],
-                'name': row['username'], 'disc': row['discriminator']}
+        query = '''
+            UPDATE accounts
+            SET global_score = global_score + :score
+            WHERE username = :name AND discriminator = :disc
+        '''
+        values = {
+            'score': row['score'],
+            'name': row['username'], 'disc': row['discriminator']
+        }
         await database.execute(query, values)
 
     return 'SUCCESS :)', 200
@@ -105,79 +107,92 @@ async def update_all_riddles():
 @requires_authorization
 async def update_all(alias: str):
     '''Wildcard route for running all update routines below.'''
-    update_methods = \
-        (update_scores, update_page_count,
-        update_completion_count, update_ratings)
+
+    update_methods = (
+        update_scores, update_page_count,
+        update_completion_count, update_ratings,
+    )
     for update in update_methods:
         response = await update(alias)
         if response[1] != 200:
             return response
+
     return 'SUCCESS :)', 200
 
 
 @admin.get('/admin/<alias>/update-scores')
 @requires_authorization
 async def update_scores(alias: str):
-    '''Úpdates riddle players' score.'''    
+    '''Úpdates riddle players' score.'''
 
     # Check for admin permissions
     await auth(alias)
 
     # Iterate over riddle accounts
-    query = 'SELECT * FROM riddle_accounts ' \
-            'WHERE riddle = :riddle'
-    result = await database.fetch_all(query, {'riddle': alias})
-    for row in result:
+    query = 'SELECT * FROM riddle_accounts WHERE riddle = :riddle'
+    accounts = await database.fetch_all(query, {'riddle': alias})
+    for acc in accounts:
         # Get current score
-        cur_score = row['score']
+        cur_score = acc['score']
 
         # Add beaten level points to new score
         new_score = 0
-        query = 'SELECT * FROM user_levels ' \
-                'INNER JOIN levels ' \
-                    'ON user_levels.riddle = levels.riddle ' \
-                    'AND user_levels.level_name = levels.name ' \
-                'WHERE levels.riddle = :riddle ' \
-                    'AND username = :name and discriminator = :disc ' \
-                    'AND completion_time IS NOT NULL '
-        values = {'riddle': alias,
-                'name': row['username'], 'disc': row['discriminator']}
-        result = await database.fetch_all(query, values)
-        for row in result:
-            points = level_ranks[row['rank']]['points']
+        query = '''
+            SELECT * FROM user_levels
+            INNER JOIN levels
+                ON user_levels.riddle = levels.riddle
+                    AND user_levels.level_name = levels.name
+            WHERE levels.riddle = :riddle 
+                AND username = :name and discriminator = :disc 
+                AND completion_time IS NOT NULL
+        '''
+        values = {
+            'riddle': alias,
+            'name': acc['username'], 'disc': acc['discriminator']
+        }
+        completed_levels = await database.fetch_all(query, values)
+        for level in completed_levels:
+            points = level_ranks[level['rank']]['points']
             new_score += points
 
         # Add unlocked cheevo points to new score
-        query = 'SELECT * FROM user_achievements ' \
-                'INNER JOIN achievements ' \
-                    'ON user_achievements.riddle = achievements.riddle ' \
-                    'AND user_achievements.title = achievements.title ' \
-                'WHERE achievements.riddle = :riddle ' \
-                    'AND username = :name and discriminator = :disc'
-        result = await database.fetch_all(query, values)
-        for row in result:
-            points = cheevo_ranks[row['rank']]['points']
+        query = '''
+            SELECT * FROM user_achievements 
+            INNER JOIN achievements 
+                ON user_achievements.riddle = achievements.riddle 
+                    AND user_achievements.title = achievements.title 
+            WHERE achievements.riddle = :riddle 
+                AND username = :name and discriminator = :disc
+        '''
+        unlocked_cheevos = await database.fetch_all(query, values)
+        for cheevo in unlocked_cheevos:
+            points = cheevo_ranks[cheevo['rank']]['points']
             new_score += points
 
         # Update player's riddle score
-        query = 'UPDATE riddle_accounts ' \
-                'SET score = :score ' \
-                'WHERE riddle = :riddle ' \
-                    'AND username = :name and discriminator = :disc'
+        query = '''
+            UPDATE riddle_accounts 
+            SET score = :score 
+            WHERE riddle = :riddle 
+                AND username = :name and discriminator = :disc
+        '''
         values = {'score': new_score, **values}
         await database.execute(query, values)
 
         # If riddle is listed, update player's global score
-        query = 'SELECT * FROM riddles ' \
-                'WHERE alias = :alias'
+        query = 'SELECT * FROM riddles WHERE alias = :alias'
         values = {'alias': alias}
-        result = await database.fetch_one(query, values)
-        if not result['unlisted']:
-            query = 'UPDATE accounts ' \
-                    'SET global_score = (global_score - :cur + :new) ' \
-                    'WHERE username = :name and discriminator = :disc'
-            new_values = {'cur': cur_score, 'new': new_score,
-                    'name': row['username'], 'disc': row['discriminator']}
+        riddle = await database.fetch_one(query, values)
+        if not riddle['unlisted']:
+            query = '''
+                UPDATE accounts
+                SET global_score = (global_score - :cur + :new)
+                WHERE username = :name and discriminator = :disc
+            '''
+            new_values = {
+                'cur': cur_score, 'new': new_score,
+                'name': acc['username'], 'disc': acc['discriminator']
+            }
             await database.execute(query, new_values)
 
     return 'SUCCESS :)', 200
@@ -192,25 +207,29 @@ async def update_page_count(alias: str):
     await auth(alias)
 
     # Fetch page count for every riddle player
-    query = 'SELECT racc.username, racc.discriminator, ' \
-                'COUNT(level_name) AS page_count ' \
-            'FROM riddle_accounts AS racc ' \
-                'INNER JOIN user_pages AS up ' \
-                    'ON racc.username = up.username ' \
-                        'AND racc.discriminator = up.discriminator ' \
-            'WHERE up.riddle = :riddle ' \
-            'GROUP BY racc.riddle, racc.username, racc.discriminator'
+    query = '''
+        SELECT racc.username, racc.discriminator,
+            COUNT(level_name) AS page_count 
+        FROM riddle_accounts AS racc 
+        INNER JOIN user_pages AS up 
+            ON racc.username = up.username 
+                AND racc.discriminator = up.discriminator 
+        WHERE up.riddle = :riddle 
+        GROUP BY racc.riddle, racc.username, racc.discriminator
+    '''
     accounts = await database.fetch_all(query, {'riddle': alias})
 
     # Update page count for each riddle account in DB
-    for account in accounts:
-        query = 'UPDATE riddle_accounts ' \
-                'SET page_count = :page_count ' \
-                'WHERE riddle = :riddle ' \
-                    'AND username = :username and discriminator = :disc'
-        values = {'riddle': alias, 'page_count': account['page_count'],
-                'username': account['username'],
-                'disc': account['discriminator']}
+    for acc in accounts:
+        query = '''
+            UPDATE riddle_accounts SET page_count = :page_count
+            WHERE riddle = :riddle 
+                AND username = :username and discriminator = :disc
+        '''
+        values = {
+            'riddle': alias, 'page_count': acc['page_count'],
+            'username': acc['username'], 'disc': acc['discriminator']
+        }
         await database.execute(query, values)
 
     return 'SUCCESS :)', 200
@@ -219,25 +238,29 @@ async def update_page_count(alias: str):
 @admin.get('/admin/<alias>/update-completion')
 @requires_authorization
 async def update_completion_count(alias: str):
-    '''Úpdates riddle levelś' completion count.'''    
+    '''Úpdates riddle levelś' completion count.'''
 
     # Check for admin permissions
     await auth(alias)
 
     # Get list of levels and completion counts
-    query = 'SELECT level_name, COUNT(*) AS count ' \
-                'FROM user_levels ' \
-            'WHERE riddle = :riddle AND completion_time IS NOT NULL ' \
-            'GROUP BY level_name'
+    query = '''
+        SELECT level_name, COUNT(*) AS count FROM user_levels 
+        WHERE riddle = :riddle AND completion_time IS NOT NULL 
+        GROUP BY level_name
+    '''
     levels = await database.fetch_all(query, {'riddle': alias})
 
     # Update completion count for all riddle levels
     for level in levels:
-        query = 'UPDATE levels ' \
-                'SET completion_count = :count ' \
-                'WHERE riddle = :riddle AND name = :level'
-        values = {'count': level['count'],
-                'riddle': alias, 'level': level['level_name']}
+        query = '''
+            UPDATE levels SET completion_count = :count
+            WHERE riddle = :riddle AND name = :level
+        '''
+        values = {
+            'count': level['count'],
+            'riddle': alias, 'level': level['level_name']
+        }
         await database.execute(query, values)
 
     return 'SUCCESS :)', 200
@@ -246,83 +269,35 @@ async def update_completion_count(alias: str):
 @admin.get('/admin/<alias>/update-ratings')
 @requires_authorization
 async def update_ratings(alias: str):
-    '''Úpdates riddle levels' user ratings.'''    
+    '''Úpdates riddle levels' user ratings.'''
 
     # Check for admin permissions
     await auth(alias)
 
     # Iterate over levels
-    query = 'SELECT * FROM levels ' \
-            'WHERE riddle = :riddle'
+    query = 'SELECT * FROM levels WHERE riddle = :riddle'
     levels = await database.fetch_all(query, {'riddle': alias})
     for level in levels:
         # Get total number of votes and their average from DB
         count, average = 0, None
-        query = 'SELECT COUNT(rating_given) AS count, ' \
-                    'AVG(rating_given) AS average ' + \
-                    'FROM user_levels ' \
-                'WHERE riddle = :riddle AND level_name = :name ' \
-                'GROUP BY riddle, level_name'
+        query = '''
+            SELECT COUNT(rating_given) AS count, AVG(rating_given) AS average
+            FROM user_levels
+            WHERE riddle = :riddle AND level_name = :name 
+            GROUP BY riddle, level_name
+        '''
         values = {'riddle': alias, 'name': level['name']}
-        result = await database.fetch_one(query, values)
-        if result:
-            count, average = result['count'], result['average']
+        level = await database.fetch_one(query, values)
+        if level:
+            count, average = level['count'], level['average']
 
         # Update count and average on levels table
-        query = 'UPDATE levels ' \
-                'SET rating_count = :count, rating_avg = :average ' \
-                'WHERE riddle = :riddle AND name = :name'
+        query = '''
+            UPDATE levels
+            SET rating_count = :count, rating_avg = :average
+            WHERE riddle = :riddle AND name = :name
+        '''
         values = {'count': count, 'average': average, **values}
         await database.execute(query, values)
 
     return 'SUCCESS :)', 200
-
-
-async def save_image(folder: str, alias: str,
-        filename: str, imgdata: str, prev_filename=''):
-    '''Create a image from a base64 string and 
-    save it on riddle's thumbs folder.'''
-
-    # Get pure base64 data from URL and convert it to image
-    mime, data = imgdata.split(',', maxsplit=1)
-    mime += ','
-    data = b64decode(data)
-    img = Image.open(BytesIO(data))
-
-    if folder == 'cheevos':
-        # Center and crop cheevo image 1:1
-        left, top, right, bottom = (0, 0, img.width, img.height)
-        if img.width > img.height:
-            left = (img.width - img.height) / 2
-            right = left + img.height
-        elif img.height > img.width:
-            top = (img.height - img.width) / 2
-            bottom = top + img.width
-        img = img.crop((left, top, right, bottom))
-
-        # Resize cheevo image to 200x200
-        size = (200, 200)
-        img = img.resize(size)
-
-    # Get correct riddle dir
-    dir = '../static/%s/%s' % (folder, alias)
-    if not os.path.isdir(dir):
-        # Create directory if nonexistent
-        os.makedirs(dir)
-
-    # Erase previous file (if any and filename was changed)
-    if prev_filename and filename != prev_filename:
-        prev_path = '%s/%s' % (dir, prev_filename)
-        try:
-            os.remove(prev_path)
-            print('[%s] Image %s successfully removed'
-                    % (alias, prev_filename))
-        except:
-            print('[%s] Couldn\'t remove image %s'
-                    % (alias, prev_filename))
-
-    # Save image on riddle's thumbs folder
-    path = '%s/%s' % (dir, filename)
-    img.save(path)
-    print('[%s] Image %s successfully saved'
-            % (alias, filename))
