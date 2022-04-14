@@ -4,27 +4,27 @@ from discord_slash import cog_ext, SlashContext
 
 class Extra(commands.Cog):
     '''Extra bot commands.'''
-    
+
     def __init__(self, bot):
         self.bot = bot
-   
+
     @cog_ext.cog_slash(name='ping')
     async def ping(self, ctx: SlashContext):
         '''Ping-pong with measurable latency.'''
         latency = 1000 * self.bot.latency
-        await ctx.send('Pong! (%dms)' % latency)
+        await ctx.send(f'Pong! ({latency}ms)')
 
     @cog_ext.cog_slash(name='balthify')
     async def balthify(self, ctx: SlashContext, text: str):
         '''Turn text into Balthazar-speak!'''
-        
+
         # Transform text into uppercase, remove spaces
         # and punctuation and keep numbers
         text = list(text)
-        for i in range((len(text))):
-            if text[i].isalpha():
-                text[i] = text[i].upper()
-            elif not text[i].isdigit():
+        for i, c in enumerate(text):
+            if c.isalpha():
+                text[i] = c.upper()
+            elif not c.isdigit():
                 text[i] = ''
         text = ''.join(text)
 

@@ -9,6 +9,8 @@ class Send(commands.Cog):
 
     @commands.command()
     async def send(self, ctx):
+        '''Send messages to member or channel.'''
+
         guild = get(bot.guilds, name='Cipher: Crack the Code')
         member = get(guild.members, name=ctx.author.name)
         if not member or not member.guild_permissions.manage_guild:
@@ -20,9 +22,11 @@ class Send(commands.Cog):
         aux = ctx.message.content.split(maxsplit=3)
         if len(aux) != 4:
             # Command usage
-            text = '> `!send` - Send bot text message to member or channel\n' \
-                    '> • Usage: `!send member <member> <text>`' \
-                    '> • Usage: `!send channel <channel> <text>`'
+            text = (
+                '> `!send` - Send bot text message to member or channel\n'
+                '> • Usage: `!send member <member> <text>`\n'
+                '> • Usage: `!send channel <channel> <text>`'
+            )
             await ctx.author.send(text)
             return
 
@@ -47,6 +51,8 @@ class Send(commands.Cog):
 
     @commands.command()
     async def broadcast(self, ctx):
+        '''Send messages to all given role members.'''
+
         guild = bot.guilds[0]
         member = get(guild.members, name=ctx.author.name)
         if not member or not member.guild_permissions.administrator:
@@ -58,8 +64,10 @@ class Send(commands.Cog):
         aux = ctx.message.content.split(maxsplit=2)
         if len(aux) < 3:
             # Command usage
-            text = '> `!broadcast` - Send bot PM to all role members\n' \
-                    '> • Usage: `!broadcast <role> <text>`'
+            text = (
+                '> `!broadcast` - Send bot PM to all role members\n'
+                '> • Usage: `!broadcast <role> <text>`'
+            )
             await ctx.author.send(text)
             return
 
@@ -71,6 +79,6 @@ class Send(commands.Cog):
                 await member.send(text)
 
 
-def setup(bot: commands.Bot):
+def setup(_bot: commands.Bot):
     '''Add cog every time extension (module) is (re)loaded.'''
-    bot.add_cog(Send(bot))
+    _bot.add_cog(Send(_bot))

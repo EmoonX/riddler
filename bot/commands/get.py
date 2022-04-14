@@ -4,46 +4,50 @@ from aiohttp import web
 from discord.utils import get
 
 from bot import bot
-from util.db import database
 
 
 async def is_member_of_guild(request):
     '''Check if user is currently member of given guild'''
+
     data = request.rel_url.query
     guild = get(bot.guilds, id=int(data['guild_id']))
-    member = get(guild.members,
-        name=data['username'], discriminator=data['disc'])
+    member = get(
+        guild.members,
+        name=data['username'], discriminator=data['disc']
+    )
     if not member:
-        return web.Response(text="False")            
+        return web.Response(text="False")
     return web.Response(text="True")
 
 
 async def is_member_and_has_permissions(request):
-    '''Check if user is a current member 
+    '''Check if user is a current member
     AND has enough permissions in given guild.'''
-    
+
     # Get Discord member object
     data = request.rel_url.query
     guild = get(bot.guilds, id=int(data['guild_id']))
-    member = get(guild.members,
-        name=data['username'], discriminator=data['disc'])
-    
+    member = get(
+        guild.members,
+        name=data['username'], discriminator=data['disc']
+    )
     # Check if it's a member of guild
     if not member:
         return web.Response(text="False")
-    
+
     # Check if all needed permissions are on
     permissions = ('manage_roles', 'manage_channels', 'manage_nicknames')
     for s in permissions:
         permission = getattr(member.guild_permissions, s)
         if not permission:
             return web.Response(text="False")
-            
+
     return web.Response(text="True")
 
 
 async def get_riddle_icon_url(request):
     '''Get riddle's icon URL from its guild ID.'''
+
     guild_id = int(request.rel_url.query['guild_id'])
     guild = get(bot.guilds, id=guild_id)
     if not guild:
@@ -52,9 +56,10 @@ async def get_riddle_icon_url(request):
     return web.Response(text=url)
 
 
-async def fetch_riddle_icon_urls(request):
+async def fetch_riddle_icon_urls(_request):
     '''Fetch all riddles' icon URLs,
     returning a JSON dict of pairs (guild ID -> url).'''
+
     urls = {}
     for guild in bot.guilds:
         url = str(guild.icon_url)
@@ -65,12 +70,15 @@ async def fetch_riddle_icon_urls(request):
 
 async def get_avatar_url(request):
     '''Get avatar URL from a user by their Discord handle.'''
+
     members = bot.get_all_members()
     username = request.rel_url.query['username']
     disc = request.rel_url.query['disc']
     user = get(members, name=username, discriminator=disc)
-    url = str(user.avatar_url) if user \
-        else 'https://riddler.app/static/images/locked.png'
+    url = (
+        str(user.avatar_url) if user
+        else '/static/images/locked.png'
+    )
     return web.Response(text=url)
 
 
@@ -89,24 +97,14 @@ async def fetch_avatar_urls(request):
     else:
         # Get members from all guilds bot has access
         members = bot.get_all_members()
-    
-    # Get list of recently active players (to restrict PFPs)
-    active_players = set()
-    query = '''SELECT * FROM accounts
-        WHERE current_riddle IS NOT NULL'''
-    result = await database.fetch_all(query)
-    for row in result:
-        tag = row['username'] + '#' + row['discriminator']
-        active_players.add(tag)
-    
+
     # Build dict of pairs (DiscordTag -> URL)
     urls = {}
     for member in members:
         tag = member.name + '#' + member.discriminator
-        if tag in active_players:
-            url = str(member.avatar_url)
-            urls[tag] = url
-    
+        url = str(member.avatar_url)
+        urls[tag] = url
+
     # Convert dict to JSON format and return response with it
     data = json.dumps(urls)
     return web.Response(text=data)
