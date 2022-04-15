@@ -52,8 +52,8 @@ async def global_list(country: str = None):
         riddles[alias]['cheevo_count'] = row['cheevo_count']
 
     # Get players data from database
-    cond_country = f'AND country = "{country}"' if country else ''
-    query = f'''
+    cond_country = f"AND country = \"{country}\"" if country else ''
+    query = f"""
         SELECT *, acc.recent_score, SUM(page_count)
         FROM accounts AS acc INNER JOIN riddle_accounts AS racc
             ON acc.username = racc.username
@@ -61,13 +61,13 @@ async def global_list(country: str = None):
         WHERE global_score > 0 {cond_country}
         GROUP BY acc.username, acc.discriminator
         ORDER BY global_score DESC, page_count DESC
-    '''
+    """
     result = await database.fetch_all(query)
 
     # Init dict of (handle -> player info)
     accounts = {}
     for row in result:
-        handle = f'{row["username"]}#{row["discriminator"]}'
+        handle = f"{row['username']}#{row['discriminator']}"
         player = dict(row) | {'last_level': {}, 'cheevo_count': {}}
         accounts[handle] = player
 
@@ -89,7 +89,7 @@ async def global_list(country: str = None):
     '''
     player_last_levels = await database.fetch_all(query)
     for row in player_last_levels:
-        handle = f'{row["username"]}#{row["discriminator"]}'
+        handle = f"{row['username']}#{row['discriminator']}"
         if not handle in accounts:
             continue
         alias = row['riddle']
@@ -103,7 +103,7 @@ async def global_list(country: str = None):
     '''
     player_cheevo_counts = await database.fetch_all(query)
     for row in player_cheevo_counts:
-        handle = f'{row["username"]}#{row["discriminator"]}'
+        handle = f"{row['username']}#{row['discriminator']}"
         if not handle in accounts:
             continue
         alias = row['riddle']
@@ -183,7 +183,7 @@ async def riddle_list(alias: str, country: str = None):
         'get-riddle-icon-url', guild_id=riddle['guild_id']
     )
     if not url:
-        url = f'/static/riddles/{alias}.png'
+        url = f"/static/riddles/{alias}.png"
     riddle['icon_url'] = url
 
     # Get total number of riddle achievements
@@ -196,13 +196,14 @@ async def riddle_list(alias: str, country: str = None):
     riddle['cheevo_count'] = result['count']
 
     # Get players data from database
-    cond_country = f'WHERE country = "{country}" ' if country else ''
-    query = f'''
+    cond_country = f"WHERE country = \"{country}\" " if country else ''
+    query = f"""
         SELECT * FROM (
             (
                 SELECT *, 999999 AS `index`, 2 AS filter
                 FROM riddle_accounts
-                WHERE riddle_accounts.riddle = :riddle AND current_level = "🏅"
+                WHERE riddle_accounts.riddle = :riddle
+                    AND current_level = \"🏅\"
             ) UNION ALL (
                 SELECT riddle_accounts.*, levels.`index`, 1 AS filter
                 FROM riddle_accounts INNER JOIN levels
@@ -216,7 +217,7 @@ async def riddle_list(alias: str, country: str = None):
                 AND result.discriminator = acc.discriminator
         {cond_country}
         ORDER BY score DESC LIMIT 1000
-    '''
+    """
     result = await database.fetch_all(query, values)
     accounts = [dict(account) for account in result]
 

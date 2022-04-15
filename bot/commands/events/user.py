@@ -64,7 +64,7 @@ class User(commands.Cog):
         '''
         current_levels = await database.fetch_all(query, values)
         for level in current_levels:
-            role_name = f'reached-{level["discord_name"]}'
+            role_name = f"reached-{level['discord_name']}"
             level_role = get(guild.roles, name=role_name)
             await member.add_roles(level_role)
 
@@ -80,7 +80,7 @@ class User(commands.Cog):
         secret_levels = await database.fetch_all(query, values)
         for level in secret_levels:
             role_name = 'solved' if level['completion_time'] else 'reached'
-            role_name += f'-{level["discord_name"]}'
+            role_name += f"-{level['discord_name']}"
             role = get(member.guild.roles, name=role_name)
             await member.add_roles(role)
 

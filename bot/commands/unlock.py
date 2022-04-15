@@ -111,16 +111,16 @@ class UnlockHandler:
         stars = '★' * n
         name = level['name']
         if level['latin_name']:
-            name += f' ({level["latin_name"]})'
+            name += f" ({level['latin_name']})"
         logging.info(
             ('\033[1m[%s]\033[0m \033[1m%s\033[0m '
                 'has beaten level \033[1m%s\033[0m'),
             self.full_name, self.discord_handle, name
         )
         text = (
-            f'**{self.full_name}]** '
-            f'You have solved level **{name}** [{stars}] '
-            f'and won **{points}** points!\n'
+            f"**{self.full_name}]** "
+            f"You have solved level **{name}** [{stars}] "
+                f"and won **{points}** points!\n"
         )
         await self._send(text)
 
@@ -128,8 +128,8 @@ class UnlockHandler:
         if first_to_solve and self.in_riddle_guild:
             text = '**🏅 FIRST TO SOLVE 🏅**\n'
             text += (
-                f'**<@!{self.member.id}>** has completed level **{name}**! '
-                'Congratulations!'
+                f"**<@!{self.member.id}>** has completed level **{name}**! "
+                    'Congratulations!'
             )
             channel = get(self.guild.channels, name=level['discord_name'])
             await self._send(text, channel)
@@ -147,8 +147,8 @@ class UnlockHandler:
         if completed_set:
             # Congratulatory DM
             role_name = completed_set['completion_role']
-            text = f'**[{self.full_name}] 🗿 LEVEL SET BEATEN 🗿**\n'
-            text += f'You have unlocked special title **@{role_name}**!'
+            text = f"**[{self.full_name}] 🗿 LEVEL SET BEATEN 🗿**\n"
+            text += f"You have unlocked special title **@{role_name}**!"
             await self._send(text)
             if not self.in_riddle_guild:
                 return
@@ -166,9 +166,9 @@ class UnlockHandler:
                 return
             channel = get(self.guild.channels, name=level['discord_name'])
             text = (
-                f'**<@!{self.member.id}>** has beaten level **{name}** '
-                f'and is now part of **@{completion_role.name}**! '
-                'Congratulations!'
+                f"**<@!{self.member.id}>** has beaten level **{name}** "
+                    f"and is now part of **@{completion_role.name}**! "
+                    'Congratulations!'
             )
             await self._send(text, channel)
 
@@ -195,7 +195,7 @@ class UnlockHandler:
         name = level['discord_name']
         if not name:
             name = level['name']
-        role = get(self.guild.roles, name=f'reached-{name}')
+        role = get(self.guild.roles, name=f"reached-{name}")
         await self.member.add_roles(role)
 
         # Show current level(s) in nickname
@@ -207,15 +207,15 @@ class UnlockHandler:
         # Log reaching secret and send message to member
         name = level['name']
         if level['latin_name']:
-            name += f' ({level["latin_name"]})'
+            name += f" ({level['latin_name']})"
         logging.info(
             ('\033[1m[%s]\033[0m \033[1m%s\033[0m '
                 'has found secret level \033[1m%s\033[0m'),
             self.full_name, self.discord_handle, name
         )
         text = (
-            f'**[{self.full_name}]** You found secret level **{name}**. '
-            'Congratulations!'
+            f"**[{self.full_name}]** You found secret level **{name}**. "
+                'Congratulations!'
         )
         await self._send(text)
         if not self.in_riddle_guild:
@@ -225,7 +225,7 @@ class UnlockHandler:
         discord_name = level['discord_name']
         if not discord_name:
             discord_name = level['name']
-        reached = get(self.guild.roles, name=f'reached-{discord_name}')
+        reached = get(self.guild.roles, name=f"reached-{discord_name}")
         await self.member.add_roles(reached)
 
     async def secret_solve(self, level: dict, points: int,
@@ -237,16 +237,16 @@ class UnlockHandler:
         stars = '★' * n
         name = level['name']
         if level['latin_name']:
-            name += f' ({level["latin_name"]})'
+            name += f" ({level['latin_name']})"
         logging.info(
             ('\033[1m[%s]\033[0m \033[1m%s\033[0m '
                 'has completed secret level \033[1m%s\033[0m'),
             self.full_name, self.discord_handle, name
         )
         text = (
-            f'**[{self.full_name}]** '
-            f'You solved secret level **{name}** [{stars}] '
-            f'and won **{points}** points!\n'
+            f"**[{self.full_name}]** "
+            f"You solved secret level **{name}** [{stars}] "
+                f"and won **{points}** points!\n"
         )
         await self._send(text)
         if not self.in_riddle_guild:
@@ -256,8 +256,8 @@ class UnlockHandler:
         discord_name = level['discord_name']
         if not discord_name:
             discord_name = level['name']
-        reached = get(self.guild.roles, name=f'reached-{discord_name}')
-        solved = get(self.guild.roles, name=f'solved-{discord_name}')
+        reached = get(self.guild.roles, name=f"reached-{discord_name}")
+        solved = get(self.guild.roles, name=f"solved-{discord_name}")
 
         # Remove old "reached" role and add "solved" role to member
         await self.member.remove_roles(reached)
@@ -271,9 +271,9 @@ class UnlockHandler:
         if first_to_solve:
             text = '**🏅 FIRST TO SOLVE 🏅**\n'
         text += (
-            f'**<@!{self.member.id}>** '
-            f'has completed secret level **{name}**! '
-            'Congratulations!'
+            f"**<@!{self.member.id}>** "
+                f"has completed secret level **{name}**! "
+                'Congratulations!'
         )
         await self._send(text, channel)
         if first_to_solve:
@@ -290,23 +290,22 @@ class UnlockHandler:
             self.full_name, self.discord_handle, cheevo['title']
         )
         text = (
-            f'**[{self.full_name}]** '
-            f'You unlocked achievement **_{cheevo["title"]}_**  '
-            f'in page `{path}` and won **{points}** points!\n'
+            f"**[{self.full_name}]** "
+            f"You unlocked achievement **_{cheevo['title']}_**  "
+                f"in page `{path}` and won **{points}** points!\n"
         )
         await self._send(text)
 
         # Get cheevo thumb image from path
         image_path = (
-            '../../web/static/cheevos'
-            f'/{cheevo["riddle"]}/{cheevo["image"]}'
+            f"../../web/static/cheevos/{cheevo['riddle']}/{cheevo['image']}"
         )
         with open(image_path, 'rb') as fp:
             # Create image object
             image = File(fp, cheevo['image'])
 
             # send flavor message with description and image
-            description = f'_"{cheevo["description"]}"_'
+            description = f"_\"{cheevo['description']}\"_"
             await self._send(description, file=image)
 
     async def game_completed(self):
@@ -318,7 +317,7 @@ class UnlockHandler:
             self.full_name, self.discord_handle
         )
         text = (
-            f'**[{self.full_name}] 🏅 GAME COMPLETED 🏅**\n'
+            f"**[{self.full_name}] 🏅 GAME COMPLETED 🏅**\n"
             'You just completed the game! **Congratulations!**'
         )
         await self._send(text)
@@ -361,7 +360,7 @@ class UnlockHandler:
             self.full_name, self.discord_handle
         )
         text = (
-            f'**[{self.full_name}] 💎 GAME MASTERED 💎**\n'
+            f"**[{self.full_name}] 💎 GAME MASTERED 💎**\n"
             'You have beaten all levels, found all achievements '
                 'and scored every single possible point in the game! '
             '**Outstanding!**'
@@ -500,7 +499,7 @@ async def multi_update_nickname(riddle: str, member: Member):
         sep = ', ' if len(set_progress) <= 2 else ' '
         s = sep.join(set_progress)
         if s != '🏅':
-            s = f'[{s}]'
+            s = f"[{s}]"
     await update_nickname(member, s)
 
 

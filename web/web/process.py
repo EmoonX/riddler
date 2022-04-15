@@ -81,20 +81,20 @@ async def process_url(username=None, disc=None, path=None):
         if status_code == 404:
             # Page not found
             print(
-                f'\033[1m[{ph.riddle_alias}]\033[0m '
-                f'Received path \033[3m\033[9m{ph.path}\033[0m\033[0m from '
-                    f'\033[1m{ph.username}\033[0m#\033[1m{ph.disc}\033[0m '
-                    f'({tnow})'
+                f"\033[1m[{ph.riddle_alias}]\033[0m "
+                f"Received path \033[3m\033[9m{ph.path}\033[0m\033[0m from "
+                    f"\033[1m{ph.username}\033[0m#\033[1m{ph.disc}\033[0m "
+                    f"({tnow})"
             )
             message, status_code = 'Page not found', 404
         elif status_code != 412:
             # Valid level page
             print(
-                f'\033[1m[{ph.riddle_alias}]\033[0m '
-                f'Received path \033[3m\033[1m{ph.path}\033[0m\033[0m '
-                    f'\033[1m({ph.path_level})\033[0m from '
-                    f'\033[1m{ph.username}\033[0m#\033[1m{ph.disc}\033[0m '
-                    f'({tnow})'
+                f"\033[1m[{ph.riddle_alias}]\033[0m "
+                f"Received path \033[3m\033[1m{ph.path}\033[0m\033[0m "
+                    f"\033[1m({ph.path_level})\033[0m from "
+                    f"\033[1m{ph.username}\033[0m#\033[1m{ph.disc}\033[0m "
+                    f"({tnow})"
             )
             message, status_code = ph.riddle_alias, 200
 
@@ -608,7 +608,7 @@ class _PathHandler:
             WHERE riddle = :riddle
                 AND JSON_CONTAINS(paths_json, :path, "$.paths")
         '''
-        values = {'riddle': self.riddle_alias, 'path': (f'\"{self.path}\"')}
+        values = {'riddle': self.riddle_alias, 'path': (f"\"{self.path}\"")}
         cheevo = await database.fetch_one(query, values)
         if not cheevo:
             return

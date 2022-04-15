@@ -126,11 +126,11 @@ async def _update_levels(
             for attr, value in level.items():
                 if attr in ('imgdata', 'added-pages'):
                     continue
-                s = f'`{attr}` = :{attr}'
+                s = f"`{attr}` = :{attr}"
                 aux.append(s)
                 if attr == 'discord_category':
                     other = 'level_set'
-                    t = f'`{other}` = :{attr}'
+                    t = f"`{other}` = :{attr}"
                     aux.append(t)
                 values[attr] = value
             query += ', '.join(aux)
@@ -166,12 +166,12 @@ async def _update_levels(
                 UPDATE riddle_accounts SET current_level = :level
                 WHERE riddle = :riddle AND current_level = "🏅"
             '''
-            values = {'riddle': alias, 'level': form[f'{index}-name']}
+            values = {'riddle': alias, 'level': form[f"{index}-name"]}
             await database.execute(query, values)
 
         levels = []
         for i in range(len(levels_before) + 1, len(levels_after) + 1):
-            index = str(i) if not is_secret else f's{i}'
+            index = str(i) if not is_secret else f"s{i}"
 
             # Insert new level data on database
             query = '''
@@ -185,19 +185,19 @@ async def _update_levels(
             '''
             values = {
                 'riddle': alias, 'is_secret': is_secret,
-                'set': form[f'{index}-discord_category'], 'index': i,
-                'name': form[f'{index}-name'], 'path': form[f'{index}-path'],
-                'image': form[f'{index}-image'],
-                'answer': form[f'{index}-answer'],
-                'rank': form[f'{index}-rank'],
-                'discord_category': form[f'{index}-discord_category'],
-                'discord_name': form[f'{index}-discord_name'],
+                'set': form[f"{index}-discord_category"], 'index': i,
+                'name': form[f"{index}-name"], 'path': form[f"{index}-path"],
+                'image': form[f"{index}-image"],
+                'answer': form[f"{index}-answer"],
+                'rank': form[f"{index}-rank"],
+                'discord_category': form[f"{index}-discord_category"],
+                'discord_name': form[f"{index}-discord_name"],
             }
             await database.execute(query, values)
 
             # Get image data and save image on thumbs folder
-            filename = form[f'{index}-image']
-            imgdata = form[f'{index}-imgdata']
+            filename = form[f"{index}-image"]
+            imgdata = form[f"{index}-imgdata"]
             await save_image('thumbs', alias, filename, imgdata)
 
             # Append values to new levels list for bot request
@@ -231,14 +231,14 @@ async def _update_levels(
 
     # Update pages data to changed or new levels
     for i in range(1, len(levels_after) + 1):
-        index = str(i) if not is_secret else f's{i}'
-        aux = form[f'{index}-added-pages']
+        index = str(i) if not is_secret else f"s{i}"
+        aux = form[f"{index}-added-pages"]
         if not aux:
             continue
         added_pages = json.loads(aux)
         for page in added_pages:
             # Update path level on table
-            level_to = form[f'{index}-name']
+            level_to = form[f"{index}-name"]
             query = '''
                 UPDATE level_pages SET level_name = :level_name
                 WHERE riddle = :riddle AND `path` = :path
@@ -363,14 +363,14 @@ async def update_pages(alias: str):
         try:
             await database.execute(query, values)
             print(
-                f'> \033[1m[{alias}]\033[0m '
-                f'Added page \033[1m{path}\033[0m to database!'
+                f"> \033[1m[{alias}]\033[0m "
+                f"Added page \033[1m{path}\033[0m to database!"
             )
         except IntegrityError:
             # Page already present, so nothing to do
             print(
-                f'> \033[1m[{alias}]\033[0m '
-                f'Skipping page \033[1m{path}\033[0m... '
+                f"> \033[1m[{alias}]\033[0m "
+                f"Skipping page \033[1m{path}\033[0m... "
             )
 
     return 'OK', 200

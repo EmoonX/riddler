@@ -143,7 +143,7 @@ async def insert(request):
     # Add level channels and roles to the guild
     levels = json.loads(data['levels'])
     for level in levels:
-        text = f'**[{guild.name}]** Processing level **{level["name"]}**...'
+        text = f"**[{guild.name}]** Processing level **{level['name']}**..."
         for member in guild.members:
             if member.guild_permissions.administrator and not member.bot:
                 await member.send(text)
@@ -176,17 +176,17 @@ async def update(request):
     await channel.edit(name=data['new_name'])
 
     # Update "reached" (and possibly "solved") role name(s)
-    reached = get(guild.roles, name=f'reached-{data["old_name"]}')
-    await reached.edit(name=f'reached-{data["new_name"]}')
-    solved = get(guild.roles, name=f'solved-{data["old_name"]}')
+    reached = get(guild.roles, name=f"reached-{data['old_name']}")
+    await reached.edit(name=f"reached-{data['new_name']}")
+    solved = get(guild.roles, name=f"solved-{data['old_name']}")
     if solved:
         await reached.edit(name='solved-{data["new_name"]}')
 
     # Log message to admin by DM
     text = (
-        f'**[{guild.name}]** '
-        f'Renamed level **{data["old_name"]}** '
-            f'channel and role(s) to **{data["new_name"]}**'
+        f"**[{guild.name}]** "
+        f"Renamed level **{data['old_name']}** "
+            f"channel and role(s) to **{data['new_name']}**"
     )
     for member in guild.members:
         if member.guild_permissions.administrator and not member.bot:

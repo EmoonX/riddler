@@ -12,7 +12,7 @@ class Extra(commands.Cog):
     async def ping(self, ctx: SlashContext):
         '''Ping-pong with measurable latency.'''
         latency = 1000 * self.bot.latency
-        await ctx.send(f'Pong! ({latency}ms)')
+        await ctx.send(f"Pong! ({latency}ms)")
 
     @cog_ext.cog_slash(name='balthify')
     async def balthify(self, ctx: SlashContext, text: str):

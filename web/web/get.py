@@ -51,7 +51,7 @@ async def get_current_riddle_data():
         'get-riddle-icon-url', guild_id=riddle['guild_id']
     )
     if not icon_url:
-        icon_url = f'https://riddler.app/static/riddles/{alias}.png'
+        icon_url = f"https://riddler.app/static/riddles/{alias}.png"
 
     # Create and return JSON dict with data
     data = {

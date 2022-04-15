@@ -37,11 +37,11 @@ class Guild(commands.Cog):
         for role in honor_roles:
             role_name = riddle[role]
             if before.name == role_name:
-                query = f'''
+                query = f"""
                     UPDATE riddles
                     SET {role} = :new_name
                     WHERE alias = :riddle
-                '''
+                """
                 await database.execute(query, values)
                 honor_changed = True
                 break

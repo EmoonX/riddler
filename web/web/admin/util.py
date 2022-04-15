@@ -35,20 +35,20 @@ async def save_image(
         img = img.resize(size)
 
     # Get correct riddle dir, creating it if nonexistent
-    riddle_dir = f'../static/{folder}/{alias}'
+    riddle_dir = f"../static/{folder}/{alias}"
     if not os.path.isdir(riddle_dir):
         os.makedirs(riddle_dir)
 
     # Erase previous file (if any and filename was changed)
     if prev_filename and filename != prev_filename:
-        prev_path = f'{riddle_dir}/{prev_filename}'
+        prev_path = f"{riddle_dir}/{prev_filename}"
         try:
             os.remove(prev_path)
-            print(f'[{alias}] Image {prev_filename} successfully removed.')
+            print(f"[{alias}] Image {prev_filename} successfully removed.")
         except (FileNotFoundError, IsADirectoryError):
-            print(f'[{alias}] Couldn\'t remove image {prev_filename}.')
+            print(f"[{alias}] Couldn\'t remove image {prev_filename}.")
 
     # Save image on riddle's thumbs folder
-    path = f'{riddle_dir}/{filename}'
+    path = f"{riddle_dir}/{filename}"
     img.save(path)
-    print(f'[{alias}] Image {filename} successfully saved.')
+    print(f"[{alias}] Image {filename} successfully saved.")

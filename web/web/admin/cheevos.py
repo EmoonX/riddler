@@ -66,7 +66,7 @@ async def manage_cheevos(alias: str):
             for attr, value in cheevo.items():
                 if attr == 'imgdata':
                     continue
-                s = f'`{attr}` = :{attr}'
+                s = f"`{attr}` = :{attr}"
                 aux.append(s)
                 values[attr] = value
             query += ', '.join(aux)
@@ -90,16 +90,16 @@ async def manage_cheevos(alias: str):
         '''
         index = len(cheevos_before) + 1
         values = {
-            'riddle': alias, 'title': form[f'{index}-title'],
-            'description': form[f'{index}-description'],
-            'image': form[f'{index}-image'], 'rank': form[f'{index}-rank'],
-            'paths_json': form[f'{index}-paths_json'],
+            'riddle': alias, 'title': form[f"{index}-title"],
+            'description': form[f"{index}-description"],
+            'image': form[f"{index}-image"], 'rank': form[f"{index}-rank"],
+            'paths_json': form[f"{index}-paths_json"],
         }
         await database.execute(query, values)
 
         # Get image data and save image on thumbs folder
-        filename = form[f'{index}-image']
-        imgdata = form[f'{index}-imgdata']
+        filename = form[f"{index}-image"]
+        imgdata = form[f"{index}-imgdata"]
         await save_image('cheevos', alias, filename, imgdata)
 
         # Send insert request to bot just to clear
