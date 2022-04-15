@@ -13,12 +13,11 @@ account = Blueprint('account', __name__)
 @requires_authorization
 async def settings():
     '''Account update form submission.'''
-    
+
     def r(msg):
         '''Render page with **kwargs.'''
-        return render_template('players/settings.htm',
-                user=user, msg=msg)
-    
+        return render_template('players/settings.htm', user=user, msg=msg)
+
     # Render page normally on GET
     user = await discord.get_user()
     if request.method == 'GET':
@@ -33,12 +32,16 @@ async def settings():
     country = country_names.get(form['country'])
     if not country:
         return await r('No bogus countries allowed...')
-    
+
     # Update info in accounts table
-    query = 'UPDATE accounts SET country = :country ' \
-            'WHERE username = :name AND discriminator = :disc'
-    values = {'country': form['country'],
-            'name': user.name, 'disc': user.discriminator}
+    query = '''
+        UPDATE accounts SET country = :country
+        WHERE username = :name AND discriminator = :disc
+    '''
+    values = {
+        'country': form['country'],
+        'name': user.name, 'disc': user.discriminator
+    }
     await database.execute(query, values)
 
     return await r('Account details updated successfully!')

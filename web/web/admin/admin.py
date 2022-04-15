@@ -176,7 +176,7 @@ async def update_scores(alias: str):
             WHERE riddle = :riddle 
                 AND username = :name and discriminator = :disc
         '''
-        values = {'score': new_score, **values}
+        values |= {'score': new_score}
         await database.execute(query, values)
 
         # If riddle is listed, update player's global score
@@ -297,7 +297,7 @@ async def update_ratings(alias: str):
             SET rating_count = :count, rating_avg = :average
             WHERE riddle = :riddle AND name = :name
         '''
-        values = {'count': count, 'average': average, **values}
+        values |= {'count': count, 'average': average}
         await database.execute(query, values)
 
     return 'SUCCESS :)', 200
