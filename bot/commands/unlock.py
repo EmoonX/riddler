@@ -31,8 +31,8 @@ class UnlockHandler:
     in_riddle_guild: bool
     '''If player is member of the riddle guild per se.'''
 
-    discord_tag: str
-    '''Player's DiscordTag (for quick access).'''
+    discord_handle: str
+    '''Player's Discord handle (for quick access).'''
 
     def __init__(self, alias: str, username: str, disc: str):
         '''Build handler for guild `alias` and member `username#disc`.'''
@@ -42,7 +42,7 @@ class UnlockHandler:
         self.full_name, self.guild, self.levels = (
             riddle.full_name, riddle.guild, riddle.levels
         )
-        self.discord_tag = username + '#' + disc
+        self.discord_handle = username + '#' + disc
         
         # Check player guild membership
         self.in_riddle_guild = False
@@ -100,7 +100,7 @@ class UnlockHandler:
             logging.info(
                 ('\033[1m[%s]\033[0m '
                     'Can\'t send messages  to \033[1m%s\033[0m '),
-                self.full_name, self.discord_tag
+                self.full_name, self.discord_handle
             )
 
     async def beat(self, level: dict, points: int, first_to_solve: bool):
@@ -115,7 +115,7 @@ class UnlockHandler:
         logging.info(
             ('\033[1m[%s]\033[0m \033[1m%s\033[0m '
                 'has beaten level \033[1m%s\033[0m'),
-            self.full_name, self.discord_tag, name
+            self.full_name, self.discord_handle, name
         )
         text = (
             f'**{self.full_name}]** '
@@ -211,7 +211,7 @@ class UnlockHandler:
         logging.info(
             ('\033[1m[%s]\033[0m \033[1m%s\033[0m '
                 'has found secret level \033[1m%s\033[0m'),
-            self.full_name, self.discord_tag, name
+            self.full_name, self.discord_handle, name
         )
         text = (
             f'**[{self.full_name}]** You found secret level **{name}**. '
@@ -241,7 +241,7 @@ class UnlockHandler:
         logging.info(
             ('\033[1m[%s]\033[0m \033[1m%s\033[0m '
                 'has completed secret level \033[1m%s\033[0m'),
-            self.full_name, self.discord_tag, name
+            self.full_name, self.discord_handle, name
         )
         text = (
             f'**[{self.full_name}]** '
@@ -287,7 +287,7 @@ class UnlockHandler:
         # Log and send congratulatory message
         logging.info(
             '\033[1m[%s]\033[0m \033[1m%s\033[0m got cheevo \033[1m%s\033[0m!',
-            self.full_name, self.discord_tag, cheevo['title']
+            self.full_name, self.discord_handle, cheevo['title']
         )
         text = (
             f'**[{self.full_name}]** '
@@ -315,7 +315,7 @@ class UnlockHandler:
         # Player has completed the game (for now?)
         logging.info(
             '\033[1m[%s]\033[0m \033[1m%s\033[0m has finished the game!',
-            self.full_name, self.discord_tag
+            self.full_name, self.discord_handle
         )
         text = (
             f'**[{self.full_name}] 🏅 GAME COMPLETED 🏅**\n'
@@ -358,7 +358,7 @@ class UnlockHandler:
         # Player has mastered the game (for now?)
         logging.info(
             '\033[1m[%s]\033[0m \033[1m%s\033[0m has mastered the game!',
-            self.full_name, self.discord_tag
+            self.full_name, self.discord_handle
         )
         text = (
             f'**[{self.full_name}] 💎 GAME MASTERED 💎**\n'

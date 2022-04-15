@@ -1,8 +1,8 @@
-import sys
 import asyncio
 from asyncio.events import AbstractEventLoop
-from ssl import SSLError
 from datetime import datetime, timedelta
+import sys
+from ssl import SSLError
 
 # Allow util folder to be visible
 sys.path.append('..')
@@ -21,40 +21,42 @@ load_dotenv(verbose=True)
 from auth import discord_session_init
 
 # Really unique secret key
-app.secret_key = \
-        b'l\xdew\x80"\xb5O\x8eQ\x93-\x15\xc9^\xc5\x97N\xb0l\xa5\x02\x15_\xfa'
-
-# Create Discord OAuth2 session
+app.secret_key = (
+    b'l\xdew\x80"\xb5Z\x8eQ\x93-\x15'
+        b'\xc9^\xc5\x97N\xb0l\xa5\x02\x15_\xfa'
+)
+# Create Discord OAuth2 session object
 discord_session_init(app)
 
-from auth import auth, session_cookie
 from admin.admin import admin
 from admin.levels import admin_levels
 from admin.cheevos import admin_cheevos
 from admin.recent import admin_recent
+from auth import auth, session_cookie
+from countries import countries
+from get import get
 from home import home
+from info import info
+from levels import levels
 from players.players import players
 from players.account import account
 from players.profile import profile
-from countries import countries
 from process import process
-from levels import levels
-from info import info
-from get import get
-from util.db import database
 from inject import context_processor
+from util.db import database
 
-for blueprint in (auth, admin,
-        admin_levels, admin_cheevos, admin_recent,
-        home, players, account, profile, countries,
-        process, levels, info, get):
+for blueprint in (
+    admin, admin_levels, admin_cheevos, admin_recent,
+    auth, countries, get, home, info, levels,
+    players, account, profile, process,
+):
     # Register app blueprint to allow other modules
     app.register_blueprint(blueprint)
 
-    # Define context processor for blueprint
+    # Context processor for blueprint
     blueprint.context_processor(context_processor)
 
-# Define context processor for main app
+# Context processor for main app
 app.context_processor(context_processor)
 
 # Disable annoying newlines on Jinja-rendered HTML templates
@@ -68,9 +70,10 @@ app.jinja_env.lstrip_blocks = True
 @app.before_first_request
 async def before():
     '''Procedures to be done upon app start.'''
+
     # Connect to MySQL database
     await database.connect()
-    
+
     # Define exception handler for async loop
     loop = asyncio.get_event_loop()
     loop.set_exception_handler(_exception_handler)
@@ -79,21 +82,25 @@ async def before():
 @app.after_request
 async def cookies(response):
     '''Set session cookie to be valid accross sites (SameSite=None)
-    and also to expire only after some (or a long) time of inactivity.'''
+    and to expire only after some (or a long) time of inactivity.'''
+
     value = session_cookie.dumps(dict(session))
-    dt = datetime.utcnow() + timedelta(days=365)
+    expire_time = datetime.utcnow() + timedelta(days=365)
     if 'Set-Cookie' in response.headers:
         response.headers.pop('Set-Cookie')
-    response.set_cookie('session', value,
-            expires=dt, secure=True, samesite='None')
+    response.set_cookie(
+        'session', value,
+        expires=dt, secure=True, samesite='None'
+    )
     return response
 
 
 @app.errorhandler(Unauthorized)
-async def redirect_unauthorized(e: Exception):
+async def redirect_unauthorized(_e):
     '''Redirect user back to login if not logged on restricted pages.'''
-    return redirect(url_for("players_auth.login",
-            redirect_url=request.url))
+    return redirect(
+        url_for("players_auth.login", redirect_url=request.url)
+    )
 
 
 def _exception_handler(loop: AbstractEventLoop, context: dict):

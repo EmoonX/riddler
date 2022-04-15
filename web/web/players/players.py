@@ -152,9 +152,8 @@ async def global_list(country: str = None):
             )
             if completed:
                 # Append riddle to list of mastered or completed ones
-                mastered = (
+                mastered = \
                     player['cheevo_count'][alias] == riddle['cheevo_count']
-                )
                 if mastered:
                     player['mastered_riddles'].append(riddle)
                 else:
