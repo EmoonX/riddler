@@ -2,9 +2,9 @@
       <nav>
         <div class="title">Riddler</div>
         <nav class="dropdown">
-          <button class="nav-button">...</button>
+          <button class="nav-button">⋮</button>
           {% set riddles = get_riddles() %}
-          <div class="riddles">
+          <div class="menu riddles">
           {% for riddle in riddles %}
             {% set riddle = get_riddle(riddle['alias']) %}
             {% set page = 'levels.level_list' if is_authorized() else 'players.riddle_list' %}
@@ -25,8 +25,9 @@
           <button class="nav-button riddle-banner">
             <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
             <div class="name">{{ riddle['full_name'] }}</div>
+            <div class="arrow">▼</div>
           </button>
-          <div>
+          <div class="menu">
             <a href="{{ url_for('levels.level_list', alias=riddle['alias']) }}" class="nav-button">Level explorer</a>
             <a href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" class="nav-button">Leaderboard</a>
             <a href="{{ url_for('countries.riddle_list', alias=riddle['alias']) }}" class="nav-button">Countries leaderboard</a>
@@ -41,10 +42,12 @@
           </div>
         </nav>
       {% endif %}
+    {% else %}
+        <div class="blank"></div>
     {% endif %}
         <nav class="dropdown">
-          <button class="nav-button menu">≡</button>
-          <div>
+          <button class="nav-button burger">≡</button>
+          <div class="menu">
             <a href="{{ url_for('players.global_list') }}" class="nav-button">All players</a>
             <a href="{{ url_for('countries.global_list') }}" class="nav-button">Countries</a>
             <a href="{{ url_for('info.info_page', page='about') }}" class="nav-button">About / Help</a>
@@ -69,7 +72,7 @@
           <button class="nav-button profile">
             <img class="avatar-small" src="{{ get_avatar_url(user.username, user.discriminator) }}">{{ user.username }}
           </button>
-          <div>
+          <div class="menu">
             <!--<a href="#" class="nav-button">Public info</a>-->
             <a href="{{ url_for('account.settings') }}" class="nav-button">Settings</a>
             <a href="{{ url_for('players_auth.logout', redirect_url=(request.url)) }}" class="nav-button">Logout</a>

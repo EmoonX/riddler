@@ -68,7 +68,7 @@ header {
 
 header > nav {
   display: flex;
-  justify-content: space-between;
+  justify-content: space-evenly;
   margin: 0 auto;
   max-width: 1200px;
 
@@ -87,7 +87,15 @@ header > nav {
       border: 0;
       background-color: transparent;
       font-family: standard-font;
+      font-size: 3em;
       color: white;
+
+      &:hover {
+        border-bottom: thin solid rgba(255, 255, 255, 0.5);
+      }
+      &.burger {
+        font-size: 1.8em;
+      }
     }
     > div {
       position: absolute;
@@ -108,8 +116,9 @@ header > nav {
 
         > a.riddle {
           margin: 0.5em;
+          font-size: 1.3em;
           text-decoration: none;
-          transition: filter 2s;
+          transition: filter 1s;
 
           &:hover {
             filter: drop-shadow(0 0 0.5em crimson);
@@ -125,9 +134,18 @@ header > nav {
         display: grid;
       }
     }
+    .menu {
+      width: 250px;
+      font-size: 0.6em;
+      z-index: 8000;
+
+      > .nav-button {
+        width: 100%;
+      }
+    }
     .nav-button {
       display: block;
-      min-width: 100px;
+      width: 100px;
       height: 100px;
       line-height: 100px;
       padding: 0;
@@ -141,14 +159,6 @@ header > nav {
       cursor: pointer;
       transition: background-color 0.3s;
 
-      &.menu {
-        width: 250px;
-        font-size: 3em;
-
-        & + * > .nav-button {
-          font-size: 1em;
-        }
-      }
       &.riddle {
         display: flex;
         justify-content: center;
@@ -160,6 +170,10 @@ header > nav {
         padding-right: 30px;
         text-align: right;
         text-transform: none;
+
+        + .menu {
+          width: 100%;
+        }
       }
       > img.icon {
         width: 40px;
@@ -176,22 +190,33 @@ header > nav {
     > .riddle-banner {
       position: relative;
       display: flex;
-      justify-content: center;
       align-items: center;
-      width: 450px;
-      border: medium solid rgba(127, 127, 127, 0.5);
-      border-width: 0 medium;
+      width: 400px;
+      border: medium solid rgba(127, 127, 127, 0.2);
+      border-width: 0 thick;
+      border-radius: 0.5em;
       background-color: rgba(127, 127, 127, 0.2);
-      font-size: 1.1em;
+      font-size: 1em;
       text-transform: none;
 
-      &::after {
-        content: '▼';
-        position: absolute;
-        right: 20px;
+      > img.riddle-icon {
+        margin-left: 1em;
+      }
+      > .name {
+        margin: auto;
+        font-size: 1em;
+      }
+      > .arrow {
+        margin: auto 0.5em;
         font-size: 1.5em;
       }
+      + .menu {
+        width: 400px;
+      }
     }
+  }
+  .blank {
+    width: 400px;
   }
 }
 
