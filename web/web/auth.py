@@ -6,7 +6,9 @@ from quart import (
 )
 from quart.sessions import SecureCookieSessionInterface
 from quart_discord import DiscordOAuth2Session, exceptions
-from oauthlib.oauth2.rfc6749.errors import InvalidGrantError
+from oauthlib.oauth2.rfc6749.errors import (
+    InvalidGrantError, MismatchingStateError
+)
 
 from countries import country_names
 from util.db import database
@@ -107,11 +109,14 @@ async def login():
 async def callback():
     '''Callback for OAuth2 authentication.'''
 
-    # Execute the callback
+    # Execute the callback (and treat errors)
     try:
         data = await discord.callback()
     except exceptions.AccessDenied:
         return 'Unauthorized', 401
+    except MismatchingStateError:
+        discord.revoke()
+        return redirect('/login')
 
     # If user doesn't have an account on database, do registration
     user = await discord.get_user()
