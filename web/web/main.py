@@ -90,7 +90,7 @@ async def cookies(response):
         response.headers.pop('Set-Cookie')
     response.set_cookie(
         'session', value,
-        expires=dt, secure=True, samesite='None'
+        expires=expire_time, secure=True, samesite='None'
     )
     return response
 

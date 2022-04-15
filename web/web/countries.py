@@ -9,7 +9,7 @@ countries = Blueprint('countries', __name__)
 country_names = {}
 
 
-@countries.route("/countries")
+@countries.get("/countries")
 async def global_list():
     '''Global countries list.'''
 
@@ -61,7 +61,7 @@ async def global_list():
     )
 
 
-@countries.route("/<alias>/countries")
+@countries.get("/<alias>/countries")
 async def riddle_list(alias: str):
     '''Riddle countries list.'''
 
