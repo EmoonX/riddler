@@ -12,7 +12,7 @@ body {
   flex-direction: column;
   justify-content: space-around;
   align-items: center;
-  margin: 15px 10px;
+  margin: 15px 10px 0px;
   width: 200px;
   background-color: #111;
   font-family: standard;
@@ -51,15 +51,19 @@ section {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  margin: 15px auto 0;
+  padding: 15px 0;
   width: 180px;
   text-align: center;
 }
 section:not(:last-of-type) {
-  padding-bottom: 5px;
   border-bottom: 1px solid #999;
 }
 
+section#currently-playing {
+  text-align: center;
+  font-weight: bold;
+  font-size: 20px;
+}
 section#currently-playing > .label {
   font-size: 15px;
   font-style: italic;
@@ -75,10 +79,8 @@ img#current-icon {
   height: 40px;
   margin-right: 10px;
 }
-figcaption#current-name {
-  text-align: center;
-  font-weight: bold;
-  font-size: 20px;
+#visited-level {
+  font-size: 0.95em;
 }
 
 section#buttons {
