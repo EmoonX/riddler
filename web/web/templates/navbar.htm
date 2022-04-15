@@ -1,41 +1,24 @@
     <header>
       <nav>
+        <div class="title">Riddler</div>
         <nav class="dropdown">
-          <button class="nav-button menu">≡</button>
-          <div>
-            <a href="{{ url_for('players.global_list') }}" class="nav-button">All players</a>
-            <a href="{{ url_for('countries.global_list') }}" class="nav-button">Countries</a>
-            <a href="{{ url_for('info.info_page', page='about') }}" class="nav-button">About / Help</a>
-            <a href="https://discord.gg/ktaPPtnPSn" class="nav-button" target="_blank">
-              <img class="icon" src="/static/icons/discord.png">Wonderland II
+          <button class="nav-button">...</button>
+          {% set riddles = get_riddles() %}
+          <div class="riddles">
+          {% for riddle in riddles %}
+            {% set riddle = get_riddle(riddle['alias']) %}
+            {% set page = 'levels.level_list' if is_authorized() else 'players.riddle_list' %}
+            <a href="{{ url_for(page, alias=riddle['alias']) }}" class="riddle">
+              <figure>
+                <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
+                <figcaption>{{ riddle['alias']|title }}</figcaption>
+              </figure>
             </a>
-          <!--
-            <a href="https://ko-fi.com/emoon" class="nav-button" target="_blank">
-              <img class="icon" src="/static/icons/ko-fi.png">Donate
-            </a>
-          -->
-            <a href="{{ url_for('info.info_page', page='terms-and-conditions') }}" class="nav-button">Terms & Conditions</a>
-            <a href="{{ url_for('info.info_page', page='privacy-policy') }}" class="nav-button">Privacy Policy</a>
+          {% endfor %}
           </div>
         </nav>
-    {% if not alias %}
-      <nav class="dropdown">
-        <button class="nav-button riddle-banner">
-          <img class="riddle-icon" src="/static/icons/letter-r-icon.png">
-          <div class="name">Riddler</div>
-        </button>
-        {% set riddles = get_riddles() %}
-        <div>
-       {% for riddle in riddles %}
-          {% set riddle = get_riddle(riddle['alias']) %}
-          {% set page = 'levels.level_list' if is_authorized() else 'players.riddle_list' %}
-          <a href="{{ url_for(page, alias=riddle['alias']) }}" class="nav-button riddle">
-            <img class="icon" src="{{ riddle['icon_url'] }}">{{ riddle['full_name'] }}
-          </a>
-        {% endfor %}
-        </div>
-      </nav>
-    {% else %}
+    {% if alias %}
+      {# Riddle pages #}
       {% set riddle = get_riddle(alias) %}
       {% if riddle %}
         <nav class="dropdown">
@@ -59,7 +42,24 @@
         </nav>
       {% endif %}
     {% endif %}
-      {# Verify if user is logged in #}
+        <nav class="dropdown">
+          <button class="nav-button menu">≡</button>
+          <div>
+            <a href="{{ url_for('players.global_list') }}" class="nav-button">All players</a>
+            <a href="{{ url_for('countries.global_list') }}" class="nav-button">Countries</a>
+            <a href="{{ url_for('info.info_page', page='about') }}" class="nav-button">About / Help</a>
+            <a href="https://discord.gg/ktaPPtnPSn" class="nav-button" target="_blank">
+              <img class="icon" src="/static/icons/discord.png">Wonderland II
+            </a>
+          <!--
+            <a href="https://ko-fi.com/emoon" class="nav-button" target="_blank">
+              <img class="icon" src="/static/icons/ko-fi.png">Donate
+            </a>
+          -->
+            <a href="{{ url_for('info.info_page', page='terms-and-conditions') }}" class="nav-button">Terms & Conditions</a>
+            <a href="{{ url_for('info.info_page', page='privacy-policy') }}" class="nav-button">Privacy Policy</a>
+          </div>
+        </nav>
       {% if not is_authorized() %}
         <a class="nav-button" href="{{ url_for('players_auth.login', redirect_url=(request.url)) }}">Login</a>
       {% else %}

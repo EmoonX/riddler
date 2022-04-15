@@ -10,6 +10,10 @@
   font-weight: bold;
 }
 @font-face {
+  font-family: old-english;
+  src: url("/static/fonts/old-english-text-mt.ttf");
+}
+@font-face {
   font-family: calculator;
   src: url("/static/fonts/calculator.ttf");
   unicode-range: U+00-B0, U+100-FFFF;
@@ -59,7 +63,7 @@ figure {
 /* -- Header and navbar -- */
 
 header {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: rgba(64, 64, 64, 0.95);
 }
 
 header > nav {
@@ -68,74 +72,125 @@ header > nav {
   margin: 0 auto;
   max-width: 1200px;
 
-  .nav-button {
-    display: block;
-    width: inherit;
-    height: 100px;
-    line-height: 100px;
-    padding: 0;
-    font-size: 1.2em;
-    font-weight: bold;
-    text-align: center;
-    text-transform: uppercase;
-    text-decoration: none;
-    color: white;
-    text-shadow: 0 0 0.4em white;
-    cursor: pointer;
-    transition: background-color 0.3s;
+  & > .title {
+    display: flex;
+    align-items: center;
+    font-family: old-english;
+    font-size: 1.8em;
+    text-shadow: 0 0 0.5em white;
+  }
+  .dropdown {
+    position: relative;
+    display: inline-block;
 
-    &.menu {
-      width: 250px;
-      font-size: 3em;
+    > button {
+      border: 0;
+      background-color: transparent;
+      font-family: standard-font;
+      color: white;
+    }
+    > div {
+      position: absolute;
+      top: 100px;
+      display: none;
+      z-index: 1;
+      width: 100%;
+      border: thin solid white;
+      border-top: thin solid rgba(64, 64, 64, 0.5);
+      border-radius: 0 0 15px 15px;
+      background-color: rgba(64, 64, 64, 0.95);
+      font-size: 0.8em;
 
-      & + * > .nav-button {
-        font-size: 1em;
+      &.riddles {
+        grid-template-columns: 1fr 1fr 1fr 1fr;
+        width: 400px;
+        padding: 1.5em 1em;
+
+        > a.riddle {
+          margin: 0.5em;
+          text-decoration: none;
+          transition: filter 2s;
+
+          &:hover {
+            filter: drop-shadow(0 0 0.5em crimson);
+            transition: filter 0.2s;
+          }
+        }
       }
     }
-    &.riddle {
+    &:hover > div {
+      display: block;
+
+      &.riddles {
+        display: grid;
+      }
+    }
+    .nav-button {
+      display: block;
+      min-width: 100px;
+      height: 100px;
+      line-height: 100px;
+      padding: 0;
+      font-size: 1.2em;
+      font-weight: bold;
+      text-align: center;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: white;
+      text-shadow: 0 0 0.4em white;
+      cursor: pointer;
+      transition: background-color 0.3s;
+
+      &.menu {
+        width: 250px;
+        font-size: 3em;
+
+        & + * > .nav-button {
+          font-size: 1em;
+        }
+      }
+      &.riddle {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-transform: none;
+      }
+      &.profile {
+        width: 100%;
+        padding-right: 30px;
+        text-align: right;
+        text-transform: none;
+      }
+      > img.icon {
+        width: 40px;
+        height: 40px;
+        margin: auto 10px;
+      }
+      &:not(.menu)::first-letter {
+        font-size: 1.6em;
+      }
+      &:hover {
+        background-color: rgba(127, 127, 127, 0.5);
+      }
+    }
+    > .riddle-banner {
+      position: relative;
       display: flex;
       justify-content: center;
       align-items: center;
+      width: 450px;
+      border: medium solid rgba(127, 127, 127, 0.5);
+      border-width: 0 medium;
+      background-color: rgba(127, 127, 127, 0.2);
+      font-size: 1.1em;
       text-transform: none;
-    }
-    &.profile {
-      width: 100%;
-      padding-right: 30px;
-      text-align: right;
-      text-transform: none;
-    }
-    > img.icon {
-      width: 40px;
-      height: 40px;
-      margin: auto 10px;
-    }
-    &:not(.menu)::first-letter {
-      font-size: 1.6em;
-    }
-    &:hover {
-      background-color: rgba(127, 127, 127, 0.5);
-    }
-  }
-  .riddle-banner {
-    position: relative;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 450px;
-    border: medium solid rgba(127, 127, 127, 0.5);
-    border-width: 0 medium;
-    background-color: rgba(127, 127, 127, 0.2); 
-    font-size: 1.1em;
-    text-transform: none;
-  
-    > .name {
-      margin-left: 20px;
-    }
-    &::after {
-      content: '▼';
-      position: absolute;
-      right: 20px;
-      font-size: 1.5em;
+
+      &::after {
+        content: '▼';
+        position: absolute;
+        right: 20px;
+        font-size: 1.5em;
+      }
     }
   }
 }
@@ -143,39 +198,6 @@ header > nav {
 img.riddle-icon {
   width: 60px;
   border-radius: 25%;
-}
-
-/* -- Dropdown menus -- */
-
-.dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-.dropdown > button {
-  border: 0;
-  background-color: transparent;
-  font-family: standard-font;
-  color: white;
-}
-
-.dropdown > div {
-  position: absolute;
-  top: 100px;
-  display: none;
-  z-index: 1;
-  width: 100%;
-  outline: medium solid white;
-  background-color: rgba(64, 64, 64, 0.9);
-  font-size: 0.8em;
-}
-
-.dropdown:hover div {
-  display: block;
-}
-
-.dropdown > div > .nav-button {
-  max-width: 100%;
 }
 
 /* ------------------------------------------------------------------------- */
