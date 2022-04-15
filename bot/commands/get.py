@@ -11,13 +11,14 @@ async def is_member_of_guild(request):
 
     data = request.rel_url.query
     guild = get(bot.guilds, id=int(data['guild_id']))
-    member = get(
-        guild.members,
-        name=data['username'], discriminator=data['disc']
-    )
-    if not member:
-        return web.Response(text="False")
-    return web.Response(text="True")
+    if guild:
+        member = get(
+            guild.members,
+            name=data['username'], discriminator=data['disc']
+        )
+        if member:
+            return web.Response(text="True")
+    return web.Response(text="False")
 
 
 async def is_member_and_has_permissions(request):

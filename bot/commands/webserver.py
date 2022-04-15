@@ -128,7 +128,7 @@ async def unlock(request):
 
             # If nothing was found, then player got everything
             if not has_unfound_cheevos:
-                await unlock_handler.game_mastered(alias)
+                await unlock_handler.game_mastered()
 
     if 'points' in params and unlock_handler.member:
         # Update Wonderland guild score-based role, if the case
