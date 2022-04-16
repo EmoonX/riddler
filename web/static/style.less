@@ -345,6 +345,45 @@ hr {
   border-image-slice: 1;
 }
 
+.hoverable-figures {
+  figure {
+    > img {
+      margin: 0;
+      transition: opacity 0.4s;
+    }
+    > figcaption {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      z-index: 100;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      width: 0;
+      height: 0;
+      opacity: 0;
+      font-size: 0;
+      font-style: normal;
+      text-shadow:
+        4px 0 0 black, -4px 0 0 black,
+        0 4px 0 black, 0 -4px 0 black,
+        2px 2px 0 black, 2px -2px 0 black,
+        -2px 2px 0 black, -2px -2px 0 black;
+      transition: opacity 0.4s, font-size 0.4s;
+      white-space: nowrap;
+    }
+    &:hover {
+      > img, > .badge {
+        opacity: 1;
+      }
+      > figcaption {
+        opacity: 1;
+        font-size: 0.8em;
+      }
+    }
+  }
+}
+
 /* ------------------------------------------------------------------------- */
 /* -- User lists -- */
 
@@ -811,9 +850,6 @@ section.list.players > .row {
       transparent
     );
   }
-  figcaption {
-    font-size: 0.8em;
-  }
   > .rank {
     width: 60px;
     font-size: 1.5em;
@@ -926,10 +962,10 @@ section.list.players > .row {
       text-align: center;
       text-decoration: none;
 
-      > .badge {
+      .badge {
         position: absolute;
         top: 20%;
-        left: 10%;   
+        left: 5%;
         z-index: 1000;
         font-size: 0.8em;
         transition: font-size 0.5s;
@@ -943,7 +979,7 @@ section.list.players > .row {
       &.completed > .badge {
         text-shadow: 0 0 0.4em crimson, 0 0 0.8em crimson;
       }
-      > img.riddle-icon {
+      figure > img.riddle-icon {
         position: absolute;
         top: 0;
         right: 0;
@@ -951,27 +987,28 @@ section.list.players > .row {
         left: 0;
         margin: auto;
         width: 35px;
+        opacity: 0.7;
         transition: width 0.5s, max-height 0.5s;
       }
-      &.other > img.riddle-icon {
-        opacity: 0.2;
-        width: 40px;
+      figcaption {
+        top: -1em;
+      }
+      &.other figure > img.riddle-icon {
+        opacity: 0.3;
         transition: width 0.5s, max-height 0.5s, opacity 1s;
       }
       &:hover {
-        & > .badge {
+        & .badge {
           font-size: 1em;
           transition: font-size 0.15s;
         }
-        & > img.riddle-icon {
-          width: 50px;
-          max-height: 50px;
+        figure > img.riddle-icon {
+          width: 45px;
+          max-height: 45px;
+          opacity: 1;
           transition: width 0.15s, max-height 0.15s;
         }
-        &.other > img.riddle-icon {
-          width: 50px;
-          max-height: 50px;
-          opacity: 1;
+        &.other figure > img.riddle-icon {
           transition: width 0.15s, max-height 0.15s, opacity 0.15s;
         }
       }
@@ -1210,43 +1247,6 @@ section.list.levels > .row {
     > a.player {
       position: relative;
       display: block;
-
-      > figure {
-        > img.avatar-small {
-          margin: 0;
-          transition: opacity 0.4s;
-        }
-        > figcaption {
-          position: absolute;
-          top: 0;
-          right: 0;
-          bottom: 0;
-          left: 0;
-          z-index: 100;
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          opacity: 0;
-          font-size: 0;
-          font-style: normal;
-          text-shadow: 
-            4px 0 0 black, -4px 0 0 black,
-            0 4px 0 black, 0 -4px 0 black,
-            2px 2px 0 black, 2px -2px 0 black,
-            -2px 2px 0 black, -2px -2px 0 black;
-          transition: opacity 0.4s, font-size 0.4s;
-          white-space: nowrap;
-        }
-        &:hover {
-          > img.avatar-small {
-            opacity: 1;
-          }
-          > figcaption {
-            opacity: 1;
-            font-size: 0.8em;
-          }
-        }
-      }
     }
     > .remaining-count {
       opacity: 0.8;
@@ -1260,8 +1260,10 @@ section.list.levels > .row {
         opacity: 1 !important;
       }
     }
-    &:hover img.avatar-small, &:hover > .remaining-count {
-      opacity: 0.3;
+    &:hover {
+      img.avatar-small, > .remaining-count {
+        opacity: 0.3;
+      }
     }
   }
   &:hover .rank span {

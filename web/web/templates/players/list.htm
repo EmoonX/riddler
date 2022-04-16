@@ -49,23 +49,26 @@
             </var>
             <figcaption>total points</figcaption>            
           </figure>
-          <div class="honors">
+          <div class="honors hoverable-figures">
         {% for honor in ('created', 'mastered', 'completed', 'other') %}
           {% set honor_set = honor + '_riddles' %}
           {% for riddle in player[honor_set] %}
             {% set icon_url = riddles[riddle['alias']]['icon_url'] %}
-            {% set title = '%s&#10;↳'|safe % riddle['full_name'] %}
+            {% set progress = '%s'|safe % riddle['full_name'] %}
             {% if honor != 'other' %}
               {% set s = honor.upper() if honor != 'created' else 'CREATOR' %}
-              {% set title = '%s %s'|safe % (title, s) %}
+              {% set progress = '%s<br>(%s)'|safe % (progress, s) %}
               {% set badge = badges[honor] %}
             {% else %}
               {% set last_level_name = player['last_level'][riddle['alias']]['level_name'] %}
-              {% set title = '%s currently on %s'|safe % (title, last_level_name) %}
+              {% set progress = '%s<br>(currently on %s)'|safe % (progress, last_level_name) %}
             {% endif %}
-            <a class="honor {{ honor }}" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" title="{{ title }}">
-              <span class='badge'>{{ badge }}</span>
-              <img class="riddle-icon" src="{{ icon_url }}">
+            <a class="honor {{ honor }}" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}">
+              <figure>
+                <span class='badge'>{{ badge }}</span>
+                <img class="riddle-icon" src="{{ icon_url }}">
+                <figcaption>{{ progress }}</figcaption>
+              </figure>
             </a>
           {% endfor %}
         {% endfor %}
