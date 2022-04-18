@@ -28,12 +28,15 @@ async def is_member_and_has_permissions(request):
     # Get Discord member object
     data = request.rel_url.query
     guild = get(bot.guilds, id=int(data['guild_id']))
+    if not guild:
+        # No associated guild
+        return web.Response(text="False")
     member = get(
         guild.members,
         name=data['username'], discriminator=data['disc']
     )
-    # Check if it's a member of guild
     if not member:
+        # Not a member
         return web.Response(text="False")
 
     # Check if all needed permissions are on

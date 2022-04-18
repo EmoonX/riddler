@@ -156,8 +156,8 @@ async def insert(request):
 
     # Send success message to guild admins
     text = (
-        '**[{guild.name}]** ✨ Channel(s) and role(s) '
-            'have been successfully built! ✨'
+        f"**[{guild.name}]** ✨ Channel(s) and role(s) "
+            "have been successfully built! ✨"
     )
     for member in guild.members:
         if member.guild_permissions.administrator and not member.bot:

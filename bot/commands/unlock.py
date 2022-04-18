@@ -43,7 +43,7 @@ class UnlockHandler:
             riddle.full_name, riddle.guild, riddle.levels
         )
         self.discord_handle = username + '#' + disc
-        
+
         # Check player guild membership
         self.in_riddle_guild = False
         if riddle.guild:
@@ -67,7 +67,7 @@ class UnlockHandler:
     ):
         '''Try to send a message to member/channel.
         If they/it do(es)n't accept DMs from bot, ignore.'''
-        
+
         if not channel and not self.member:
             # Unreachable player
             return
@@ -118,7 +118,7 @@ class UnlockHandler:
             self.full_name, self.discord_handle, name
         )
         text = (
-            f"**{self.full_name}]** "
+            f"**[{self.full_name}]** "
             f"You have solved level **{name}** [{stars}] "
                 f"and won **{points}** points!\n"
         )
@@ -408,7 +408,7 @@ async def multi_update_nickname(riddle: str, member: Member):
 
     # Get level sets from DB
     query = '''
-        SELECT * FROM level_sets '
+        SELECT * FROM level_sets
         WHERE riddle = :riddle
     '''
     values = {'riddle': riddle}

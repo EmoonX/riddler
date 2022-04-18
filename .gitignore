@@ -132,9 +132,6 @@ dmypy.json
 .vscode
 .VSCodeCounter
 
-# We don't want any answer files on the remote!
-levels.txt
-
 # Site static image folders
 web/static/thumbs/*
 web/static/cheevos/*
@@ -143,5 +140,5 @@ web/static/riddles/*
 # Less CSS: Use .less files that work like CSS (but better)
 style.css
 
-# Environment variables
-.env
+# Junk Krita temp files
+*~
