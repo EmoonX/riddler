@@ -140,5 +140,8 @@ web/static/riddles/*
 # Less CSS: Use .less files that work like CSS (but better)
 style.css
 
+# Third party things for extension (e.g jQuery script)
+extension/thirdParty
+
 # Junk Krita temp files
 *~

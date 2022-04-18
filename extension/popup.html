@@ -4,7 +4,9 @@
     <meta charset="utf-8">
     <link rel="stylesheet" href="popup.css">
     <title>Riddler Settings</title>
-    <script src="popup.js"></script>
+    <script src="thirdParty/jquery-3.6.0.slim.min.js"></script>
+    <script type="module" src="popup.js"></script>
+    <script type="module" src="explorer.js"></script>
   </head>
   <body>
     <header>
@@ -21,6 +23,15 @@
           </figure>
           <div id="visited-level"></div>
         </a>
+        <div class="page-explorer">
+          <nav>
+            <img width="40" height="40" class="folder-up" src="/icons/folderup.png">
+            <div class="path"></div>
+          </nav>
+          <div class="files">
+            <!-- JS will append files here -->
+          </div>
+        </div>
       </section>
       <section id="buttons">
         <button type="button" name="update-hosts">

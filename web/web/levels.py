@@ -164,18 +164,22 @@ async def level_list(alias: str):
 
 
 @levels.get('/<alias>/levels/get-pages')
+@levels.get('/<alias>/levels/get-pages/<level_name>')
 @requires_authorization
-async def get_pages(alias: str) -> str:
-    '''Return a recursive JSON of all riddle folders and pages.'''
+async def get_pages(alias: str, level_name: str = None) -> str:
+    '''Return a recursive JSON of all user level folders and pages.
+    If a level is specified, return only pages from that level instead.'''
 
     # Build dict of (level -> paths) from user database data
     user = await discord.get_user()
-    query = '''
+    level_cond = f'AND level_name = "{level_name}"' if level_name else ''
+    query = f"""
         SELECT level_name, path, access_time FROM user_pages
         WHERE riddle = :riddle
             AND username = :username AND discriminator = :disc
+            {level_cond}
         ORDER BY SUBSTRING_INDEX(`path`, ".", -1)
-    '''
+    """
     values = {
         'riddle': alias, 'username': user.name, 'disc': user.discriminator
     }

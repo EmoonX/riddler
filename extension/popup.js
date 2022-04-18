@@ -1,9 +1,13 @@
-// Current riddle being played
+import {
+  initExplorer
+}
+  from './explorer.js';
+
+/** Current riddle being played. */
 var currentRiddle;
 
+/** Send synchronous GET request to target URL and return response text. */
 function request(url) {
-  // Send synchronous GET request to
-  // target URL and return response text
   const request = new XMLHttpRequest();
   request.open('GET', url, false);
   request.send(null);
@@ -13,16 +17,16 @@ function request(url) {
   }
 }
 
+/** Retrieve riddle host domains. */
 function getRiddleHosts() {
-  // Retrieve riddle host domains
   const HOSTS_URL = 'https://riddler.app/get-riddle-hosts';
   const data = request(HOSTS_URL);
   const hosts = data.split(" ");
   return hosts;
 }
 
+/** Update host permissions on button click. */
 function updateHosts() {
-  // Update host permissions on button click
   const hosts = getRiddleHosts();
   console.log(hosts);
   chrome.permissions.request({
@@ -36,11 +40,18 @@ function updateHosts() {
   });
 }
 
+/** Retrieve current riddle data for authenticated user. */
 function getCurrentRiddleData() {
-  // Retrieve current riddle data for authenticated user
   const DATA_URL = 'https://riddler.app/get-current-riddle-data';
   const data = request(DATA_URL);
   return data;
+}
+
+function getCurrentLevelPages(riddle, level_name) {
+  const PAGES_URL =
+    `https://riddler.app/${riddle}/levels/get-pages/${level_name}`;
+  const pages = request(PAGES_URL);
+  return pages;
 }
 
 window.onload = (_ => {
@@ -52,6 +63,7 @@ window.onload = (_ => {
   const text = getCurrentRiddleData();
   const data = JSON.parse(text);
   const alias = data['alias'];
+  const levelName = data['visited_level'];
   const currentIcon = document.getElementById('current-icon');
   const currentName = document.getElementById('current-name');
   const currentLink = document.getElementById('current-link');
@@ -60,5 +72,8 @@ window.onload = (_ => {
   currentIcon.setAttribute('src', data['icon_url']);
   currentName.textContent = data['full_name'];
   currentLink.setAttribute('href', explorerURL);
-  visitedLevel.textContent = `Level ${data['visited_level']}`;
+  visitedLevel.textContent = `Level ${levelName}`;
+
+  const pagesData = getCurrentLevelPages(alias, levelName);
+  initExplorer(pagesData, levelName);
 });
