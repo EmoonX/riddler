@@ -1,7 +1,7 @@
 from quart import Blueprint, request, render_template
 from quart_discord import requires_authorization
 
-from admin.admin import auth
+from admin.admin_auth import admin_auth
 from admin.util import save_image
 from inject import get_achievements
 from webclient import bot_request
@@ -17,7 +17,7 @@ async def manage_cheevos(alias: str):
     '''Riddle cheevos management.'''
 
     # Check for right permissions
-    await auth(alias)
+    await admin_auth(alias)
 
     def r(msg: str):
         '''Render page with correct data.'''

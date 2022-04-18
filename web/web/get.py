@@ -33,12 +33,16 @@ async def get_riddle_hosts():
 async def get_current_riddle_data():
     '''Get currently being played riddle data for authenticated user.'''
 
-    # Get riddle data from DB
+    # Get player and riddle data from DB
     user = await discord.get_user()
     query = '''
         SELECT * FROM accounts acc
         INNER JOIN riddles r ON acc.current_riddle = r.alias
-        WHERE username = :username AND discriminator = :disc
+        INNER JOIN riddle_accounts racc
+            ON r.alias = racc.riddle
+                AND acc.username = racc.username
+                AND acc.discriminator = racc.discriminator
+        WHERE acc.username = :username AND acc.discriminator = :disc
     '''
     values = {'username': user.name, 'disc': user.discriminator}
     riddle = await database.fetch_one(query, values)
@@ -56,8 +60,8 @@ async def get_current_riddle_data():
     # Create and return JSON dict with data
     data = {
         'alias': alias,
-        'full_name': riddle['full_name'],
-        'icon_url': icon_url
+        'full_name': riddle['full_name'], 'icon_url': icon_url,
+        'visited_level': riddle['last_visited_level'],
     }
     data = json.dumps(data)
     return data

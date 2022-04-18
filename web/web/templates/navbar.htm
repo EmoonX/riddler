@@ -28,15 +28,27 @@
             <div class="arrow">▼</div>
           </button>
           <div class="menu">
-            <a href="{{ url_for('levels.level_list', alias=riddle['alias']) }}" class="nav-button">Level explorer</a>
-            <a href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}" class="nav-button">Leaderboard</a>
-            <a href="{{ url_for('countries.riddle_list', alias=riddle['alias']) }}" class="nav-button">Countries leaderboard</a>
+            <a href="{{ url_for('levels.level_list', alias=alias) }}" class="nav-button">Level explorer</a>
+            <a href="{{ url_for('players.riddle_list', alias=alias) }}" class="nav-button">Leaderboard</a>
+            <a href="{{ url_for('countries.riddle_list', alias=alias) }}" class="nav-button">Countries leaderboard</a>
             <a href="{{ riddle['front_page'] }}" class="nav-button" target="_blank">
-              <img class="icon" src="/static/icons/external-link.png">Front page
+              <img class="icon" src="/static/icons/external-link.png">
+              Front page
             </a>
           {% if riddle['invite_code'] %}
             <a href="https://discord.gg/{{ riddle['invite_code'] }}" class="nav-button">
-              <img class="icon" src="/static/icons/discord.png">Discord guild
+              <img class="icon" src="/static/icons/discord.png">
+              Discord guild
+            </a>
+          {% endif %}
+          {% if is_admin_of(alias) %}
+            <a href="{{ url_for('admin_levels.manage_levels', alias=alias) }}" class="nav-button">
+              <img class="icon" src="/static/icons/padlock.png">
+              Manage levels
+            </a>
+            <a href="{{ url_for('admin_cheevos.manage_cheevos', alias=alias) }}" class="nav-button">
+              <img class="icon" src="/static/icons/padlock.png">
+              Manage cheevos
             </a>
           {% endif %}
           </div>

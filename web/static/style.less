@@ -87,7 +87,7 @@ header > nav {
       border: 0;
       background-color: transparent;
       font-family: standard-font;
-      font-size: 3em;
+      font-size: 1.3em;
       color: white;
 
       &:hover {
@@ -140,51 +140,12 @@ header > nav {
       z-index: 8000;
 
       > .nav-button {
-        width: 100%;
-      }
-    }
-    .nav-button {
-      display: block;
-      width: 100px;
-      height: 100px;
-      line-height: 100px;
-      padding: 0;
-      font-size: 1.2em;
-      font-weight: bold;
-      text-align: center;
-      text-transform: uppercase;
-      text-decoration: none;
-      color: white;
-      text-shadow: 0 0 0.4em white;
-      cursor: pointer;
-      transition: background-color 0.3s;
-
-      &.riddle {
         display: flex;
         justify-content: center;
         align-items: center;
-        text-transform: none;
-      }
-      &.profile {
         width: 100%;
-        padding-right: 30px;
-        text-align: right;
-        text-transform: none;
-
-        + .menu {
-          width: 100%;
-        }
-      }
-      > img.icon {
-        width: 40px;
-        height: 40px;
-        margin: auto 10px;
-      }
-      &:not(.menu)::first-letter {
-        font-size: 1.6em;
-      }
-      &:hover {
-        background-color: rgba(127, 127, 127, 0.5);
+        height: 80px;
+        font-size: 1.1em;
       }
     }
     > .riddle-banner {
@@ -213,6 +174,50 @@ header > nav {
       + .menu {
         width: 400px;
       }
+    }
+  }
+  .nav-button {
+    display: block;
+    width: 100px;
+    height: 100px;
+    line-height: 100px;
+    padding: 0;
+    font-weight: bold;
+    text-align: center;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: white;
+    text-shadow: 0 0 0.4em white;
+    cursor: pointer;
+    transition: background-color 0.3s;
+
+    &.riddle {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      text-transform: none;
+    }
+    &.profile {
+      width: 100%;
+      padding-right: 30px;
+      text-align: right;
+      text-transform: none;
+
+      + .menu {
+        width: 100%;
+      }
+    }
+    > img.icon {
+      width: 36px;
+      height: 36px;
+      margin: auto 10px;
+      padding-bottom: 0.2em;
+    }
+    &::first-letter {
+      font-size: 1.5em;
+    }
+    &:hover {
+      background-color: rgba(127, 127, 127, 0.5);
     }
   }
   .blank {

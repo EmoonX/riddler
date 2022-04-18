@@ -4,46 +4,12 @@ import country_converter as coco
 from flag import flag
 from pycountry import pycountry
 
+from admin.admin_auth import is_admin_of
 from auth import discord
 from countries import country_names
+from riddle import level_ranks, cheevo_ranks
 from webclient import bot_request
 from util.db import database
-
-
-# Dict of pairs rank -> (points, color)
-f = lambda p, c : {'points': p, 'color': c}
-level_ranks = {
-    'D': f(50, 'cornflowerblue'),
-    'C': f(100, 'lawngreen'),
-    'B': f(200, 'gold'),
-    'A': f(400, 'crimson'),
-    'S': f(1000, 'lightcyan')
-}
-
-# Colors for achievements outline based on ranks
-g = lambda e, p, s, c, d : {
-    'emoji': e, 'points': p, 'size': s, 'color': c, 'description': d
-}
-cheevo_ranks = {
-    'C': g(
-        '🥉', 50, 40, 'firebrick',
-        '"Dumb" and/or easy-to-reach cheevos.'
-    ),
-    'B': g(
-        '🥈', 100, 50, 'lightcyan',
-        'Substancial ones that require creativity '
-            'and/or out-of-the-box thinking.'
-    ),
-    'A': g(
-        '🥇', 200, 60, 'gold',
-        'Good challenges like secret levels or very well hidden eggs.'
-    ),
-    'S': g(
-        '💎', 500, 80, 'darkturquoise',
-        'Should be reserved for the best among the best '
-         '(like reaching a vital game\'s landmark).'
-    )
-}
 
 
 async def get_riddles(unlisted=False):
@@ -240,8 +206,9 @@ async def context_processor():
     extra = {
         'level_ranks': level_ranks, 'cheevo_ranks': cheevo_ranks,
         'get_riddles': get_riddles, 'get_achievements': get_achievements,
-        'country_names': country_names, 'get_emoji_flag': flag,
-        'pycountries': pycountry.countries
+        'country_names': country_names,
+        'is_admin_of': is_admin_of,
+        'get_emoji_flag': flag, 'pycountries': pycountry.countries,
     }
     # Return concatenated dict with pairs ("var" -> var_value)
     return locals() | extra

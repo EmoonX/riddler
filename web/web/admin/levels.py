@@ -5,7 +5,7 @@ from quart import Blueprint, request, render_template
 from quart_discord import requires_authorization
 from pymysql.err import IntegrityError
 
-from admin.admin import auth
+from admin.admin_auth import admin_auth
 from admin.util import save_image
 from webclient import bot_request
 from util.db import database
@@ -20,7 +20,7 @@ async def manage_levels(alias: str):
     '''Riddle level management.'''
 
     # Check for admin permissions
-    await auth(alias)
+    await admin_auth(alias)
 
     async def r(levels: list, secret_levels: list, msg: str):
         '''Render page with correct data.'''
@@ -253,7 +253,7 @@ async def get_pages(alias: str) -> str:
     '''Return a recursive JSON of all riddle folders and pages.'''
 
     # Check for right permissions
-    await auth(alias)
+    await admin_auth(alias)
 
     # Build list of paths from database data
     query = '''
@@ -328,7 +328,7 @@ async def update_pages(alias: str):
     '''Update pages list with data sent by admin in text format.'''
 
     # Check for right permissions
-    await auth(alias)
+    await admin_auth(alias)
 
     # Decode received text data and split into list (ignore empty).
     # Also get rid of "carriage hellturns", swap `\` for `/``,

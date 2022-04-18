@@ -28,10 +28,10 @@ app.secret_key = (
 # Create Discord OAuth2 session object
 discord_session_init(app)
 
-from admin.admin import admin
-from admin.levels import admin_levels
 from admin.cheevos import admin_cheevos
+from admin.levels import admin_levels
 from admin.recent import admin_recent
+from admin.update import admin_update
 from auth import auth, session_cookie
 from countries import countries
 from get import get
@@ -46,7 +46,7 @@ from inject import context_processor
 from util.db import database
 
 for blueprint in (
-    admin, admin_levels, admin_cheevos, admin_recent,
+    admin_cheevos, admin_levels, admin_recent, admin_update,
     auth, countries, get, home, info, levels,
     players, account, profile, process,
 ):
