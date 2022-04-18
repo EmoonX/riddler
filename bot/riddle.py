@@ -13,7 +13,7 @@ class Riddle:
     full_name: str
     '''Riddle's full name.'''
 
-    guild: discord.Guild
+    guild: discord.Guild = None
     '''Discord guild object.'''
 
     levels: OrderedDict[str, dict]
@@ -27,17 +27,18 @@ class Riddle:
 
         # Get info from guild's database data
         self.full_name = riddle['full_name']
-        self.guild = get(bot.guilds, id=int(riddle['guild_id']))
+        if riddle['guild_id']:
+            self.guild = get(bot.guilds, id=int(riddle['guild_id']))
 
-        # Get riddle's level info from database query
-        self.levels = OrderedDict()
-        for level in levels:
-            id = level['name']
-            self.levels[id] = level
-        self.secret_levels = OrderedDict()
-        for level in secret_levels:
-            id = level['name']
-            self.secret_levels[id] = level
+            # Get riddle's level info from database query
+            self.levels = OrderedDict()
+            for level in levels:
+                id = level['name']
+                self.levels[id] = level
+            self.secret_levels = OrderedDict()
+            for level in secret_levels:
+                id = level['name']
+                self.secret_levels[id] = level
 
 
 # Global dict of (guild_alias -> riddle) which bot supervises
