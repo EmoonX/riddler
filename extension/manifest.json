@@ -1,7 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Riddler",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "description": "Browser extension for Riddler, the online riddle enhancer.",
 
   "background": {

@@ -72,7 +72,7 @@ window.onload = (_ => {
   currentIcon.setAttribute('src', data['icon_url']);
   currentName.textContent = data['full_name'];
   currentLink.setAttribute('href', explorerURL);
-  visitedLevel.textContent = `Level ${levelName}`;
+  visitedLevel.innerHTML = `Level <strong>${levelName}</strong>`;
 
   const pagesData = getCurrentLevelPages(alias, levelName);
   initExplorer(pagesData, levelName);
