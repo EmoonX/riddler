@@ -73,9 +73,11 @@ section {
       flex-direction: row;
       justify-content: center;
       align-items: center;
-      width: 200px;
       font-weight: bold;
 
+      &#current-riddle {
+        width: 170px;
+      }
       img#current-icon {
         height: 40px;
         margin-right: 10px;
@@ -88,25 +90,33 @@ section {
       margin: 0.8em auto 0.4em;
       width: 80%;
       height: 180px;
-      padding: 0.4em;
+      padding: 0.2em;
       border-radius: 0.2em;
       background-color: white;
       overflow: scroll;
       color: black;
 
-      figure {
+      figure.file {
         justify-content: left;
         margin: 0.2em auto;
+        width: fit-content;
+        padding: 0.1em 0.4em 0.1em 0.3em;
+        cursor: pointer;
+        user-select: none;
 
         > img {
-          margin: 0.1em 0.15em;
+          margin-right: 0.15em;
           max-width: 20px;
           max-height: 20px;
         }
         > figcaption {
           font-size: 0.7em;
           font-style: italic;
-          color: #444;
+          color: #555;
+        }
+        &.active {
+          background-color: rgba(128, 64, 0, 0.15);
+          border-radius: 0.4em;
         }
       }
     }

@@ -143,5 +143,9 @@ web/static/riddles/*
 # Third party things for extension (e.g jQuery script)
 extension/thirdParty
 
+# NodeJS things for jQuery
+package*.json
+node_modules
+
 # Junk Krita temp files
 *~

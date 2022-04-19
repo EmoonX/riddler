@@ -74,6 +74,7 @@ window.onload = (_ => {
   currentLink.setAttribute('href', explorerURL);
   visitedLevel.innerHTML = `Level <strong>${levelName}</strong>`;
 
+  // Build page explorer
   const pagesData = getCurrentLevelPages(alias, levelName);
   initExplorer(pagesData, levelName);
 });

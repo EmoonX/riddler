@@ -1,36 +1,37 @@
 // Dictionary of all folders and pages/files
 export var pages = {};
 
+/** Inits page explorer for given riddle level. */
 export function initExplorer(pagesData, levelName) {
   setPages(pagesData, levelName);
-  console.log(pages);
-
-  insertPages(pages['/'], '/', 0)
+  insertFiles(pages['/'], '/', -1);
 }
 
+/** Sets pages dict(s) from JSON data. */
 function setPages(json, levelName) {
-  // Set pages dict(s) from JSON data
   pages = JSON.parse(json);
   pages = pages[levelName];
 }
 
-function insertPages(object, filename, count) {
+/** Recursively insert files on explorer with correct margin. */
+function insertFiles(object, filename, count) {
   if (filename != '/') {
-    const figure = getFigureHtml(object, filename, count);
+    const figure = getFileFigureHtml(object, filename, count);
     $('.page-explorer').append(figure);
   }
   for (const childFilename in object.children) {
     const child = object.children[childFilename];
     if (child.folder) {
-      insertPages(child, childFilename, count + 1)
+      insertFiles(child, childFilename, count + 1)
     } else {
-      const figure = getFigureHtml(child, childFilename, count + 1);
+      const figure = getFileFigureHtml(child, childFilename, count + 1);
       $('.page-explorer').append(figure);
     }
   }
 }
 
-function getFigureHtml(object, filename, count) {
+/** Generate `<figure>` HTML tag for given file oject. */
+function getFileFigureHtml(object, filename, count) {
   let type = 'folder';
   if (!object.folder) {
     const i = filename.lastIndexOf('.');
@@ -38,14 +39,29 @@ function getFigureHtml(object, filename, count) {
   }
   const url = `https://riddler.app/static/icons/extensions/${type}.png`;
   const margin = `${0.4 * count}em`;
-  const img = `<img src="${url}" style="margin-left: ${margin}">`;
+  const img = `<img src="${url}">`;
   const fc = `<figcaption>${filename}</figcaption>`;
-  const html = `<figure>${img}${fc}</figure>`;
+  const html = `
+    <figure class="file"
+      title="${object.path}" style="margin-left: ${margin}"
+    >
+      ${img}${fc}
+    </figure>
+  `;
   return html;
 }
 
+/** Select file and unselect the other ones, as in a file explorer. */
+function clickFile() {
+  const files = $(this).parents('.page-explorer').find('figure.file');
+  files.each(function () {
+    $(this).removeClass('active');
+  });
+  $(this).addClass('active');
+}
+
+/** Animate "files popping in sequence" visual effect. */
 function popIcons(explorer) {
-  // "Icons popping in sequence" effect
   explorer.find('figure').each(function (index) {
     const t = 50 * (index + 1);
     setTimeout(_ => {
@@ -53,4 +69,8 @@ function popIcons(explorer) {
     }, t);
   });
 }
+
+$(_ => {
+  $('.page-explorer').on('click', 'figure.file', clickFile);
+});
   
