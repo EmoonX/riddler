@@ -1,8 +1,12 @@
-// Dictionary of all folders and pages/files
-export var pages = {};
+/** Current riddle alias. */
+var currentRiddle;
+
+/** Dictionary of all folders and pages/files. */
+var pages = {};
 
 /** Inits page explorer for given riddle level. */
-export function initExplorer(pagesData, levelName) {
+export function initExplorer(alias, pagesData, levelName) {
+  currentRiddle = alias;
   setPages(pagesData, levelName);
   insertFiles(pages['/'], '/', -1);
 }
@@ -60,6 +64,25 @@ function clickFile() {
   $(this).addClass('active');
 }
 
+/** Handle double clicking files or folders. */
+function doubleClickFile() {
+  const page = $(this).find('figcaption').text();
+  const j = page.lastIndexOf('.');
+  if (j != -1) {
+    // Open desired page in new tab
+    const explorer = $(this).parents('.page-explorer');
+    const path = $(this).attr('title');
+    const endpoint =
+      `https://riddler.app/${currentRiddle}/levels/get-root-path`;
+    $.get(endpoint, rootPath => {
+      const url = rootPath + path;
+      window.open(url, '_blank');
+    });
+  } else {
+    // TODO
+  }
+}
+
 /** Animate "files popping in sequence" visual effect. */
 function popIcons(explorer) {
   explorer.find('figure').each(function (index) {
@@ -72,5 +95,6 @@ function popIcons(explorer) {
 
 $(_ => {
   $('.page-explorer').on('click', 'figure.file', clickFile);
+  $('.page-explorer').on('dblclick', 'figure.file', doubleClickFile);
 });
   

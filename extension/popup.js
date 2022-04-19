@@ -3,9 +3,6 @@ import {
 }
   from './explorer.js';
 
-/** Current riddle being played. */
-var currentRiddle;
-
 /** Send synchronous GET request to target URL and return response text. */
 function request(url) {
   const request = new XMLHttpRequest();
@@ -76,5 +73,5 @@ window.onload = (_ => {
 
   // Build page explorer
   const pagesData = getCurrentLevelPages(alias, levelName);
-  initExplorer(pagesData, levelName);
+  initExplorer(alias, pagesData, levelName);
 });
