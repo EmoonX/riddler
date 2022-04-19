@@ -8,7 +8,7 @@ var pages = {};
 export function initExplorer(alias, pagesData, levelName) {
   currentRiddle = alias;
   setPages(pagesData, levelName);
-  insertFiles(pages['/'], '/', -1);
+  insertFiles($('.page-explorer'), pages['/'], '/', -1);
 }
 
 /** Sets pages dict(s) from JSON data. */
@@ -17,19 +17,16 @@ function setPages(json, levelName) {
   pages = pages[levelName];
 }
 
-/** Recursively insert files on explorer with correct margin. */
-function insertFiles(object, filename, count) {
-  if (filename != '/') {
-    const figure = getFileFigureHtml(object, filename, count);
-    $('.page-explorer').append(figure);
-  }
+/** Recursively insert files on parent with correct margin. */
+function insertFiles(parent, object, filename, count) {
   for (const childFilename in object.children) {
     const child = object.children[childFilename];
+    const figure = getFileFigureHtml(child, childFilename, count + 1);
+      parent.append(figure);
     if (child.folder) {
-      insertFiles(child, childFilename, count + 1)
-    } else {
-      const figure = getFileFigureHtml(child, childFilename, count + 1);
-      $('.page-explorer').append(figure);
+      const div = $('<div class="folder-files"></div>')
+      div.appendTo(parent);
+      insertFiles(div, child, childFilename, count + 1);
     }
   }
 }
@@ -42,11 +39,12 @@ function getFileFigureHtml(object, filename, count) {
     type = filename.substr(i+1);
   }
   const url = `https://riddler.app/static/icons/extensions/${type}.png`;
+  const state = (type == 'folder') ? 'open' : '';
   const margin = `${0.4 * count}em`;
   const img = `<img src="${url}">`;
   const fc = `<figcaption>${filename}</figcaption>`;
   const html = `
-    <figure class="file open"
+    <figure class="file ${state}"
       title="${object.path}" style="margin-left: ${margin}"
     >
       ${img}${fc}
@@ -70,7 +68,6 @@ function doubleClickFile() {
   const j = page.lastIndexOf('.');
   if (j != -1) {
     // Open desired page in new tab
-    const explorer = $(this).parents('.page-explorer');
     const path = $(this).attr('title');
     const endpoint =
       `https://riddler.app/${currentRiddle}/levels/get-root-path`;
@@ -79,22 +76,9 @@ function doubleClickFile() {
       window.open(url, '_blank');
     });
   } else {
-    if (!$(this).hasClass('open')) {
-
-    } else {
-      let figure = $(this).next('figure.file');
-      for (;;) {
-        if (
-          !figure.length ||
-          figure.css('margin-left') == $(this).css('margin-left')
-        ) {
-          break;
-        }
-        let next = figure.next('figure.file');
-        figure.remove();
-        figure = next;
-      }
-    }
+    // Open or collapse folder, showing/hiding inner files
+    const files = $(this).next('.folder-files');
+    files.toggle();
   }
 }
 

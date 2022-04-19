@@ -69,7 +69,7 @@ window.onload = (_ => {
   currentIcon.setAttribute('src', data['icon_url']);
   currentName.textContent = data['full_name'];
   currentLink.setAttribute('href', explorerURL);
-  visitedLevel.innerHTML = `Level <strong>${levelName}</strong>`;
+  visitedLevel.textContent = `Level ${levelName}`;
 
   // Build page explorer
   const pagesData = getCurrentLevelPages(alias, levelName);

@@ -32,7 +32,8 @@ async def get_achievements(alias: str, user: dict = None) -> dict:
 
     # Build dict of cheevos with titles as keys
     query = 'SELECT * FROM achievements WHERE riddle = :riddle'
-    result = await database.fetch_all(query, {'riddle': alias})
+    values = {'riddle': alias}
+    result = await database.fetch_all(query, values)
     cheevos = {row['title']: dict(row) for row in result}
 
     if not user:
@@ -45,10 +46,7 @@ async def get_achievements(alias: str, user: dict = None) -> dict:
             WHERE riddle = :riddle
                 AND username = :name AND discriminator = :disc
         '''
-        values = {
-            'riddle': alias,
-            'name': user['username'], 'disc': user['discriminator']
-        }
+        values |= {'name': user['username'], 'disc': user['discriminator']}
     user_cheevos = await database.fetch_all(query, values)
 
     # Create dict of pairs (rank -> list of cheevos)
