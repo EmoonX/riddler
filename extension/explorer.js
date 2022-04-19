@@ -46,7 +46,7 @@ function getFileFigureHtml(object, filename, count) {
   const img = `<img src="${url}">`;
   const fc = `<figcaption>${filename}</figcaption>`;
   const html = `
-    <figure class="file"
+    <figure class="file open"
       title="${object.path}" style="margin-left: ${margin}"
     >
       ${img}${fc}
@@ -79,7 +79,22 @@ function doubleClickFile() {
       window.open(url, '_blank');
     });
   } else {
-    // TODO
+    if (!$(this).hasClass('open')) {
+
+    } else {
+      let figure = $(this).next('figure.file');
+      for (;;) {
+        if (
+          !figure.length ||
+          figure.css('margin-left') == $(this).css('margin-left')
+        ) {
+          break;
+        }
+        let next = figure.next('figure.file');
+        figure.remove();
+        figure = next;
+      }
+    }
   }
 }
 
