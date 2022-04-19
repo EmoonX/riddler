@@ -3,7 +3,7 @@ import {
 }
   from './explorer.js';
 
-/** Send synchronous GET request to target URL and return response text. */
+/** Sends synchronous GET request to target URL and return response text. */
 function request(url) {
   const request = new XMLHttpRequest();
   request.open('GET', url, false);
@@ -14,7 +14,7 @@ function request(url) {
   }
 }
 
-/** Retrieve riddle host domains. */
+/** Retrieves riddle host domains. */
 function getRiddleHosts() {
   const HOSTS_URL = 'https://riddler.app/get-riddle-hosts';
   const data = request(HOSTS_URL);
@@ -22,7 +22,7 @@ function getRiddleHosts() {
   return hosts;
 }
 
-/** Update host permissions on button click. */
+/** Updates host permissions on button click. */
 function updateHosts() {
   const hosts = getRiddleHosts();
   console.log(hosts);
@@ -37,13 +37,14 @@ function updateHosts() {
   });
 }
 
-/** Retrieve current riddle data for authenticated user. */
+/** Retrieves current riddle data for authenticated user. */
 function getCurrentRiddleData() {
   const DATA_URL = 'https://riddler.app/get-current-riddle-data';
   const data = request(DATA_URL);
   return data;
 }
 
+/** Retrieves current level user found pages. */
 function getCurrentLevelPages(riddle, level_name) {
   const PAGES_URL =
     `https://riddler.app/${riddle}/levels/get-pages/${level_name}`;

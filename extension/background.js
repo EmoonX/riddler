@@ -1,4 +1,4 @@
-// Time of last login request
+/** Time of last login request. */
 var t0;
 
 function sendToServer(url, statusCode) {

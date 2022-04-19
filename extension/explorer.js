@@ -17,7 +17,7 @@ function setPages(json, levelName) {
   pages = pages[levelName];
 }
 
-/** Recursively insert files on parent with correct margin. */
+/** Recursively inserts files on parent with correct margin. */
 function insertFiles(parent, object, filename, count) {
   for (const childFilename in object.children) {
     const child = object.children[childFilename];
@@ -31,7 +31,7 @@ function insertFiles(parent, object, filename, count) {
   }
 }
 
-/** Generate `<figure>` HTML tag for given file oject. */
+/** Generates `<figure>` HTML tag for given file oject. */
 function getFileFigureHtml(object, filename, count) {
   let type = 'folder';
   if (!object.folder) {
@@ -53,7 +53,7 @@ function getFileFigureHtml(object, filename, count) {
   return html;
 }
 
-/** Select file and unselect the other ones, as in a file explorer. */
+/** Selects file and unselect the other ones, as in a file explorer. */
 function clickFile() {
   const files = $(this).parents('.page-explorer').find('figure.file');
   files.each(function () {
@@ -62,7 +62,7 @@ function clickFile() {
   $(this).addClass('active');
 }
 
-/** Handle double clicking files or folders. */
+/** Handles double clicking files or folders. */
 function doubleClickFile() {
   const page = $(this).find('figcaption').text();
   const j = page.lastIndexOf('.');
@@ -82,7 +82,7 @@ function doubleClickFile() {
   }
 }
 
-/** Animate "files popping in sequence" visual effect. */
+/** Animates "files popping in sequence" visual effect. */
 function popIcons(explorer) {
   explorer.find('figure').each(function (index) {
     const t = 50 * (index + 1);
