@@ -54,13 +54,13 @@ async def global_list(country: str = None):
     # Get players data from database
     cond_country = f"AND country = \"{country}\"" if country else ''
     query = f"""
-        SELECT *, acc.recent_score, SUM(page_count)
+        SELECT *, acc.recent_score, SUM(page_count), MAX(last_page_time)
         FROM accounts AS acc INNER JOIN riddle_accounts AS racc
             ON acc.username = racc.username
                 AND acc.discriminator = racc.discriminator
         WHERE global_score > 0 {cond_country}
         GROUP BY acc.username, acc.discriminator
-        ORDER BY global_score DESC, page_count DESC
+        ORDER BY global_score DESC, page_count DESC, last_page_time DESC
     """
     result = await database.fetch_all(query)
 
@@ -210,11 +210,13 @@ async def riddle_list(alias: str, country: str = None):
                     ON current_level = lv.name
                 WHERE racc.riddle = :riddle AND lv.riddle = :riddle
             )
-        ) AS result INNER JOIN accounts AS acc
+        ) AS result
+        INNER JOIN accounts AS acc
         ON result.username = acc.username
             AND result.discriminator = acc.discriminator
         {cond_country}
-        ORDER BY score DESC LIMIT 1000
+        ORDER BY score DESC, last_page_time DESC
+        LIMIT 1000
     '''
     result = await database.fetch_all(query, values)
     accounts = [dict(account) for account in result]

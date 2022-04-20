@@ -13,7 +13,7 @@
         <section class="list players">
           {% set avatar_urls = fetch_avatar_urls(riddle['guild_id']) %}
           {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
-        {% for player in accounts + [creator_account] if player %}
+      {% for player in accounts + [creator_account] if player %}
         {% if loop.index > accounts|length %}
           {% set rank = '👑' %}
           {% set color = 'crimson' %}
@@ -96,7 +96,7 @@
               <figcaption>pages found</figcaption>
             </figure>
           </div>
-        {% endfor %}
+      {% endfor %}
         </section>
       </main>
 {% endblock %}
