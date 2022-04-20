@@ -59,8 +59,8 @@
               {% set progress = '%s<br>(%s)'|safe % (progress, s) %}
               {% set badge = badges[honor] %}
             {% else %}
-              {% set last_level_name = player['last_level'][riddle['alias']]['level_name'] %}
-              {% set progress = '%s<br>(currently on %s)'|safe % (progress, last_level_name) %}
+              {% set current_level = player['current_level'][riddle['alias']] %}
+              {% set progress = '%s<br>(currently on %s)'|safe % (progress, current_level) %}
             {% endif %}
             <a class="honor {{ honor }}" href="{{ url_for('players.riddle_list', alias=riddle['alias']) }}">
               <figure>

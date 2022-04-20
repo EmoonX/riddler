@@ -22,23 +22,6 @@ async def global_list(country: str = None):
     result = await database.fetch_all(query)
     riddles = {riddle['alias']: dict(riddle) for riddle in result}
 
-    # Fetch riddles' last levels and add them to dict
-    query = '''
-        SELECT l1.*, l1.name AS name
-        FROM levels AS l1 INNER JOIN (
-            SELECT riddle, MAX(`index`) AS max_index FROM levels
-            WHERE is_secret IS NOT TRUE
-            GROUP BY riddle
-        ) AS l2
-        ON l1.riddle = l2.riddle AND l1.`index` = l2.max_index
-    '''
-    last_levels = await database.fetch_all(query)
-    for row in last_levels:
-        alias = row['riddle']
-        if alias not in riddles:
-            continue
-        riddles[alias]['last_level'] = row['name']
-
     # Do the same for cheevo counts
     query = '''
         SELECT riddle, COUNT(*) as cheevo_count FROM achievements
@@ -54,7 +37,7 @@ async def global_list(country: str = None):
     # Get players data from database
     cond_country = f"AND country = \"{country}\"" if country else ''
     query = f"""
-        SELECT *, acc.recent_score, SUM(page_count), MAX(last_page_time)
+        SELECT acc.*, SUM(page_count), MAX(last_page_time)
         FROM accounts AS acc INNER JOIN riddle_accounts AS racc
             ON acc.username = racc.username
                 AND acc.discriminator = racc.discriminator
@@ -68,32 +51,15 @@ async def global_list(country: str = None):
     accounts = {}
     for row in result:
         handle = f"{row['username']}#{row['discriminator']}"
-        player = dict(row) | {'last_level': {}, 'cheevo_count': {}}
+        player = dict(row) | {'current_level': {}, 'cheevo_count': {}}
         accounts[handle] = player
 
-    # Fetch players' last found level add them to dict
-    query = '''
-        SELECT u1.*
-        FROM user_levels AS u1 INNER JOIN (
-            SELECT riddle, username, discriminator, MAX(find_time) AS max_find
-            FROM user_levels AS ul
-            WHERE level_name NOT IN (
-                SELECT name FROM levels AS lv
-                WHERE ul.riddle = lv.riddle AND is_secret IS TRUE
-            )
-            GROUP BY riddle, username, discriminator
-        ) AS u2
-        ON u1.riddle = u2.riddle AND u1.username = u2.username
-            AND u1.discriminator = u2.discriminator
-            AND u1.find_time = u2.max_find
-    '''
-    player_last_levels = await database.fetch_all(query)
-    for row in player_last_levels:
+    query = 'SELECT * FROM riddle_accounts WHERE score > 0'
+    result = await database.fetch_all(query)
+    for row in result:
         handle = f"{row['username']}#{row['discriminator']}"
-        if not handle in accounts:
-            continue
         alias = row['riddle']
-        accounts[handle]['last_level'][alias] = row
+        accounts[handle]['current_level'][alias] = row['current_level']
 
     # Fetch players' cheevo counts and add them to dict
     query = '''
@@ -140,16 +106,12 @@ async def global_list(country: str = None):
                 continue
 
             # Check ir player played such riddle
-            played = alias in player['last_level']
-            if not played:
+            current_level = player['current_level'].get(alias)
+            if not current_level:
                 continue
 
             # Check completion
-            last_level = player['last_level'][alias]
-            completed = (
-                last_level['level_name'] == riddle['last_level'] and
-                last_level['completion_time']
-            )
+            completed = current_level == '🏅'
             if completed:
                 # Append riddle to list of mastered or completed ones
                 mastered = \
