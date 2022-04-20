@@ -40,10 +40,9 @@
           <figure class="score">
             {% set score = player['global_score'] %}
             {% set zeroes = '0' * 6 %}
-            {% if player['recent_score'] %}
-              {% set recent_score = '<span class="recent-score">⇪%d</span>'|safe % player['recent_score'] %}
-            {% endif %}
-            {{ recent_score }}
+          {% if player['recent_score'] %}
+            <span class="recent-score">⇪{{ player['recent_score'] }}</span>
+          {% endif %}
             <var class="points">
               <var class="zeroes">{{ zeroes }}</var>{{ score }}
             </var>

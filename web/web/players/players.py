@@ -197,27 +197,25 @@ async def riddle_list(alias: str, country: str = None):
 
     # Get players data from database
     cond_country = f"WHERE country = \"{country}\" " if country else ''
-    query = f"""
-        SELECT * FROM (
+    query = f'''
+        SELECT result.*, acc.country, acc.hidden FROM (
             (
                 SELECT *, 999999 AS `index`, 2 AS filter
-                FROM riddle_accounts
-                WHERE riddle_accounts.riddle = :riddle
-                    AND current_level = \"🏅\"
+                FROM riddle_accounts AS racc
+                WHERE racc.riddle = :riddle
+                    AND current_level = "🏅"
             ) UNION ALL (
-                SELECT riddle_accounts.*, levels.`index`, 1 AS filter
-                FROM riddle_accounts INNER JOIN levels
-                    ON current_level = levels.name
-                WHERE riddle_accounts.riddle = :riddle
-                    AND levels.riddle = :riddle
+                SELECT racc.*, lv.`index`, 1 AS filter
+                FROM riddle_accounts AS racc INNER JOIN levels AS lv
+                    ON current_level = lv.name
+                WHERE racc.riddle = :riddle AND lv.riddle = :riddle
             )
-        ) AS result
-        INNER JOIN accounts AS acc
-            ON result.username = acc.username
-                AND result.discriminator = acc.discriminator
+        ) AS result INNER JOIN accounts AS acc
+        ON result.username = acc.username
+            AND result.discriminator = acc.discriminator
         {cond_country}
         ORDER BY score DESC LIMIT 1000
-    """
+    '''
     result = await database.fetch_all(query, values)
     accounts = [dict(account) for account in result]
 

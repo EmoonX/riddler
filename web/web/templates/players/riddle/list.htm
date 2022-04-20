@@ -54,6 +54,9 @@
             <figure class="score">
               {% set score = player['score'] %}
               {% set zeroes = '0' * 6 %}
+            {% if player['recent_score'] %}
+              <span class="recent-score">⇪{{ player['recent_score'] }}</span>
+            {% endif %}
               <var class="points"><var class="zeroes">{{ zeroes }}</var>{{ score }}</var>
               <figcaption>points</figcaption>
             </figure>
@@ -76,10 +79,10 @@
               <div class="thumbs">
               {% for rank in cheevos|reverse if cheevos[rank] %}
                 <div class="rank">
-                {% for cheevo in cheevos[rank] %}
                   {% set points = cheevo_ranks[rank]['points'] %}
                   {% set color = cheevo_ranks[rank]['color'] %}
                   {% set size = cheevo_ranks[rank]['size'] %}
+                {% for cheevo in cheevos[rank] %}
                   <img class="cheevo" src="/static/cheevos/{{ riddle['alias'] }}/{{ cheevo['image'] }}" title="[ {{ cheevo['title'] }} ] ({{ points }} points)&#10;&#10;&quot;{{ cheevo['description'] }}&quot;" style="width: {{ size }}px; height: {{ size }}px; border-color: {{ color }}; box-shadow: 0 0 0.8em {{ color }}" alt="{{ cheevo['title'] }}">
                 {% endfor %}
                 </div>
