@@ -92,10 +92,10 @@ async def update_scores(alias: str):
         # Add beaten level points to new score
         new_score = 0
         query = '''
-            SELECT * FROM user_levels
-            INNER JOIN levels
-                ON user_levels.riddle = levels.riddle
-                    AND user_levels.level_name = levels.name
+            SELECT *
+            FROM user_levels INNER JOIN levels
+            ON user_levels.riddle = levels.riddle
+                AND user_levels.level_name = levels.name
             WHERE levels.riddle = :riddle
                 AND username = :name and discriminator = :disc
                 AND completion_time IS NOT NULL
@@ -111,10 +111,10 @@ async def update_scores(alias: str):
 
         # Add unlocked cheevo points to new score
         query = '''
-            SELECT * FROM user_achievements
-            INNER JOIN achievements
-                ON user_achievements.riddle = achievements.riddle
-                    AND user_achievements.title = achievements.title
+            SELECT *
+            FROM user_achievements INNER JOIN achievements
+            ON user_achievements.riddle = achievements.riddle
+                AND user_achievements.title = achievements.title
             WHERE achievements.riddle = :riddle
                 AND username = :name and discriminator = :disc
         '''
@@ -125,8 +125,7 @@ async def update_scores(alias: str):
 
         # Update player's riddle score
         query = '''
-            UPDATE riddle_accounts
-            SET score = :score
+            UPDATE riddle_accounts SET score = :score
             WHERE riddle = :riddle
                 AND username = :name and discriminator = :disc
         '''
@@ -164,10 +163,9 @@ async def update_page_count(alias: str):
     query = '''
         SELECT racc.username, racc.discriminator,
             COUNT(level_name) AS page_count
-        FROM riddle_accounts AS racc
-        INNER JOIN user_pages AS up
-            ON racc.username = up.username
-                AND racc.discriminator = up.discriminator
+        FROM riddle_accounts AS racc INNER JOIN user_pages AS up
+        ON racc.username = up.username
+            AND racc.discriminator = up.discriminator
         WHERE up.riddle = :riddle
         GROUP BY racc.riddle, racc.username, racc.discriminator
     '''

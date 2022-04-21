@@ -34,7 +34,8 @@ async def global_list(country: str = None):
             continue
         riddles[alias]['cheevo_count'] = row['cheevo_count']
 
-    # Get players data from database
+    # Init dict of (handle -> player info)
+    accounts = {}
     cond_country = f"AND country = \"{country}\"" if country else ''
     query = f"""
         SELECT acc.*, SUM(page_count), MAX(last_page_time)
@@ -46,18 +47,18 @@ async def global_list(country: str = None):
         ORDER BY global_score DESC, page_count DESC, last_page_time DESC
     """
     result = await database.fetch_all(query)
-
-    # Init dict of (handle -> player info)
-    accounts = {}
     for row in result:
         handle = f"{row['username']}#{row['discriminator']}"
         player = dict(row) | {'current_level': {}, 'cheevo_count': {}}
         accounts[handle] = player
 
+    # Get current levels for each riddle and player (ignore unplayed ones)
     query = 'SELECT * FROM riddle_accounts WHERE score > 0'
     result = await database.fetch_all(query)
     for row in result:
         handle = f"{row['username']}#{row['discriminator']}"
+        if not handle in accounts:
+            continue
         alias = row['riddle']
         accounts[handle]['current_level'][alias] = row['current_level']
 
