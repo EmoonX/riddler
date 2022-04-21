@@ -32,8 +32,9 @@
               <img class="avatar" src="{{ url }}">
             </a>
             <div>
+              {% set color = get_score_ranked_color(player) %}
               {% set country_name = country_names[player['country']] %}
-              <a class="username" href="#">{{ player['username'] }}</a><!--
+              <a class="username" href="#" style="color: {{ color }}; text-shadow: 0 0 1em {{ color }}">{{ player['username'] }}</a><!--
            --><a class="country" href="/players/{{ player['country'] }}" title="{{ country_name }}"><img class="flag" src="/static/flags/{{ player['country'] }}.png"></a>
             </div>
           </div>

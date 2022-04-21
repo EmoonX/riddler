@@ -161,7 +161,7 @@ async def riddle_list(alias: str, country: str = None):
     # Get players data from database
     cond_country = f"WHERE country = \"{country}\" " if country else ''
     query = f'''
-        SELECT result.*, acc.country, acc.hidden FROM (
+        SELECT result.*, acc.country, acc.global_score, acc.hidden FROM (
             (
                 SELECT *, 999999 AS `index`, 2 AS filter
                 FROM riddle_accounts AS racc

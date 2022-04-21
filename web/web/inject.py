@@ -7,7 +7,7 @@ from pycountry import pycountry
 from admin.admin_auth import is_admin_of
 from auth import discord
 from countries import country_names
-from riddle import level_ranks, cheevo_ranks
+from riddle import level_ranks, cheevo_ranks, player_ranks
 from webclient import bot_request
 from util.db import database
 
@@ -183,6 +183,12 @@ async def context_processor():
         result = await database.fetch_one(query, values)
         country = result['country']
         return country
+
+    def get_score_ranked_color(user: dict):
+        '''Get rank color based on score lower bound.'''
+        for rank in player_ranks:
+            if user['global_score'] >= rank['min_score']:
+                return rank['color']
 
     # Build dict of country names
     # (also a separate loop for UK nations)

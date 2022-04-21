@@ -34,3 +34,13 @@ cheevo_ranks = {
          '(like reaching a vital game\'s landmark).'
     )
 }
+
+# Flavored score-based player ranks
+h = lambda s, t, c : {'min_score': s, 'title': t, 'color': c}
+player_ranks = [
+    h(200000, 'Ascended Riddler', 'crimson'),
+    h(100000, 'Master Riddler', 'orangered'),
+    h(50000, 'Expert Riddler', 'goldenrod'),
+    h(10000, 'Seasoned Riddler', 'greenyellow'),
+    h(1000, 'Beginner Riddler', 'lightgreen'),
+]

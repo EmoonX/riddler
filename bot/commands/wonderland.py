@@ -84,7 +84,7 @@ async def update_score_role(member: Member):
         role = get(wonderland.roles, name='Expert Riddlers')
     elif global_score >= 10000:
         role = get(wonderland.roles, name='Seasoned Riddlers')
-    elif global_score > 0:
+    elif global_score > 1000:
         role = get(wonderland.roles, name='Beginner Riddlers')
 
     # Do role swap, but only if a role change indeed occurred
