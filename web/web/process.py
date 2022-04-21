@@ -9,23 +9,12 @@ from quart.app import Logger
 from quart_discord.models import User
 
 from auth import discord
-from inject import cheevo_ranks
+from riddle import level_ranks, cheevo_ranks
 from webclient import bot_request
 from util.db import database
 
 # Create app blueprint
 process = Blueprint('process', __name__)
-
-# Dict of pairs (level rank -> (points, color))
-level_ranks = {
-    'D': (50, 'cornflowerblue'),
-    'C': (100, 'lawngreen'),
-    'B': (200, 'gold'),
-    'A': (400, 'crimson'),
-    'S': (1000, 'lightcyan')
-}
-for rank, pair in level_ranks.items():
-    level_ranks[rank] = {'points': pair[0], 'color': pair[1]}
 
 
 @process.route('/process', methods=['POST', 'OPTIONS'])
@@ -851,11 +840,18 @@ class _NormalLevelHandler(_LevelHandler):
             points=self.points, first_to_solve=first_to_solve
         )
         # Check if level just completed is the *final* one
-        query = 'SELECT * FROM riddles  WHERE alias = :riddle'
+        query = 'SELECT * FROM riddles WHERE alias = :riddle'
         values = {'riddle': self.riddle_alias}
         final_level = await database.fetch_val(query, values, 'final_level')
         if self.level['name'] == final_level:
             # Player has just completed the game :)
+            query = '''
+                UPDATE riddle_accounts SET current_level = "🏅"
+                WHERE riddle = :riddle
+                    AND username = :username AND discriminator = :disc
+            '''
+            values |= {'username': self.username, 'disc': self.disc}
+            await database.execute(query, values)
             await bot_request(
                 'unlock', method='game_completed',
                 alias=self.riddle_alias,
