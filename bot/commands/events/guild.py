@@ -17,6 +17,8 @@ class Guild(commands.Cog):
         '''Update special role names (honors and set completion ones)
         in DB when changed on guild by admin.'''
 
+        if before.guild.name == "Riddler's Wonderland II":
+            return
         if before.name == after.name:
             return
 
@@ -38,8 +40,7 @@ class Guild(commands.Cog):
             role_name = riddle[role]
             if before.name == role_name:
                 query = f"""
-                    UPDATE riddles
-                    SET {role} = :new_name
+                    UPDATE riddles SET {role} = :new_name
                     WHERE alias = :riddle
                 """
                 await database.execute(query, values)

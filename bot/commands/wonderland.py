@@ -65,7 +65,7 @@ async def update_score_role(member: Member):
 
     # Find old score role of user, if any
     roles = (
-        'Master Riddlers', 'Expert Riddlers',
+        'Ascended Riddlers', 'Master Riddlers', 'Expert Riddlers',
         'Seasoned Riddlers', 'Beginner Riddlers',
     )
     old_role = None
@@ -76,7 +76,9 @@ async def update_score_role(member: Member):
             break
 
     # Check role based on global score
-    if global_score >= 100000:
+    if global_score >= 200000:
+        role = get(wonderland.roles, name='Ascended Riddlers')
+    elif global_score >= 100000:
         role = get(wonderland.roles, name='Master Riddlers')
     elif global_score >= 50000:
         role = get(wonderland.roles, name='Expert Riddlers')
