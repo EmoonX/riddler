@@ -8,8 +8,8 @@ from discord_slash import (
 from discord_slash.utils.manage_commands import create_option
 from nltk.corpus import words
 
-# Set of English words
-word_set = set(words.words())
+# Set of English words (as char tuples)
+word_set = set(tuple(word) for word in words.words())
 
 
 class Decipher(commands.Cog):
@@ -22,7 +22,7 @@ class Decipher(commands.Cog):
         name='anagram',
         options=[create_option(
             name='word',
-            description='String to be anagrammed (max length: 10).',
+            description='Word to be anagrammed (max length: 10).',
             option_type=OptType.from_type(str),
             required=True,
         )],
@@ -35,9 +35,9 @@ class Decipher(commands.Cog):
         text = f"Anagrams of ***{word}***:"
         valid_anagrams = set()
         for perm in permutations(word):
-            perm = ''.join(perm)
             if perm in word_set and perm not in valid_anagrams:
-                text += f"\n• _{perm}_"
+                new_word = ''.join(perm)
+                text += f"\n• _{new_word}_"
                 valid_anagrams.add(perm)
         if not valid_anagrams:
             text += '\nNone found...'
