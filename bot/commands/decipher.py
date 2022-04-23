@@ -63,10 +63,12 @@ class Decipher(commands.Cog):
         valid_anagrams = set()
         for perm in permutations(word):
             if perm in word_set and perm not in valid_anagrams:
-                new_word = ''.join(perm)
-                text += f"\n• _{new_word}_"
                 valid_anagrams.add(perm)
-        if not valid_anagrams:
+        if valid_anagrams:
+            for perm in sorted(valid_anagrams):
+                word = ''.join(perm)
+                text += f"\n• _{word}_"
+        else:
             text += '\nNone found...'
         await ctx.send(text)
 
