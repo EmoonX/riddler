@@ -30,17 +30,14 @@ class Decipher(commands.Cog):
 
     @cog_ext.cog_slash(
         name='anagram',
-        options=[create_option(
-            name='word',
-            description='Word to be anagrammed (max length: 10).',
-            option_type=OptType.from_type(str),
-            required=True,
+        options=[_required_str_option(
+            'word', 'Word to be anagrammed (max length: 10).'
         )],
     )
     async def anagram(self, ctx: SlashContext, word: str):
         '''Find all available English language anagrams of a given word.'''
         if len(word) > 10:
-            await ctx.send('Too big of a word.')
+            await ctx.send('_[ERROR] Too big of a word._', hidden=True)
             return
         text = f"Anagrams of ***{word}***:"
         valid_anagrams = set()
@@ -55,52 +52,47 @@ class Decipher(commands.Cog):
 
     @cog_ext.cog_slash(
         name='ascii_to_text',
-        options=[create_option(
-            name='ascii_codes',
-            description=(
-                'List of space-separated ASCII decimal codes.'
-            ),
-            option_type=OptType.from_type(str),
-            required=True,
+        options=[_required_str_option(
+            'ascii_codes', 'List of space-separated ASCII decimal codes.'
         )],
     )
     async def ascii_to_text(self, ctx: SlashContext, ascii_codes: str):
         '''Convert ASCII codes to text.'''
+        bad_chars = re.search(r'[^\d\s]', ascii_codes) is not None
+        if bad_chars:
+            await ctx.send(
+                "_[ERROR] Text should only contain numbers and whitespace._",
+                hidden=True
+            )
+            return
         ascii_list = ascii_codes.split()
         text = ''.join(chr(int(k)) for k in ascii_list)
-        if text.isspace():
-            text = '_This message was intentionally left blank._'
         await ctx.send(text)
 
     @cog_ext.cog_slash(
         name='binary_to_text',
-        options=[create_option(
-            name='binary_code',
-            description=(
-                'Binary string of 0s and 1s (and possibly whitespace).'
-            ),
-            option_type=OptType.from_type(str),
-            required=True,
+        options=[_required_str_option(
+            'binary_code',
+            'Binary string of 0s and 1s (and possibly whitespace).'
         )],
     )
     async def binary_to_text(self, ctx: SlashContext, binary_code: str):
         '''Convert binary string(s) to ASCII character representation.'''
-
-        # Ignore anything that isn't '0' or '1'
-        binary_code = re.sub('[^01]', '', binary_code)
-
-        # Build list of converted chars from binary groups of 8
-        ascii_str = []
+        bad_chars = re.search(r'[^01\s]', binary_code) is not None
+        if bad_chars:
+            await ctx.send(
+                "_[ERROR] Code should only contain 0s, 1s and whitespace._",
+                hidden=True
+            )
+            return
+        binary_code = re.sub(r'\s', '', binary_code)
+        ascii_list = []
         for k in range(0, len(binary_code) - 7, 8):
             binary = binary_code[k:k+8]
             n = int(binary, 2)
             c = chr(n)
-            ascii_str.append(c)
-
-        # Get resulting string (possibly blank) and send it
-        text = ''.join(ascii_str)
-        if text.isspace():
-            text = '_This message was intentionally left blank._'
+            ascii_list.append(c)
+        text = ''.join(ascii_list)
         await ctx.send(text)
 
     @cog_ext.cog_slash(
