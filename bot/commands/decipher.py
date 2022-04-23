@@ -1,3 +1,4 @@
+from itertools import permutations
 import re
 
 from discord.ext import commands
@@ -5,13 +6,61 @@ from discord_slash import (
     cog_ext, SlashContext, SlashCommandOptionType as OptType
 )
 from discord_slash.utils.manage_commands import create_option
+from nltk.corpus import words
+
+# Set of English words
+word_set = set(words.words())
 
 
 class Decipher(commands.Cog):
-    '''Several commands for deciphering codes.'''
+    '''Several commands for deciphering codes and solving things.'''
 
     def __init__(self, bot):
         self.bot = bot
+
+    @cog_ext.cog_slash(
+        name='anagram',
+        options=[create_option(
+            name='word',
+            description='String to be anagrammed (max length: 10).',
+            option_type=OptType.from_type(str),
+            required=True,
+        )],
+    )
+    async def anagram(self, ctx: SlashContext, word: str):
+        '''Find all available English language anagrams of a given word.'''
+        if len(word) > 10:
+            await ctx.send('Too big of a word.')
+            return
+        text = f"Anagrams of ***{word}***:"
+        valid_anagrams = set()
+        for perm in permutations(word):
+            perm = ''.join(perm)
+            if perm in word_set and perm not in valid_anagrams:
+                text += f"\n• _{perm}_"
+                valid_anagrams.add(perm)
+        if not valid_anagrams:
+            text += '\nNone found...'
+        await ctx.send(text)
+
+    @cog_ext.cog_slash(
+        name='ascii_to_text',
+        options=[create_option(
+            name='ascii_codes',
+            description=(
+                'List of space-separated ASCII decimal codes.'
+            ),
+            option_type=OptType.from_type(str),
+            required=True,
+        )],
+    )
+    async def ascii_to_text(self, ctx: SlashContext, ascii_codes: str):
+        '''Convert ASCII codes to text.'''
+        ascii_list = ascii_codes.split()
+        text = ''.join(chr(int(k)) for k in ascii_list)
+        if text.isspace():
+            text = '_This message was intentionally left blank._'
+        await ctx.send(text)
 
     @cog_ext.cog_slash(
         name='binary_to_text',
@@ -40,25 +89,6 @@ class Decipher(commands.Cog):
 
         # Get resulting string (possibly blank) and send it
         text = ''.join(ascii_str)
-        if text.isspace():
-            text = '_This message was intentionally left blank._'
-        await ctx.send(text)
-
-    @cog_ext.cog_slash(
-        name='ascii_to_text',
-        options=[create_option(
-            name='ascii_codes',
-            description=(
-                'List of space-separated ASCII decimal codes.'
-            ),
-            option_type=OptType.from_type(str),
-            required=True,
-        )],
-    )
-    async def ascii_to_text(self, ctx: SlashContext, ascii_codes: str):
-        '''Convert ASCII codes to text.'''
-        ascii_list = ascii_codes.split()
-        text = ''.join(chr(int(k)) for k in ascii_list)
         if text.isspace():
             text = '_This message was intentionally left blank._'
         await ctx.send(text)
