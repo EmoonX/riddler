@@ -12,6 +12,16 @@ from nltk.corpus import words
 word_set = set(tuple(word) for word in words.words())
 
 
+def _required_str_option(name: str, description: str) -> dict:
+    '''Wrapper function for creating a required string command option.'''
+    return create_option(
+        name=name,
+        description=description,
+        option_type=OptType.from_type(str),
+        required=True,
+    )
+
+
 class Decipher(commands.Cog):
     '''Several commands for deciphering codes and solving things.'''
 
@@ -92,6 +102,43 @@ class Decipher(commands.Cog):
         if text.isspace():
             text = '_This message was intentionally left blank._'
         await ctx.send(text)
+
+    @cog_ext.cog_slash(
+        name='vigenere',
+        options=[
+            _required_str_option('ciphertext', 'Vigenère-encoded ciphertext.'),
+            _required_str_option('key', 'Alphabetic keyword to be applied.'),
+        ],
+    )
+    async def vigenere_decode(
+        self, ctx: SlashContext, ciphertext: str, key: str
+    ):
+        '''Decode ciphertext using Vigenère method with given key.'''
+        if not key.isalpha():
+            await ctx.send('_[ERROR] Non-alphabetic keyword._', hidden=True)
+            return
+        key = key.upper()
+        j = 0
+        decoded_chars = list(ciphertext)
+        for i, char in enumerate(decoded_chars):
+            code = ord(char)
+            if ord('A') <= code <= ord('Z'):
+                # Uppercase letters
+                delta = ord('A')
+            elif ord('a') <= code <= ord('z'):
+                # Lowercase letters
+                delta = ord('a')
+            else:
+                # Ignore anything else
+                continue
+            index = ord(key[j]) - ord('A')
+            code -= delta
+            code = (code - index + 26) % 26
+            code += delta
+            decoded_chars[i] = chr(code)
+            j = (j + 1) % len(key)
+        decoded_text = ''.join(decoded_chars)
+        await ctx.send(decoded_text)
 
 
 def setup(bot: commands.Bot):
