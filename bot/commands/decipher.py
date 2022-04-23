@@ -22,6 +22,21 @@ def _required_str_option(name: str, description: str) -> dict:
     )
 
 
+def _shift_char(char: str, shift: int) -> str:
+    '''Shift char by given amount on the alphabet.'''
+    code = ord(char)
+    if ord('A') <= code <= ord('Z'):
+        delta = ord('A')
+    elif ord('a') <= code <= ord('z'):
+        delta = ord('a')
+    else:
+        return
+    code -= delta
+    code = (code + shift + 26) % 26
+    code += delta
+    return chr(code)
+
+
 async def _error_message(ctx: SlashContext, text: str):
     '''Send custom hidden error message.'''
     await ctx.send(f"_[ERROR] {text}_", hidden=True)
@@ -102,6 +117,33 @@ class Decipher(commands.Cog):
         await ctx.send(text)
 
     @cog_ext.cog_slash(
+        name='caesar',
+        options=[
+            _required_str_option('ciphertext', 'Caesar-shifted ciphertext.'),
+            create_option(
+                name='shift',
+                description=(
+                    'How many positions each char should be shifted on '
+                        'the alphabet (sign infers direction).'
+                ),
+                option_type=OptType.from_type(int),
+                required=True,
+            )
+        ],
+    )
+    async def caesar_decode(
+        self, ctx: SlashContext, ciphertext: str, shift: int
+    ):
+        '''Decode ciphertext using Caesar cipher with given shift.'''
+        decoded_chars = list(ciphertext)
+        for i, char in enumerate(ciphertext):
+            char = _shift_char(char, shift)
+            if char:
+                decoded_chars[i] = char
+        text = ''.join(decoded_chars)
+        await ctx.send(text)
+
+    @cog_ext.cog_slash(
         name='crossword',
         options=[_required_str_option(
             'pattern',
@@ -159,22 +201,11 @@ class Decipher(commands.Cog):
         j = 0
         decoded_chars = list(ciphertext)
         for i, char in enumerate(decoded_chars):
-            code = ord(char)
-            if ord('A') <= code <= ord('Z'):
-                # Uppercase letters
-                delta = ord('A')
-            elif ord('a') <= code <= ord('z'):
-                # Lowercase letters
-                delta = ord('a')
-            else:
-                # Ignore anything else
-                continue
-            shift = ord(key[j]) - ord('A')
-            code -= delta
-            code = (code - shift + 26) % 26
-            code += delta
-            decoded_chars[i] = chr(code)
-            j = (j + 1) % len(key)
+            shift = -(ord(key[j]) - ord('A'))
+            char = _shift_char(char, shift)
+            if char:
+                decoded_chars[i] = char
+                j = (j + 1) % len(key)
         decoded_text = ''.join(decoded_chars)
         await ctx.send(decoded_text)
 
