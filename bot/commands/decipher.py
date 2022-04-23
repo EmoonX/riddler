@@ -18,7 +18,7 @@ class Decipher(commands.Cog):
         options=[create_option(
             name='binary_code',
             description=(
-                'Binary string of 0s and 1s (and possibly whitespace)'
+                'Binary string of 0s and 1s (and possibly whitespace).'
             ),
             option_type=OptType.from_type(str),
             required=True,

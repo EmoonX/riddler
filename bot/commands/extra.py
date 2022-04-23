@@ -1,5 +1,8 @@
 from discord.ext import commands
-from discord_slash import cog_ext, SlashContext
+from discord_slash import (
+    cog_ext, SlashContext, SlashCommandOptionType as OptType
+)
+from discord_slash.utils.manage_commands import create_option
 
 
 class Extra(commands.Cog):
@@ -12,9 +15,17 @@ class Extra(commands.Cog):
     async def ping(self, ctx: SlashContext):
         '''Ping-pong with measurable latency.'''
         latency = 1000 * self.bot.latency
-        await ctx.send(f"Pong! ({latency}ms)")
+        await ctx.send(f"Pong! ({latency:.2f} ms)")
 
-    @cog_ext.cog_slash(name='balthify')
+    @cog_ext.cog_slash(
+        name='balthify',
+        options=[create_option(
+            name='text',
+            description='Text to be converted.',
+            option_type=OptType.from_type(str),
+            required=True,
+        )],
+    )
     async def balthify(self, ctx: SlashContext, text: str):
         '''Turn text into Balthazar-speak!'''
 

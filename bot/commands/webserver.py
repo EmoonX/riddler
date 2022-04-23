@@ -124,7 +124,6 @@ async def unlock(request):
                 )
             '''
             has_unfound_cheevos = await database.fetch_one(query, values)
-            logging.info(has_unfound_cheevos)
 
             # If nothing was found, then player got everything
             if not has_unfound_cheevos:
