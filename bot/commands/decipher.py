@@ -22,6 +22,11 @@ def _required_str_option(name: str, description: str) -> dict:
     )
 
 
+async def _error_message(ctx: SlashContext, text: str):
+    '''Send custom hidden error message.'''
+    await ctx.send(f"_[ERROR] {text}_", hidden=True)
+
+
 class Decipher(commands.Cog):
     '''Several commands for deciphering codes and solving things.'''
 
@@ -37,7 +42,7 @@ class Decipher(commands.Cog):
     async def anagram(self, ctx: SlashContext, word: str):
         '''Find all available English language anagrams of a given word.'''
         if len(word) > 10:
-            await ctx.send('_[ERROR] Too big of a word._', hidden=True)
+            await _error_message(ctx, 'Too big of a word.')
             return
         text = f"Anagrams of ***{word}***:"
         valid_anagrams = set()
@@ -60,9 +65,8 @@ class Decipher(commands.Cog):
         '''Convert ASCII codes to text.'''
         bad_chars = re.search(r'[^\d\s]', ascii_codes) is not None
         if bad_chars:
-            await ctx.send(
-                "_[ERROR] Text should only contain numbers and whitespace._",
-                hidden=True
+            await _error_message(
+                ctx, 'Text should only contain numbers and whitespace.'
             )
             return
         ascii_list = ascii_codes.split()
@@ -80,9 +84,8 @@ class Decipher(commands.Cog):
         '''Convert binary string(s) to ASCII character representation.'''
         bad_chars = re.search(r'[^01\s]', binary_code) is not None
         if bad_chars:
-            await ctx.send(
-                "_[ERROR] Code should only contain 0s, 1s and whitespace._",
-                hidden=True
+            await _error_message(
+                ctx, 'Code should only contain 0s, 1s and whitespace.'
             )
             return
         binary_code = re.sub(r'\s', '', binary_code)
@@ -93,6 +96,9 @@ class Decipher(commands.Cog):
             c = chr(n)
             ascii_list.append(c)
         text = ''.join(ascii_list)
+        if not text or text.isspace():
+            await _error_message(ctx, 'Empty message.')
+            return
         await ctx.send(text)
 
     @cog_ext.cog_slash(
@@ -107,7 +113,7 @@ class Decipher(commands.Cog):
     ):
         '''Decode ciphertext using Vigenère method with given key.'''
         if not key.isalpha():
-            await ctx.send('_[ERROR] Non-alphabetic keyword._', hidden=True)
+            await _error_message(ctx, 'Non-alphabetic keyword.')
             return
         key = key.upper()
         j = 0
@@ -123,9 +129,9 @@ class Decipher(commands.Cog):
             else:
                 # Ignore anything else
                 continue
-            index = ord(key[j]) - ord('A')
+            shift = ord(key[j]) - ord('A')
             code -= delta
-            code = (code - index + 26) % 26
+            code = (code - shift + 26) % 26
             code += delta
             decoded_chars[i] = chr(code)
             j = (j + 1) % len(key)
