@@ -8,8 +8,8 @@ from discord_slash import (
 from discord_slash.utils.manage_commands import create_option
 from nltk.corpus import words
 
-# Set of English words (as char tuples)
-word_set = set(tuple(word) for word in words.words())
+# Set of lowercase English words (as char tuples)
+word_set = set(tuple(word.lower()) for word in words.words())
 
 
 def _required_str_option(name: str, description: str) -> dict:
@@ -40,7 +40,7 @@ class Decipher(commands.Cog):
         )],
     )
     async def anagram(self, ctx: SlashContext, word: str):
-        '''Find all available English language anagrams of a given word.'''
+        '''Find all available English language anagrams for a given word.'''
         if len(word) > 10:
             await _error_message(ctx, 'Too big of a word.')
             return
@@ -99,6 +99,46 @@ class Decipher(commands.Cog):
         if not text or text.isspace():
             await _error_message(ctx, 'Empty message.')
             return
+        await ctx.send(text)
+
+    @cog_ext.cog_slash(
+        name='crossword',
+        options=[_required_str_option(
+            'pattern',
+            "Pattern to be searched for, with '?' as wildcard."
+        )],
+    )
+    async def crossword_solver(self, ctx: SlashContext, pattern: str):
+        '''Search for English words that match given pattern.'''
+
+        def _match(pattern: str, word: str):
+            '''Wildcard match between pattern and word.'''
+            if len(pattern) != len(word):
+                return False
+            for i, _ in enumerate(pattern):
+                if pattern[i] not in (word[i], '?'):
+                    return False
+            return True
+
+        # Build list of solutions by exhaustively iteracting over word set
+        text = f"Solutions for ***{pattern}***:"
+        solutions = []
+        for word in word_set:
+            if _match(pattern, word):
+                solutions.append(''.join(word))
+
+        # Show ordered solutions (up to a hard limit)
+        if solutions:
+            max_shown = 16
+            for count, word in enumerate(sorted(solutions)):
+                text += f"\n• _{word}_"
+                if count == max_shown - 1:
+                    break
+            if len(solutions) > max_shown:
+                excess = len(solutions) - max_shown
+                text += f"\n(+ ***{excess}*** more not shown here...)"
+        else:
+            text += '\nNone found...'
         await ctx.send(text)
 
     @cog_ext.cog_slash(
