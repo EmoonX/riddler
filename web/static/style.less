@@ -1489,7 +1489,6 @@ ol {
   counter-reset: item;
 
   > li {
-    margin: 10px 20px;
     list-style-type: none;
     counter-increment: item;
 
@@ -1503,12 +1502,18 @@ ol {
     > nav.extension-links, > figure {
       display: flex;
       justify-content: space-evenly;
-      margin: 50px 0;  
+      margin: 2em 0 1em;
 
       figure {
         text-align: center;
       }
     }
+  }
+  &#how-it-works > li {
+    margin: 0.6em;
+  }
+  &#installation-and-usage > li {
+    padding: 0.8em;
   }
 }
 

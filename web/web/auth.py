@@ -11,6 +11,7 @@ from oauthlib.oauth2.rfc6749.errors import (
 )
 
 from countries import country_names
+from webclient import bot_request
 from util.db import database
 
 # Discord OAuth2 sessionz
@@ -49,7 +50,7 @@ def discord_session_init(app: Quart):
     # Create session cookie
     global session_cookie
     session_cookie = \
-            SecureCookieSessionInterface().get_signing_serializer(app)
+        SecureCookieSessionInterface().get_signing_serializer(app)
 
 
 @auth.route('/register', methods=['GET', 'POST'])
@@ -92,7 +93,8 @@ async def register():
     await database.execute(query, values)
 
     # Redirect to post-registration page
-    return redirect(url_for('info.info_page', page='about'))
+    url = url_for('info.info_page', page='about') + '#wonderland-invite'
+    return redirect(url)
 
 
 @auth.get('/login')

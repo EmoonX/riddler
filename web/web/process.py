@@ -54,7 +54,7 @@ async def process_url(username=None, disc=None, path=None):
             # Page is not inside root path (e.g forum or admin pages)
             return 'Not part of root path', 403
 
-        ok, invite_code = await ph.build_player_riddle_data()
+        ok = await ph.build_player_riddle_data()
         if not ok:
             # Banned player
             return 'Banned player', 403
@@ -86,10 +86,6 @@ async def process_url(username=None, disc=None, path=None):
                     f"({tnow})"
             )
             message, status_code = ph.riddle_alias, 200
-
-        # if invite_code:
-        #     # If starting a new riddle, return invite code to its guild
-        #     message, status_code = invite_code, 401
 
     # All clear
     return message, status_code
@@ -190,7 +186,7 @@ class _PathHandler:
 
         return True
 
-    async def build_player_riddle_data(self) -> (bool, str):
+    async def build_player_riddle_data(self) -> bool:
         '''Build player riddle data from database,
         creating it if not present.'''
 
@@ -202,7 +198,7 @@ class _PathHandler:
         values = {'username': self.username, 'disc': self.disc}
         player = await database.fetch_one(query, values)
         if player['banned']:
-            return False, None
+            return False
 
         async def _get_data():
             '''Get player riddle data.'''
@@ -217,7 +213,6 @@ class _PathHandler:
         # Check if player's riddle acount already exists
         values['riddle'] = self.riddle_alias
         riddle_account = await _get_data()
-        invite_code = None
         if not riddle_account:
             # If negative, create a brand new one
             query = '''
@@ -226,19 +221,6 @@ class _PathHandler:
             '''
             await database.execute(query, values)
             riddle_account = await _get_data()
-
-            # If player isn't a guild member,
-            # send an invite code to be opened in a new tab
-            query = 'SELECT * FROM riddles WHERE alias = :riddle'
-            riddle = await database.fetch_one(
-                query, {'riddle': self.riddle_alias}
-            )
-            is_member = await bot_request(
-                'is-member-of-guild', guild_id=riddle['guild_id'],
-                username=self.username, disc=self.disc
-            )
-            if is_member == 'False':
-                invite_code = riddle['invite_code']
 
         # Update current riddle being played
         query = '''
@@ -249,7 +231,7 @@ class _PathHandler:
 
         # Build dict from query result
         self.riddle_account = dict(riddle_account)
-        return True, invite_code
+        return True
 
     async def process(self):
         '''Process level path.
