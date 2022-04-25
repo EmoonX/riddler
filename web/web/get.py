@@ -60,8 +60,8 @@ async def get_current_riddle_data():
     # Create and return JSON dict with data
     data = {
         'alias': alias,
-        'full_name': riddle['full_name'], 'icon_url': icon_url,
-        'visited_level': riddle['last_visited_level'],
+        'fullName': riddle['full_name'], 'iconUrl': icon_url,
+        'visitedLevel': riddle['last_visited_level'],
     }
     data = json.dumps(data)
     return data

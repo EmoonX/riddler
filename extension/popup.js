@@ -22,26 +22,26 @@ $(_ => {
   // Set "Update hosts" button click event
   $('[name=update-hosts]').on('click', updateHosts);
 
+  // Get message data from background.js
   let port = chrome.extension.connect(
     { name: 'Communication with background.js' }
   );
   port.onMessage.addListener(data => {
     console.log('Received data from background.js...');
     console.log(data);
-    const riddleData = data.riddleData;
-    const pages = data.pages;
-    if (riddleData) {
+    const alias = data.currentRiddle;
+    if (alias) {
       // Show current riddle info in extension's popup
-      const alias = riddleData['alias'];
-      const levelName = riddleData['visited_level'];
+      const riddle = data.riddles[alias];
+      const levelName = riddle.visitedLevel;
       const explorerURL = `https://riddler.app/${alias}/levels`;
-      $('#current-icon').attr('src', riddleData['icon_url']);
-      $('#current-name').text(riddleData['full_name']);
+      $('#current-icon').attr('src', data.iconUrl);
+      $('#current-name').text(data.fullName);
       $('#current-link').attr('href', explorerURL);
       $('#visited-level').text(`Level ${levelName}`);
 
       // Build HTML for list of files of currently visited level
-      insertFiles($('.page-explorer'), pages['/'], -1);
+      insertFiles($('.page-explorer'), riddle.pages['/'], -1);
     }
   });
 });

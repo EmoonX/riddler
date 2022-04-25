@@ -1,35 +1,31 @@
-export var riddleData;
+/** Dictionary of all durrent player riddle data. */
+var riddles = {};
 
 /** Current riddle alias. */
 var currentRiddle;
 
-/** Level currently being visited. */
-var visitedLevel;
-
-/** Dictionary of all folders and pages/files. */
-var pages = {};
-
 /** Inits page explorer for current visited riddle level. */
 export function initExplorer(callback) {
   const DATA_URL = 'https://riddler.app/get-current-riddle-data';
-  $.get(DATA_URL, text => {
-    riddleData = JSON.parse(text);
+  $.get(DATA_URL, json => {
+    const riddleData = JSON.parse(json);
     currentRiddle = riddleData['alias'];
-    visitedLevel = riddleData['visited_level'];
     const pagesUrl =
       `https://riddler.app/${currentRiddle}`
-        + `/levels/get-pages/${visitedLevel}`;
-    $.get(pagesUrl, data => {
-      setPages(data);
-      callback(pages);
+        + `/levels/get-pages/${riddleData.visitedLevel}`;
+    $.get(pagesUrl, json => {
+      const pagesData = JSON.parse(json);
+      buildRiddle(riddleData, pagesData);
+      callback(riddles, currentRiddle);
     });
   });
 }
 
-/** Sets pages dict(s) from JSON data. */
-function setPages(json) {
-  pages = JSON.parse(json);
-  pages = pages[visitedLevel];
+/** Builds riddle dict from JSON data. */
+function buildRiddle(riddleData, pagesData) {
+  riddles[currentRiddle] = riddleData;
+  const riddle = riddles[currentRiddle];
+  riddle.pages = pagesData[riddle.visitedLevel];
 }
 
 /** Recursively inserts files on parent with correct margin. */

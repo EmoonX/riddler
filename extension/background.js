@@ -1,4 +1,4 @@
-import { initExplorer, riddleData } from './explorer.js';
+import { initExplorer } from './explorer.js';
 
 /** Wildcard URLs to be matched. */
 const filter = {
@@ -76,13 +76,13 @@ chrome.webRequest.onHeadersReceived.addListener(function (details) {
 }, filter);
 
 $(_ => {
-  initExplorer(pages => {
+  initExplorer((riddles, currentRiddle) => {
     // Send riddle data to popup.js
     chrome.extension.onConnect.addListener(port => {
       console.log('Connected to popup.js...');
       port.postMessage({
-        riddleData: riddleData,
-        pages: pages,
+        riddles: riddles,
+        currentRiddle: currentRiddle,
       });
     });
   });
