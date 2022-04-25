@@ -8,59 +8,42 @@ const filter = {
 /** Time of last login request. */
 var t0;
 
-function sendToServer(url, statusCode) {
-  // Base URL to where requests will be sent to
+/** Sends user-visited URL and its status code to `/process` endpoint. */
+function sendToProcess(visitedUrl, statusCode) {
   const SERVER_URL = 'https://riddler.app';
-
-  // Get session cookie from browser storage
-  const details = {
-    url: SERVER_URL,
-    name: 'session'
-  };
-  chrome.cookies.get(details, cookie => {
+  const url = SERVER_URL + '/process';
+  $.ajax(url, {
     // Request parameters
-    const params = {
-      method: 'POST',
-      mode: 'cors',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'text/uri-list',
-        'Cookie': cookie.name + '=' + cookie.value,
-        'Statuscode': statusCode,
-      },
-      body: url
-    };
-    // Send request to server containing URL text
-    const urlTo = SERVER_URL + '/process';
-    fetch(urlTo, params)
-      .then(res => {
-        console.log(res);
-        res.text().then(text => {
-          if (res.status == 200) {
-            console.log(text);
-          } 
-          else if (res.status == 401) {
-            // If current login request is less than 5 seconds
-            // after marked one, don't open a new login tab.
-            tNow = new Date();
-            dt = tNow - t0;
-            if (t0 && dt < 5000) {
-              return;
-            }
-            // Mark time of current login request
-            t0 = tNow;
+    type: 'POST',
+    contentType: 'text/uri-list',
+    headers: {
+      'Statuscode': statusCode,
+    },
+    data: visitedUrl,
 
-            if (text == 'Not logged in') {         
-              // Not logged in, so open Discord auth page on new tab
-              console.log('401: Not logged in');
-              const login = SERVER_URL + '/login';
-              chrome.tabs.create({url: login});
-            }
-          }
-        });
-      })
-      .then(error => {console.log(error)})
-    ;
+    // Callbacks on successful and failed responses
+    success: text => {
+      console.log(`[${text}] Valid page found`);
+    },
+    error: xhr => {
+      console.log(`[${xhr.status}] ${xhr.responseText}`);
+      if (xhr.status == 401) {
+        // If current login request is less than 5 seconds
+        // after marked one, don't open a new login tab.
+        const tNow = new Date();
+        const dt = tNow - t0;
+        if (t0 && dt < 5000) {
+          return;
+        }
+        t0 = tNow;
+
+        if (xhr.responseText == 'Not logged in') {
+          // Not logged in, so open Discord auth page on new tab
+          const login = SERVER_URL + '/login';
+          chrome.tabs.create({url: login});
+        }
+      }
+    },
   });
 }
 
@@ -71,7 +54,7 @@ chrome.webRequest.onHeadersReceived.addListener(function (details) {
   }
   console.log(details.url, details.statusCode);
   if ([200, 404].indexOf(details.statusCode) !== -1) { 
-    sendToServer(details.url, details.statusCode);
+    sendToProcess(details.url, details.statusCode);
   }  
 }, filter);
 

@@ -1,4 +1,4 @@
-import { insertFiles } from './explorer.js';
+import { update, insertFiles } from './explorer.js';
 
 /** Updates host permissions on button click. */
 function updateHosts() {
@@ -31,12 +31,16 @@ $(_ => {
     console.log(data);
     const alias = data.currentRiddle;
     if (alias) {
+      // Update explorer.js members
+      const riddles = data.riddles;
+      update(riddles, alias);
+
       // Show current riddle info in extension's popup
-      const riddle = data.riddles[alias];
+      const riddle = riddles[alias];
       const levelName = riddle.visitedLevel;
       const explorerURL = `https://riddler.app/${alias}/levels`;
-      $('#current-icon').attr('src', data.iconUrl);
-      $('#current-name').text(data.fullName);
+      $('#current-icon').attr('src', riddle.iconUrl);
+      $('#current-name').text(riddle.fullName);
       $('#current-link').attr('href', explorerURL);
       $('#visited-level').text(`Level ${levelName}`);
 

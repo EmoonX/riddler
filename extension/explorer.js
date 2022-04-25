@@ -4,6 +4,12 @@ var riddles = {};
 /** Current riddle alias. */
 var currentRiddle;
 
+/** Updates members from popup.js state. */
+export function update(_riddles, _currentRiddle) {
+  riddles = _riddles;
+  currentRiddle = _currentRiddle;
+}
+
 /** Inits page explorer for current visited riddle level. */
 export function initExplorer(callback) {
   const DATA_URL = 'https://riddler.app/get-current-riddle-data';

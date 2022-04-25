@@ -34,7 +34,6 @@ async def process_url(username=None, disc=None, path=None):
         # Receive path from request
         if not auto:
             path = (await request.data).decode('utf-8')
-        # print(path)
 
         # Get status code from request header (default 200)
         status_code = request.headers.get('Statuscode', 200)
