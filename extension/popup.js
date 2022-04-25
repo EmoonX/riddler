@@ -51,7 +51,7 @@ $(_ => {
       $('#current-icon').attr('src', riddle.iconUrl);
       $('#current-name').text(riddle.fullName);
       $('#current-link').attr('href', explorerURL);
-      $('#level > .current').text(`Level ${levelName}`);
+      $('#level > var.current').text(levelName);
       if (!level.previous) {
         $('#level > .previous').addClass('disabled');
       }

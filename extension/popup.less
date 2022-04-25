@@ -6,6 +6,11 @@
   font-family: standard;
   src: url("fonts/standard.ttf");
 }
+@font-face {
+  font-family: digital-mono;
+  src: url("/fonts/digital-7-mono.ttf");
+  unicode-range: U+00-B0, U+100-FFFF;
+}
 
 body {
   display: flex;
@@ -86,21 +91,36 @@ section {
     #level {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       width: 180px;
-      line-height: 1em;
       font-size: 0.9em;
 
+      > var.current {
+        margin-bottom: 0.2em;
+        font-family: digital-mono;
+        font-size: 1.2em;
+        font-weight: bold;
+        font-style: normal;
+        letter-spacing: 0.15em;
+        text-shadow:
+          0 0 0.4em crimson, 0 0 0.8em crimson, 0 0 1.2em crimson;
+      }
       > .previous, > .next {
+        width: 1em;
+        height: 1em;
+        border: thin solid rgba(255, 255, 255, 0.5);
+        border-radius: 25%;
+        line-height: 1em;
         font-size: 1.2em;
         user-select: none;
 
         &:not(.disabled) {
           cursor: pointer;
-          transition: color 0.2s, text-shadow 0.2s;
+          transition: background-color 0.2s, color 0.2s;
 
           &:hover {
-            color: lightgray;
-            text-shadow: 0 0 0.4em white, 0 0 1.2em white;
+            color: black;
+            background-color: white;
           }
         }
         &.disabled {
