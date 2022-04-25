@@ -12,9 +12,9 @@ var t0;
 function sendToProcess(visitedUrl, statusCode) {
   const SERVER_URL = 'https://riddler.app';
   const url = SERVER_URL + '/process';
-  $.ajax(url, {
+  $.post({
     // Request parameters
-    type: 'POST',
+    url: url,
     contentType: 'text/uri-list',
     headers: {
       'Statuscode': statusCode,
@@ -61,7 +61,7 @@ chrome.webRequest.onHeadersReceived.addListener(details => {
 $(_ => {
   initExplorer((riddles, currentRiddle) => {
     // Send riddle data to popup.js
-    chrome.extension.onConnect.addListener(port => {
+    chrome.runtime.onConnect.addListener(port => {
       console.log('Connected to popup.js...');
       port.postMessage({
         riddles: riddles,

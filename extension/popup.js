@@ -3,19 +3,27 @@ import { update, insertFiles } from './explorer.js';
 /** Updates host permissions on button click. */
 function updateHosts() {
   const HOSTS_URL = 'https://riddler.app/get-riddle-hosts';
-  $.get(HOSTS_URL, data => {
-    const hosts = data.split(' ');
-    chrome.permissions.request(
-      { origins: hosts },
-      granted => {
-        if (granted) {
-          console.log('OK!');
-        } else {
-          console.log('NO :(');
-        }
-      }
-    );
+  let hosts;
+  $.get({
+    // Async request because Firefox got... issues
+    url: HOSTS_URL,
+    async: false,
+    success: data => {
+      hosts = data.split(' ');
+      console.log(hosts);
+    },
   });
+  chrome.permissions.request(
+    { origins: hosts },
+    granted => {
+      if (granted) {
+        console.log('OK!');
+      } else {
+        console.log('NO :(');
+        console.log(chrome.runtime.lastError);
+      }
+    }
+  );
 }
 
 $(_ => {
@@ -23,7 +31,7 @@ $(_ => {
   $('[name=update-hosts]').on('click', updateHosts);
 
   // Get message data from background.js
-  let port = chrome.extension.connect(
+  let port = chrome.runtime.connect(
     { name: 'Communication with background.js' }
   );
   port.onMessage.addListener(data => {
