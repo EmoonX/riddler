@@ -1,3 +1,10 @@
+import { initExplorer, riddleData } from './explorer.js';
+
+/** Wildcard URLs to be matched. */
+const filter = {
+  urls: ['*://*/*']
+};
+
 /** Time of last login request. */
 var t0;
 
@@ -57,12 +64,6 @@ function sendToServer(url, statusCode) {
   });
 }
 
-const filter = {
-  urls: [
-    '*://*/*'
-  ]
-};
-
 chrome.webRequest.onHeadersReceived.addListener(function (details) {
   // Send a process request to server whenever response is received
   if (details.url.includes('riddler.app')) {
@@ -73,3 +74,16 @@ chrome.webRequest.onHeadersReceived.addListener(function (details) {
     sendToServer(details.url, details.statusCode);
   }  
 }, filter);
+
+$(_ => {
+  initExplorer(pages => {
+    // Send riddle data to popup.js
+    chrome.extension.onConnect.addListener(port => {
+      console.log('Connected to popup.js...');
+      port.postMessage({
+        riddleData: riddleData,
+        pages: pages,
+      });
+    });
+  });
+});

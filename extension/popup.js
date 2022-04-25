@@ -1,78 +1,47 @@
-import {
-  initExplorer
-}
-  from './explorer.js';
-
-/** Sends synchronous GET request to target URL and return response text. */
-function request(url) {
-  const request = new XMLHttpRequest();
-  request.open('GET', url, false);
-  request.send(null);
-  if (request.status === 200) {
-    const data = request.responseText;
-    return data;
-  }
-}
-
-/** Retrieves riddle host domains. */
-function getRiddleHosts() {
-  const HOSTS_URL = 'https://riddler.app/get-riddle-hosts';
-  const data = request(HOSTS_URL);
-  const hosts = data.split(" ");
-  return hosts;
-}
+import { insertFiles } from './explorer.js';
 
 /** Updates host permissions on button click. */
 function updateHosts() {
-  const hosts = getRiddleHosts();
-  console.log(hosts);
-  chrome.permissions.request({
-    origins: hosts,
-  }, function(granted) {
-    if (granted) {
-      console.log('OK!');
-    } else {
-      console.log('NO :(');
-    }
+  const HOSTS_URL = 'https://riddler.app/get-riddle-hosts';
+  $.get(HOSTS_URL, data => {
+    const hosts = data.split(' ');
+    chrome.permissions.request(
+      { origins: hosts },
+      granted => {
+        if (granted) {
+          console.log('OK!');
+        } else {
+          console.log('NO :(');
+        }
+      }
+    );
   });
 }
 
-/** Retrieves current riddle data for authenticated user. */
-function getCurrentRiddleData() {
-  const DATA_URL = 'https://riddler.app/get-current-riddle-data';
-  const data = request(DATA_URL);
-  return data;
-}
-
-/** Retrieves current level user found pages. */
-function getCurrentLevelPages(riddle, level_name) {
-  const PAGES_URL =
-    `https://riddler.app/${riddle}/levels/get-pages/${level_name}`;
-  const pages = request(PAGES_URL);
-  return pages;
-}
-
-window.onload = (_ => {
+$(_ => {
   // Set "Update hosts" button click event
-  document.getElementsByName('update-hosts')[0]
-    .addEventListener('click', updateHosts);
-  
-  // Show current riddle info in extension's popup
-  const text = getCurrentRiddleData();
-  const data = JSON.parse(text);
-  const alias = data['alias'];
-  const levelName = data['visited_level'];
-  const currentIcon = document.getElementById('current-icon');
-  const currentName = document.getElementById('current-name');
-  const currentLink = document.getElementById('current-link');
-  const visitedLevel = document.getElementById('visited-level');
-  const explorerURL = `https://riddler.app/${alias}/levels`;
-  currentIcon.setAttribute('src', data['icon_url']);
-  currentName.textContent = data['full_name'];
-  currentLink.setAttribute('href', explorerURL);
-  visitedLevel.textContent = `Level ${levelName}`;
+  $('[name=update-hosts]').on('click', updateHosts);
 
-  // Build page explorer
-  const pagesData = getCurrentLevelPages(alias, levelName);
-  initExplorer(alias, pagesData, levelName);
+  let port = chrome.extension.connect(
+    { name: 'Communication with background.js' }
+  );
+  port.onMessage.addListener(data => {
+    console.log('Received data from background.js...');
+    console.log(data);
+    const riddleData = data.riddleData;
+    const pages = data.pages;
+    if (riddleData) {
+      // Show current riddle info in extension's popup
+      const alias = riddleData['alias'];
+      const levelName = riddleData['visited_level'];
+      const explorerURL = `https://riddler.app/${alias}/levels`;
+      $('#current-icon').attr('src', riddleData['icon_url']);
+      $('#current-name').text(riddleData['full_name']);
+      $('#current-link').attr('href', explorerURL);
+      $('#visited-level').text(`Level ${levelName}`);
+
+      // Build HTML for list of files of currently visited level
+      insertFiles($('.page-explorer'), pages['/'], -1);
+    }
+  });
 });

@@ -1,32 +1,47 @@
+export var riddleData;
+
 /** Current riddle alias. */
 var currentRiddle;
+
+/** Level currently being visited. */
+var visitedLevel;
 
 /** Dictionary of all folders and pages/files. */
 var pages = {};
 
-/** Inits page explorer for given riddle level. */
-export function initExplorer(alias, pagesData, levelName) {
-  currentRiddle = alias;
-  setPages(pagesData, levelName);
-  insertFiles($('.page-explorer'), pages['/'], '/', -1);
+/** Inits page explorer for current visited riddle level. */
+export function initExplorer(callback) {
+  const DATA_URL = 'https://riddler.app/get-current-riddle-data';
+  $.get(DATA_URL, text => {
+    riddleData = JSON.parse(text);
+    currentRiddle = riddleData['alias'];
+    visitedLevel = riddleData['visited_level'];
+    const pagesUrl =
+      `https://riddler.app/${currentRiddle}`
+        + `/levels/get-pages/${visitedLevel}`;
+    $.get(pagesUrl, data => {
+      setPages(data);
+      callback(pages);
+    });
+  });
 }
 
 /** Sets pages dict(s) from JSON data. */
-function setPages(json, levelName) {
+function setPages(json) {
   pages = JSON.parse(json);
-  pages = pages[levelName];
+  pages = pages[visitedLevel];
 }
 
 /** Recursively inserts files on parent with correct margin. */
-function insertFiles(parent, object, filename, count) {
+export function insertFiles(parent, object, count) {
   for (const childFilename in object.children) {
     const child = object.children[childFilename];
     const figure = getFileFigureHtml(child, childFilename, count + 1);
       parent.append(figure);
     if (child.folder) {
-      const div = $('<div class="folder-files"></div>')
+      const div = $('<div class="folder-files"></div>');
       div.appendTo(parent);
-      insertFiles(div, child, childFilename, count + 1);
+      insertFiles(div, child, count + 1);
     }
   }
 }
