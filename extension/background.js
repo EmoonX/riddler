@@ -47,7 +47,7 @@ function sendToProcess(visitedUrl, statusCode) {
   });
 }
 
-chrome.webRequest.onHeadersReceived.addListener(function (details) {
+chrome.webRequest.onHeadersReceived.addListener(details => {
   // Send a process request to server whenever response is received
   if (details.url.includes('riddler.app')) {
     return;

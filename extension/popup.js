@@ -42,10 +42,11 @@ $(_ => {
       $('#current-icon').attr('src', riddle.iconUrl);
       $('#current-name').text(riddle.fullName);
       $('#current-link').attr('href', explorerURL);
-      $('#visited-level').text(`Level ${levelName}`);
+      $('#visited-level > .current').text(`Level ${levelName}`);
 
       // Build HTML for list of files of currently visited level
-      insertFiles($('.page-explorer'), riddle.pages['/'], -1);
+      const levelPages = riddle.levels[levelName].pages['/'];
+      insertFiles($('.page-explorer'), levelPages, -1);
     }
   });
 });

@@ -84,7 +84,14 @@ section {
       }
     }
     #visited-level {
+      display: flex;
+      justify-content: space-between;
+      width: 180px;
       font-size: 0.95em;
+
+      > .previous, > .next {
+        cursor: pointer;
+      }
     }
     .page-explorer {
       margin: 0.8em auto 0.4em;

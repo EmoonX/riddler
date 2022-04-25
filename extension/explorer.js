@@ -17,8 +17,7 @@ export function initExplorer(callback) {
     const riddleData = JSON.parse(json);
     currentRiddle = riddleData['alias'];
     const pagesUrl =
-      `https://riddler.app/${currentRiddle}`
-        + `/levels/get-pages/${riddleData.visitedLevel}`;
+      `https://riddler.app/${currentRiddle}/levels/get-pages`;
     $.get(pagesUrl, json => {
       const pagesData = JSON.parse(json);
       buildRiddle(riddleData, pagesData);
@@ -27,11 +26,28 @@ export function initExplorer(callback) {
   });
 }
 
-/** Builds riddle dict from JSON data. */
+/** Builds riddle dict from riddle and levels JSON data. */
 function buildRiddle(riddleData, pagesData) {
   riddles[currentRiddle] = riddleData;
   const riddle = riddles[currentRiddle];
-  riddle.pages = pagesData[riddle.visitedLevel];
+  riddle.shownLevel = riddle.visitedLevel;
+  riddle.levels = {};
+  let previousLevel;
+  $.each(pagesData, (levelName, pages) => {
+    let previousName = null;
+    if (previousLevel) {
+      previousName = previousLevel.name;
+      previousLevel.nextLevel = levelName;
+    }
+    const level = {
+      name: levelName,
+      pages: pages,
+      previousLevel: previousName,
+    }
+    riddle.levels[levelName] = level;
+    previousLevel = level;
+  });
+  previousLevel.nextLevel = null;
 }
 
 /** Recursively inserts files on parent with correct margin. */
@@ -68,6 +84,17 @@ function getFileFigureHtml(object, filename, count) {
     </figure>
   `;
   return html;
+}
+
+/** Changes displayed level to previous or next one, upon arrow click. */
+function changeLevel() {
+  const riddle = riddles[currentRiddle];
+  const currentLevel = riddle.levels[riddle.shownLevel];
+  const levelName =
+    $(this).hasClass('previous') ?
+    currentLevel.previousLevel : currentLevel.nextLevel;
+  riddle.shownLevel = levelName;
+  $(this).parent().children('.current').text(`Level ${levelName}`);
 }
 
 /** Selects file and unselect the other ones, as in a file explorer. */
@@ -110,6 +137,8 @@ function popIcons(explorer) {
 }
 
 $(_ => {
+  $('#visited-level > .previous').on('click', changeLevel);
+  $('#visited-level > .next').on('click', changeLevel);
   $('.page-explorer').on('click', 'figure.file', clickFile);
   $('.page-explorer').on('dblclick', 'figure.file', doubleClickFile);
 });
