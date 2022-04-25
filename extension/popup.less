@@ -83,14 +83,31 @@ section {
         margin-right: 10px;
       }
     }
-    #visited-level {
+    #level {
       display: flex;
       justify-content: space-between;
       width: 180px;
-      font-size: 0.95em;
+      line-height: 1em;
+      font-size: 0.9em;
 
       > .previous, > .next {
-        cursor: pointer;
+        font-size: 1.2em;
+        user-select: none;
+
+        &:not(.disabled) {
+          cursor: pointer;
+          transition: color 0.2s, text-shadow 0.2s;
+
+          &:hover {
+            color: lightgray;
+            text-shadow:
+              0 0 0.4em white, 0 0 0.8em white,
+              0 0 1.2em white, 0 0 1.6em white;
+          }
+        }
+        &.disabled {
+          color: #666;
+        }
       }
     }
     .page-explorer {

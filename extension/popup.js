@@ -38,14 +38,20 @@ $(_ => {
       // Show current riddle info in extension's popup
       const riddle = riddles[alias];
       const levelName = riddle.visitedLevel;
+      const level = riddle.levels[levelName];
       const explorerURL = `https://riddler.app/${alias}/levels`;
       $('#current-icon').attr('src', riddle.iconUrl);
       $('#current-name').text(riddle.fullName);
       $('#current-link').attr('href', explorerURL);
-      $('#visited-level > .current').text(`Level ${levelName}`);
-
+      $('#level > .current').text(`Level ${levelName}`);
+      if (!level.previous) {
+        $('#level > .previous').addClass('disabled');
+      }
+      if (!level.next) {
+        $('#level > .next').addClass('disabled');
+      }
       // Build HTML for list of files of currently visited level
-      const levelPages = riddle.levels[levelName].pages['/'];
+      const levelPages = level.pages['/'];
       insertFiles($('.page-explorer'), levelPages, -1);
     }
   });

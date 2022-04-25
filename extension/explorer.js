@@ -37,17 +37,17 @@ function buildRiddle(riddleData, pagesData) {
     let previousName = null;
     if (previousLevel) {
       previousName = previousLevel.name;
-      previousLevel.nextLevel = levelName;
+      previousLevel.next = levelName;
     }
     const level = {
       name: levelName,
       pages: pages,
-      previousLevel: previousName,
+      previous: previousName,
     }
     riddle.levels[levelName] = level;
     previousLevel = level;
   });
-  previousLevel.nextLevel = null;
+  previousLevel.next = null;
 }
 
 /** Recursively inserts files on parent with correct margin. */
@@ -89,12 +89,16 @@ function getFileFigureHtml(object, filename, count) {
 /** Changes displayed level to previous or next one, upon arrow click. */
 function changeLevel() {
   const riddle = riddles[currentRiddle];
-  const currentLevel = riddle.levels[riddle.shownLevel];
+  let level = riddle.levels[riddle.shownLevel];
   const levelName =
     $(this).hasClass('previous') ?
-    currentLevel.previousLevel : currentLevel.nextLevel;
+      level.previous : level.next;
   riddle.shownLevel = levelName;
-  $(this).parent().children('.current').text(`Level ${levelName}`);
+  level = riddle.levels[levelName];
+  console.log(level);
+  $('#level > .current').text(`Level ${levelName}`);
+  $('#level > .previous').toggleClass('disabled', !level.previous);
+  $('#level > .next').toggleClass('disabled', !level.next);
 }
 
 /** Selects file and unselect the other ones, as in a file explorer. */
@@ -137,8 +141,8 @@ function popIcons(explorer) {
 }
 
 $(_ => {
-  $('#visited-level > .previous').on('click', changeLevel);
-  $('#visited-level > .next').on('click', changeLevel);
+  $('#level').on('click', '.previous:not(.disabled)', changeLevel);
+  $('#level').on('click', '.next:not(.disabled)', changeLevel);
   $('.page-explorer').on('click', 'figure.file', clickFile);
   $('.page-explorer').on('dblclick', 'figure.file', doubleClickFile);
 });
