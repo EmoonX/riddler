@@ -1,3 +1,6 @@
+/** Base server URL. */
+const SERVER_URL = 'https://riddler.app';
+
 /** Dictionary of all durrent player riddle data. */
 var riddles = {};
 
@@ -12,14 +15,14 @@ export function update(_riddles, _currentRiddle) {
 
 /** Inits page explorer for current visited riddle level. */
 export function initExplorer(callback) {
-  const DATA_URL = 'https://riddler.app/get-current-riddle-data';
+  const DATA_URL = SERVER_URL + '/get-current-riddle-data';
   $.get(DATA_URL, json => {
     const riddleData = JSON.parse(json);
     currentRiddle = riddleData['alias'];
-    const pagesUrl =
-      `https://riddler.app/${currentRiddle}/levels/get-pages`;
+    const pagesUrl = SERVER_URL + `/${currentRiddle}/levels/get-pages`;
     $.get(pagesUrl, json => {
       const pagesData = JSON.parse(json);
+      console.log(pagesData)
       buildRiddle(riddleData, pagesData);
       callback(riddles, currentRiddle);
     });
@@ -28,26 +31,34 @@ export function initExplorer(callback) {
 
 /** Builds riddle dict from riddle and levels JSON data. */
 function buildRiddle(riddleData, pagesData) {
-  riddles[currentRiddle] = riddleData;
+  riddles[currentRiddle] = {};
   const riddle = riddles[currentRiddle];
+  const levelOrdering = riddleData.levelOrderings[currentRiddle];
+  riddle.fullName = riddleData.fullName;
+  riddle.iconUrl = SERVER_URL + `/static/riddles/${currentRiddle}.png`
+  riddle.visitedLevel = riddleData.lastVisitedLevels[currentRiddle];
   riddle.shownLevel = riddle.visitedLevel;
   riddle.levels = {};
-  let previousLevel;
   $.each(pagesData, (levelName, pages) => {
-    let previousName = null;
-    if (previousLevel) {
-      previousName = previousLevel.name;
-      previousLevel.next = levelName;
-    }
     const level = {
       name: levelName,
       pages: pages,
-      previous: previousName,
     }
     riddle.levels[levelName] = level;
-    previousLevel = level;
   });
-  previousLevel.next = null;
+  $.each(levelOrdering, (i, levelName) => {
+    let previousName = null;
+    if (i > 0) {
+      previousName = levelOrdering[i-1];
+      riddle.levels[previousName].next = levelName;
+    }
+    riddle.levels[levelName].previous = previousName;
+  });
+}
+
+export function setCurrentRiddleAndLevel(riddle, level) {
+  currentRiddle = riddle;
+  riddles[riddle].currentLevel = level;
 }
 
 /** Recursively inserts files on parent with correct margin. */
@@ -71,7 +82,7 @@ function getFileFigureHtml(object, filename, count) {
     const i = filename.lastIndexOf('.');
     type = filename.substr(i+1);
   }
-  const url = `https://riddler.app/static/icons/extensions/${type}.png`;
+  const url = SERVER_URL + `/static/icons/extensions/${type}.png`;
   const state = (type == 'folder') ? 'open' : '';
   const margin = `${0.4 * count}em`;
   const img = `<img src="${url}">`;
@@ -95,10 +106,11 @@ function changeLevel() {
       level.previous : level.next;
   riddle.shownLevel = levelName;
   level = riddle.levels[levelName];
-  console.log(level);
-  $('#level > .current').text(`Level ${levelName}`);
+  $('#level > var.current').text(levelName);
   $('#level > .previous').toggleClass('disabled', !level.previous);
   $('#level > .next').toggleClass('disabled', !level.next);
+  $('.page-explorer').empty();
+  insertFiles($('.page-explorer'), level.pages['/'], -1);
 }
 
 /** Selects file and unselect the other ones, as in a file explorer. */
@@ -117,8 +129,7 @@ function doubleClickFile() {
   if (j != -1) {
     // Open desired page in new tab
     const path = $(this).attr('title');
-    const endpoint =
-      `https://riddler.app/${currentRiddle}/levels/get-root-path`;
+    const endpoint = SERVER_URL + `${currentRiddle}/levels/get-root-path`;
     $.get(endpoint, rootPath => {
       const url = rootPath + path;
       window.open(url, '_blank');
