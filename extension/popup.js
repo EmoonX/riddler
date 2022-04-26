@@ -1,4 +1,4 @@
-import { update, insertFiles } from './explorer.js';
+import { updateStateInPopup, insertFiles } from './explorer.js';
 
 /** Updates host permissions on button click. */
 function updateHosts() {
@@ -41,7 +41,7 @@ $(_ => {
     if (alias) {
       // Update explorer.js members
       const riddles = data.riddles;
-      update(riddles, alias);
+      updateStateInPopup(riddles, alias);
 
       // Show current riddle info in extension's popup
       const riddle = riddles[alias];

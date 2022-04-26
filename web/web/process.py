@@ -84,7 +84,8 @@ async def process_url(username=None, disc=None, path=None):
                     f"\033[1m{ph.username}\033[0m#\033[1m{ph.disc}\033[0m "
                     f"({tnow})"
             )
-            message, status_code = ph.riddle_alias, 200
+            message = f"{ph.riddle_alias} {ph.path_level}"
+            status_code = 200
 
     # All clear
     return message, status_code

@@ -29,32 +29,48 @@ async def get_riddle_hosts():
     return text
 
 
-@get.get('/get-current-riddle-data')
-async def get_current_riddle_data():
-    '''Get current riddle data for authenticated user.'''
+@get.get('/get-user-riddle-data')
+async def get_user_riddle_data():
+    '''Get riddle data for authenticated user.'''
 
     # Get player and riddle data from DB
+    riddles = {}
     user = await discord.get_user()
     query = '''
-        SELECT *
-        FROM riddles r INNER JOIN accounts acc
-        ON r.alias = acc.current_riddle
-        WHERE username = :username AND discriminator = :disc
+        SELECT * FROM riddles
+        WHERE alias IN (
+            SELECT current_riddle FROM accounts
+            WHERE username = :username AND discriminator = :disc
+        )
     '''
     values = {'username': user.name, 'disc': user.discriminator}
     current_riddle = await database.fetch_one(query, values)
     if not current_riddle:
         return 'No riddle being played...', 404
-
+    query = '''
+        SELECT * FROM riddles r
+        WHERE alias IN (
+            SELECT riddle FROM user_levels ul
+            WHERE r.alias = ul.riddle
+                AND username = :username AND discriminator = :disc
+        )
+    '''
+    result = await database.fetch_all(query, values)
+    for row in result:
+        alias, full_name = row['alias'], row['full_name']
+        riddles[alias] = {
+            'alias': alias, 'fullName': full_name, 'levelOrdering': [],
+        }
     # Get last visited levels for each riddle
     query = '''
         SELECT * FROM riddle_accounts
         WHERE username = :username AND discriminator = :disc
     '''
     result = await database.fetch_all(query, values)
-    last_visited_levels = {
-        row['riddle']: row['last_visited_level'] for row in result
-    }
+    for row in result:
+        alias, last_visited = row['riddle'], row['last_visited_level']
+        riddles[alias]['visitedLevel'] = last_visited
+
     # Get level ordering for navigating levels in extension
     query = '''
         SELECT * FROM levels lv
@@ -66,19 +82,49 @@ async def get_current_riddle_data():
         ORDER BY is_secret, `index`
     '''
     result = await database.fetch_all(query, values)
-    level_orderings = {}
     for row in result:
         alias, level_name = row['riddle'], row['name']
-        if not alias in level_orderings:
-            level_orderings[alias] = []
-        level_orderings[alias].append(level_name)
+        riddles[alias]['levelOrdering'].append(level_name)
+
+    # Create and return JSON dict with data
+    data = {'riddles': riddles, 'currentRiddle': current_riddle['alias']}
+    data = json.dumps(data)
+    return data
+
+
+@get.get('/get-current-riddle-data')
+async def get_current_riddle_data():
+    '''Get currently being played riddle data for authenticated user.'''
+
+    # Get player and riddle data from DB
+    user = await discord.get_user()
+    query = '''
+        SELECT * FROM accounts acc
+        INNER JOIN riddles r ON acc.current_riddle = r.alias
+        INNER JOIN riddle_accounts racc
+            ON r.alias = racc.riddle
+                AND acc.username = racc.username
+                AND acc.discriminator = racc.discriminator
+        WHERE acc.username = :username AND acc.discriminator = :disc
+    '''
+    values = {'username': user.name, 'disc': user.discriminator}
+    riddle = await database.fetch_one(query, values)
+    if not riddle:
+        return 'No riddle being played...', 404
+    alias = riddle['alias']
+
+    # Get guild icon URL by bot request (or static one)
+    icon_url = await bot_request(
+        'get-riddle-icon-url', guild_id=riddle['guild_id']
+    )
+    if not icon_url:
+        icon_url = f"https://riddler.app/static/riddles/{alias}.png"
 
     # Create and return JSON dict with data
     data = {
-        'alias': current_riddle['alias'],
-        'fullName': current_riddle['full_name'],
-        'lastVisitedLevels': last_visited_levels,
-        'levelOrderings': level_orderings,
+        'alias': alias,
+        'full_name': riddle['full_name'], 'icon_url': icon_url,
+        'visited_level': riddle['last_visited_level'],
     }
     data = json.dumps(data)
     return data

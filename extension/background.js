@@ -1,4 +1,7 @@
-import { initExplorer } from './explorer.js';
+import {
+  initExplorer, sendMessageToPopup, setCurrentRiddleAndLevel
+}
+from './explorer.js';
 
 /** Wildcard URLs to be matched. */
 const filter = {
@@ -24,6 +27,10 @@ function sendToProcess(visitedUrl, statusCode) {
     // Callbacks on successful and failed responses
     success: text => {
       console.log(`[${text}] Valid page found`);
+      const aux = text.split(' ', 2);
+      const riddle = aux[0];
+      const levelName = aux[1];
+      setCurrentRiddleAndLevel(riddle, levelName);
     },
     error: xhr => {
       console.log(`[${xhr.status}] ${xhr.responseText}`);
@@ -59,14 +66,5 @@ chrome.webRequest.onHeadersReceived.addListener(details => {
 }, filter);
 
 $(_ => {
-  initExplorer((riddles, currentRiddle) => {
-    // Send riddle data to popup.js
-    chrome.runtime.onConnect.addListener(port => {
-      console.log('Connected to popup.js...');
-      port.postMessage({
-        riddles: riddles,
-        currentRiddle: currentRiddle,
-      });
-    });
-  });
+  initExplorer();
 });

@@ -7,36 +7,29 @@ var riddles = {};
 /** Current riddle alias. */
 var currentRiddle;
 
-/** Updates members from popup.js state. */
-export function update(_riddles, _currentRiddle) {
-  riddles = _riddles;
-  currentRiddle = _currentRiddle;
-}
-
 /** Inits page explorer for current visited riddle level. */
-export function initExplorer(callback) {
-  const DATA_URL = SERVER_URL + '/get-current-riddle-data';
+export function initExplorer() {
+  const DATA_URL = SERVER_URL + '/get-user-riddle-data';
   $.get(DATA_URL, json => {
-    const riddleData = JSON.parse(json);
-    currentRiddle = riddleData['alias'];
-    const pagesUrl = SERVER_URL + `/${currentRiddle}/levels/get-pages`;
-    $.get(pagesUrl, json => {
-      const pagesData = JSON.parse(json);
-      console.log(pagesData)
-      buildRiddle(riddleData, pagesData);
-      callback(riddles, currentRiddle);
+    const riddlesData = JSON.parse(json);
+    currentRiddle = riddlesData.currentRiddle;
+    $.each(riddlesData.riddles, (alias, data) => {
+      const pagesUrl = SERVER_URL + `/${alias}/levels/get-pages`;
+      $.get(pagesUrl, json => {
+        const pagesData = JSON.parse(json);
+        buildRiddle(data, pagesData);
+      });
     });
+    sendMessageToPopup();
   });
 }
 
 /** Builds riddle dict from riddle and levels JSON data. */
-function buildRiddle(riddleData, pagesData) {
-  riddles[currentRiddle] = {};
-  const riddle = riddles[currentRiddle];
-  const levelOrdering = riddleData.levelOrderings[currentRiddle];
-  riddle.fullName = riddleData.fullName;
-  riddle.iconUrl = SERVER_URL + `/static/riddles/${currentRiddle}.png`
-  riddle.visitedLevel = riddleData.lastVisitedLevels[currentRiddle];
+function buildRiddle(data, pagesData) {
+  const alias = data.alias;
+  riddles[alias] = data;
+  const riddle = riddles[alias];
+  riddle.iconUrl = SERVER_URL + `/static/riddles/${alias}.png`;
   riddle.shownLevel = riddle.visitedLevel;
   riddle.levels = {};
   $.each(pagesData, (levelName, pages) => {
@@ -46,19 +39,31 @@ function buildRiddle(riddleData, pagesData) {
     }
     riddle.levels[levelName] = level;
   });
-  $.each(levelOrdering, (i, levelName) => {
+  $.each(riddle.levelOrdering, (i, levelName) => {
     let previousName = null;
     if (i > 0) {
-      previousName = levelOrdering[i-1];
+      previousName = riddle.levelOrdering[i-1];
       riddle.levels[previousName].next = levelName;
     }
     riddle.levels[levelName].previous = previousName;
   });
 }
 
-export function setCurrentRiddleAndLevel(riddle, level) {
-  currentRiddle = riddle;
-  riddles[riddle].currentLevel = level;
+/** Send message containing module data to popup.js. */
+export function sendMessageToPopup() {
+  chrome.runtime.onConnect.addListener(port => {
+    console.log('Connected to popup.js...');
+    port.postMessage({
+      riddles: riddles,
+      currentRiddle: currentRiddle,
+    });
+  });
+}
+
+/** Updates module members in popup.js state. */
+export function updateStateInPopup(_riddles, _currentRiddle) {
+  riddles = _riddles;
+  currentRiddle = _currentRiddle;
 }
 
 /** Recursively inserts files on parent with correct margin. */
@@ -95,6 +100,13 @@ function getFileFigureHtml(object, filename, count) {
     </figure>
   `;
   return html;
+}
+
+/** Updates current riddle and visited level info. */
+export function setCurrentRiddleAndLevel(riddle, levelName) {
+  currentRiddle = riddle;
+  riddles[currentRiddle].visitedLevel = levelName;
+  riddles[currentRiddle].shownLevel = levelName;
 }
 
 /** Changes displayed level to previous or next one, upon arrow click. */
