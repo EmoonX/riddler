@@ -49,6 +49,13 @@ function buildRiddle(data, pagesData) {
   });
 }
 
+/** Updates current riddle and visited level info. */
+export function setCurrentRiddleAndLevel(riddle, levelName) {
+  currentRiddle = riddle;
+  riddles[currentRiddle].visitedLevel = levelName;
+  riddles[currentRiddle].shownLevel = levelName;
+}
+
 /** Send message containing module data to popup.js. */
 export function sendMessageToPopup() {
   chrome.runtime.onConnect.addListener(port => {
@@ -92,21 +99,23 @@ function getFileFigureHtml(object, filename, count) {
   const margin = `${0.4 * count}em`;
   const img = `<img src="${url}">`;
   const fc = `<figcaption>${filename}</figcaption>`;
+  let fileCount = '';
+  if (object.folder) {
+    const riddle = riddles[currentRiddle];
+    const levelSolved = riddle.shownLevel in riddle.solvedLevels;
+    const filesFound = object.filesFound;
+    const filesTotal = levelSolved ? object.filesTotal : '??';
+    fileCount =
+      `<div class="file-count">(${filesFound} / ${filesTotal})</div>`;
+  }
   const html = `
     <figure class="file ${state}"
       title="${object.path}" style="margin-left: ${margin}"
     >
-      ${img}${fc}
+      ${img}${fc}${fileCount}
     </figure>
   `;
   return html;
-}
-
-/** Updates current riddle and visited level info. */
-export function setCurrentRiddleAndLevel(riddle, levelName) {
-  currentRiddle = riddle;
-  riddles[currentRiddle].visitedLevel = levelName;
-  riddles[currentRiddle].shownLevel = levelName;
 }
 
 /** Changes displayed level to previous or next one, upon arrow click. */

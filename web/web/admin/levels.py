@@ -311,7 +311,7 @@ async def get_pages(alias: str) -> str:
 
     # # Save number of pages/files in folder
     # for folder in folders.values():
-    #     folder['files_total'] = len(folder['files'])
+    #     folder['filesTotal'] = len(folder['files'])
 
     # Return JSON dump
     return json.dumps(pages)

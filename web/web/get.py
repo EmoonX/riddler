@@ -61,6 +61,19 @@ async def get_user_riddle_data():
         riddles[alias] = {
             'alias': alias, 'fullName': full_name, 'levelOrdering': [],
         }
+    # Build set of solved levels
+    query = '''
+        SELECT * FROM user_levels
+        WHERE username = :username AND discriminator = :disc
+            AND completion_time IS NOT NULL
+    '''
+    result = await database.fetch_all(query, values)
+    for row in result:
+        alias, level_name = row['riddle'], row['level_name']
+        if not 'solvedLevels' in riddles[alias] :
+            riddles[alias]['solvedLevels'] = {}
+        riddles[alias]['solvedLevels'][level_name] = True
+
     # Get last visited levels for each riddle
     query = '''
         SELECT * FROM riddle_accounts

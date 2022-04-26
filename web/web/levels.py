@@ -199,7 +199,7 @@ async def get_pages(alias: str, level_name: str = None) -> str:
     # Build recursive dict of folders and files
     base = {
         'children': {}, 'folder': 1,
-        'files_found': 0, 'files_total': 0
+        'filesFound': 0, 'filesTotal': 0
     }
     pages = {}
     for level, level_paths in paths.items():
@@ -214,7 +214,7 @@ async def get_pages(alias: str, level_name: str = None) -> str:
                         children[seg] = deepcopy(base)
                     else:
                         children[seg] = data
-                parent['files_found'] += 1
+                parent['filesFound'] += 1
                 parent = children[seg]
 
     # Get recursively total file count for each folder
@@ -228,7 +228,7 @@ async def get_pages(alias: str, level_name: str = None) -> str:
         parent = pages[level]['/']
         segments = data['path'].split('/')[1:]
         for seg in segments:
-            parent['files_total'] += 1
+            parent['filesTotal'] += 1
             if not seg in parent['children']:
                 # Avoid registering locked folders/pages
                 break

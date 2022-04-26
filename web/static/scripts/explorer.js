@@ -22,7 +22,7 @@ export function toggleExplorer() {
       const folder = node.text();
       const admin = row.parents('.list').hasClass('admin');
       changeDir(explorer, folder, admin);
-      
+
       // Scroll page to accomodate view to margin-top
       $('html').animate({
         scrollTop: row.offset().top
@@ -96,9 +96,9 @@ export function changeDir(explorer, folderPath, admin) {
     }
     const img = `<img src="/static/icons/extensions/${name}.png">`;
     const fc = `<figcaption>${page}</figcaption>`;
-    const figure = `<figure ${current} 
+    const figure = `<figure ${current}
         title="${path}${accessTimeMessage}">${img}${fc}</figure>`;
-    
+
     // Append current level files in correct order
     // (current folders -> other folders -> current files -> other files)
     if (name == 'folder') {
@@ -120,8 +120,8 @@ export function changeDir(explorer, folderPath, admin) {
   popIcons(explorer);
 
   // Update folder's files count and total
-  const found = folder['files_found'];
-  const total = folder['files_total'];
+  const found = folder['filesFound'];
+  const total = folder['filesTotal'];
   explorer.find('.completion .found').text(found);
   explorer.find('.completion .total').text(total);
   toggleCheck(explorer);
@@ -205,4 +205,3 @@ $(_ => {
     reader.readAsText(file);
   });
 });
-  
