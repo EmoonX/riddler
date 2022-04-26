@@ -29,7 +29,7 @@ function buildRiddle(data, pagesData) {
   const alias = data.alias;
   riddles[alias] = data;
   const riddle = riddles[alias];
-  riddle.iconUrl = SERVER_URL + `/static/riddles/${alias}.png`;
+  riddle.iconUrl = `images/riddles/${alias}.png`;
   riddle.shownLevel = riddle.visitedLevel;
   riddle.levels = {};
   $.each(pagesData, (levelName, pages) => {
@@ -94,7 +94,7 @@ function getFileFigureHtml(object, filename, count) {
     const i = filename.lastIndexOf('.');
     type = filename.substr(i+1);
   }
-  const url = SERVER_URL + `/static/icons/extensions/${type}.png`;
+  const url = `images/icons/extensions/${type}.png`;
   const state = (type == 'folder') ? 'open' : '';
   const margin = `${0.4 * count}em`;
   const img = `<img src="${url}">`;
