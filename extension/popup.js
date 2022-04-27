@@ -48,9 +48,9 @@ $(_ => {
       const levelName = riddle.visitedLevel;
       const level = riddle.levels[levelName];
       const explorerURL = `https://riddler.app/${alias}/levels`;
-      $('#current-icon').attr('src', riddle.iconUrl);
-      $('#current-name').text(riddle.fullName);
-      $('#current-link').attr('href', explorerURL);
+      $('#riddle > .icons img.current').attr('src', riddle.iconUrl);
+      $('#riddle > .full-name').text(riddle.fullName);
+      $('#riddle > a').attr('href', explorerURL);
       $('#level > var.current').text(levelName);
       if (!level.previous) {
         $('#level > .previous').addClass('disabled');

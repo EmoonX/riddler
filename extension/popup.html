@@ -10,16 +10,18 @@
   <body>
     <header>
       <img src="images/riddler-glitched-48.png" alt="Riddler head">
-      <div id="riddler-title">Riddler</span>
+      <div id="riddler-title">Riddler</div>
     </header>
     <main>
-      <section id="currently-playing">
+      <div id="currently-playing">
         <div class="label">Currently playing</div>
         <figure id="riddle">
           <div class="icons">
-            <img class="current" src="" alt="???">
+            <a>
+              <img class="current" src="#" alt="...">
+            </a>
           </div>
-          <figcaption class="full-name"></figcaption>
+          <figcaption class="full-name">...</figcaption>
         </figure>
         <div id="level">
           <div class="previous" title="Previous level">◀</div>
@@ -29,8 +31,8 @@
         <div class="page-explorer">
           <!-- JS will append files here -->
         </div>
-      </section>
-      <section id="buttons">
+      </div>
+      <div id="buttons">
         <button type="button" name="update-hosts">
           <img src="images/refresh-icon.png" alt="Refresh icon">Update hosts
         </button>
@@ -41,7 +43,7 @@
           </button>
         </form>
       -->
-      </section>
+      </div>
     </main>
   </body>
 </html>

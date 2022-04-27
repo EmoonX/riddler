@@ -1,7 +1,4 @@
-import {
-  initExplorer, sendMessageToPopup, setCurrentRiddleAndLevel
-}
-from './explorer.js';
+import { initExplorer, updateRiddleData } from './explorer.js';
 
 /** Wildcard URLs to be matched. */
 const filter = {
@@ -25,12 +22,11 @@ function sendToProcess(visitedUrl, statusCode) {
     data: visitedUrl,
 
     // Callbacks on successful and failed responses
-    success: text => {
-      console.log(`[${text}] Valid page found`);
-      const aux = text.split(' ', 2);
-      const riddle = aux[0];
-      const levelName = aux[1];
-      setCurrentRiddleAndLevel(riddle, levelName);
+    success: data => {
+      console.log(
+        `[${data.riddle}] Page "${data.path}" (${data.levelName}) found`
+      );
+      updateRiddleData(data.riddle, data.levelName);
     },
     error: xhr => {
       console.log(`[${xhr.status}] ${xhr.responseText}`);

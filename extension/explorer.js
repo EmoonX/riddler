@@ -12,48 +12,68 @@ export function initExplorer() {
   const DATA_URL = SERVER_URL + '/get-user-riddle-data';
   $.get(DATA_URL, json => {
     const riddlesData = JSON.parse(json);
+    console.log(riddlesData);
     currentRiddle = riddlesData.currentRiddle;
-    $.each(riddlesData.riddles, (alias, data) => {
-      const pagesUrl = SERVER_URL + `/${alias}/levels/get-pages`;
-      $.get(pagesUrl, json => {
-        const pagesData = JSON.parse(json);
-        buildRiddle(data, pagesData);
-      });
+    $.each(riddlesData.riddles, (_, data) => {
+      buildRiddle(data);
     });
     sendMessageToPopup();
   });
 }
 
 /** Builds riddle dict from riddle and levels JSON data. */
-function buildRiddle(data, pagesData) {
+function buildRiddle(data) {
   const alias = data.alias;
-  riddles[alias] = data;
-  const riddle = riddles[alias];
-  riddle.iconUrl = `images/riddles/${alias}.png`;
-  riddle.shownLevel = riddle.visitedLevel;
-  riddle.levels = {};
-  $.each(pagesData, (levelName, pages) => {
-    const level = {
-      name: levelName,
-      pages: pages,
-    }
-    riddle.levels[levelName] = level;
-  });
-  $.each(riddle.levelOrdering, (i, levelName) => {
-    let previousName = null;
-    if (i > 0) {
-      previousName = riddle.levelOrdering[i-1];
-      riddle.levels[previousName].next = levelName;
-    }
-    riddle.levels[levelName].previous = previousName;
+  const pagesUrl = SERVER_URL + `/${alias}/levels/get-pages`;
+  $.get(pagesUrl, json => {
+    const pagesData = JSON.parse(json);
+    riddles[alias] = data;
+    const riddle = riddles[alias];
+    riddle.iconUrl = `images/riddles/${alias}.png`;
+    riddle.shownLevel = riddle.visitedLevel;
+    riddle.levels = {};
+    $.each(pagesData, (levelName, pages) => {
+      const level = {
+        name: levelName,
+        pages: pages,
+      }
+      riddle.levels[levelName] = level;
+    });
+    $.each(riddle.levelOrdering, (i, levelName) => {
+      let previousName = null;
+      if (i > 0) {
+        previousName = riddle.levelOrdering[i-1];
+        riddle.levels[previousName].next = levelName;
+      }
+      riddle.levels[levelName].previous = previousName;
+    });
   });
 }
 
-/** Updates current riddle and visited level info. */
-export function setCurrentRiddleAndLevel(riddle, levelName) {
-  currentRiddle = riddle;
-  riddles[currentRiddle].visitedLevel = levelName;
-  riddles[currentRiddle].shownLevel = levelName;
+/** Updates current dict with possibly new riddle, level and/or page. */
+export function updateRiddleData(alias, levelName) {
+  currentRiddle = alias;
+  if (!(alias in riddles) || !(levelName in riddles[alias].levels)) {
+    // Add new riddle and/or level
+    const DATA_URL = SERVER_URL + `/get-user-riddle-data/${alias}`;
+    $.get(DATA_URL, json => {
+      const data = JSON.parse(json);
+      buildRiddle(data);
+    });
+  } else {
+    // Add (possibly) new page
+    const pagesUrl = SERVER_URL + `/${alias}/levels/get-pages/${levelName}`;
+    $.get(pagesUrl, json => {
+      const pagesData = JSON.parse(json);
+      const riddle = riddles[alias];
+      riddle.visitedLevel = levelName
+      riddle.shownLevel = levelName;
+      $.each(pagesData, (levelName, pages) => {
+        const level = riddle.levels[levelName];
+        level.pages = pages;
+      });
+    });
+  }
 }
 
 /** Send message containing module data to popup.js. */
