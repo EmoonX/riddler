@@ -1,11 +1,9 @@
 from datetime import datetime
 import json
 import re
-from urllib.parse import urlparse
 from pymysql.err import IntegrityError
 
 from quart import Blueprint, request, jsonify
-from quart.app import Logger
 from quart_discord.models import User
 
 from auth import discord
@@ -84,8 +82,12 @@ async def process_url(username=None, disc=None, path=None):
                     f"\033[1m{ph.username}\033[0m#\033[1m{ph.disc}\033[0m "
                     f"({tnow})"
             )
-            message = f"{ph.riddle_alias} {ph.path_level}"
-            status_code = 200
+            response = jsonify(
+                riddle=ph.riddle_alias,
+                levelName=ph.path_level,
+                path=ph.path,
+            )
+            return response
 
     # All clear
     return message, status_code
@@ -216,7 +218,8 @@ class _PathHandler:
         if not riddle_account:
             # If negative, create a brand new one
             query = '''
-                INSERT INTO riddle_accounts (riddle, username, discriminator)
+                INSERT IGNORE INTO riddle_accounts
+                    (riddle, username, discriminator)
                 VALUES (:riddle, :username, :disc)
             '''
             await database.execute(query, values)
