@@ -170,7 +170,7 @@ function doubleClickFile() {
   if (j != -1) {
     // Open desired page in new tab
     const path = $(this).attr('title');
-    const endpoint = SERVER_URL + `${currentRiddle}/levels/get-root-path`;
+    const endpoint = SERVER_URL + `/${currentRiddle}/levels/get-root-path`;
     $.get(endpoint, rootPath => {
       const url = rootPath + path;
       window.open(url, '_blank');
