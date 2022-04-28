@@ -488,13 +488,15 @@ class _PathHandler:
                 values = values | {'level_name': self.path_level, 'time': tnow}
                 await database.execute(query, values)
 
-                # Increment player's riddle page count
+                # Increment player's riddle page count and find time
                 query = '''
-                    UPDATE riddle_accounts SET page_count = page_count + 1
+                    UPDATE riddle_accounts
+                    SET page_count = page_count + 1, last_page_time = :time
                     WHERE riddle = :riddle
                         AND username = :username AND discriminator = :disc
                 '''
-                await database.execute(query, base_values)
+                values = base_values | {'time': tnow}
+                await database.execute(query, values)
 
             # Check and possibly grant an achievement
             await self._process_cheevo()
