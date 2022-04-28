@@ -50,7 +50,7 @@ $(_ => {
       const explorerURL = `https://riddler.app/${alias}/levels`;
       $('#riddle > .icons img.current').attr('src', riddle.iconUrl);
       $('#riddle > .full-name').text(riddle.fullName);
-      $('#riddle > a').attr('href', explorerURL);
+      $('#riddle a').attr('href', explorerURL);
       $('#level > var.current').text(levelName);
       if (!level.previous) {
         $('#level > .previous').addClass('disabled');
