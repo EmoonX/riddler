@@ -71,11 +71,10 @@ async def unlock(request):
         params[param] = value
 
     # Get argument tuple according to method to be called
-    args = ()
-    if params['method'] in ('advance', 'secret_found'):
+    if params['method'] == 'advance':
         args = (params['level'],)
-    elif params['method'] in ('beat', 'secret_solve'):
-        args = (params['level'], params['points'], params['first_to_solve'])
+    elif params['method'] == 'beat':
+        args = (params['level'], params['points'])
     elif params['method'] == 'cheevo_found':
         args = (params['cheevo'], params['points'], params['page'])
 
@@ -90,7 +89,7 @@ async def unlock(request):
         return web.Response(status=500)
 
     # Special procedures to be done upon score increase
-    methods = ['beat', 'cheevo_found', 'secret_solve', 'game_completed']
+    methods = ['beat', 'cheevo_found', 'game_completed']
     if params['method'] in methods:
         # Check if player completed all levels
         query = '''

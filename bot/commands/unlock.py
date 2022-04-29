@@ -103,39 +103,67 @@ class UnlockHandler:
                 self.full_name, self.discord_handle
             )
 
-    async def beat(self, level: dict, points: int, first_to_solve: bool):
+    async def advance(self, level: dict):
+        '''Advance to level when player arrives at its front page.
+        "reached" role is granted to user and thus access to channel(s).'''
+
+        if level['is_secret']:
+            # Log reaching secret and send message to member
+            name = level['name']
+            if level['latin_name']:
+                name += f" ({level['latin_name']})"
+            logging.info(
+                ('\033[1m[%s]\033[0m \033[1m%s\033[0m '
+                    'has found secret level \033[1m%s\033[0m'),
+                self.full_name, self.discord_handle, name
+            )
+            text = (
+                f"**[{self.full_name}]** "
+                f"You have found secret level **{name}**. Congratulations!"
+            )
+            await self._send(text)
+
+        if not self.in_riddle_guild:
+            return
+
+        if not level['is_secret']:
+            # Remove ancestors' "reached" role from user
+            ancestor_levels = await get_ancestor_levels(self.alias, level)
+            for level_name in ancestor_levels:
+                role_name = 'reached-' + level_name
+                role = get(self.member.roles, name=role_name)
+                if role:
+                    await self.member.remove_roles(role)
+
+        # Add "reached" role to member
+        discord_name = level['discord_name']
+        role = get(self.guild.roles, name=f"reached-{discord_name}")
+        await self.member.add_roles(role)
+
+        # Show current level(s) in nickname
+        await multi_update_nickname(self.alias, self.member)
+
+    async def beat(self, level: dict, points: int):
         '''Procedures to be done when level is beaten.'''
 
-        # Send congratulatory message
+        # Log solving procedure and send message to member
         n = 'DCBAS'.find(level['rank']) + 1
         stars = '★' * n
         name = level['name']
         if level['latin_name']:
             name += f" ({level['latin_name']})"
+        level_type = 'level' if not level['is_secret'] else 'secret_level'
         logging.info(
             ('\033[1m[%s]\033[0m \033[1m%s\033[0m '
-                'has beaten level \033[1m%s\033[0m'),
-            self.full_name, self.discord_handle, name
+                'has completed %s \033[1m%s\033[0m'),
+            self.full_name, self.discord_handle, level_type, name
         )
         text = (
             f"**[{self.full_name}]** "
-            f"You have solved level **{name}** [{stars}] "
+            f"You have solved {level_type} **{name}** [{stars}] "
                 f"and won **{points}** points!\n"
         )
         await self._send(text)
-
-        # Send also to channels if first to solve level
-        if first_to_solve and self.in_riddle_guild:
-            text = '**🏅 FIRST TO SOLVE 🏅**\n'
-            text += (
-                f"**<@!{self.member.id}>** has completed level **{name}**! "
-                    'Congratulations!'
-            )
-            channel = get(self.guild.channels, name=level['discord_name'])
-            await self._send(text, channel)
-            achievements = get(self.guild.channels, name='achievements')
-            if achievements:
-                await self._send(text, achievements)
 
         # Check for set completion
         query = '''
@@ -175,111 +203,17 @@ class UnlockHandler:
             # Update multi-nickname
             await multi_update_nickname(self.alias, self.member)
 
-    async def advance(self, level: dict):
-        '''Advance to further level when player arrives at a level front page.
-        "reached" role is granted to user and thus given access to channel(s).'''
+        if level['is_secret'] and self.in_riddle_guild:
+            # Get roles from guild
+            discord_name = level['discord_name']
+            if not discord_name:
+                discord_name = level['name']
+            reached = get(self.guild.roles, name=f"reached-{discord_name}")
+            solved = get(self.guild.roles, name=f"solved-{discord_name}")
 
-        if not self.in_riddle_guild:
-            # All procedures here are guild-related
-            return
-
-        # Remove ancestors' "reached" role from user
-        ancestor_levels = await get_ancestor_levels(self.alias, level)
-        for level_name in ancestor_levels:
-            role_name = 'reached-' + level_name
-            role = get(self.member.roles, name=role_name)
-            if role:
-                await self.member.remove_roles(role)
-
-        # Add "reached" role to member
-        name = level['discord_name']
-        if not name:
-            name = level['name']
-        role = get(self.guild.roles, name=f"reached-{name}")
-        await self.member.add_roles(role)
-
-        # Show current level(s) in nickname
-        await multi_update_nickname(self.alias, self.member)
-
-    async def secret_found(self, level: dict):
-        '''Grant access to secret channel.'''
-
-        # Log reaching secret and send message to member
-        name = level['name']
-        if level['latin_name']:
-            name += f" ({level['latin_name']})"
-        logging.info(
-            ('\033[1m[%s]\033[0m \033[1m%s\033[0m '
-                'has found secret level \033[1m%s\033[0m'),
-            self.full_name, self.discord_handle, name
-        )
-        text = (
-            f"**[{self.full_name}]** You found secret level **{name}**. "
-                'Congratulations!'
-        )
-        await self._send(text)
-        if not self.in_riddle_guild:
-            return
-
-        # Grant "reached" role
-        discord_name = level['discord_name']
-        if not discord_name:
-            discord_name = level['name']
-        reached = get(self.guild.roles, name=f"reached-{discord_name}")
-        await self.member.add_roles(reached)
-
-    async def secret_solve(self, level: dict, points: int,
-            first_to_solve=False):
-        '''Solve secret level and grant special colored role.'''
-
-        # Log solving procedure and send message to member
-        n = 'DCBAS'.find(level['rank']) + 1
-        stars = '★' * n
-        name = level['name']
-        if level['latin_name']:
-            name += f" ({level['latin_name']})"
-        logging.info(
-            ('\033[1m[%s]\033[0m \033[1m%s\033[0m '
-                'has completed secret level \033[1m%s\033[0m'),
-            self.full_name, self.discord_handle, name
-        )
-        text = (
-            f"**[{self.full_name}]** "
-            f"You solved secret level **{name}** [{stars}] "
-                f"and won **{points}** points!\n"
-        )
-        await self._send(text)
-        if not self.in_riddle_guild:
-            return
-
-        # Get roles from guild
-        discord_name = level['discord_name']
-        if not discord_name:
-            discord_name = level['name']
-        reached = get(self.guild.roles, name=f"reached-{discord_name}")
-        solved = get(self.guild.roles, name=f"solved-{discord_name}")
-
-        # Remove old "reached" role and add "solved" role to member
-        await self.member.remove_roles(reached)
-        await self.member.add_roles(solved)
-
-        # Send congratulations message to channel (and cheevos one?) :)
-        if self.member == self.guild.owner:
-            return
-        channel = get(self.guild.channels, name=discord_name)
-        text = ''
-        if first_to_solve:
-            text = '**🏅 FIRST TO SOLVE 🏅**\n'
-        text += (
-            f"**<@!{self.member.id}>** "
-                f"has completed secret level **{name}**! "
-                'Congratulations!'
-        )
-        await self._send(text, channel)
-        if first_to_solve:
-            achievements = get(self.guild.channels, name='achievements')
-            if achievements:
-                await self._send(text, achievements)
+            # Remove old "reached" role and add "solved" role to member
+            await self.member.remove_roles(reached)
+            await self.member.add_roles(solved)
 
     async def cheevo_found(self, cheevo: dict, points: int, path: str):
         '''Congratulations upon achievement being found.'''

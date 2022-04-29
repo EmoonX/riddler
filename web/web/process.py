@@ -114,11 +114,7 @@ class _PathHandler:
 
     @classmethod
     async def build(cls, user: User, url: str, status_code: str):
-        '''Build handler from raw URL's path and DB's user info.
-
-        @param user: Discord user object for logged in player.
-        @param url: raw URL sent by extension.
-        @param status_code: status code of the user-accessed page.'''
+        '''Build handler from DB's user info and URL info.'''
 
         async def _get_riddle(url) -> dict:
             '''Retrieve riddle info from database.'''
@@ -228,7 +224,6 @@ class _PathHandler:
         '''Process level path.'''
 
         # Search for unlocked and unbeaten levels on DB
-        current_name = self.riddle_account['current_level']
         query = '''
             SELECT is_secret, `index`, name, latin_name,
                 answer, `rank`, discord_name
@@ -237,7 +232,7 @@ class _PathHandler:
                 AND levels.name = user_levels.level_name
             WHERE user_levels.riddle = :riddle
                 AND username = :username AND discriminator = :disc
-                AND is_secret IS FALSE AND completion_time IS NULL
+                AND completion_time IS NULL
         '''
         values = {
             'riddle': self.riddle_alias,
@@ -245,14 +240,11 @@ class _PathHandler:
         }
         current_levels = await database.fetch_all(query, values)
 
-        # Check if path is answer to any of the found levels
-        current_level = None
+        # Register completion if path is answer to any of the found levels
         for level in current_levels:
             if self.path == level['answer']:
-                # If user entered the correct answer, register completion
-                lh = _NormalLevelHandler(level, self)
+                lh = _LevelHandler(level, self)
                 await lh.register_completion()
-                current_level = level
                 break
 
         # Check if page is a normal one (i.e not txt/image/video/etc)
@@ -283,87 +275,43 @@ class _PathHandler:
             WHERE riddle = :riddle AND name = :level_name
         '''
         values = {'riddle': self.riddle_alias, 'level_name': self.path_level}
-        page_level = await database.fetch_one(query, values)
+        level = await database.fetch_one(query, values)
 
-        if current_name != '🏅':
-            # Search for a level which has the current path as front
-            query = '''
-                SELECT * FROM levels
-                WHERE riddle = :riddle AND is_secret IS FALSE
-                    AND (`path` = :path OR `path` LIKE "%\":path\"%")
-            '''
-            values = {'riddle': self.riddle_alias, 'path': self.path}
-            level = await database.fetch_one(query, values)
-            if level:
-                await self._check_and_unlock(level, page_level)
-
-        # Check for secret level pages
-        # (and also for phony JSON of multi-front levels)
+        # Search for a level which has the current path as front
         query = '''
             SELECT * FROM levels
-            WHERE riddle = :riddle AND is_secret IS TRUE
+            WHERE riddle = :riddle
                 AND (`path` = :path OR `path` LIKE "%\":path\"%")
         '''
         values = {'riddle': self.riddle_alias, 'path': self.path}
-        secret = await database.fetch_one(query, values)
-        if secret:
-            # "A secret has been found"
-            sh = _SecretLevelHandler(secret, self)
-            await sh.register_finding()
+        result = await database.fetch_one(query, values)
+        if result:
+            await self._check_and_unlock(level)
 
-        # Check if a secret level was beaten
-        query = '''
-            SELECT * FROM levels
-            WHERE riddle = :riddle AND is_secret IS TRUE
-                AND answer = :answer
-        '''
-        values = {'riddle': self.riddle_alias, 'answer': self.path}
-        secret = await database.fetch_one(query, values)
-        if secret:
-            sh = _SecretLevelHandler(secret, self)
-            await sh.register_completion()
-
-        # If the currently level being visited has not
-        # been unlocked yet, ignore it for access counting purposes.
+        # If the currently being visited level has not
+        # been unlocked yet, ignore it for access counting purposes
         query = '''
             SELECT * FROM user_levels
-            WHERE riddle = :riddle
+            WHERE riddle = :riddle AND level_name = :level_name
                 AND username = :username AND discriminator = :disc
-                AND level_name = :level_name
         '''
         values = {
-            'riddle': self.riddle_alias,
+            'riddle': self.riddle_alias, 'level_name': self.path_level,
             'username': self.username, 'disc': self.disc,
-            'level_name': self.path_level
         }
         is_unlocked = await database.fetch_one(query, values)
-        if not is_unlocked:
-            values['level_name'] = None
-
-        # Mark level currently being visited in `last_visited_level` field
-        query = '''
-            UPDATE riddle_accounts SET last_visited_level = :level_name
-            WHERE riddle = :riddle
-                AND username = :username AND discriminator = :disc
-        '''
-        await database.execute(query, values)
+        if is_unlocked:
+            # Mark level currently being visited in `last_visited_level` field
+            query = '''
+                UPDATE riddle_accounts SET last_visited_level = :level_name
+                WHERE riddle = :riddle
+                    AND username = :username AND discriminator = :disc
+            '''
+            await database.execute(query, values)
 
         # If a normal page, update all hit counters
         if is_normal_page:
             await self._update_hit_counters()
-
-        # if not has_access():
-        #     # Forbid user from accessing any level further than permitted
-        #     abort(403)
-
-        # Get new current level info from DB
-        current_name = self.riddle_account['current_level']
-        query = '''
-            SELECT * FROM levels
-            WHERE riddle = :riddle AND name = :level_name
-        '''
-        values = {'riddle': self.riddle_alias, 'level_name': current_name}
-        current_level = await database.fetch_one(query, values)
 
         # Register new page access in database (if applicable)
         query = '''
@@ -373,9 +321,8 @@ class _PathHandler:
                 AND level_name = :level_name AND find_time IS NOT NULL
         '''
         values = {
-            'riddle': self.riddle_alias,
+            'riddle': self.riddle_alias, 'level_name': level['name'],
             'username': self.username, 'disc': self.disc,
-            'level_name': page_level['name']
         }
         cond = await database.fetch_one(query, values)
         if not cond:
@@ -398,7 +345,7 @@ class _PathHandler:
                 GROUP BY level_name
             '''
             values = {
-                'riddle': self.riddle_alias, 'level_name': page_level['name']
+                'riddle': self.riddle_alias, 'level_name': level['name'],
             }
             result = await database.fetch_one(query, values)
             count_req = result['count'] if result else 0
@@ -444,7 +391,7 @@ class _PathHandler:
 
         return True
 
-    async def _check_and_unlock(self, level, page_level):
+    async def _check_and_unlock(self, level: dict):
         '''Check if a level hasn't been AND can be unlocked.
         If positive, proceeds with unlocking procedures.'''
 
@@ -485,7 +432,7 @@ class _PathHandler:
                 return
 
         # A new level has been found!
-        lh = _NormalLevelHandler(page_level, self)
+        lh = _LevelHandler(level, self)
         await lh.register_finding()
 
     async def _update_hit_counters(self):
@@ -630,10 +577,10 @@ class _PathHandler:
 
 
 class _LevelHandler:
-    '''Handler base class for processing levels.'''
+    '''Handler class for processing levels.'''
 
     level: dict
-    '''Dict containing level DB data.'''
+    '''Level DB data.'''
 
     points: int
     '''Points awarded upon level completion.'''
@@ -643,88 +590,118 @@ class _LevelHandler:
 
     def __init__(self, level: dict, ph: _PathHandler):
         '''Register level DB data and points,
-        as well as parent attributes from PH.
-
-        @param level: Level DB table row data.
-        @param ph: The parent's paths handler.'''
-
-        self.level = dict(level)
+        as well as parent attributes from PH.'''
         rank = level['rank']
+        self.level = dict(level)
         self.points = level_ranks[rank]['points']
-
-        # Set some attributes from parent caller's PH (to ease access)
         self.ph = ph
-        for name in (
-            'riddle_alias', 'unlisted',
-            'username', 'disc', 'riddle_account',
-        ):
-            attr = getattr(ph, name)
-            setattr(self, name, attr)
 
-    async def _get_user_level_row(self):
-        ''':return: User/level registry from DB.'''
-
-        query = '''
-            SELECT * FROM user_levels
-            WHERE riddle = :riddle AND username = :username
-                AND discriminator = :disc AND level_name = :level_name
-        '''
-        values = {
-            'riddle': self.riddle_alias,
-            'username': self.username, 'disc': self.disc,
-            'level_name': self.level['name']
-        }
-        row = await database.fetch_one(query, values)
-        return row
-
-    async def register_finding(self, method: str) -> bool:
-        '''Base level finding procedures.
-
-        :param method: bot request path; "advance" or "secret_found",
-            whether it's a normal or secret level.
-        :return: If a new level has indeed been found.'''
-
-        # Check if level has not yet been found
-        row = await self._get_user_level_row()
-        if row:
-            return False
+    async def register_finding(self):
+        '''Increment player level upon reaching level's front page.'''
 
         # Record it on user table with current time
-        time = datetime.utcnow()
+        tnow = datetime.utcnow()
         query = '''
             INSERT INTO user_levels
                 (riddle, username, discriminator, level_name, find_time)
             VALUES (:riddle, :username, :disc, :level_name, :time)
         '''
         values = {
-            'riddle': self.riddle_alias,
-            'username': self.username, 'disc': self.disc,
-            'level_name': self.level['name'], 'time': time
+            'riddle': self.ph.riddle_alias,
+            'username': self.ph.username, 'disc': self.ph.disc,
+            'level_name': self.level['name'], 'time': tnow
         }
         await database.execute(query, values)
 
         # Call bot unlocking procedure
         await bot_request(
-            'unlock', method=method,
-            alias=self.riddle_alias, level=self.level,
-            username=self.username, disc=self.disc
+            'unlock', method='advance',
+            alias=self.ph.riddle_alias, level=self.level,
+            username=self.ph.username, disc=self.ph.disc
         )
-        return True
+        if not self.level['is_secret']:
+            # Update player's current_level
+            query = '''
+                UPDATE riddle_accounts SET current_level = :name_next
+                WHERE riddle = :riddle AND
+                    username = :username AND discriminator = :disc
+            '''
+            values = {
+                'riddle': self.ph.riddle_alias,
+                'username': self.ph.username, 'disc': self.ph.disc,
+                'name_next': self.level['name'],
+            }
+            await database.execute(query, values)
+            self.ph.riddle_account['current_level'] = self.level['name']
 
     async def register_completion(self) -> bool:
         '''Register level completion and update all needed tables.
-
-        :return: If level is unlocked AND yet to be completed.'''
+        Return `true` if level is unlocked AND yet to be completed.'''
 
         # Check if level is unlocked AND unbeaten
         row = await self._get_user_level_row()
         if not row or row['completion_time']:
             return False
 
+        # Register level completion in designated table
+        tnow = datetime.utcnow()
+        query = '''
+            UPDATE user_levels SET completion_time = :time
+            WHERE riddle = :riddle
+                AND username = :username AND discriminator = :disc
+                AND level_name = :level
+        '''
+        values = {
+            'riddle': self.ph.riddle_alias,
+            'username': self.ph.username, 'disc': self.ph.disc,
+            'level': self.level['name'], 'time': tnow,
+        }
+        await database.execute(query, values)
+
+        # Bot level beat procedures
+        await bot_request(
+            'unlock', method='beat',
+            alias=self.ph.riddle_alias, level=self.level,
+            username=self.ph.username, disc=self.ph.disc,
+            points=self.points, first_to_solve=False
+        )
+        # Check if level just completed is the _final_ one
+        query = 'SELECT * FROM riddles WHERE alias = :riddle'
+        values = {'riddle': self.ph.riddle_alias}
+        final_name = await database.fetch_val(query, values, 'final_level')
+        if self.level['name'] == final_name:
+            # Player has just completed the game :)
+            query = '''
+                UPDATE riddle_accounts SET current_level = "🏅"
+                WHERE riddle = :riddle
+                    AND username = :username AND discriminator = :disc
+            '''
+            values |= {'username': self.ph.username, 'disc': self.ph.disc}
+            await database.execute(query, values)
+            await bot_request(
+                'unlock', method='game_completed',
+                alias=self.ph.riddle_alias,
+                username=self.ph.username, disc=self.ph.disc
+            )
         # Update level-related tables
         await self._update_info()
 
         return True
+
+    async def _get_user_level_row(self):
+        '''Return user/level record from DB.'''
+
+        query = '''
+            SELECT * FROM user_levels
+            WHERE riddle = :riddle AND level_name = :level_name
+                AND username = :username AND discriminator = :disc
+        '''
+        values = {
+            'riddle': self.ph.riddle_alias, 'level_name': self.level['name'],
+            'username': self.ph.username, 'disc': self.ph.disc,
+        }
+        row = await database.fetch_one(query, values)
+        return row
 
     async def _update_info(self):
         '''Update level-related tables.'''
@@ -735,152 +712,9 @@ class _LevelHandler:
             WHERE riddle = :riddle AND name = :level_name
         '''
         values = {
-            'riddle': self.riddle_alias, 'level_name': self.level['name']
+            'riddle': self.ph.riddle_alias, 'level_name': self.level['name']
         }
         await database.execute(query, values)
 
         # Update user and global scores
         await self.ph.update_score(self.points)
-
-
-class _NormalLevelHandler(_LevelHandler):
-    '''Handler for normal (non secret) levels.'''
-
-    def __init__(self, level: dict, ph: _PathHandler):
-        super().__init__(level, ph)
-
-    async def register_finding(self):
-        '''Increment player level upon reaching level's front page.'''
-
-        # Request advance procedures to bot
-        is_new = await super().register_finding('advance')
-        if not is_new:
-            return
-
-        # Update player's current_level and reset their page count
-        query = '''
-            UPDATE riddle_accounts SET current_level = :name_next
-            WHERE riddle = :riddle AND
-                username = :username AND discriminator = :disc
-        '''
-        values = {
-            'name_next': self.level['name'], 'riddle': self.riddle_alias,
-            'username': self.username, 'disc': self.disc
-        }
-        self.riddle_account['current_level'] = self.level['name']
-        await database.execute(query, values)
-
-    async def register_completion(self):
-        '''Register normal level completion and update all needed tables.'''
-
-        # Do base completion procedures first
-        ok = await super().register_completion()
-        if not ok:
-            return
-
-        # Check if player was the first one to solve level
-        query = '''
-            SELECT * FROM user_levels
-            WHERE riddle = :riddle AND level_name = :level_name
-        '''
-        values = {
-            'riddle': self.riddle_alias, 'level_name': self.level['name']
-        }
-        result = await database.fetch_one(query, values)
-        first_to_solve = (result is None)
-
-        # Register level completion in designated table
-        time = datetime.utcnow()
-        query = '''
-            UPDATE user_levels SET completion_time = :time
-            WHERE riddle = :riddle
-                AND username = :username AND discriminator = :disc
-                AND level_name = :level
-        '''
-        values = {
-            'riddle': self.riddle_alias,
-            'username': self.username, 'disc': self.disc,
-            'level': self.level['name'], 'time': time
-        }
-        await database.execute(query, values)
-
-        # Bot level beat procedures
-        await bot_request(
-            'unlock', method='beat',
-            alias=self.riddle_alias, level=self.level,
-            username=self.username, disc=self.disc,
-            points=self.points, first_to_solve=first_to_solve
-        )
-        # Check if level just completed is the *final* one
-        query = 'SELECT * FROM riddles WHERE alias = :riddle'
-        values = {'riddle': self.riddle_alias}
-        final_level = await database.fetch_val(query, values, 'final_level')
-        if self.level['name'] == final_level:
-            # Player has just completed the game :)
-            query = '''
-                UPDATE riddle_accounts SET current_level = "🏅"
-                WHERE riddle = :riddle
-                    AND username = :username AND discriminator = :disc
-            '''
-            values |= {'username': self.username, 'disc': self.disc}
-            await database.execute(query, values)
-            await bot_request(
-                'unlock', method='game_completed',
-                alias=self.riddle_alias,
-                username=self.username, disc=self.disc
-            )
-
-
-class _SecretLevelHandler(_LevelHandler):
-    '''Handler for secret levels.'''
-
-    def __init__(self, level: dict, ph: _PathHandler):
-        super().__init__(level, ph)
-
-    async def register_finding(self):
-        '''Register new secret if not yet been found.'''
-        await super().register_finding('secret_found')
-
-    async def register_completion(self):
-        '''Register normal level completion and update all needed tables.'''
-
-        # Do base completion procedures first
-        ok = await super().register_completion()
-        if not ok:
-            return
-
-        # Check if player was first to solve level
-        query = '''
-            SELECT * FROM user_levels
-            WHERE riddle = :riddle
-                AND username = :username AND discriminator = :disc
-        '''
-        values = {
-            'riddle': self.riddle_alias,
-            'username': self.username, 'disc': self.disc
-        }
-        result = await database.fetch_one(query, values)
-        first_to_solve = (result is None)
-
-        # Register level completion in designated table
-        time = datetime.utcnow()
-        query = '''
-            UPDATE user_levels SET completion_time = :time
-            WHERE riddle = :riddle
-                AND username = :username AND discriminator = :disc
-                AND level_name = :level_name
-        '''
-        values = {
-            'time': time, 'riddle': self.riddle_alias,
-            'username': self.username, 'disc': self.disc,
-            'level_name': self.level['name']
-        }
-        await database.execute(query, values)
-
-        # Bot secret solve procedures
-        await bot_request(
-            'unlock', method='secret_solve',
-            alias=self.riddle_alias, level=self.level,
-            username=self.username, disc=self.disc,
-            points=self.points, first_to_solve=first_to_solve
-        )
