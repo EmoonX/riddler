@@ -45,6 +45,7 @@ async def global_list(country: str = None):
         WHERE global_score > 0 {cond_country}
         GROUP BY acc.username, acc.discriminator
         ORDER BY global_score DESC, page_count DESC, last_page_time DESC
+        LIMIT 150
     """
     result = await database.fetch_all(query)
     for row in result:

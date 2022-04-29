@@ -23,17 +23,14 @@ async def process_url(username=None, disc=None, path=None):
     auto = (path is not None)
 
     if not auto and not await discord.authorized:
-        # Not logged in, return status 401
+        # Not logged in
         status = 401 if request.method == 'POST' else 200
         return 'Not logged in', status
 
-    message, status_code = 'Success!', 200
     if auto or request.method == 'POST':
-        # Receive path from request
+        # Receive path and status code from request
         if not auto:
             path = (await request.data).decode('utf-8')
-
-        # Get status code from request header (default 200)
         status_code = request.headers.get('Statuscode', 200)
         if status_code:
             status_code = int(status_code)
@@ -45,15 +42,12 @@ async def process_url(username=None, disc=None, path=None):
             user = lambda: None
             setattr(user, 'name', username)
             setattr(user, 'discriminator', disc)
-        ph = _PathHandler()
-        ok = await ph.build_handler(user, path, status_code, auto)
-        if not ok:
-            # Page is not inside root path (e.g forum or admin pages)
+        ph = await _PathHandler.build(user, path, status_code)
+        if not ph:
+            # Not inside root path (e.g forum or admin pages)
             return 'Not part of root path', 403
-
         ok = await ph.build_player_riddle_data()
         if not ok:
-            # Banned player
             return 'Banned player', 403
 
         # Process received path
@@ -83,9 +77,7 @@ async def process_url(username=None, disc=None, path=None):
                     f"({tnow})"
             )
             response = jsonify(
-                riddle=ph.riddle_alias,
-                levelName=ph.path_level,
-                path=ph.path,
+                riddle=ph.riddle_alias, levelName=ph.path_level, path=ph.path
             )
             return response
 
@@ -120,54 +112,54 @@ class _PathHandler:
     status_code: int
     '''Real status code of requested page (either 200 or 404).'''
 
-    async def build_handler(
-        self, user: User, url: str, status_code: str, auto: bool
-    ):
-        '''Get path from raw URL and get user info from DB.
+    @classmethod
+    async def build(cls, user: User, url: str, status_code: str):
+        '''Build handler from raw URL's path and DB's user info.
 
         @param user: Discord user object for logged in player.
         @param url: raw URL sent by extension.
-        @param status_code: status code of the user-accessed page.
-        #param auto: if `process_url` has been called automatically.'''
+        @param status_code: status code of the user-accessed page.'''
 
-        # Exclude protocol from URL
-        base_url = url.replace('https://', 'http://').replace('http://', '')
+        async def _get_riddle(url) -> dict:
+            '''Retrieve riddle info from database.'''
 
-        # Retrieve riddle info from database
-        # (https root_path is searched first, and then http)
-        riddle = None
-        for protocol in ('https://', 'http://'):
-            url = protocol + base_url
-            url_without_www = url.replace('//www.', '//')
-            query = '''
-                SELECT * FROM riddles
-                WHERE LOCATE(root_path, :url)
-                    OR LOCATE(root_path, :url_without_www)
-            '''
-            values = {'url': url, 'url_without_www': url_without_www}
-            riddle = await database.fetch_one(query, values)
-            if riddle:
-                break
+            # Exclude protocol from URL
+            base_url = \
+                url.replace('https://', 'http://').replace('http://', '')
 
+            # (https root_path is searched first, and then http)
+            for protocol in ('https://', 'http://'):
+                url = protocol + base_url
+                url_without_www = url.replace('//www.', '//')
+                query = '''
+                    SELECT * FROM riddles
+                    WHERE LOCATE(root_path, :url)
+                        OR LOCATE(root_path, :url_without_www)
+                '''
+                values = {'url': url, 'url_without_www': url_without_www}
+                riddle = await database.fetch_one(query, values)
+                if riddle:
+                    return riddle
+
+        riddle = await _get_riddle(url)
         if not riddle:
-            # Page outside levels, like forum and admin ones
-            return False
+            # Page outside level folders
+            return None
 
         # Remove potential "www." from URL, if not required
         if not '//www.' in riddle['root_path']:
             url = url.replace('//www.', '//')
 
-        # Save basic riddle info
+        # Save basic riddle + user info
+        self = cls()
         self.riddle_alias = riddle['alias']
-        root_path = riddle['root_path']
         self.unlisted = bool(riddle['unlisted'])
-
-        # Save basic user info
         self.username = user.name
         self.disc = user.discriminator
 
-        # Get relative path by removing root portion
-        self.path = url.removeprefix(root_path)
+        # Save relative path and status code
+        self.path = url.removeprefix(riddle['root_path'])
+        self.status_code = status_code
 
         # Ignore occurrences of consecutive slashes and trailing #
         self.path = re.sub('/{2,}', '/', self.path)
@@ -183,14 +175,10 @@ class _PathHandler:
             if not has_dot:
                 self.path += '.htm'
 
-        # Save requesting status code
-        self.status_code = status_code
-
-        return True
+        return self
 
     async def build_player_riddle_data(self) -> bool:
-        '''Build player riddle data from database,
-        creating it if not present.'''
+        '''Build player riddle data from DB, creating it if nonexistent.'''
 
         # Ignore progress for banned players :)
         query = '''
@@ -198,8 +186,8 @@ class _PathHandler:
             WHERE username = :username AND discriminator = :disc
         '''
         values = {'username': self.username, 'disc': self.disc}
-        player = await database.fetch_one(query, values)
-        if player['banned']:
+        banned = await database.fetch_val(query, values, 'banned')
+        if banned:
             return False
 
         async def _get_data():
@@ -237,9 +225,7 @@ class _PathHandler:
         return True
 
     async def process(self):
-        '''Process level path.
-
-        @path: a level path in the current riddle domain.'''
+        '''Process level path.'''
 
         # Search for unlocked and unbeaten levels on DB
         current_name = self.riddle_account['current_level']
@@ -299,7 +285,6 @@ class _PathHandler:
         values = {'riddle': self.riddle_alias, 'level_name': self.path_level}
         page_level = await database.fetch_one(query, values)
 
-        current_solved = False
         if current_name != '🏅':
             # Search for a level which has the current path as front
             query = '''
@@ -310,51 +295,7 @@ class _PathHandler:
             values = {'riddle': self.riddle_alias, 'path': self.path}
             level = await database.fetch_one(query, values)
             if level:
-                # Check if level has already been unlocked beforehand
-                query = '''
-                    SELECT * FROM user_levels
-                    WHERE riddle = :riddle
-                        AND username = :username AND discriminator = :disc
-                        AND level_name = :level_name
-                '''
-                values = {
-                    'riddle': self.riddle_alias,
-                    'username': self.username, 'disc': self.disc,
-                    'level_name': level['name']
-                }
-                already_unlocked = await database.fetch_one(query, values)
-                if not already_unlocked:
-                    # Check if all required levels are already beaten
-                    query = '''
-                        SELECT * FROM level_requirements
-                        WHERE riddle = :riddle AND level_name = :level_name
-                    '''
-                    other_values = {
-                        'riddle': self.riddle_alias,
-                        'level_name': level['name']
-                    }
-                    result = await database.fetch_all(query, other_values)
-                    level_requirements = [row['requires'] for row in result]
-                    can_unlock = True
-                    for req in level_requirements:
-                        query = '''
-                            SELECT * FROM user_levels
-                            WHERE riddle = :riddle
-                                AND username = :username
-                                AND discriminator = :disc
-                                AND level_name = :level_name
-                                AND completion_time IS NOT NULL
-                        '''
-                        values['level_name'] = req
-                        req_satisfied = await database.fetch_one(query, values)
-                        if not req_satisfied:
-                            can_unlock = False
-                            break
-
-                    if can_unlock:
-                        # A new level has been found!
-                        lh = _NormalLevelHandler(page_level, self)
-                        await lh.register_finding()
+                await self._check_and_unlock(level, page_level)
 
         # Check for secret level pages
         # (and also for phony JSON of multi-front levels)
@@ -502,6 +443,50 @@ class _PathHandler:
             await self._process_cheevo()
 
         return True
+
+    async def _check_and_unlock(self, level, page_level):
+        '''Check if a level hasn't been AND can be unlocked.
+        If positive, proceeds with unlocking procedures.'''
+
+        # Check if level has already been unlocked beforehand
+        query = '''
+            SELECT * FROM user_levels
+            WHERE riddle = :riddle AND level_name = :level_name
+                AND username = :username AND discriminator = :disc
+        '''
+        values = {
+            'riddle': self.riddle_alias, 'level_name': level['name'],
+            'username': self.username, 'disc': self.disc,
+        }
+        already_unlocked = await database.fetch_one(query, values)
+        if already_unlocked:
+            return
+
+        # Check if all required levels are already beaten
+        query = '''
+            SELECT * FROM level_requirements
+            WHERE riddle = :riddle AND level_name = :level_name
+        '''
+        other_values = {
+            'riddle': self.riddle_alias, 'level_name': level['name']
+        }
+        result = await database.fetch_all(query, other_values)
+        level_requirements = [row['requires'] for row in result]
+        for req in level_requirements:
+            query = '''
+                SELECT * FROM user_levels
+                WHERE riddle = :riddle AND level_name = :level_name
+                    AND username = :username AND discriminator = :disc
+                    AND completion_time IS NOT NULL
+            '''
+            values['level_name'] = req
+            req_satisfied = await database.fetch_one(query, values)
+            if not req_satisfied:
+                return
+
+        # A new level has been found!
+        lh = _NormalLevelHandler(page_level, self)
+        await lh.register_finding()
 
     async def _update_hit_counters(self):
         '''Update player, riddle and level hit counters.'''
