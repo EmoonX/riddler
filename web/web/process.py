@@ -417,16 +417,19 @@ class _PathHandler:
         other_values = {
             'riddle': self.riddle_alias, 'level_name': level['name']
         }
-        result = await database.fetch_all(query, other_values)
-        level_requirements = [row['requires'] for row in result]
+        level_requirements = await database.fetch_all(query, other_values)
         for req in level_requirements:
-            query = '''
+            completion_cond = (
+                '' if req['finding_is_enough']
+                else 'AND completion_time IS NOT NULL'
+            )
+            query = f"""
                 SELECT * FROM user_levels
                 WHERE riddle = :riddle AND level_name = :level_name
                     AND username = :username AND discriminator = :disc
-                    AND completion_time IS NOT NULL
-            '''
-            values['level_name'] = req
+                    {completion_cond}
+            """
+            values['level_name'] = req['requires']
             req_satisfied = await database.fetch_one(query, values)
             if not req_satisfied:
                 return
