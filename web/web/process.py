@@ -314,80 +314,7 @@ class _PathHandler:
             await self._update_hit_counters()
 
         # Register new page access in database (if applicable)
-        query = '''
-            SELECT * FROM user_levels
-            WHERE riddle = :riddle
-                AND username = :username AND discriminator = :disc
-                AND level_name = :level_name AND find_time IS NOT NULL
-        '''
-        values = {
-            'riddle': self.riddle_alias, 'level_name': level['name'],
-            'username': self.username, 'disc': self.disc,
-        }
-        cond = await database.fetch_one(query, values)
-        if not cond:
-            query = '''
-                SELECT COUNT(*) AS count FROM user_levels
-                WHERE riddle = :riddle
-                    AND username = :username AND discriminator = :disc
-                    AND level_name IN (
-                        SELECT requires FROM level_requirements
-                        WHERE riddle = :riddle
-                            AND level_name = :level_name
-                    )
-                    AND completion_time IS NOT NULL
-            '''
-            result = await database.fetch_one(query, values)
-            count_user = result['count'] if result else 0
-            query = '''
-                SELECT COUNT(*) AS count FROM level_requirements
-                WHERE riddle = :riddle AND level_name = :level_name
-                GROUP BY level_name
-            '''
-            values = {
-                'riddle': self.riddle_alias, 'level_name': level['name'],
-            }
-            result = await database.fetch_one(query, values)
-            count_req = result['count'] if result else 0
-            cond = (count_user == count_req)
-
-        if cond:
-            # Check if page hasn't been found yet
-            query = '''
-                SELECT * FROM user_pages
-                WHERE riddle = :riddle
-                    AND username = :username AND discriminator = :disc
-                    AND path = :path
-            '''
-            base_values = {
-                'riddle': self.riddle_alias,
-                'username': self.username, 'disc': self.disc
-            }
-            values = base_values | {'path': self.path}
-            already_found = await database.fetch_one(query, values)
-            if not already_found:
-                # Insert new page in `user_pages`
-                tnow = datetime.utcnow()
-                query = '''
-                    INSERT INTO user_pages VALUES (
-                        :riddle, :username, :disc, :level_name, :path, :time
-                    )
-                '''
-                values = values | {'level_name': self.path_level, 'time': tnow}
-                await database.execute(query, values)
-
-                # Increment player's riddle page count and find time
-                query = '''
-                    UPDATE riddle_accounts
-                    SET page_count = page_count + 1, last_page_time = :time
-                    WHERE riddle = :riddle
-                        AND username = :username AND discriminator = :disc
-                '''
-                values = base_values | {'time': tnow}
-                await database.execute(query, values)
-
-            # Check and possibly grant an achievement
-            await self._process_cheevo()
+        await self._process_page()
 
         return True
 
@@ -509,6 +436,54 @@ class _PathHandler:
             '''
             values.pop('riddle')
             await database.execute(query, values)
+
+    async def _process_page(self):
+        # Check if all required levels have been found
+        query = '''
+            SELECT * FROM level_requirements req
+            WHERE riddle = :riddle AND level_name = :level_name
+                AND requires NOT IN (
+                    SELECT level_name FROM user_levels ul
+                    WHERE req.riddle = ul.riddle
+                        AND username = :username AND discriminator = :disc
+                )
+        '''
+        base_values = {
+            'riddle': self.riddle_alias,
+            'username': self.username, 'disc': self.disc,
+        }
+        values = base_values | {'level_name': self.path_level}
+        result = await database.fetch_one(query, values)
+        has_all_requirements = result is None
+        if not has_all_requirements:
+            return
+
+        # Try to insert new page in `user_pages`
+        tnow = datetime.utcnow()
+        query = '''
+            INSERT INTO user_pages VALUES (
+                :riddle, :username, :disc, :level_name, :path, :time
+            )
+        '''
+        values = values | {'path': self.path, 'time': tnow}
+        try:
+            await database.execute(query, values)
+        except IntegrityError:
+            # Page already there, so quit
+            return
+
+        # Increment player's riddle page count and find time
+        query = '''
+            UPDATE riddle_accounts
+            SET page_count = page_count + 1, last_page_time = :time
+            WHERE riddle = :riddle
+                AND username = :username AND discriminator = :disc
+        '''
+        values = base_values | {'time': tnow}
+        await database.execute(query, values)
+
+        # Check and possibly grant an achievement
+        await self._process_cheevo()
 
     async def _process_cheevo(self):
         '''Grant cheevo and awards if page is an achievement one.'''
