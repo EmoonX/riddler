@@ -180,12 +180,7 @@ function addRow(event) {
     index = 's' + String($('.list.secret .row').length + 1);
   }  
   // Send GET request for a new row
-  var url;
-  if (type != 'secret-level') {
-    url = `/admin/${type}-row`;
-  } else {
-    url = '/admin/level-row';
-  }
+  const url = (type != 'secret-level') ? `${type}-row` : 'level-row';
   const data = {'index': index};
   $.get(url, data, function(html) {
     // Get HTML from rendered template and append to section

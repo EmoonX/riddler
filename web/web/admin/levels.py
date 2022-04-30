@@ -78,8 +78,9 @@ async def manage_levels(alias: str):
 
 
 async def _fetch_levels(alias: str, is_secret=False):
-    '''Fetch guild levels info from database as an indexed dict.'''
+    '''Fetch level info from database as an indexed dict.'''
 
+    # Get level data from DB
     query = '''
         SELECT * FROM levels
         WHERE riddle = :riddle AND is_secret = :is_secret
@@ -87,14 +88,26 @@ async def _fetch_levels(alias: str, is_secret=False):
     '''
     values = {'riddle': alias, 'is_secret': is_secret}
     result = await database.fetch_all(query, values)
+    level_list = [dict(row) for row in result]
 
+    # Build dict of levels
     levels = {}
-    for row in result:
-        level = dict(row)
+    for i, level in enumerate(level_list):
         if level['path'][0] == '[':
-            # Use first available path for multi-front levels
+            # Multi-path support
             level['path'] = level['path'].split('"')[1]
         levels[level['index']] = level
+
+        # Get requirements as a comma-separated list
+        query = '''
+            SELECT * FROM level_requirements
+            WHERE riddle = :riddle AND level_name = :level_name
+        '''
+        values = {'riddle': alias, 'level_name': level['name']}
+        result = await database.fetch_all(query, values)
+        if result:
+            level['requirements'] = \
+                ', '.join(row['requires'] for row in result)
 
     return levels
 
@@ -317,12 +330,33 @@ async def get_pages(alias: str) -> str:
     return json.dumps(pages)
 
 
-@admin_levels.get('/admin/level-row')
-async def level_row():
-    '''Level row HTML code to be fetched by JS script.'''
+@admin_levels.get('/admin/<alias>/level-row')
+async def level_row(alias: str):
+    '''Level row HTML code to be fetched by JS script.
+    Some info related to previous level (if any) is included.'''
+
+    is_secret = request.args['index'][0] == 's'
+    index = int(request.args['index'].replace('s', ''))
+    if index == 1:
+        level = None
+    else:
+        query = '''
+            SELECT * FROM levels
+            WHERE riddle = :riddle
+                AND is_secret = :is_secret AND `index` = :prev_index
+        '''
+        values = {
+            'riddle': alias, 'is_secret': is_secret, 'prev_index': index - 1
+        }
+        previous = await database.fetch_one(query, values)
+        level = {key: '' for key in dict(previous)}
+        level |= {
+            'requirements': previous['name'] if not is_secret else '',
+            'discord_category': previous['discord_category'],
+        }
     return await render_template(
-        'admin/level-row.htm', level=None,
-        index=request.args['index'], image='/static/thumbs/locked.png'
+        'admin/level-row.htm', level=level,
+        index=index, image='/static/thumbs/locked.png'
     )
 
 
