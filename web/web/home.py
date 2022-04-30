@@ -15,6 +15,31 @@ home = Blueprint('home', __name__)
 @home.route('/home')
 async def homepage():
     
+    query = '''
+        SELECT COUNT(*) count FROM riddles
+        WHERE unlisted IS FALSE
+    '''
+    riddle_count = await database.fetch_val(query, column='count')
+    query = '''
+        SELECT COUNT(*) count FROM levels
+        WHERE riddle IN (
+            SELECT alias FROM riddles WHERE unlisted IS FALSE
+        )
+    '''
+    level_count = await database.fetch_val(query, column='count')
+    query = '''
+        SELECT COUNT(*) count FROM level_pages
+        WHERE riddle IN (
+            SELECT alias FROM riddles WHERE unlisted IS FALSE
+        ) AND level_name IS NOT NULL and level_name != ''
+    '''
+    page_count = await database.fetch_val(query, column='count')
+    query = '''
+        SELECT COUNT(*) count FROM accounts
+        WHERE global_score > 0
+    '''
+    player_count = await database.fetch_val(query, column='count')
+
     query = '''SELECT u1.*, (
             SELECT country FROM accounts acc
             WHERE u1.username = acc.username
@@ -34,5 +59,4 @@ async def homepage():
         ORDER BY completion_time DESC'''
     recent_completion = await database.fetch_all(query)
     
-    return await render_template('home.htm',
-        recent_completion=recent_completion)
+    return await render_template('home.htm', **locals())

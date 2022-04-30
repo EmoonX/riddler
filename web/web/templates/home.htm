@@ -2,9 +2,10 @@
 {% block title %}Riddler{% endblock %}
 {% block content %}
     <main>
-      <h1>Riddler</h1>
+      <h1 class="riddler-title">Riddler</h1>
       <p class='riddler-synopsis'>
-        Enhancing the online riddle experience since 2021.
+        Serving <var>{{ riddle_count }}</var> riddles, <var>{{ level_count }}</var> levels, <var>{{ page_count }}</var> pages<br>
+        and <var>{{ player_count }}</var> players since 2021.
       </p>
       <hr>
       <h2>Recent progress</h2>
