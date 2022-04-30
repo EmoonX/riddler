@@ -242,7 +242,11 @@ class _PathHandler:
 
         # Register completion if path is answer to any of the found levels
         for level in current_levels:
-            if self.path == level['answer']:
+            if (
+                # Single + multi-answer support
+                self.path == level['answer'] or
+                f'"{self.path}"' in level['answer']
+            ):
                 lh = _LevelHandler(level, self)
                 await lh.register_completion()
                 break
