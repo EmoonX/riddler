@@ -131,13 +131,14 @@ async def _update_levels(
 
         level_before = levels_before[index]
         level = levels_after[index]
-        if not set(level.keys()).issubset({'imgdata', 'added-pages'}):
+        attrs_to_be_ignored = {'added-pages', 'imgdata', 'requirements'}
+        if not set(level.keys()).issubset(attrs_to_be_ignored):
             # Update level(s) database data
             query = 'UPDATE levels SET '
             values = {'riddle': alias, 'is_secret': is_secret, 'index': index}
             aux = []
             for attr, value in level.items():
-                if attr in ('imgdata', 'added-pages'):
+                if attr in attrs_to_be_ignored:
                     continue
                 s = f"`{attr}` = :{attr}"
                 aux.append(s)
@@ -222,12 +223,12 @@ async def _update_levels(
                 index = int(index)
                 query = '''
                     INSERT IGNORE INTO level_requirements
-                    VALUES (:riddle, :level, :level_prev, NULL)
+                    VALUES (:riddle, :level, :requirement, NULL)
                 '''
                 values = {
                     'riddle': alias,
                     'level': form[f"{index}-name"],
-                    'level_prev': form[f"{index - 1}-name"],
+                    'requirement': form[f"{index}-requirements"],
                 }
                 await database.execute(query, values)
 

@@ -74,9 +74,9 @@ async def get_ancestor_levels(riddle: str, root_level: dict):
     ancestor_levels = set()
     queue = [root_level]
     while queue:
-        # Add level to set
+        # Get top level from queue
         level = queue.pop(0)
-        ancestor_levels.add(level['discord_name'])
+        discord_name = level['discord_name']
 
         # Don't search node's children if level is final in set
         # (except if this is the root level itself, of course)
@@ -104,5 +104,8 @@ async def get_ancestor_levels(riddle: str, root_level: dict):
             level = await database.fetch_one(query, values)
             if level['discord_name'] not in ancestor_levels:
                 queue.append(dict(level))
+
+        # Add level to set
+        ancestor_levels.add(discord_name)
 
     return ancestor_levels
