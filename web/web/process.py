@@ -472,19 +472,20 @@ class _PathHandler:
         values = values | {'path': self.path, 'time': tnow}
         try:
             await database.execute(query, values)
-        except IntegrityError:
-            # Page already there, so quit
-            return
 
-        # Increment player's riddle page count and find time
-        query = '''
-            UPDATE riddle_accounts
-            SET page_count = page_count + 1, last_page_time = :time
-            WHERE riddle = :riddle
-                AND username = :username AND discriminator = :disc
-        '''
-        values = base_values | {'time': tnow}
-        await database.execute(query, values)
+            # Increment player's riddle page count and find time
+            query = '''
+                UPDATE riddle_accounts
+                SET page_count = page_count + 1, last_page_time = :time
+                WHERE riddle = :riddle
+                    AND username = :username AND discriminator = :disc
+            '''
+            values = base_values | {'time': tnow}
+            await database.execute(query, values)
+
+        except IntegrityError:
+            # Page's already there, so no increments
+            pass
 
         # Check and possibly grant an achievement
         await self._process_cheevo()
