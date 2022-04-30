@@ -117,8 +117,8 @@ async def manage_cheevos(alias: str):
     return await r('Guild info updated successfully!')
 
 
-@admin_cheevos.get('/admin/cheevo-row')
-async def cheevo_row():
+@admin_cheevos.get('/admin/<_alias>/cheevo-row')
+async def cheevo_row(_alias: str):
     '''Çheevo row HTML code to be fetched by JS script.'''
     return await render_template(
         'admin/cheevo-row.htm', cheevo=None,
