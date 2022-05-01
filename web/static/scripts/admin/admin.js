@@ -3,7 +3,7 @@ import {
 }
   from '../explorer.js';
 
-// Outline colors for cheevos based on rank
+/** Outline colors for cheevos based on rank. */
 const cheevoRankColors = {
   'C': 'firebrick',
   'B': 'lightcyan',
@@ -11,11 +11,19 @@ const cheevoRankColors = {
   'S': 'darkturquoise'
 };
 
-// Dictionary of sets of current added pages for each level
+/** Dictionary of sets of current added pages for each level.  */
 var addedPages = {};
 
-// Set of removed (unhighlighted) level pages
+/** Set of removed (unhighlighted) level pages.  */
 var removedPages = new Set();
+
+/** Syncs discord name with level name on the latter change. */
+function updateDiscordName() {
+  const row = $(this).parents('.row');
+  const levelName = $(this).val();
+  const discordName = row.find('.discord-name');
+  discordName.val(levelName);
+}
 
 function changeThumb() {
   // Load image from file browser
@@ -202,7 +210,7 @@ function addRow(event) {
       $(`[name=${index}-discord_category]`).val(prevCategory);
     }
     // Add listeners to new fields
-    console.log(index)
+    list.on('change', `.name input`, updateDiscordName);
     list.on('change', `#${index}-input`, changeThumb);
     if (type == 'cheevo') {
       list.on('click', '.rank-radio', changeCheevoRank);
@@ -215,7 +223,7 @@ function addRow(event) {
 $(_ => {
   // Dinamically create CSS classes for thumb outline colors
   var css = '<style type="text/css">';
-  $.each(cheevoRankColors, function(rank, color) {
+  $.each(cheevoRankColors, (rank, color) => {
     css += '.' + rank.toLowerCase() + '-rank { ';
     css += `border-color: ${color} !important; `;
     css += `box-shadow: 0 0 0.8em ${color} !important; } `;
@@ -223,12 +231,15 @@ $(_ => {
   css += '</style>';
   $('head').append(css);
 
+  // Listen to level name changes
+  $('.row .name input').on('change', updateDiscordName);
+
   // Listen to thumb changes
-  $('.thumb-input').each(function () {
+  $('.thumb-input').each(_ => {
     $(this).on('change', changeThumb);
   });
   // Listen to rank radio changes
-  $('.rank-radio').each(function () {
+  $('.rank-radio').each(_ => {
     $(this).on('click', changeCheevoRank);
   });
   // Listen to page explorer clicks

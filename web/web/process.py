@@ -256,7 +256,7 @@ class _PathHandler:
         extension = self.path[(dot_index + 1):]
         is_normal_page = extension in ('htm', 'html', 'php')
 
-        # Check if path corresponds to a valid page (non 404)
+        # Check if path corresponds to a valid level page (non 404)
         query = '''
             SELECT * FROM level_pages
             WHERE riddle = :riddle AND path = :path
