@@ -11,7 +11,6 @@ from util.db import database
 players = Blueprint('players', __name__)
 
 
-@players.get('/')
 @players.get('/players')
 @players.get('/players/<country>')
 async def global_list(country: str = None):
