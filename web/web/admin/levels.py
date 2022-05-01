@@ -331,33 +331,12 @@ async def get_pages(alias: str) -> str:
     return json.dumps(pages)
 
 
-@admin_levels.get('/admin/<alias>/level-row')
-async def level_row(alias: str):
-    '''Level row HTML code to be fetched by JS script.
-    Some info related to previous level (if any) is included.'''
-
-    is_secret = request.args['index'][0] == 's'
-    index = int(request.args['index'].replace('s', ''))
-    if index == 1:
-        level = None
-    else:
-        query = '''
-            SELECT * FROM levels
-            WHERE riddle = :riddle
-                AND is_secret = :is_secret AND `index` = :prev_index
-        '''
-        values = {
-            'riddle': alias, 'is_secret': is_secret, 'prev_index': index - 1
-        }
-        previous = await database.fetch_one(query, values)
-        level = {key: '' for key in dict(previous)}
-        level |= {
-            'requirements': previous['name'] if not is_secret else '',
-            'discord_category': previous['discord_category'],
-        }
+@admin_levels.get('/admin/<_alias>/level-row')
+async def level_row(_alias: str):
+    '''Level row HTML code to be fetched by JS script.'''
     return await render_template(
-        'admin/level-row.htm', level=level,
-        index=index, image='/static/thumbs/locked.png'
+        'admin/level-row.htm', level=None,
+        index=request.args['index'], image='/static/thumbs/locked.png'
     )
 
 

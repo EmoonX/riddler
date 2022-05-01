@@ -43,11 +43,11 @@
   <div>
     <label title="ℹ️ Separate grouped set to appear on level explorer; also currently corresponds to the Discord category the level's channel will be in.">
       Set/Category
-      <input type="text" name="{{ index }}-discord_category" size="10" value="{{ level['discord_category'] }}" required>
+      <input type="text" class="discord-category" name="{{ index }}-discord_category" size="10" value="{{ level['discord_category'] }}" required>
     </label>
     <label title="ℹ️ Name to be used on Discord channel and role(s). ASCII, can only contain lowercase letters and hyphens (-); it's generally intended to be the same (or to have the same pronunciation) as the level name.">
       Discord name
-      <input type="text" name="{{ index }}-discord_name" size="8" value="{{ level['discord_name'] }}" required>
+      <input type="text" class="discord-name" name="{{ index }}-discord_name" size="8" value="{{ level['discord_name'] }}" required>
     </label>
   </div>
 </div>

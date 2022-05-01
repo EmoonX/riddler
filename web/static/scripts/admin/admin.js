@@ -184,14 +184,23 @@ function addRow(event) {
   const data = {'index': index};
   $.get(url, data, function(html) {
     // Get HTML from rendered template and append to section
-    const div = $.parseHTML(html);
-    var list = $('.new:not(.secret)');
-    if (type == 'secret-level') {
-      list = $('.secret.new');
-    }
+    const row = $.parseHTML(html);
+    const list = (type != 'secret-level') ?
+      $('.new:not(.secret)') : $('.secret.new');
     list.show();
-    list.append(div);
+    list.append(row);
 
+    // Insert handy values from previous row (if any)
+    if (index != '1') {
+      const prevIndex =
+        (index[0] != 's') ?
+        (parseInt(index) - 1).toString() :
+        ('s' + (parseInt(index.substring(1)) - 1).toString());
+      const prevName = $(`[name=${prevIndex}-name]`).val();
+      const prevCategory = $(`[name=${prevIndex}-discord_category]`).val();
+      $(`[name=${index}-requirements]`).val(prevName);
+      $(`[name=${index}-discord_category]`).val(prevCategory);
+    }
     // Add listeners to new fields
     console.log(index)
     list.on('change', `#${index}-input`, changeThumb);
