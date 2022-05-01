@@ -163,8 +163,8 @@
         {% endfor %}
           </div>
         </div>
-      {% if level['unlocked'] %}
         <div class="page-explorer">
+        {% if level['unlocked'] %}
           {% set folder = level['topmost_folder'] %}
           <nav>
             <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">{{ folder }}</div>
@@ -175,8 +175,8 @@
           <div class="files">
             <!-- JS will append files here -->
           </div>
+        {% endif %}
         </div>
-      {% endif %}
       {% endfor %}
       </section>
     {% endfor %}

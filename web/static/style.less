@@ -669,7 +669,7 @@ section.list {
   border-image: linear-gradient(
     to right,
     transparent,
-    rgba(255, 255, 221, 0.5) 15% 85%,
+    rgba(255, 255, 221, 0.5) 10% 90%,
     transparent
   );
   border-image-slice: 1;
@@ -682,8 +682,6 @@ section.list > .row {
   display: flex;
   flex-direction: row;
   justify-content: space-around;
-  height: 250px;
-  width: 100%;
   margin: 0 -80px;
   padding: 0 80px;
   background-image: linear-gradient(
@@ -692,18 +690,18 @@ section.list > .row {
     rgba(127, 127, 127, 0.15) 15% 85%,
     transparent
   );
-  border: thin solid;
-  border-image: linear-gradient(
-    to right,
-    transparent,
-    rgba(255, 255, 221, 0.5) 15% 85%,
-    transparent
-  );
-  border-image-slice: 1;
   text-align: center;
   font-size: 1.2rem;
   color: #ffd;
 
+  &:nth-child(even) {
+    background-image: linear-gradient(
+      to right,
+      transparent,
+      rgba(127, 127, 127, 0.25) 15% 85%,
+      transparent
+    );
+  }
   > * {
     display: flex;
     flex-direction: column;
@@ -783,7 +781,7 @@ section.list > .row {
     background-image: linear-gradient(
     to right,
     transparent,
-    rgba(127, 127, 127, 0.15) 15% 85%,
+    rgba(127, 127, 127, 0.06) 15% 85%,
     transparent
   );
     opacity: 0;
@@ -846,16 +844,8 @@ section.list.players {
 section.list.players > .row {
   position: relative;
   z-index: -1000;
-  height: 120px;
+  height: 6em;
 
-  &:nth-child(even) {
-    background-image: linear-gradient(
-      to right,
-      transparent,
-      rgba(127, 127, 127, 0.2) 15% 85%,
-      transparent
-    );
-  }
   > .rank {
     width: 60px;
     font-size: 1.5em;
@@ -1148,6 +1138,7 @@ section.list.countries > .row {
 /* -- Levels lists -- */
 
 section.list.levels > .row {
+  height: 10em;
   font-size: 1.5rem;
 
   > :first-child {
@@ -1249,12 +1240,17 @@ section.list.levels > .row {
     display: grid;
     grid-template-rows: 33% 33% 33%;
     grid-template-columns: 33% 33% 33%;
-    width: 250px;
+    width: 200px;
     margin: 15px 0;
 
     > a.player {
       position: relative;
       display: block;
+
+      img.avatar-small {
+        width: 45px;
+        height: 45px;
+      }
     }
     > .remaining-count {
       opacity: 0.8;
@@ -1277,6 +1273,14 @@ section.list.levels > .row {
   &:hover .rank span {
     transform: rotate(360deg);
   }
+  &.active {
+    border-top: thin solid;
+    border-image: linear-gradient(
+      to right,
+      transparent, rgba(255, 255, 221, 0.5) 15% 85%, transparent
+    );
+    border-image-slice: 1;
+  }
 }
 
 .check {
@@ -1287,11 +1291,21 @@ section.list.levels > .row {
 /* ------------------------------------------------------------------------- */
 /* -- Level Explorer -- */
 
-section.list.levels > .row:not(:first-child) {
-  margin-top: 0px;
+section.list.levels {
+  > .row:not(:first-child) {
+    margin-top: 0px;
 
-  &.active {
-    margin-top: 50px !important;
+    &.active {
+      margin-top: 50px !important;
+    }
+  }
+  > .row:nth-child(4n + 3) {
+    background-image: linear-gradient(
+      to right,
+      transparent,
+      rgba(127, 127, 127, 0.25) 15% 85%,
+      transparent
+    );
   }
 }
 
@@ -1437,6 +1451,10 @@ section.list.levels > .page-explorer {
 /* ------------------------------------------------------------------------- */
 /* -- [ADMIN] Level lists -- */
 
+section.list.admin > .row {
+  height: 13em;
+}
+
 section.list.levels.admin > .row {
   font-size: 1.2rem;
 
@@ -1481,6 +1499,38 @@ p.riddler-synopsis {
   text-indent: 0;
   line-height: 1.5em;
   font-size: 1.5em;
+
+  > var {
+    text-shadow:
+      0 0 0.3em MediumVioletRed,
+      0 0 0.6em MediumVioletRed,
+      0 0 0.9em MediumVioletRed;
+  }
+}
+
+.list.players.recent-progress > .row {
+  justify-content: left;
+  gap: 2em;
+  height: 4em;
+  border: none;
+
+  > .completion-time {
+    font-style: italic;
+  }
+  > .status {
+    flex-direction: row;
+    gap: 0.5em;
+
+    > .player {
+      display: flex;
+      align-items: center;
+      gap: 0.6em;
+
+      img.avatar {
+        width: 2.5em;
+      }
+    }
+  }
 }
 
 strong {
