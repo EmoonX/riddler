@@ -74,6 +74,8 @@ async def get_user_riddle_data(alias: str = '%'):
     result = await database.fetch_all(query, values)
     for row in result:
         _alias, level_name = row['riddle'], row['level_name']
+        if not _alias in riddles:
+            continue
         if not 'solvedLevels' in riddles[_alias]:
             riddles[_alias]['solvedLevels'] = {}
         if row['completion_time']:
@@ -88,7 +90,8 @@ async def get_user_riddle_data(alias: str = '%'):
     result = await database.fetch_all(query, values)
     for row in result:
         _alias, last_visited = row['riddle'], row['last_visited_level']
-        riddles[_alias]['visitedLevel'] = last_visited
+        if last_visited:
+            riddles[_alias]['visitedLevel'] = last_visited
 
     # Get level ordering for navigating levels in extension
     query = '''

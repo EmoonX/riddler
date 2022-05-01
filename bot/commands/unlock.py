@@ -337,8 +337,7 @@ async def update_nickname(member: Member, s: str):
 
 
 async def multi_update_nickname(riddle: str, member: Member):
-    '''Update complete nickname
-    (for riddles which use the sets system).'''
+    '''Update complete nickname.'''
 
     # Get level sets from DB
     query = '''
@@ -358,8 +357,7 @@ async def multi_update_nickname(riddle: str, member: Member):
                 AND final_level IN (
                     SELECT level_name FROM user_levels
                     WHERE riddle = :riddle
-                        AND username = :username
-                        AND discriminator = :disc
+                        AND username = :username AND discriminator = :disc
                         AND completion_time IS NOT NULL
                 )
         '''
@@ -433,7 +431,7 @@ async def multi_update_nickname(riddle: str, member: Member):
         sep = ', ' if len(set_progress) <= 2 else ' '
         s = sep.join(set_progress)
         if s != '🏅':
-            s = f"[{s}]"
+            s = f"({s})" if riddle == 'kermit' else f"[{s}]"
     await update_nickname(member, s)
 
 
