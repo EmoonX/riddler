@@ -1,6 +1,8 @@
     <header>
       <nav>
-        <div class="title">Riddler</div>
+        <a class="title" href="/" title="Homepage">
+          Riddler
+        </a>
         <nav class="dropdown">
           <button class="nav-button">⋮</button>
           {% set riddles = get_riddles() %}
@@ -60,7 +62,7 @@
         <nav class="dropdown">
           <button class="nav-button burger">≡</button>
           <div class="menu">
-            <a href="{{ url_for('players.global_list') }}" class="nav-button">All players</a>
+            <a href="{{ url_for('players.global_list') }}" class="nav-button">Players</a>
             <a href="{{ url_for('countries.global_list') }}" class="nav-button">Countries</a>
             <a href="{{ url_for('info.info_page', page='about') }}" class="nav-button">About / Help</a>
             <a href="https://discord.gg/ktaPPtnPSn" class="nav-button" target="_blank">
