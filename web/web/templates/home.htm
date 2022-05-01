@@ -8,7 +8,7 @@
         and <var>{{ player_count }}</var> players since 2021. <a href="/about">Learn more</a>.
       </p>
       <hr>
-      <h3>Recent progress</h3>
+      <h3>Recent player activity</h3>
       <section class="list players recent-progress">
         {% set avatar_urls = fetch_avatar_urls() %}
         {% set riddles = fetch_riddles() %}
@@ -28,7 +28,11 @@
               <!-- {% set country_name = country_names[player['country']] %} -->
               {% set riddle = riddles[player['riddle']] %}
               {% set icon_url = riddle['icon_url'] %}
-              completed level <var>{{ player['level_name'] }}</var> in <a class="riddle" href="{{ riddle['front_page'] }}" target="_blank">{{ riddle['full_name'] }}</a>.
+              completed level <var>{{ player['level_name'] }}</var> in
+              <a class="riddle" href="{{ riddle['front_page'] }}" target="_blank">
+                <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
+                {{ riddle['full_name'] }}
+              </a>
             </div>
           </div>
         </div>

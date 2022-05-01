@@ -1494,6 +1494,60 @@ section.list.levels.admin + button {
 }
 
 /* ------------------------------------------------------------------------- */
+/* -- Recent player activity -- */
+
+.list.players.recent-progress > .row {
+  justify-content: left;
+  gap: 2em;
+  height: 4em;
+  border: none;
+
+  > .completion-time {
+    font-style: italic;
+  }
+  > .status {
+    flex-direction: row;
+    gap: 0.5em;
+
+    * {
+      display: flex;
+      align-items: center;
+      gap: 0.3em;
+    }
+    > .player {
+      display: flex;
+      gap: 0.6em;
+
+      img.avatar {
+        width: 2.5em;
+      }
+    }
+    var {
+      letter-spacing: 0.02em;
+    }
+    a.riddle {
+      gap: 0.3em;
+      margin-left: 0.3em;
+      padding: 0.5em 0.8em 0.5em 0.7em;
+      border-radius: 1em;
+      background-color: rgba(255, 255, 255, 0.08);
+      font-weight: normal;
+      font-style: italic;
+      color: inherit;
+      text-decoration: none;
+
+      img.riddle-icon {
+        width: 1.5em;
+      }
+      &:hover {
+        background-color: rgba(255, 255, 255, 0.15);
+        text-decoration: underline;
+      }
+    }
+  }
+}
+
+/* ------------------------------------------------------------------------- */
 /* -- Info pages -- */
 
 h1.riddler-title {
@@ -1513,39 +1567,6 @@ p.riddler-synopsis {
       0 0 0.3em MediumVioletRed,
       0 0 0.6em MediumVioletRed,
       0 0 0.9em MediumVioletRed;
-  }
-}
-
-.list.players.recent-progress > .row {
-  justify-content: left;
-  gap: 2em;
-  height: 4em;
-  border: none;
-
-  > .completion-time {
-    font-style: italic;
-  }
-  > .status {
-    flex-direction: row;
-    gap: 0.5em;
-
-    > .player {
-      display: flex;
-      align-items: center;
-      gap: 0.6em;
-
-      img.avatar {
-        width: 2.5em;
-      }
-    }
-    var {
-      letter-spacing: 0.02em;
-    }
-    a.riddle {
-      color: inherit;
-      font-weight: normal;
-      font-style: italic;
-    }
   }
 }
 
