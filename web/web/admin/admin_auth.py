@@ -22,7 +22,6 @@ async def admin_auth(alias: str):
     query = 'SELECT * FROM riddles WHERE alias = :alias'
     result = await database.fetch_one(query, {'alias': alias})
     if not result:
-        # Invalid alias...
         abort(404)
 
     # Big boss can access everything 8)
@@ -30,11 +29,12 @@ async def admin_auth(alias: str):
     if user.id == 315940379553955844:
         return
 
-    # Check if user is riddle's creator/admin
+    # Check if user is riddle's creator/admin and has rights for it
     query = '''
         SELECT * FROM riddles
         WHERE alias = :alias
             AND creator_username = :username AND creator_disc = :disc
+            AND has_admin_rights IS TRUE
     '''
     values = {
         'alias': alias,
@@ -55,6 +55,8 @@ async def admin_auth(alias: str):
 
 
 async def is_admin_of(alias: str) -> bool:
+    '''Quick boolean method to check
+    for admin rights for given riddle.'''
     if not await discord.authorized:
         return False
     try:
