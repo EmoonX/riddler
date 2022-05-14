@@ -147,8 +147,6 @@ class User(commands.Cog):
             before.discriminator != after.discriminator
         ):
             # Username and/or discriminator were changed, so update tables
-            # (we only need to do it manually in the accounts table, since
-            # remaining ones are updated in cascade per foreign keys magic).
             query = '''
                 UPDATE accounts
                 SET username = :name_new, discriminator = :disc_new

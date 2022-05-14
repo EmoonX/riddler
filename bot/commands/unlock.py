@@ -99,7 +99,7 @@ class UnlockHandler:
         except Forbidden:
             logging.info(
                 ('\033[1m[%s]\033[0m '
-                    'Can\'t send messages  to \033[1m%s\033[0m '),
+                    'Can\'t send messages to \033[1m%s\033[0m '),
                 self.full_name, self.discord_handle
             )
 
@@ -175,8 +175,11 @@ class UnlockHandler:
         if completed_set:
             # Congratulatory DM
             role_name = completed_set['completion_role']
-            text = f"**[{self.full_name}] 🗿 LEVEL SET BEATEN 🗿**\n"
-            text += f"You have unlocked special title **@{role_name}**!"
+            text = (
+                f"**[{self.full_name}] "
+                    f"🗿 SET {completed_set['name']} COMPLETED 🗿**\n"
+                f"You have unlocked special title **@{role_name}**!"
+            )
             await self._send(text)
             if not self.in_riddle_guild:
                 return
@@ -225,7 +228,7 @@ class UnlockHandler:
         )
         text = (
             f"**[{self.full_name}]** "
-            f"You unlocked achievement **_{cheevo['title']}_**  "
+            f"You unlocked achievement **_{cheevo['title']}_** "
                 f"in page `{path}` and won **{points}** points!\n"
         )
         await self._send(text)
@@ -430,7 +433,7 @@ async def multi_update_nickname(riddle: str, member: Member):
     if set_progress:
         sep = ', ' if len(set_progress) <= 2 else ' '
         s = sep.join(set_progress)
-        if s != '🏅':
+        if s not in ('🏅', '🐸'):
             s = f"({s})" if riddle == 'kermit' else f"[{s}]"
     await update_nickname(member, s)
 

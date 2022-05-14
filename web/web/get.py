@@ -13,7 +13,7 @@ get = Blueprint('get', __name__)
 
 @get.get('/get-riddle-hosts')
 async def get_riddle_hosts():
-    '''Ǵet list of riddle hosts from database.'''
+    '''Get list of riddle hosts from database.'''
 
     # Get list of hosts
     riddles = await get_riddles(unlisted=True)
@@ -112,7 +112,7 @@ async def get_user_riddle_data(alias: str = '%'):
     if alias == '%':
         data = {'riddles': riddles, 'currentRiddle': current_riddle['alias']}
     else:
-        data = riddles[alias]
+        data = riddles[alias] if alias in riddles else {}
     data = json.dumps(data)
     return data
 
