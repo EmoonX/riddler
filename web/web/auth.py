@@ -93,8 +93,7 @@ async def register():
     await database.execute(query, values)
 
     # Redirect to post-registration page
-    url = url_for('info.info_page', page='about') + '#wonderland-invite'
-    return redirect(url)
+    return redirect(url_for('home.homepage'))
 
 
 @auth.get('/login')

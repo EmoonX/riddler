@@ -9,7 +9,7 @@
           <div class="menu riddles">
           {% for riddle in riddles %}
             {% set riddle = get_riddle(riddle['alias']) %}
-            {% set page = 'levels.level_list' if is_authorized() else 'players.riddle_list' %}
+            {% set page = 'players.riddle_list' %}
             <a href="{{ url_for(page, alias=riddle['alias']) }}" class="riddle">
               <figure>
                 <img class="riddle-icon" src="{{ riddle['icon_url'] }}">

@@ -433,7 +433,7 @@ a > .avatar-small {
 }
 
 figure.flag {
-  margin: 1.5em;
+  margin: 1em auto 0.5em;
 }
 
 figure.flag > img {
@@ -459,23 +459,23 @@ form {
   margin: 0 auto;
 }
 
-// fieldset {
-//   margin: 20px;
-//   width: 320px;
-//   height: 500px;
-// }
-
 legend {
   line-height: 0px;
 }
 
 /* Wrapper for Chrome and Edge fix */
-fieldset > div {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
+fieldset {
+  border-color: #aaa;
+  border-radius: 0.3em;
+
+  > div {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+    width: 300px;
+    height: 400px;
+  }
 }
 
 label {
@@ -963,7 +963,7 @@ section.list.players > .row {
     > .honor {
       position: relative;
       z-index: 0;
-      width: 50px;
+      width: 45px;
       height: 100px;
       text-align: center;
       text-decoration: none;
@@ -1053,7 +1053,7 @@ section.list.players > .row {
     > .thumbs {
       display: flex;
       position: absolute;
-      top: 120px;
+      top: 115px;
       z-index: 1000;
       flex-direction: column;
       justify-content: center;
