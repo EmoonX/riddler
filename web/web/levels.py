@@ -172,7 +172,7 @@ async def get_pages(alias: str, level_name: str = None) -> str:
 
     # Build dict of (level -> paths) from user database data
     user = await discord.get_user()
-    level_cond = f'AND level_name = "{level_name}"' if level_name else ''
+    level_cond = 'AND level_name = :level_name' if level_name else ''
     query = f"""
         SELECT level_name, path, access_time FROM user_pages
         WHERE riddle = :riddle
@@ -183,6 +183,8 @@ async def get_pages(alias: str, level_name: str = None) -> str:
     values = {
         'riddle': alias, 'username': user.name, 'disc': user.discriminator
     }
+    if level_name:
+        values['level_name'] = level_name
     result = await database.fetch_all(query, values)
     user_page_data = [dict(row) for row in result]
     paths = {}

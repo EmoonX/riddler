@@ -35,7 +35,7 @@ async def global_list(country: str = None):
 
     # Init dict of (handle -> player info)
     accounts = {}
-    cond_country = f"AND country = \"{country}\"" if country else ''
+    cond_country = 'AND country = :country' if country else ''
     query = f"""
         SELECT acc.*, SUM(page_count), MAX(last_page_time)
         FROM accounts AS acc INNER JOIN riddle_accounts AS racc
@@ -45,7 +45,10 @@ async def global_list(country: str = None):
         GROUP BY acc.username, acc.discriminator
         ORDER BY global_score DESC, page_count DESC, last_page_time DESC
     """
-    result = await database.fetch_all(query)
+    values = {}
+    if country:
+        values['country'] = country
+    result = await database.fetch_all(query, values)
     for row in result:
         handle = f"{row['username']}#{row['discriminator']}"
         player = dict(row) | {'current_level': {}, 'cheevo_count': {}}
@@ -158,7 +161,7 @@ async def riddle_list(alias: str, country: str = None):
     riddle['cheevo_count'] = result['count']
 
     # Get players data from database
-    cond_country = f"WHERE country = \"{country}\" " if country else ''
+    cond_country = 'WHERE country = :country ' if country else ''
     query = f'''
         SELECT result.*, acc.country, acc.global_score, acc.hidden FROM (
             (
@@ -180,6 +183,8 @@ async def riddle_list(alias: str, country: str = None):
         ORDER BY score DESC, last_page_time DESC
         LIMIT 1000
     '''
+    if country:
+        values['country'] = country
     result = await database.fetch_all(query, values)
     accounts = [dict(account) for account in result]
 
