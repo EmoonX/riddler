@@ -1,3 +1,5 @@
+#!/usr/bin/python3
+
 '''Web-crawler script. Picks up front level links
 from a `filelist.txt` and searches given site pages
 for images' URLs, downloading them in the process.'''
@@ -8,6 +10,40 @@ import sys
 
 from bs4 import BeautifulSoup
 import requests
+
+
+
+def visit_and_process_images(url: str) -> str:
+    '''Visit webpage and search for <img> tags,
+    saving it not downloaded yet and returning found URL.'''
+
+    if url[-4:] != '.htm' and url[-5:] != '.html':
+        return
+
+    # Crawl page for <img> tag and add it to list
+    resp = requests.get(url)
+    if resp.status_code != 200:
+        return
+    html = resp.text
+    soup = BeautifulSoup(html, features="lxml")
+    if not soup.find('img'):
+        return
+    src = soup.img['src']
+    print(f"({level}) Found image {src}...", end='')
+    image_url = url.rsplit('/', maxsplit=1)[0] + '/' + src
+
+    # Download image from given URL and save it in folder
+    resp = requests.get(image_url, stream=True)
+    path = 'images/' + src
+    if not os.path.exists(path):
+        with open(path, 'wb') as image_file:
+            shutil.copyfileobj(resp.raw, image_file)
+            print(' saved.')
+    else:
+        print()
+
+    return image_url
+
 
 if len(sys.argv) != 2:
     print('ERROR: missing filename', file=sys.stderr)
@@ -21,49 +57,34 @@ with open(filename, encoding='utf-8') as file:
 # Build dict of front URLs
 levels = {}
 for text in data:
-    level, url = text.split('\n')[0:2]
+    level, urls = text.strip().split('\n', maxsplit=1)
     level = level.strip()
-    url = url.strip()
-    levels[level] = url
+    urls = set(urls.split())
+    levels[level] = urls
 
 if not os.path.exists('images'):
     os.mkdir('images')
-    print('Created dir "images"')
+    print('Created dir "images".\n')
 
-images = {}
-for level, url in levels.items():
-    # Crawl page for <img> tag
-    resp = requests.get(url)
-    if resp.status_code != 200:
-        continue
-    html = resp.text
-    soup = BeautifulSoup(html, features="lxml")
-    if not soup.find('img'):
-        continue
-    src = soup.img['src']
-    image_url = url.rsplit('/', maxsplit=1)[0] + '/' + src
-    images[level] = image_url
-
-    # Download image from given URL and save it in folder
-    resp = requests.get(image_url, stream=True)
-    path = 'images/' + src
-    if not os.path.exists(path):
-        with open(path, 'wb') as image_file:
-            shutil.copyfileobj(resp.raw, image_file)
-            print(f"({level}) Image {src} saved")
+for level, urls in levels.items():
+    if level == '10':
+        break
+    to_add = []
+    for url in urls:
+        image_url = visit_and_process_images(url)
+        if image_url:
+            to_add.append(image_url)
+    urls.update(to_add)
 
 # Updates filelist with image links
-for i, text in enumerate(data):
-    rows = text.strip().split('\n')
-    level = rows[0].strip()
-    rows[0] = '#' + rows[0]
-    if level in images:
-        image_url = images[level]
-        rows.insert(2, image_url)
-    data[i] = '\n'.join(rows)
+data = []
+for level, urls in levels.items():
+    name = '#' + level
+    content = [name] + sorted(urls)
+    text = '\n'.join(content)
+    data.append(text)
 
 # Save output to new .txt
 with open('filelist.txt', 'w', encoding='utf-8') as output:
     text = '\n\n'.join(data)
-    print(text)
     output.write(text)
