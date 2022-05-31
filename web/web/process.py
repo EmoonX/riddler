@@ -602,8 +602,12 @@ class _LevelHandler:
             alias=self.ph.riddle_alias, level=self.level,
             username=self.ph.username, disc=self.ph.disc
         )
-        if not self.level['is_secret']:
+        if (
+            not self.level['is_secret']
+            and self.ph.riddle_account['current_level'] != '🏅'
+        ):
             # Update player's current_level
+            # (only if riddle hasn't been finished yet)
             query = '''
                 UPDATE riddle_accounts SET current_level = :name_next
                 WHERE riddle = :riddle AND
