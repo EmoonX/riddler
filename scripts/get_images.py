@@ -10,7 +10,7 @@ import sys
 
 from bs4 import BeautifulSoup
 import requests
-
+from requests.auth import HTTPBasicAuth
 
 
 def visit_and_process_images(url: str) -> str:
@@ -21,7 +21,8 @@ def visit_and_process_images(url: str) -> str:
         return
 
     # Crawl page for <img> tag and add it to list
-    resp = requests.get(url)
+    auth = HTTPBasicAuth('un', 'pw')
+    resp = requests.get(url, auth=auth)
     if resp.status_code != 200:
         return
     html = resp.text
@@ -54,21 +55,21 @@ filename = sys.argv[1]
 with open(filename, encoding='utf-8') as file:
     data = file.read().replace('\r', '').split('#')[1:]
 
-# Build dict of front URLs
+# Build dict of level URLs
 levels = {}
+level_fronts = {}
 for text in data:
     level, urls = text.strip().split('\n', maxsplit=1)
     level = level.strip()
-    urls = set(urls.split())
-    levels[level] = urls
+    urls = urls.split()
+    level_fronts[level] = urls[0]
+    levels[level] = set(urls)
 
 if not os.path.exists('images'):
     os.mkdir('images')
     print('Created dir "images".\n')
 
 for level, urls in levels.items():
-    if level == '10':
-        break
     to_add = []
     for url in urls:
         image_url = visit_and_process_images(url)
@@ -80,7 +81,9 @@ for level, urls in levels.items():
 data = []
 for level, urls in levels.items():
     name = '#' + level
-    content = [name] + sorted(urls)
+    front = level_fronts[level]
+    urls.remove(front)
+    content = [name, front] + sorted(urls)
     text = '\n'.join(content)
     data.append(text)
 
