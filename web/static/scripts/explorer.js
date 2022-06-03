@@ -11,7 +11,14 @@ export function toggleExplorer() {
 
   const row = $(this).parents('.row');
   const explorer = row.next('.page-explorer');
-
+  const admin = row.parents('.list').hasClass('admin');
+  if (admin && (! explorer.hasClass('active'))) {
+    // Don't open explorer until level name is supplied
+    const levelName = row.find('.name input').val()
+    if (! levelName) {
+      return;
+    }
+  }
   // Wait until "display: none" is toggled so to not break transition
   row.toggleClass('active');
   explorer.toggle(0, _ => {
@@ -20,7 +27,6 @@ export function toggleExplorer() {
       // Change to initial (front page) directory
       const node = explorer.find('.path');
       const folder = node.text();
-      const admin = row.parents('.list').hasClass('admin');
       changeDir(explorer, folder, admin);
 
       // Scroll page to accomodate view to margin-top
