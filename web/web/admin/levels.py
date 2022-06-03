@@ -348,41 +348,24 @@ async def update_pages(alias: str):
     # Check for right permissions
     await admin_auth(alias)
 
-    # Decode received text data and split into list (ignore empty).
-    # Also get rid of "carriage hellturns", swap `\` for `/``,
-    # and ignore non-file paths.
-    data = await request.data
-    data = data.decode('utf-8')
-    data = list(filter(None, data.replace('\r', '').replace('\\', '/').split('\n')))
-    data = [path for path in sorted(data) if ('/' in path and '.' in path[-5:])]
+    async def _insert(path: str, level: str = None):
+        '''Insert path into DB, possibly attached to a level.'''
 
-    # Find the longest common prefix amongst all paths
-    # longest_prefix = data[0] if len(data) > 1 else ''
-    longest_prefix = '/'
-    for path in data[1:]:
-        k = min(len(longest_prefix), len(path))
-        for i in range(k):
-            if path[i] != longest_prefix[i]:
-                longest_prefix = longest_prefix[:i]
-                break
-
-    # Remove the useless prefix from paths,
-    # guaranteeing they start with a `/`
-    data = ['/' + path.replace(longest_prefix, '', 1)
-            for path in data]
-
-    for path in data:
-        # Add page to riddle database
         query = '''
-            INSERT INTO level_pages (`riddle`, `path`)
-            VALUES (:riddle, :path)
+            SET FOREIGN_KEY_CHECKS = 0;
+            INSERT INTO level_pages (`riddle`, `path`, `level_name`)
+                VALUES (:riddle, :path, :level);
+            SET FOREIGN_KEY_CHECKS = 1;
         '''
-        values = {'riddle': alias, 'path': path}
+        values = {'riddle': alias, 'path': path, 'level': level}
         try:
+            # Add page to riddle database
+            # (foreign keys are disabled to accept level a priori)
             await database.execute(query, values)
+            s = f" ({level})" if level else ''
             print(
                 f"> \033[1m[{alias}]\033[0m "
-                f"Added page \033[1m{path}\033[0m to database!"
+                f"Added page \033[1m{path}{s}\033[0m to database!"
             )
         except IntegrityError:
             # Page already present, so nothing to do
@@ -390,5 +373,20 @@ async def update_pages(alias: str):
                 f"> \033[1m[{alias}]\033[0m "
                 f"Skipping page \033[1m{path}\033[0m... "
             )
+
+    # Receive text data and split it between levels (if any)
+    data = (await request.data).decode('utf-8').split('#')
+    for i, text in enumerate(data):
+        # Get level info (or None), remove undesired
+        # characters and insert individual pages into db
+        level = None if i == 0 else text.split('\n')[0].strip()
+        pages = list(filter(
+            None, text.replace('\r', '').replace('\\', '/').split('\n')
+        ))
+        for path in pages:
+            if not ('/' in path and '.' in path[-5:]):
+                continue
+            path = path.strip()
+            await _insert(path, level)
 
     return 'OK', 200
