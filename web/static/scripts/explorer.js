@@ -61,16 +61,45 @@ export function changeDir(explorer, folderPath, admin) {
   files.find('.folder').append('<span class="first"></span>');
   files.append('<span class="first"></span>');
 
-  // And now add the current dir files
-  // const levelName = explorer.prev().find('.key > input').val();
-  var levelName;
-  if (!admin) {
-    levelName = explorer.prev().find('.name').text();
-  } else {
-    levelName = explorer.prev().find('.name input').val();
-  }
+  // Get level and folder entry
+  const prev = explorer.prev()
+  const levelName =
+    admin ?
+    prev.find('.name input').val() :
+    prev.find('.name').text()
+  ;
+  console.log(levelName);
   const folder = getFolderEntry(folderPath, levelName, admin);
-  $.each(folder['children'], (page, row) => {
+
+  // Get sorted (by extension and then name) pages object
+  const pages =
+    Object.keys(folder['children'])
+    .sort((a, b) => {
+      const i = a.lastIndexOf('.');
+      const j = b.lastIndexOf('.');
+      if (i == -1 || j == -1) {
+        return (
+          (i == j) ?
+            a.localeCompare(b) : ((i == -1) ? +1 : -1)
+        );
+      } else {
+        const aExt = a.substring(i+1);
+        const bExt = b.substring(j+1);
+        return (
+          (aExt != bExt) ?
+            aExt.localeCompare(bExt) : a.localeCompare(b)
+        );
+      }
+    }).reduce(
+      (obj, key) => {
+        obj[key] = folder['children'][key];
+        return obj;
+      },
+      {}
+    )
+  ;
+  // And now add the current dir files
+  $.each(pages, (page, row) => {
     var name = 'folder';
     const j = page.lastIndexOf('.');
     if (j != -1) {

@@ -307,22 +307,6 @@ async def get_pages(alias: str) -> str:
                     children[seg] = row
             parent = children[seg]
 
-    def _extension_cmp(row: dict):
-        '''Compare pages based firstly on their extension.
-        Order goes: folders first, then .htm, then the rest.'''
-
-        page = row['page']
-        index = page.rfind('.')
-        if index == -1:
-            return 'aaa' + page
-        if page[index:] in ('.htm', '.html'):
-            return 'aab' + page
-        return 'zzz' + page[-3:]
-
-    # # Sort pages from each folder
-    # for folder in pages['/']['children'].values():
-    #     folder.sort(key=_extension_cmp)
-
     # # Save number of pages/files in folder
     # for folder in folders.values():
     #     folder['filesTotal'] = len(folder['files'])
