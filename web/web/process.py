@@ -53,8 +53,9 @@ async def process_url(username=None, disc=None, path=None):
         # Process received path
         ok = await ph.process()
         if not ok and status_code != 404:
-            # Page exists, but not a level one
+            # Page exists, but not (yet?) a level one
             message, status_code = 'Not a level page', 412
+            await ph.check_and_register_missing_page()
 
         # Log received path with timestamp
         tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -557,6 +558,25 @@ class _PathHandler:
             alias=self.riddle_alias, username=self.username, disc=self.disc,
             cheevo=dict(cheevo), points=points, page=self.path
         )
+
+    async def check_and_register_missing_page(self):
+        '''Check and possibly register non-level-associated
+        page (which necessarily came from a valid request).'''
+
+        query = '''
+            INSERT INTO level_pages (riddle, `path`)
+            VALUES (:riddle, :path)
+        '''
+        values = {'riddle': self.riddle_alias, 'path': self.path}
+        try:
+            await database.execute(query, values)
+            print(
+                f"> \033[1m[{self.riddle_alias}]\033[0m "
+                f"Found new page \033[1m{self.path}\033[0m "
+                    f"by \033[1m{self.username}#{self.disc}\033[0m."
+            )
+        except IntegrityError:
+            pass
 
 
 class _LevelHandler:
