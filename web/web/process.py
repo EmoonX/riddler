@@ -563,6 +563,7 @@ class _PathHandler:
         '''Check and possibly register non-level-associated
         page (which necessarily came from a valid request).'''
 
+        # Register page as a new one (with NULL level)
         query = '''
             INSERT INTO level_pages (riddle, `path`)
             VALUES (:riddle, :path)
@@ -575,6 +576,14 @@ class _PathHandler:
                 f"Found new page \033[1m{self.path}\033[0m "
                     f"by \033[1m{self.username}#{self.disc}\033[0m."
             )
+            # Record user that has found it
+            query = '''
+                INSERT INTO found_pages
+                VALUES (:riddle, :path, :username, :disc)
+            '''
+            values |= {'username': self.username, 'disc': self.disc}
+            await database.execute(query, values)
+
         except IntegrityError:
             pass
 
