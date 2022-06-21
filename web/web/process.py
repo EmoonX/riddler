@@ -563,25 +563,31 @@ class _PathHandler:
         '''Check and possibly register non-level-associated
         page (which necessarily came from a valid request).'''
 
-        # Register page as a new one (with NULL level)
+        # Record found page and respective user
+        tnow = datetime.utcnow()
         query = '''
-            INSERT INTO level_pages (riddle, `path`)
-            VALUES (:riddle, :path)
+            INSERT INTO found_pages
+                (riddle, `path`, username, discriminator, access_time)
+            VALUES (:riddle, :path, :username, :disc, :time)
         '''
-        values = {'riddle': self.riddle_alias, 'path': self.path}
+        values = {
+            'riddle': self.riddle_alias, 'path': self.path,
+            'username': self.username, 'disc': self.disc, 'time': tnow,
+        }
         try:
             await database.execute(query, values)
             print(
                 f"> \033[1m[{self.riddle_alias}]\033[0m "
                 f"Found new page \033[1m{self.path}\033[0m "
-                    f"by \033[1m{self.username}#{self.disc}\033[0m."
+                    f"by \033[1m{self.username}#{self.disc}\033[0m "
+                    f"({tnow})"
             )
-            # Record user that has found it
+            # Register page as a new one (with NULL level)
             query = '''
-                INSERT INTO found_pages
-                VALUES (:riddle, :path, :username, :disc)
+                INSERT INTO level_pages (riddle, `path`)
+                VALUES (:riddle, :path)
             '''
-            values |= {'username': self.username, 'disc': self.disc}
+            values = {'riddle': self.riddle_alias, 'path': self.path}
             await database.execute(query, values)
 
         except IntegrityError:
