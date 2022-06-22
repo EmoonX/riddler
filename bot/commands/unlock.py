@@ -55,12 +55,9 @@ class UnlockHandler:
 
         # Use Wonderland membership as replacement
         if not self.in_riddle_guild:
-            # Not a member of riddle guild, so use Wonderland instead
-            wonderland = get(bot.guilds, name="Riddler's Wonderland II")
-            self.member = get(
-                wonderland.members,
-                name=username, discriminator=disc
-            )
+            # Not a member of specific riddle guild, so use another one
+            members = bot.get_all_members()
+            self.member = get(members, name=username, discriminator=disc)
 
     async def _send(
         self, text: str, channel: abc.Messageable = None, **kwargs
