@@ -16,11 +16,11 @@ process = Blueprint('process', __name__)
 
 
 @process.route('/process', methods=['POST', 'OPTIONS'])
-async def process_url(username=None, disc=None, path=None):
+async def process_url(username=None, disc=None, url=None):
     '''Process an URL sent by browser extension.'''
 
     # Flag function call as automated or not
-    auto = (path is not None)
+    auto = (url is not None)
 
     if not auto and not await discord.authorized:
         # Not logged in
@@ -28,9 +28,9 @@ async def process_url(username=None, disc=None, path=None):
         return 'Not logged in', status
 
     if auto or request.method == 'POST':
-        # Receive path and status code from request
+        # Receive url and status code from request
         if not auto:
-            path = (await request.data).decode('utf-8')
+            url = (await request.data).decode('utf-8')
         status_code = request.headers.get('Statuscode', 200)
         if status_code:
             status_code = int(status_code)
@@ -42,7 +42,7 @@ async def process_url(username=None, disc=None, path=None):
             user = lambda: None
             setattr(user, 'name', username)
             setattr(user, 'discriminator', disc)
-        ph = await _PathHandler.build(user, path, status_code)
+        ph = await _PathHandler.build(user, url, status_code)
         if not ph:
             # Not inside root path (e.g forum or admin pages)
             return 'Not part of root path', 403
@@ -114,38 +114,11 @@ class _PathHandler:
     '''Real status code of requested page (either 200 or 404).'''
 
     @classmethod
-    async def build(cls, user: User, url: str, status_code: str):
+    async def build(cls, user: User, url: str, status_code: str) -> object:
         '''Build handler from DB's user info and URL info.'''
 
-        async def _get_riddle(url) -> dict:
-            '''Retrieve riddle info from database.'''
-
-            # Exclude protocol from URL
-            base_url = \
-                url.replace('https://', 'http://').replace('http://', '')
-
-            # (https root_path is searched first, and then http)
-            for protocol in ('https://', 'http://'):
-                url = protocol + base_url
-                url_without_www = url.replace('//www.', '//')
-                query = '''
-                    SELECT * FROM riddles
-                    WHERE LOCATE(root_path, :url)
-                        OR LOCATE(root_path, :url_without_www)
-                '''
-                values = {'url': url, 'url_without_www': url_without_www}
-                riddle = await database.fetch_one(query, values)
-                if riddle:
-                    return riddle
-
-        riddle = await _get_riddle(url)
-        if not riddle:
-            # Page outside level folders
-            return None
-
-        # Remove potential "www." from URL, if not required
-        if not '//www.' in riddle['root_path']:
-            url = url.replace('//www.', '//')
+        # Get riddle and path info from URL
+        riddle, path = await cls._get_riddle_and_path(url)
 
         # Save basic riddle + user info
         self = cls()
@@ -155,7 +128,7 @@ class _PathHandler:
         self.disc = user.discriminator
 
         # Save relative path and status code
-        self.path = url.removeprefix(riddle['root_path'])
+        self.path = path
         self.status_code = status_code
 
         # Ignore occurrences of consecutive slashes and trailing #
@@ -173,6 +146,30 @@ class _PathHandler:
                 self.path += '.htm'
 
         return self
+
+    @staticmethod
+    async def _get_riddle_and_path(url: str) -> dict:
+        '''Retrieve riddle and path from given URL.'''
+
+        # Domain and path for URL
+        aux = url.split('/', 3)[2:]
+        url_domain = aux[0].replace('www.', '')
+        url_path = '/' + aux[1]
+
+        query = 'SELECT * FROM riddles'
+        riddles = await database.fetch_all(query)
+        for riddle in riddles:
+            # Riddle domain and root path
+            aux = (riddle['root_path'] + '/').split('/', 3)[2:]
+            riddle_domain, riddle_path = aux[0], '/' + aux[1]
+            if riddle_domain == url_domain:
+                # Build relative path from root
+                url_path = (
+                    '/' + url_path[len(riddle_path):]
+                        if url_path.startswith(riddle_path)
+                    else ('../' * (riddle_path.count('/') - 1)) + url_path
+                )
+                return riddle, url_path
 
     async def build_player_riddle_data(self) -> bool:
         '''Build player riddle data from DB, creating it if nonexistent.'''
