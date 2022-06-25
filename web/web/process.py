@@ -131,6 +131,9 @@ class _PathHandler:
         self.path = path
         self.status_code = status_code
 
+        # Ignore content (GET variables) after '?'
+        self.path = self.path.split('?', 1)[0]
+
         # Ignore occurrences of consecutive slashes and trailing #
         self.path = re.sub('/{2,}', '/', self.path)
         if self.path[-1] == '#':
