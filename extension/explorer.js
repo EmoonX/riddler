@@ -1,11 +1,11 @@
 /** Base server URL. */
 const SERVER_URL = 'https://riddler.app';
 
-/** Dictionary of all durrent player riddle data. */
-var riddles = {};
+/** All player riddle data. */
+let riddles = {};
 
 /** Current riddle alias. */
-var currentRiddle;
+let currentRiddle;
 
 /** Inits page explorer for current visited riddle level. */
 export function initExplorer() {
@@ -29,7 +29,7 @@ function buildRiddle(data) {
     const pagesData = JSON.parse(json);
     riddles[alias] = data;
     const riddle = riddles[alias];
-    riddle.iconUrl = `images/riddles/${alias}.png`;
+    riddle.iconUrl = `${SERVER_URL}/static/riddles/${alias}.png`;
     riddle.shownLevel = riddle.visitedLevel;
     riddle.levels = {};
     $.each(pagesData, (levelName, pages) => {
@@ -180,16 +180,6 @@ function doubleClickFile() {
     const files = $(this).next('.folder-files');
     files.toggle();
   }
-}
-
-/** Animates "files popping in sequence" visual effect. */
-function popIcons(explorer) {
-  explorer.find('figure').each(function (index) {
-    const t = 50 * (index + 1);
-    setTimeout(_ => {
-      $(this).addClass('show');
-    }, t);
-  });
 }
 
 $(_ => {
