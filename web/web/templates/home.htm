@@ -4,20 +4,23 @@
     <main>
       <h1 class="riddler-title">Riddler</h1>
       <p class='riddler-synopsis'>
-        Serving <var>{{ riddle_count }}</var> online riddles, <var>{{ level_count }}</var> levels, <var>{{ page_count }}</var> pages<br>
-        and <var>{{ player_count }}</var> players since 2021. <a href="/about">Learn more</a>.
+        Serving <span style="font-size: 0.5em">(in an independent way)</span> <var>{{ riddle_count }}</var> online riddles, <var>{{ level_count }}</var> levels,<br>
+        <var>{{ page_count }}</var> pages and <var>{{ player_count }}</var> players since 2021. <a href="/about">Learn more</a>.
       </p>
       <hr>
       <h3>Recent player activity</h3>
       <section class="list players recent-progress">
         {% set avatar_urls = fetch_avatar_urls() %}
         {% set riddles = fetch_riddles() %}
-      {% for player in recent_completion %}
+      {% for player in recent_progress %}
         <div class="row">
-          <div class="completion-time">
-            {{ player['completion_time'] }}
+          <div class="time">
+            {{ player['time'] }}
           </div>
-          <div class="status">
+          {% if not 'is_completion' in player %}
+            {% set class = 'just-playing' %}
+          {% endif %}
+          <div class="status {{ class }}">
             <a class="player">
               {% set tag = player['username'] + '#' + player['discriminator'] %}
               {% set url = avatar_urls[tag] if tag in avatar_urls else '/static/images/locked.png' %}
@@ -28,7 +31,11 @@
               <!-- {% set country_name = country_names[player['country']] %} -->
               {% set riddle = riddles[player['riddle']] %}
               {% set icon_url = riddle['icon_url'] %}
+            {% if 'is_completion' in player %}
               completed level <var>{{ player['level_name'] }}</var> in
+            {% else %}
+              is playing
+            {% endif %}
               <a class="riddle" href="{{ riddle['front_page'] }}" target="_blank">
                 <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
                 {{ riddle['full_name'] }}

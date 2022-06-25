@@ -43,18 +43,26 @@ async def homepage():
     '''
     player_count = await database.fetch_val(query, column='count')
 
-    # Recent player progress data
+    # Recent player progress (newly found pages)
     query = '''
-        SELECT u1.*, (
-            SELECT country FROM accounts acc
-            WHERE u1.username = acc.username
-                AND u1.discriminator = acc.discriminator
-        ) country
+        SELECT *, MAX(access_time) AS time FROM user_pages
+        WHERE TIMESTAMPDIFF(DAY, access_time, NOW()) < 2
+            AND riddle NOT IN (
+                SELECT alias FROM riddles WHERE unlisted IS TRUE
+            )
+        GROUP BY username
+        ORDER BY time DESC
+    '''
+    recent_progress = await database.fetch_all(query)
+
+    # Recent player level completion data
+    query = '''
+        SELECT u1.*, completion_time AS time
         FROM user_levels u1 INNER JOIN (
             SELECT username, discriminator,
                 MAX(completion_time) AS max_time
             FROM user_levels
-            WHERE TIMESTAMPDIFF(DAY, completion_time, NOW()) <= 1
+            WHERE TIMESTAMPDIFF(DAY, completion_time, NOW()) < 2
             GROUP BY username
         ) u2
         ON u1.username = u2.username
@@ -65,6 +73,16 @@ async def homepage():
         )
         ORDER BY completion_time DESC
     '''
-    recent_completion = await database.fetch_all(query)
+    result = await database.fetch_all(query)
+    recent_levels = {
+        f"{row['username']}#{row['discriminator']}": row
+        for row in result
+    }
+    # Swap generic progress for completion whenever it happened
+    for i, row in enumerate(recent_progress):
+        handle = f"{row['username']}#{row['discriminator']}"
+        if handle in recent_levels:
+            recent_progress[i] = dict(recent_levels[handle])
+            recent_progress[i]['is_completion'] = True
 
     return await render_template('home.htm', **locals())
