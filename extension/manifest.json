@@ -3,12 +3,13 @@
 
   "name": "Riddler",
   "description": "Browser extension for Riddler, the online riddle enhancer.",
-  "version": "0.3.8",
+  "version": "0.3.9",
 
   "background": {
     "page": "background.html"
   },
   "permissions": [
+    "storage",
     "webRequest",
     "https://riddler.app/process"
   ],
@@ -19,5 +20,7 @@
     "default_icon": "images/letter-r-32.png",
     "default_title": "Riddler",
     "default_popup": "popup.html"
-  }
+  },
+  "content_security_policy":
+    "script-src 'self' https://code.jquery.com; object-src 'self'"
 }
