@@ -164,7 +164,8 @@ class _PathHandler:
         for riddle in riddles:
             # Riddle domain and root path
             aux = (riddle['root_path'] + '/').split('/', 3)[2:]
-            riddle_domain, riddle_path = aux[0], '/' + aux[1]
+            riddle_domain = aux[0].replace('www.', '')
+            riddle_path = '/' + aux[1]
             if riddle_domain == url_domain:
                 # Build relative path from root
                 url_path = (
