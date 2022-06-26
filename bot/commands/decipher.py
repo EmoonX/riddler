@@ -155,13 +155,19 @@ class Decipher(commands.Cog):
         self, ctx: SlashContext, ciphertext: str, shift: int
     ):
         '''Decode ciphertext using Caesar cipher with given shift.'''
-        decoded_chars = list(ciphertext)
-        for i, char in enumerate(ciphertext):
+        text = await self._caesar_base(ciphertext, shift)
+        await ctx.send(text)
+
+    @staticmethod
+    def _caesar_base(text: str, shift: int):
+        '''Reusable base Caesar cipher method.'''
+        decoded_chars = list(text)
+        for i, char in enumerate(text):
             char = _shift_char(char, shift)
             if char:
                 decoded_chars[i] = char
         text = ''.join(decoded_chars)
-        await ctx.send(text)
+        return text
 
     @cog_ext.cog_slash(
         name='crossword',
@@ -256,6 +262,17 @@ class Decipher(commands.Cog):
         '''Reverse a string of characters.'''
         reversed_text = text[::-1]
         await ctx.send(reversed_text)
+
+    @cog_ext.cog_slash(
+        name='rot13',
+        options=[_required_str_option(
+            'text', 'Text to be decoded/encoded.'
+        )],
+    )
+    async def rot13(self, ctx: SlashContext, text: str):
+        '''Shift each letter 13 positions in the alphabet.'''
+        decoded_text = self._caesar_base(text, 13)
+        await ctx.send(decoded_text)
 
     @cog_ext.cog_slash(
         name='vigenere',
