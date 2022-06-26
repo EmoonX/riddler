@@ -91,6 +91,24 @@ class Decipher(commands.Cog):
         await ctx.send(text)
 
     @cog_ext.cog_slash(
+        name='atbash',
+        options=[_required_str_option(
+            'text', 'Text to be decoded/encoded.'
+        )],
+    )
+    async def atbash(self, ctx: SlashContext, text: str):
+        '''A-Z cipher. Swaps each letter \
+        for its reverse in the latin alphabet.'''
+        decoded_text = list(text)
+        for i, char in enumerate(text):
+            if char.isalpha():
+                k = ord('a') if char.islower() else ord('A')
+                char = chr((25 - (ord(char) - k)) + k)
+            decoded_text[i] = char
+        decoded_text = ''.join(decoded_text)
+        await ctx.send(decoded_text)
+
+    @cog_ext.cog_slash(
         name='binary_to_text',
         options=[_required_str_option(
             'binary_code',
@@ -222,8 +240,8 @@ class Decipher(commands.Cog):
             word = []
             codes = segment.split()
             for code in codes:
-                letter = morse.get(code, '?')
-                word.append(letter)
+                char = morse.get(code, '?')
+                word.append(char)
             decoded_text.append(''.join(word))
         decoded_text = ' '.join(decoded_text)
         await ctx.send(decoded_text)
