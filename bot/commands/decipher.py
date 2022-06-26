@@ -133,7 +133,7 @@ class Decipher(commands.Cog):
             )
         ],
     )
-    async def caesar_decode(
+    async def caesar(
         self, ctx: SlashContext, ciphertext: str, shift: int
     ):
         '''Decode ciphertext using Caesar cipher with given shift.'''
@@ -186,13 +186,56 @@ class Decipher(commands.Cog):
         await ctx.send(text)
 
     @cog_ext.cog_slash(
+        name='morse',
+        options=[_required_str_option(
+            'code',
+            'Dots (.) and dashes (-). Use spaces ( ) for separating '
+                'letters and slashes (/) for words.'
+        )],
+    )
+    async def morse(self, ctx: SlashContext, code: str):
+        '''Decode Morse-encoded text.'''
+
+        morse = {
+            '.-'  : 'A', '-...': 'B', '-.-.': 'C', '-..' : 'D',
+            '.'   : 'E', '..-.': 'F', '--.' : 'G', '....': 'H',
+            '..'  : 'I', '.---': 'J', '-.-' : 'K', '.-..': 'L',
+            '--'  : 'M', '-.'  : 'N', '---' : 'O', '.--.': 'P',
+            '--.-': 'Q', '.-.' : 'R', '...' : 'S', '-'   : 'T',
+            '..-' : 'U', '...-': 'V', '.--' : 'W',
+            '-..-': 'X', '-.--': 'Y', '--..': 'Z',
+
+            '-----': '0', '.----': '1', '..---': '2',
+            '...--': '3', '....-': '4', '.....': '5',
+            '-....': '6', '--...': '7', '---..': '8', '----.': '9',
+
+            '.-.-.-': '.', '--..--' : ',', '..--..': '?',
+            '.----.': "'", '-.-.--' : '!', '-..-.' : '/',
+            '-.--.' : '(', '-.--.-' : ')', '.-...' : '&',
+            '---...': ':', '-.-.-.' : ';', '-...-' : '=',
+            '.-.-.' : '+', '-....-' : '-', '..--.-': '_',
+            '.-..-.': '"', '...-..-': '$', '.--.-.': '@',
+        }
+        segments = code.split('/')
+        decoded_text = []
+        for segment in segments:
+            word = []
+            codes = segment.split()
+            for code in codes:
+                letter = morse.get(code, '?')
+                word.append(letter)
+            decoded_text.append(''.join(word))
+        decoded_text = ' '.join(decoded_text)
+        await ctx.send(decoded_text)
+
+    @cog_ext.cog_slash(
         name='vigenere',
         options=[
             _required_str_option('ciphertext', 'Vigenère-encoded ciphertext.'),
             _required_str_option('key', 'Alphabetic keyword to be applied.'),
         ],
     )
-    async def vigenere_decode(
+    async def vigenere(
         self, ctx: SlashContext, ciphertext: str, key: str
     ):
         '''Decode ciphertext using Vigenère method with given key.'''
