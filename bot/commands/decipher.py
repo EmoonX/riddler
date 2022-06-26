@@ -139,7 +139,7 @@ class Decipher(commands.Cog):
     @cog_ext.cog_slash(
         name='caesar',
         options=[
-            _required_str_option('ciphertext', 'Caesar-shifted ciphertext.'),
+            _required_str_option('text', 'Caesar-shifted ciphertext.'),
             create_option(
                 name='shift',
                 description=(
@@ -151,11 +151,9 @@ class Decipher(commands.Cog):
             )
         ],
     )
-    async def caesar(
-        self, ctx: SlashContext, ciphertext: str, shift: int
-    ):
-        '''Decode ciphertext using Caesar cipher with given shift.'''
-        text = await self._caesar_base(ciphertext, shift)
+    async def caesar(self, ctx: SlashContext, text: str, shift: int):
+        '''Decode text using Caesar cipher with given shift.'''
+        text = await self._caesar_base(text, shift)
         await ctx.send(text)
 
     @staticmethod
@@ -277,20 +275,18 @@ class Decipher(commands.Cog):
     @cog_ext.cog_slash(
         name='vigenere',
         options=[
-            _required_str_option('ciphertext', 'Vigenère-encoded ciphertext.'),
+            _required_str_option('text', 'Vigenère-encoded ciphertext.'),
             _required_str_option('key', 'Alphabetic keyword to be applied.'),
         ],
     )
-    async def vigenere(
-        self, ctx: SlashContext, ciphertext: str, key: str
-    ):
-        '''Decode ciphertext using Vigenère method with given key.'''
+    async def vigenere(self, ctx: SlashContext, text: str, key: str):
+        '''Decode text using Vigenère method with given key.'''
         if not key.isalpha():
             await _error_message(ctx, 'Non-alphabetic keyword.')
             return
         key = key.upper()
         j = 0
-        decoded_chars = list(ciphertext)
+        decoded_chars = list(text)
         for i, char in enumerate(decoded_chars):
             shift = -(ord(key[j]) - ord('A'))
             char = _shift_char(char, shift)
