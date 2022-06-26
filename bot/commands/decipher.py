@@ -229,6 +229,17 @@ class Decipher(commands.Cog):
         await ctx.send(decoded_text)
 
     @cog_ext.cog_slash(
+        name='reverse',
+        options=[_required_str_option(
+            'text', 'Text to be reversed.'
+        )],
+    )
+    async def reverse(self, ctx: SlashContext, text: str):
+        '''Reverse a string of characters.'''
+        reversed_text = text[::-1]
+        await ctx.send(reversed_text)
+
+    @cog_ext.cog_slash(
         name='vigenere',
         options=[
             _required_str_option('ciphertext', 'Vigenère-encoded ciphertext.'),
