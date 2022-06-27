@@ -68,16 +68,21 @@ async def context_processor():
         # Get DB row data
         query = 'SELECT * FROM riddles WHERE alias = :alias'
         riddle = await database.fetch_one(query, {'alias': alias})
+        if not riddle:
+            return None
 
-        if riddle:
-            # Get icon URL by bot request
-            url = await bot_request(
-                'get-riddle-icon-url', guild_id=riddle['guild_id']
-            )
-            if not url:
-                url = f"/static/riddles/{alias}.png"
-            riddle = dict(riddle)
-            riddle['icon_url'] = url
+        # Account for multi-root-path riddles
+        riddle = dict(riddle)
+        if riddle['root_path'][0] == '[':
+            riddle['root_path'] = riddle['root_path'].split('"')[1]
+
+        # Get icon URL by bot request
+        url = await bot_request(
+            'get-riddle-icon-url', guild_id=riddle['guild_id']
+        )
+        if not url:
+            url = f"/static/riddles/{alias}.png"
+        riddle['icon_url'] = url
 
         return riddle
 

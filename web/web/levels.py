@@ -19,7 +19,8 @@ async def level_list(alias: str):
     # Discord user and base values for SQL queries
     user = await discord.get_user()
     base_values = {
-        'riddle': alias, 'username': user.name, 'disc': user.discriminator
+        'riddle': alias,
+        'username': user.name, 'disc': user.discriminator
     }
     # Get riddle level data
     query = '''
@@ -246,9 +247,10 @@ async def get_pages(alias: str, level_name: str = None) -> str:
 async def get_root_path(alias: str):
     '''Get riddles' root URL path from DB.'''
     query = 'SELECT * FROM riddles WHERE alias = :alias'
-    root_path = await database.fetch_val(
-        query, {'alias': alias}, 'root_path'
-    )
+    values = {'alias': alias}
+    root_path = await database.fetch_val(query, values, 'root_path')
+    if root_path[0] == '[':
+        root_path = root_path.split('"')[1]
     return root_path
 
 
