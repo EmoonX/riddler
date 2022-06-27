@@ -159,11 +159,19 @@ class _PathHandler:
         url_domain = aux[0].replace('www.', '')
         url_path = '/' + aux[1]
 
+        # Build dict of (root_paths -> riddle)
         query = 'SELECT * FROM riddles'
         riddles = await database.fetch_all(query)
+        root_paths = {}
         for riddle in riddles:
+            if riddle['root_path'][0] != '[':
+                root_paths[riddle['root_path']] = riddle
+            for path in riddle['root_path'].split('"')[1::2]:
+                root_paths[path] = riddle
+
+        for root_path, riddle in root_paths.items():
             # Riddle domain and root path
-            aux = (riddle['root_path'] + '/').split('/', 3)[2:]
+            aux = (root_path + '/').split('/', 3)[2:]
             riddle_domain = aux[0].replace('www.', '')
             riddle_path = '/' + aux[1]
             if riddle_domain == url_domain:
