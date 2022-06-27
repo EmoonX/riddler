@@ -1,5 +1,6 @@
 aiohttp==3.7.4.post0
 aiomysql>=0.0.21
+bitarray>=2.5.1
 country-converter>=0.7.3
 databases>=0.4.1
 discord.py>=1.7.3

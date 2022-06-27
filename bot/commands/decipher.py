@@ -1,6 +1,7 @@
 from itertools import permutations
 import re
 
+from bitarray import bitarray
 from discord.ext import commands
 from discord_slash import (
     cog_ext, SlashContext, SlashCommandOptionType as OptType
@@ -107,6 +108,31 @@ class Decipher(commands.Cog):
             decoded_text[i] = char
         decoded_text = ''.join(decoded_text)
         await ctx.send(decoded_text)
+
+    @cog_ext.cog_slash(
+        name='base64',
+        options=[_required_str_option(
+            'code',
+            'Base64-encoded text '
+                '(valid characters: A-Z, a-z, +, / and =).'
+        )],
+    )
+    async def base64(self, ctx: SlashContext, code: str):
+        '''Decode Base64-encoded text.'''
+
+        alphabet = (
+            'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+            'abcdefghijklmnopqrstuvwxyz'
+            '0123456789+/'
+        )
+        bits = bitarray()
+        for char in code:
+            k = alphabet.find(char)
+            if k != -1:
+                bits += f"{k:06b}"
+        size = len(bits) // 8 * 8
+        text = bits[:size].tobytes().decode('utf-8')
+        await ctx.send(text)
 
     @cog_ext.cog_slash(
         name='binary_to_text',
@@ -218,7 +244,7 @@ class Decipher(commands.Cog):
     async def morse(self, ctx: SlashContext, code: str):
         '''Decode Morse-encoded text.'''
 
-        morse = {
+        morse_to_char = {
             '.-'  : 'A', '-...': 'B', '-.-.': 'C', '-..' : 'D',
             '.'   : 'E', '..-.': 'F', '--.' : 'G', '....': 'H',
             '..'  : 'I', '.---': 'J', '-.-' : 'K', '.-..': 'L',
@@ -244,7 +270,7 @@ class Decipher(commands.Cog):
             word = []
             codes = segment.split()
             for code in codes:
-                char = morse.get(code, '?')
+                char = morse_to_char.get(code, '?')
                 word.append(char)
             decoded_text.append(''.join(word))
         decoded_text = ' '.join(decoded_text)
