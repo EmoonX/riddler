@@ -85,4 +85,7 @@ async def homepage():
             recent_progress[i] = dict(recent_levels[handle])
             recent_progress[i]['is_completion'] = True
 
+    # Ensure final list is time-sorted
+    recent_progress.sort(key=(lambda x: x['time']), reverse=True)
+
     return await render_template('home.htm', **locals())
