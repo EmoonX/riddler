@@ -1,1 +1,1 @@
-![Banner](extra/banner-github.png)
+_Waiting for something to happen?_
