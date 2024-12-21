@@ -50,11 +50,11 @@ for blueprint in (
     auth, countries, get, home, info, levels,
     players, account, profile, process,
 ):
-    # Register app blueprint to allow other modules
-    app.register_blueprint(blueprint)
-
     # Context processor for blueprint
     blueprint.context_processor(context_processor)
+    
+    # Register app blueprint to allow other modules
+    app.register_blueprint(blueprint)
 
 # Context processor for main app
 app.context_processor(context_processor)
@@ -64,13 +64,16 @@ app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 
 # Enable browser debug messages
-# app.config['DEBUG'] = True
+app.config['DEBUG'] = True
 
 
-@app.before_first_request
+@app.before_request
 async def before():
     '''Procedures to be done upon app start.'''
-
+    
+    # Make decorator work as @app.before_first_request instead
+    app.before_request_funcs[None].remove(before)
+    
     # Connect to MySQL database
     await database.connect()
 

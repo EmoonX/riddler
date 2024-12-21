@@ -1,7 +1,7 @@
 from quart import Blueprint, abort
 from quart_discord import requires_authorization
 
-from admin.admin import root_auth
+from admin.admin_auth import root_auth
 from util.db import database
 
 admin_recent = Blueprint('admin_recent', __name__)
