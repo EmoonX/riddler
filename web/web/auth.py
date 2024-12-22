@@ -30,7 +30,7 @@ def discord_session_init(app: Quart):
     # Discord OAuth2 configs
     app.config['DISCORD_CLIENT_ID'] = 803127673165053993
     app.config['DISCORD_CLIENT_SECRET'] = os.getenv('DISCORD_CLIENT_SECRET')
-    app.config['DISCORD_REDIRECT_URI'] = f"https://{os.getenv('DOMAIN_NAME')}/callback'
+    app.config['DISCORD_REDIRECT_URI'] = f"https://{os.getenv('DOMAIN_NAME')}/callback"
     app.config['DISCORD_BOT_TOKEN'] = os.getenv('DISCORD_TOKEN')
 
     # Create session object
