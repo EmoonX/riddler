@@ -30,7 +30,7 @@ async def update_country_nick(member: Member):
     # Get player's country from DB
     query = '''
         SELECT * FROM accounts
-        WHERE username = :username AND discriminator = :disc
+        WHERE username = :username
     '''
     values = {'username': member.name, 'disc': member.discriminator}
     result = await database.fetch_one(query, values)
@@ -57,7 +57,7 @@ async def update_score_role(member: Member):
     # Get player global score from DB
     query = '''
         SELECT * FROM accounts
-        WHERE username = :username AND discriminator = :disc
+        WHERE username = :username
     '''
     values = {'username': member.name, 'disc': member.discriminator}
     result = await database.fetch_one(query, values)

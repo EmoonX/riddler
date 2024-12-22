@@ -46,12 +46,9 @@ async def update_all_riddles():
         query = '''
             UPDATE accounts
             SET global_score = global_score + :score
-            WHERE username = :name AND discriminator = :disc
+            WHERE username = :name
         '''
-        values = {
-            'score': row['score'],
-            'name': row['username'], 'disc': row['discriminator']
-        }
+        values = {'score': row['score'], 'name': row['username']}
         await database.execute(query, values)
 
     return 'SUCCESS :)', 200
@@ -97,13 +94,10 @@ async def update_scores(alias: str):
             ON user_levels.riddle = levels.riddle
                 AND user_levels.level_name = levels.name
             WHERE levels.riddle = :riddle
-                AND username = :name and discriminator = :disc
+                AND username = :name
                 AND completion_time IS NOT NULL
         '''
-        values = {
-            'riddle': alias,
-            'name': acc['username'], 'disc': acc['discriminator']
-        }
+        values = {'riddle': alias, 'name': acc['username']}
         completed_levels = await database.fetch_all(query, values)
         for level in completed_levels:
             points = level_ranks[level['rank']]['points']
@@ -116,7 +110,7 @@ async def update_scores(alias: str):
             ON user_achievements.riddle = achievements.riddle
                 AND user_achievements.title = achievements.title
             WHERE achievements.riddle = :riddle
-                AND username = :name and discriminator = :disc
+                AND username = :name
         '''
         unlocked_cheevos = await database.fetch_all(query, values)
         for cheevo in unlocked_cheevos:
@@ -127,7 +121,7 @@ async def update_scores(alias: str):
         query = '''
             UPDATE riddle_accounts SET score = :score
             WHERE riddle = :riddle
-                AND username = :name and discriminator = :disc
+                AND username = :name
         '''
         values |= {'score': new_score}
         await database.execute(query, values)
@@ -140,11 +134,12 @@ async def update_scores(alias: str):
             query = '''
                 UPDATE accounts
                 SET global_score = (global_score - :cur + :new)
-                WHERE username = :name and discriminator = :disc
+                WHERE username = :name
             '''
             new_values = {
-                'cur': cur_score, 'new': new_score,
-                'name': acc['username'], 'disc': acc['discriminator']
+                'cur': cur_score,
+                'new': new_score,
+                'name': acc['username']
             }
             await database.execute(query, new_values)
 
@@ -161,13 +156,11 @@ async def update_page_count(alias: str):
 
     # Fetch page count for every riddle player
     query = '''
-        SELECT racc.username, racc.discriminator,
-            COUNT(level_name) AS page_count
+        SELECT racc.username, COUNT(level_name) AS page_count
         FROM riddle_accounts AS racc INNER JOIN user_pages AS up
         ON racc.username = up.username
-            AND racc.discriminator = up.discriminator
         WHERE up.riddle = :riddle
-        GROUP BY racc.riddle, racc.username, racc.discriminator
+        GROUP BY racc.riddle, racc.username
     '''
     accounts = await database.fetch_all(query, {'riddle': alias})
 
@@ -176,11 +169,12 @@ async def update_page_count(alias: str):
         query = '''
             UPDATE riddle_accounts SET page_count = :page_count
             WHERE riddle = :riddle
-                AND username = :username and discriminator = :disc
+                AND username = :username
         '''
         values = {
-            'riddle': alias, 'page_count': acc['page_count'],
-            'username': acc['username'], 'disc': acc['discriminator']
+            'riddle': alias,
+            'page_count': acc['page_count'],
+            'username': acc['username'],
         }
         await database.execute(query, values)
 

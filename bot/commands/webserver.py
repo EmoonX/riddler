@@ -104,7 +104,7 @@ async def unlock(request):
         query = '''
             SELECT COUNT(*) AS cnt FROM user_levels
             WHERE riddle = :riddle
-                AND username = :username AND discriminator = :disc
+                AND username = :username
                 AND completion_time IS NOT NULL
         '''
         values = {
@@ -119,9 +119,7 @@ async def unlock(request):
                 SELECT * FROM achievements
                 WHERE riddle = :riddle AND title NOT IN (
                     SELECT title FROM user_achievements
-                    WHERE riddle = :riddle
-                        AND username = :username
-                        AND discriminator = :disc
+                    WHERE riddle = :riddle AND username = :username
                 )
             '''
             has_unfound_cheevos = await database.fetch_one(query, values)

@@ -36,12 +36,9 @@ async def settings():
     # Update info in accounts table
     query = '''
         UPDATE accounts SET country = :country
-        WHERE username = :name AND discriminator = :disc
+        WHERE username = :name
     '''
-    values = {
-        'country': form['country'],
-        'name': user.name, 'disc': user.discriminator
-    }
+    values = {'country': form['country'], 'name': user.name}
     await database.execute(query, values)
 
     return await r('Account details updated successfully!')

@@ -18,10 +18,8 @@ async def level_list(alias: str):
 
     # Discord user and base values for SQL queries
     user = await discord.get_user()
-    base_values = {
-        'riddle': alias,
-        'username': user.name, 'disc': user.discriminator
-    }
+    base_values = {'riddle': alias, 'username': user.name}
+    
     # Get riddle level data
     query = '''
         SELECT * FROM levels WHERE riddle = :riddle
@@ -43,7 +41,7 @@ async def level_list(alias: str):
             SELECT username, rating_given, completion_time
             FROM user_levels
             WHERE riddle = :riddle
-                AND username = :username AND discriminator = :disc
+                AND username = :username
                 AND level_name = :level_name
         '''
         values = base_values | {'level_name': level['name']}
@@ -72,7 +70,7 @@ async def level_list(alias: str):
             query = '''
                 SELECT * FROM user_pages
                 WHERE riddle = :riddle
-                    AND username = :username AND discriminator = :disc
+                    AND username = :username
                     AND (
                         :path = `path`
                         OR :path LIKE CONCAT(\'%"\', `path`, \'"%\')
@@ -104,7 +102,7 @@ async def level_list(alias: str):
                 query = '''
                     SELECT * FROM user_pages
                     WHERE riddle = :riddle
-                        AND username = :username AND discriminator = :disc
+                        AND username = :username
                         AND level_name = :level_name
                 '''
                 values = base_values | {'level_name': level['name']}
@@ -122,7 +120,7 @@ async def level_list(alias: str):
             query = '''
                 SELECT `path` FROM user_pages
                 WHERE riddle = :riddle
-                    AND username = :username AND discriminator = :disc
+                    AND username = :username
                     AND level_name = :level
             '''
             values = base_values | {'level': level['name']}
@@ -177,13 +175,12 @@ async def get_pages(alias: str, level_name: str = None) -> str:
     query = f"""
         SELECT level_name, path, access_time FROM user_pages
         WHERE riddle = :riddle
-            AND username = :username AND discriminator = :disc
+            AND username = :username
             {level_cond}
         ORDER BY SUBSTRING_INDEX(`path`, ".", -1)
     """
-    values = {
-        'riddle': alias, 'username': user.name, 'disc': user.discriminator
-    }
+    values = {'riddle': alias, 'username': user.name}
+    
     if level_name:
         values['level_name'] = level_name
     result = await database.fetch_all(query, values)
@@ -271,12 +268,12 @@ async def rate(alias: str, level_name: str, rating: int):
     query = '''
         SELECT * FROM user_levels
         WHERE riddle = :riddle
-            AND username = :username AND discriminator = :disc
+            AND username = :username
             AND level_name = :level_name
     '''
     values = {
         'riddle': alias,
-        'username': user.name, 'disc': user.discriminator,
+        'username': user.name,
         'level_name': level_name,
     }
     played_level = await database.fetch_one(query, values)
@@ -316,12 +313,13 @@ async def rate(alias: str, level_name: str, rating: int):
     query = '''
         UPDATE user_levels SET rating_given = :rating
         WHERE riddle = :riddle
-            AND username = :username AND discriminator = :disc
+            AND username = :username
             AND level_name = :level_name
     '''
     values = {
-        'rating': rating, 'riddle': alias,
-        'username': user.name, 'disc': user.discriminator,
+        'rating': rating,
+        'riddle': alias,
+        'username': user.name,
         'level_name': level_name,
     }
     await database.execute(query, values)

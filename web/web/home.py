@@ -14,7 +14,7 @@ home = Blueprint('home', __name__)
 @home.route('/')
 @home.route('/home')
 async def homepage():
-    '''Frontpage for `riddler.app`.'''
+    '''Frontpage for the website.'''
 
     # Big number counters
     query = '''
@@ -58,14 +58,12 @@ async def homepage():
     query = '''
         SELECT u1.*, completion_time AS time
         FROM user_levels u1 INNER JOIN (
-            SELECT username, discriminator,
-                MAX(completion_time) AS max_time
+            SELECT username, MAX(completion_time) AS max_time
             FROM user_levels
             WHERE TIMESTAMPDIFF(DAY, completion_time, NOW()) < 2
             GROUP BY username
         ) u2
         ON u1.username = u2.username
-            AND u1.discriminator = u2.discriminator
             AND u1.completion_time = u2.max_time
         WHERE u1.riddle NOT IN (
             SELECT alias FROM riddles WHERE unlisted IS TRUE
@@ -73,15 +71,12 @@ async def homepage():
         ORDER BY completion_time DESC
     '''
     result = await database.fetch_all(query)
-    recent_levels = {
-        f"{row['username']}#{row['discriminator']}": row
-        for row in result
-    }
+    recent_levels = {row['username']: row for row in result}
+    
     # Swap generic progress for completion whenever it happened
     for i, row in enumerate(recent_progress):
-        handle = f"{row['username']}#{row['discriminator']}"
-        if handle in recent_levels:
-            recent_progress[i] = dict(recent_levels[handle])
+        if row['username'] in recent_levels:
+            recent_progress[i] = dict(recent_levels[row['username']])
             recent_progress[i]['is_completion'] = True
 
     # Ensure final list is time-sorted

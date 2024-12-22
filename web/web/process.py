@@ -41,7 +41,6 @@ async def process_url(username=None, disc=None, url=None):
         else:
             user = lambda: None
             setattr(user, 'name', username)
-            setattr(user, 'discriminator', disc)
         ph = await _PathHandler.build(user, url, status_code)
         if not ph:
             # Not inside root path (e.g forum or admin pages)
@@ -64,7 +63,7 @@ async def process_url(username=None, disc=None, url=None):
             print(
                 f"\033[1m[{ph.riddle_alias}]\033[0m "
                 f"Received path \033[3m\033[9m{ph.path}\033[0m\033[0m from "
-                    f"\033[1m{ph.username}\033[0m#\033[1m{ph.disc}\033[0m "
+                    f"\033[1m{ph.username}\033[0m "
                     f"({tnow})"
             )
             message, status_code = 'Page not found', 404
@@ -74,7 +73,7 @@ async def process_url(username=None, disc=None, url=None):
                 f"\033[1m[{ph.riddle_alias}]\033[0m "
                 f"Received path \033[3m\033[1m{ph.path}\033[0m\033[0m "
                     f"\033[1m({ph.path_level})\033[0m from "
-                    f"\033[1m{ph.username}\033[0m#\033[1m{ph.disc}\033[0m "
+                    f"\033[1m{ph.username}\033[0m "
                     f"({tnow})"
             )
             response = jsonify(
@@ -97,9 +96,6 @@ class _PathHandler:
 
     username: str
     '''Username of logged in player.'''
-
-    disc: str
-    '''Discriminator of logged in player.'''
 
     riddle_account: dict
     '''Dict containing player's riddle account info from DB.'''
@@ -125,7 +121,6 @@ class _PathHandler:
         self.riddle_alias = riddle['alias']
         self.unlisted = bool(riddle['unlisted'])
         self.username = user.name
-        self.disc = user.discriminator
 
         # Save relative path and status code
         self.path = path
@@ -189,9 +184,9 @@ class _PathHandler:
         # Ignore progress for banned players :)
         query = '''
             SELECT * FROM accounts
-            WHERE username = :username AND discriminator = :disc
+            WHERE username = :username
         '''
-        values = {'username': self.username, 'disc': self.disc}
+        values = {'username': self.username}
         banned = await database.fetch_val(query, values, 'banned')
         if banned:
             return False
@@ -200,8 +195,7 @@ class _PathHandler:
             '''Get player riddle data.'''
             query = '''
                 SELECT * FROM riddle_accounts
-                WHERE riddle = :riddle
-                    AND username = :username AND discriminator = :disc
+                WHERE riddle = :riddle AND username = :username
             '''
             result = await database.fetch_one(query, values)
             return result
@@ -212,9 +206,8 @@ class _PathHandler:
         if not riddle_account:
             # If negative, create a brand new one
             query = '''
-                INSERT IGNORE INTO riddle_accounts
-                    (riddle, username, discriminator)
-                VALUES (:riddle, :username, :disc)
+                INSERT IGNORE INTO riddle_accounts (riddle, username)
+                VALUES (:riddle, :username)
             '''
             await database.execute(query, values)
             riddle_account = await _get_data()
@@ -222,7 +215,7 @@ class _PathHandler:
         # Update current riddle being played
         query = '''
             UPDATE accounts SET current_riddle = :riddle
-            WHERE username = :username AND discriminator = :disc
+            WHERE username = :username
         '''
         await database.execute(query, values)
 
@@ -241,12 +234,12 @@ class _PathHandler:
             ON levels.riddle = user_levels.riddle
                 AND levels.name = user_levels.level_name
             WHERE user_levels.riddle = :riddle
-                AND username = :username AND discriminator = :disc
+                AND username = :username
                 AND completion_time IS NULL
         '''
         values = {
             'riddle': self.riddle_alias,
-            'username': self.username, 'disc': self.disc
+            'username': self.username
         }
         current_levels = await database.fetch_all(query, values)
 
@@ -306,20 +299,20 @@ class _PathHandler:
         # been unlocked yet, ignore it for access counting purposes
         query = '''
             SELECT * FROM user_levels
-            WHERE riddle = :riddle AND level_name = :level_name
-                AND username = :username AND discriminator = :disc
+            WHERE riddle = :riddle
+                AND level_name = :level_name
+                AND username = :username
         '''
         values = {
             'riddle': self.riddle_alias, 'level_name': self.path_level,
-            'username': self.username, 'disc': self.disc,
+            'username': self.username,
         }
         is_unlocked = await database.fetch_one(query, values)
         if is_unlocked:
             # Mark level currently being visited in `last_visited_level` field
             query = '''
                 UPDATE riddle_accounts SET last_visited_level = :level_name
-                WHERE riddle = :riddle
-                    AND username = :username AND discriminator = :disc
+                WHERE riddle = :riddle AND username = :username
             '''
             await database.execute(query, values)
 
@@ -339,12 +332,13 @@ class _PathHandler:
         # Check if level has already been unlocked beforehand
         query = '''
             SELECT * FROM user_levels
-            WHERE riddle = :riddle AND level_name = :level_name
-                AND username = :username AND discriminator = :disc
+            WHERE riddle = :riddle
+                AND level_name = :level_name
+                AND username = :username
         '''
         values = {
             'riddle': self.riddle_alias, 'level_name': level['name'],
-            'username': self.username, 'disc': self.disc,
+            'username': self.username,
         }
         already_unlocked = await database.fetch_one(query, values)
         if already_unlocked:
@@ -366,8 +360,9 @@ class _PathHandler:
             )
             query = f"""
                 SELECT * FROM user_levels
-                WHERE riddle = :riddle AND level_name = :level_name
-                    AND username = :username AND discriminator = :disc
+                WHERE riddle = :riddle
+                    AND level_name = :level_name
+                    AND username = :username
                     {completion_cond}
             """
             values['level_name'] = req['requires']
@@ -385,12 +380,11 @@ class _PathHandler:
         # Update player/riddle hit counters
         query = '''
             UPDATE riddle_accounts SET hit_counter = hit_counter + 1
-            WHERE riddle = :riddle
-                AND username = :username AND discriminator = :disc
+            WHERE riddle = :riddle AND username = :username
         '''
         values = {
             'riddle': self.riddle_alias,
-            'username': self.username, 'disc': self.disc
+            'username': self.username
         }
         await database.execute(query, values)
         query = '''
@@ -404,8 +398,7 @@ class _PathHandler:
         # until player visits a new valid level page.
         query = '''
             SELECT * FROM riddle_accounts
-            WHERE riddle = :riddle
-                AND username = :username AND discriminator = :disc
+            WHERE riddle = :riddle AND username = :username
         '''
         last_visited_level = await database.fetch_val(
             query, values, 'last_visited_level'
@@ -417,8 +410,9 @@ class _PathHandler:
                 UPDATE user_levels
                 SET completion_hit_counter = completion_hit_counter + 1
                 WHERE riddle = :riddle
-                    AND username = :username AND discriminator = :disc
-                    AND level_name = :level_name AND completion_time IS NULL
+                    AND username = :username
+                    AND level_name = :level_name
+                    AND completion_time IS NULL
             '''
             values['level_name'] = last_visited_level
             await database.execute(query, values)
@@ -431,12 +425,11 @@ class _PathHandler:
             UPDATE riddle_accounts
             SET score = score + :points,
                 recent_score = recent_score + :points
-            WHERE riddle = :riddle
-                AND username = :username AND discriminator = :disc
+            WHERE riddle = :riddle AND username = :username
         '''
         values = {
             'points': points, 'riddle': self.riddle_alias,
-            'username': self.username, 'disc': self.disc
+            'username': self.username
         }
         await database.execute(query, values)
 
@@ -446,7 +439,7 @@ class _PathHandler:
                 UPDATE accounts
                 SET global_score = global_score + :points,
                     recent_score = recent_score + :points
-                WHERE username = :username AND discriminator = :disc
+                WHERE username = :username
             '''
             values.pop('riddle')
             await database.execute(query, values)
@@ -458,13 +451,12 @@ class _PathHandler:
             WHERE riddle = :riddle AND level_name = :level_name
                 AND requires NOT IN (
                     SELECT level_name FROM user_levels ul
-                    WHERE req.riddle = ul.riddle
-                        AND username = :username AND discriminator = :disc
+                    WHERE req.riddle = ul.riddle AND username = :username
                 )
         '''
         base_values = {
             'riddle': self.riddle_alias,
-            'username': self.username, 'disc': self.disc,
+            'username': self.username,
         }
         values = base_values | {'level_name': self.path_level}
         result = await database.fetch_one(query, values)
@@ -476,7 +468,7 @@ class _PathHandler:
         tnow = datetime.utcnow()
         query = '''
             INSERT INTO user_pages VALUES (
-                :riddle, :username, :disc, :level_name, :path, :time
+                :riddle, :username, 0, :level_name, :path, :time
             )
         '''
         values = values | {'path': self.path, 'time': tnow}
@@ -487,8 +479,7 @@ class _PathHandler:
             query = '''
                 UPDATE riddle_accounts
                 SET page_count = page_count + 1, last_page_time = :time
-                WHERE riddle = :riddle
-                    AND username = :username AND discriminator = :disc
+                WHERE riddle = :riddle AND username = :username
             '''
             values = base_values | {'time': tnow}
             await database.execute(query, values)
@@ -522,12 +513,13 @@ class _PathHandler:
                 query = '''
                     SELECT * FROM user_pages
                     WHERE riddle = :riddle
-                        AND username = :username AND discriminator = :disc
+                        AND username = :username
                         AND path = :path
                 '''
                 values = {
                     'riddle': self.riddle_alias,
-                    'username': self.username, 'disc': self.disc, 'path': path
+                    'username': self.username,
+                    'path': path
                 }
                 page_found = await database.fetch_one(query, values)
                 if not page_found:
@@ -540,18 +532,19 @@ class _PathHandler:
         time = datetime.utcnow()
         query = '''
             INSERT INTO user_achievements
-            VALUES (:riddle, :username, :disc, :title, :time)
+            VALUES (:riddle, :username, 0, :title, :time)
         '''
         values = {
             'riddle': self.riddle_alias,
-            'username': self.username, 'disc': self.disc,
-            'title': cheevo['title'], 'time': time
+            'username': self.username,
+            'title': cheevo['title'],
+            'time': time
         }
         try:
             await database.execute(query, values)
             print(
                 f"> \033[1m[{self.riddle_alias}]\033[0m "
-                f"\033[1m{self.username}#{self.disc}\033[0m "
+                f"\033[1m{self.username}\033[0m "
                     f"got cheevo \033[1m{cheevo['title']}\033[0m!"
             )
         except IntegrityError:
@@ -564,7 +557,7 @@ class _PathHandler:
         # Request bot to congratulate member
         await bot_request(
             'unlock', method='cheevo_found',
-            alias=self.riddle_alias, username=self.username, disc=self.disc,
+            alias=self.riddle_alias, username=self.username,
             cheevo=dict(cheevo), points=points, page=self.path
         )
 
@@ -577,18 +570,18 @@ class _PathHandler:
         query = '''
             INSERT INTO found_pages
                 (riddle, `path`, username, discriminator, access_time)
-            VALUES (:riddle, :path, :username, :disc, :time)
+            VALUES (:riddle, :path, :username, 0, :time)
         '''
         values = {
             'riddle': self.riddle_alias, 'path': self.path,
-            'username': self.username, 'disc': self.disc, 'time': tnow,
+            'username': self.username, 'time': tnow,
         }
         try:
             await database.execute(query, values)
             print(
                 f"> \033[1m[{self.riddle_alias}]\033[0m "
                 f"Found new page \033[1m{self.path}\033[0m "
-                    f"by \033[1m{self.username}#{self.disc}\033[0m "
+                    f"by \033[1m{self.username}\033[0m "
                     f"({tnow})"
             )
             # Register page as a new one (with NULL level)
@@ -631,20 +624,22 @@ class _LevelHandler:
         query = '''
             INSERT INTO user_levels
                 (riddle, username, discriminator, level_name, find_time)
-            VALUES (:riddle, :username, :disc, :level_name, :time)
+            VALUES (:riddle, :username, 0, :level_name, :time)
         '''
         values = {
             'riddle': self.ph.riddle_alias,
-            'username': self.ph.username, 'disc': self.ph.disc,
-            'level_name': self.level['name'], 'time': tnow
+            'username': self.ph.username,
+            'level_name': self.level['name'],
+            'time': tnow
         }
         await database.execute(query, values)
 
         # Call bot unlocking procedure
         await bot_request(
             'unlock', method='advance',
-            alias=self.ph.riddle_alias, level=self.level,
-            username=self.ph.username, disc=self.ph.disc
+            alias=self.ph.riddle_alias,
+            level=self.level,
+            username=self.ph.username,
         )
         if (
             not self.level['is_secret']
@@ -654,12 +649,11 @@ class _LevelHandler:
             # (only if riddle hasn't been finished yet)
             query = '''
                 UPDATE riddle_accounts SET current_level = :name_next
-                WHERE riddle = :riddle AND
-                    username = :username AND discriminator = :disc
+                WHERE riddle = :riddle AND username = :username
             '''
             values = {
                 'riddle': self.ph.riddle_alias,
-                'username': self.ph.username, 'disc': self.ph.disc,
+                'username': self.ph.username,
                 'name_next': self.level['name'],
             }
             await database.execute(query, values)
@@ -679,22 +673,26 @@ class _LevelHandler:
         query = '''
             UPDATE user_levels SET completion_time = :time
             WHERE riddle = :riddle
-                AND username = :username AND discriminator = :disc
+                AND username = :username
                 AND level_name = :level
         '''
         values = {
             'riddle': self.ph.riddle_alias,
-            'username': self.ph.username, 'disc': self.ph.disc,
-            'level': self.level['name'], 'time': tnow,
+            'username': self.ph.username,
+            'level': self.level['name'],
+            'time': tnow,
         }
         await database.execute(query, values)
 
         # Bot level beat procedures
         await bot_request(
-            'unlock', method='beat',
-            alias=self.ph.riddle_alias, level=self.level,
-            username=self.ph.username, disc=self.ph.disc,
-            points=self.points, first_to_solve=False
+            'unlock',
+            method='beat',
+            alias=self.ph.riddle_alias,
+            level=self.level,
+            username=self.ph.username,
+            points=self.points,
+            first_to_solve=False
         )
         # Check if level just completed is the _final_ one
         query = 'SELECT * FROM riddles WHERE alias = :riddle'
@@ -704,15 +702,15 @@ class _LevelHandler:
             # Player has just completed the game :)
             query = '''
                 UPDATE riddle_accounts SET current_level = "🏅"
-                WHERE riddle = :riddle
-                    AND username = :username AND discriminator = :disc
+                WHERE riddle = :riddle AND username = :username
             '''
-            values |= {'username': self.ph.username, 'disc': self.ph.disc}
+            values |= {'username': self.ph.username}
             await database.execute(query, values)
             await bot_request(
-                'unlock', method='game_completed',
+                'unlock',
+                method='game_completed',
                 alias=self.ph.riddle_alias,
-                username=self.ph.username, disc=self.ph.disc
+                username=self.ph.username,
             )
         # Update level-related tables
         await self._update_info()
@@ -724,12 +722,14 @@ class _LevelHandler:
 
         query = '''
             SELECT * FROM user_levels
-            WHERE riddle = :riddle AND level_name = :level_name
-                AND username = :username AND discriminator = :disc
+            WHERE riddle = :riddle
+                AND level_name = :level_name
+                AND username = :username
         '''
         values = {
-            'riddle': self.ph.riddle_alias, 'level_name': self.level['name'],
-            'username': self.ph.username, 'disc': self.ph.disc,
+            'riddle': self.ph.riddle_alias,
+            'level_name': self.level['name'],
+            'username': self.ph.username,
         }
         row = await database.fetch_one(query, values)
         return row

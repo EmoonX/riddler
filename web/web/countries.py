@@ -18,7 +18,6 @@ async def global_list():
         SELECT racc.*, acc.country
         FROM riddle_accounts AS racc INNER JOIN accounts AS acc
         ON racc.username = acc.username
-            AND racc.discriminator = acc.discriminator
         WHERE score > 0
     '''
     riddle_accounts = await database.fetch_all(query)
@@ -31,10 +30,9 @@ async def global_list():
             alpha_2,
             {'honors': 0, 'players': set(), 'total_score': 0}
         )
-        discord_handle = f"{racc['username']}#{racc['discriminator']}"
         if racc['current_level'] == '🏅':
             country['honors'] += 1
-        country['players'].add(discord_handle)
+        country['players'].add(racc['username'])
         country['total_score'] += racc['score']
         country_dict[alpha_2] = country
 
@@ -71,7 +69,6 @@ async def riddle_list(alias: str):
             SUM(score) AS total_score, AVG(score) AS avg_score
         FROM riddle_accounts AS r_acc INNER JOIN accounts AS acc
         ON r_acc.username = acc.username
-            AND r_acc.discriminator = acc.discriminator
         WHERE riddle = :riddle AND score > 1000
         GROUP BY country
         ORDER BY total_score DESC, avg_score DESC, player_count ASC

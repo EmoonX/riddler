@@ -43,13 +43,13 @@ async def get_user_riddle_data(alias: str = '%'):
     # Get player and riddle data from DB
     riddles = {}
     user = await discord.get_user()
-    values = {'username': user.name, 'disc': user.discriminator}
+    values = {'username': user.name}
     if alias == '%':
         query = '''
             SELECT * FROM riddles
             WHERE alias IN (
                 SELECT current_riddle FROM accounts
-                WHERE username = :username AND discriminator = :disc
+                WHERE username = :username
             )
         '''
         current_riddle = await database.fetch_one(query, values)
@@ -59,8 +59,7 @@ async def get_user_riddle_data(alias: str = '%'):
         SELECT * FROM riddles r
         WHERE alias IN (
             SELECT riddle FROM user_levels ul
-            WHERE r.alias = ul.riddle
-                AND username = :username AND discriminator = :disc
+            WHERE r.alias = ul.riddle AND username = :username
         ) AND alias LIKE :alias
     '''
     values['alias'] = alias
@@ -74,7 +73,7 @@ async def get_user_riddle_data(alias: str = '%'):
     query = '''
         SELECT * FROM user_levels
         WHERE riddle LIKE :alias
-            AND username = :username AND discriminator = :disc
+            AND username = :username
     '''
     result = await database.fetch_all(query, values)
     for row in result:
@@ -90,7 +89,7 @@ async def get_user_riddle_data(alias: str = '%'):
     query = '''
         SELECT * FROM riddle_accounts
         WHERE riddle LIKE :alias
-            AND username = :username AND discriminator = :disc
+            AND username = :username
     '''
     result = await database.fetch_all(query, values)
     for row in result:
@@ -104,7 +103,7 @@ async def get_user_riddle_data(alias: str = '%'):
         WHERE `name` IN (
             SELECT level_name FROM user_levels ul
             WHERE ul.riddle = lv.riddle
-                AND username = :username AND discriminator = :disc
+                AND username = :username
         ) AND riddle LIKE :alias
         ORDER BY is_secret, `index`
     '''
@@ -132,12 +131,10 @@ async def get_current_riddle_data():
         SELECT * FROM accounts acc
         INNER JOIN riddles r ON acc.current_riddle = r.alias
         INNER JOIN riddle_accounts racc
-            ON r.alias = racc.riddle
-                AND acc.username = racc.username
-                AND acc.discriminator = racc.discriminator
-        WHERE acc.username = :username AND acc.discriminator = :disc
+            ON r.alias = racc.riddle AND acc.username = racc.username
+        WHERE acc.username = :username
     '''
-    values = {'username': user.name, 'disc': user.discriminator}
+    values = {'username': user.name}
     riddle = await database.fetch_one(query, values)
     if not riddle:
         return 'No riddle being played...', 404
@@ -148,7 +145,7 @@ async def get_current_riddle_data():
         'get-riddle-icon-url', guild_id=riddle['guild_id']
     )
     if not icon_url:
-        icon_url = f"https://riddler.app/static/riddles/{alias}.png"
+        icon_url = f"/static/riddles/{alias}.png"
 
     # Create and return JSON dict with data
     data = {

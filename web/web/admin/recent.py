@@ -21,7 +21,7 @@ async def update_recent():
     query = '''
         DROP TABLE IF EXISTS placements;
         CREATE TEMPORARY TABLE IF NOT EXISTS placements AS (
-            SELECT username, discriminator, RANK() OVER w AS idx
+            SELECT username, RANK() OVER w AS idx
             FROM accounts
             WHERE global_score > 0
             WINDOW w AS (ORDER BY global_score DESC)
@@ -30,7 +30,6 @@ async def update_recent():
         SET last_placement = (
             SELECT idx FROM placements AS plc
             WHERE acc.username = plc.username
-                AND acc.discriminator = plc.discriminator
         )
         WHERE global_score > 0;
     '''
@@ -40,7 +39,7 @@ async def update_recent():
     query = '''
         DROP TABLE IF EXISTS placements;
         CREATE TEMPORARY TABLE IF NOT EXISTS placements AS (
-            SELECT riddle, username, discriminator, RANK() OVER w AS idx
+            SELECT riddle, username, RANK() OVER w AS idx
             FROM riddle_accounts
             WHERE score > 0
             WINDOW w AS (
@@ -53,7 +52,6 @@ async def update_recent():
             SELECT idx FROM placements AS plc
             WHERE racc.riddle = plc.riddle
                 AND racc.username = plc.username
-                AND racc.discriminator = plc.discriminator
         )
         WHERE score > 0;
     '''

@@ -87,10 +87,7 @@
           {% if level['beaten'] %}
             <figure class="rating">
               <div class="data">
-                {% set is_creator = (
-                    user['username'] == riddle['creator_username']
-                      and user['discriminator'] == riddle['creator_disc'])
-                %}
+                {% set is_creator = user['username'] == riddle['creator_username'] %}
                 {% if not level['rating_given'] and not is_creator %}
                   {% set average = '??' %}
                   {% set unrated = 'unrated' %}
@@ -135,8 +132,10 @@
           {% if loop.index < 9 or level['users']|length == 9 %}
             {% set player = accounts[user['username']] %}
             <a class="player" href="#">
-              {% set tag = player['username'] + '#' + player['discriminator'] %}
-              {% set url = avatar_urls[tag] if tag in avatar_urls else '/static/images/locked.png' %}
+              {% set url = (
+                avatar_urls[player['username']] if player['username'] in avatar_urls
+                else '/static/images/locked.png'
+              ) %}
               <figure>
                 <img width="50" height="50" class="avatar-small" src="{{ url }}">
                 <figcaption>{{ player['username'] }}</figcaption>

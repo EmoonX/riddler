@@ -43,10 +43,9 @@ async def get_achievements(alias: str, user: dict = None) -> dict:
         # Get user's riddle achievement list
         query = '''
             SELECT * FROM user_achievements
-            WHERE riddle = :riddle
-                AND username = :name AND discriminator = :disc
+            WHERE riddle = :riddle AND username = :name
         '''
-        values |= {'name': user['username'], 'disc': user['discriminator']}
+        values |= {'name': user['username']}
     user_cheevos = await database.fetch_all(query, values)
 
     # Create dict of pairs (rank -> list of cheevos)
@@ -124,7 +123,6 @@ async def context_processor():
                 SELECT *
                 FROM accounts INNER JOIN riddle_accounts
                 ON accounts.username = riddle_accounts.username
-                    AND accounts.discriminator = riddle_accounts.discriminator
                 WHERE riddle = :riddle
             '''
             values = {'riddle': alias}
@@ -141,11 +139,9 @@ async def context_processor():
         user = await discord.get_user()
         return user
 
-    async def get_avatar_url(username: str, disc: str):
+    async def get_avatar_url(username: str):
         '''Returns user's avatar url from a request sent to bot.'''
-        url = await bot_request(
-            'get-avatar-url', username=username, disc=disc
-        )
+        url = await bot_request('get-avatar-url', username=username)
         return url
 
     async def fetch_avatar_urls(guild_id: int = None):
@@ -179,12 +175,11 @@ async def context_processor():
         if not username:
             user = await discord.get_user()
             username = user.name
-            disc = user.discriminator
         query = '''
             SELECT * FROM accounts
-            WHERE username = :name AND discriminator = :disc
+            WHERE username = :name
         '''
-        values = {'name': username, 'disc': disc}
+        values = {'name': username}
         result = await database.fetch_one(query, values)
         country = result['country']
         return country

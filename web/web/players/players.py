@@ -40,9 +40,8 @@ async def global_list(country: str = None):
         SELECT acc.*, SUM(page_count), MAX(last_page_time)
         FROM accounts AS acc INNER JOIN riddle_accounts AS racc
             ON acc.username = racc.username
-                AND acc.discriminator = racc.discriminator
         WHERE global_score > 0 {cond_country}
-        GROUP BY acc.username, acc.discriminator
+        GROUP BY acc.username
         ORDER BY global_score DESC, page_count DESC, last_page_time DESC
     """
     values = {}
@@ -50,33 +49,30 @@ async def global_list(country: str = None):
         values['country'] = country
     result = await database.fetch_all(query, values)
     for row in result:
-        handle = f"{row['username']}#{row['discriminator']}"
         player = dict(row) | {'current_level': {}, 'cheevo_count': {}}
-        accounts[handle] = player
+        accounts[row['username']] = player
 
     # Get current levels for each riddle and player (ignore unplayed ones)
     query = 'SELECT * FROM riddle_accounts WHERE score > 0'
     result = await database.fetch_all(query)
     for row in result:
-        handle = f"{row['username']}#{row['discriminator']}"
-        if not handle in accounts:
+        if not row['username'] in accounts:
             continue
         alias = row['riddle']
-        accounts[handle]['current_level'][alias] = row['current_level']
+        accounts[row['username']]['current_level'][alias] = row['current_level']
 
     # Fetch players' cheevo counts and add them to dict
     query = '''
-        SELECT riddle, username, discriminator, COUNT(*) as cheevo_count
+        SELECT riddle, username, COUNT(*) as cheevo_count
         FROM user_achievements
-        GROUP BY riddle, username, discriminator
+        GROUP BY riddle, username
     '''
     player_cheevo_counts = await database.fetch_all(query)
     for row in player_cheevo_counts:
-        handle = f"{row['username']}#{row['discriminator']}"
-        if not handle in accounts:
+        if not row['username'] in accounts:
             continue
         alias = row['riddle']
-        accounts[handle]['cheevo_count'][alias] = row['cheevo_count']
+        accounts[row['username']]['cheevo_count'][alias] = row['cheevo_count']
 
     # Get session user, if any
     user = await discord.get_user() if discord.user_id else None
@@ -84,13 +80,8 @@ async def global_list(country: str = None):
     for handle, player in accounts.items():
         # Hide username, country and riddles for non logged-in `hidden` players
         if player['hidden']:
-            if not (
-                user and
-                player['username'] == user.username and
-                player['discriminator'] == user.discriminator
-            ):
+            if not user and player['username'] == user.username:
                 player['username'] = 'Anonymous'
-                player['discriminator'] = '0000'
                 player['country'] = 'ZZ'
                 continue
 
@@ -101,10 +92,7 @@ async def global_list(country: str = None):
         player['other_riddles'] = []
         for alias, riddle in riddles.items():
             # Check if player is creator of current riddle
-            if (
-                riddle['creator_username'] == player['username'] and
-                riddle['creator_disc'] == player['discriminator']
-            ):
+            if (riddle['creator_username'] == player['username']):
                 player['created_riddles'].append(riddle)
                 continue
 
@@ -178,7 +166,6 @@ async def riddle_list(alias: str, country: str = None):
         ) AS result
         INNER JOIN accounts AS acc
         ON result.username = acc.username
-            AND result.discriminator = acc.discriminator
         {cond_country}
         ORDER BY score DESC, last_page_time DESC
         LIMIT 1000
@@ -202,11 +189,9 @@ async def riddle_list(alias: str, country: str = None):
         # Get player country
         query = '''
             SELECT * FROM accounts
-            WHERE username = :username AND discriminator = :disc
+            WHERE username = :username
         '''
-        values = {
-            'username': account['username'], 'disc': account['discriminator']
-        }
+        values = {'username': account['username']}
         result = await database.fetch_one(query, values)
         account['country'] = result['country']
 
@@ -217,8 +202,7 @@ async def riddle_list(alias: str, country: str = None):
             # Show 💎 if player has gotten all possible cheevos on riddle
             query = '''
                 SELECT COUNT(*) as count FROM user_achievements
-                WHERE riddle = :riddle
-                    AND username = :username AND discriminator = :disc
+                WHERE riddle = :riddle AND username = :username
             '''
             values |= {'riddle': alias}
             result = await database.fetch_one(query, values)
@@ -230,14 +214,9 @@ async def riddle_list(alias: str, country: str = None):
         if account['hidden']:
             if (
                 not riddle_admin and
-                not (
-                    user and
-                    account['username'] == user.username and
-                    account['discriminator'] == user.discriminator
-                )
+                not (user and account['username'] == user.username)
             ):
                 account['username'] = 'Anonymous'
-                account['discriminator'] = '0000'
                 account['country'] = 'ZZ'
 
     # Pluck creator account from main list to show it separately 👑
@@ -245,10 +224,7 @@ async def riddle_list(alias: str, country: str = None):
     creator_account = None
     aux = []
     for account in accounts:
-        if (
-            account['username'] == riddle['creator_username'] and
-            account['discriminator'] == riddle['creator_disc']
-        ):
+        if account['username'] == riddle['creator_username']:
             creator_account = account
         elif account['score'] > 0:
             aux.append(account)

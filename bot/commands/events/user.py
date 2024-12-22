@@ -38,13 +38,10 @@ class User(commands.Cog):
             INNER JOIN user_levels AS ul
                 ON ls.riddle = ul.riddle AND ls.final_level = ul.level_name
             WHERE ls.riddle = :riddle
-                AND ul.username = :username AND ul.discriminator = :disc
+                AND ul.username = :username
                 AND ul.completion_time IS NOT NULL
         '''
-        values = {
-            'riddle': alias,
-            'username': member.name, 'disc': member.discriminator
-        }
+        values = {'riddle': alias, 'username': member.name}
         level_sets = await database.fetch_all(query, values)
         for level_set in level_sets:
             role_name = level_set['completion_role']
@@ -58,7 +55,7 @@ class User(commands.Cog):
             INNER JOIN levels AS lv
                 ON ul.riddle = lv.riddle AND ul.level_name = lv.name
             WHERE ul.riddle = :riddle
-                AND ul.username = :username AND ul.discriminator = :disc
+                AND ul.username = :username
                 AND lv.is_Secret IS FALSE
                 AND ul.completion_time IS NULL
         '''
@@ -74,7 +71,7 @@ class User(commands.Cog):
             INNER JOIN levels AS lv
                 ON ul.riddle = lv.riddle AND ul.level_name = lv.name
             WHERE ul.riddle = :riddle
-                AND ul.username = :username AND ul.discriminator = :disc
+                AND ul.username = :username
                 AND lv.is_secret IS TRUE
         '''
         secret_levels = await database.fetch_all(query, values)
@@ -93,7 +90,7 @@ class User(commands.Cog):
             WHERE riddle = :riddle AND `name` NOT IN (
                 SELECT level_name FROM user_levels AS ul
                 WHERE riddle = :riddle
-                    AND username = :username AND discriminator = :disc
+                    AND username = :username
                     AND completion_time IS NOT NULL
             )
         '''
@@ -104,8 +101,7 @@ class User(commands.Cog):
                 SELECT * FROM achievements
                 WHERE riddle = :riddle AND `title` NOT IN (
                     SELECT `title` FROM user_achievements
-                    WHERE riddle = :riddle
-                        AND username = :username AND discriminator = :disc
+                    WHERE riddle = :riddle AND username = :username
                 )
             '''
             values.pop('final_name')
@@ -149,8 +145,8 @@ class User(commands.Cog):
             # Username and/or discriminator were changed, so update tables
             query = '''
                 UPDATE accounts
-                SET username = :name_new, discriminator = :disc_new
-                WHERE username = :name_old AND discriminator = :disc_old
+                SET username = :name_new
+                WHERE username = :name_old
             '''
             values = {
                 'name_new': after.name, 'disc_new': after.discriminator,

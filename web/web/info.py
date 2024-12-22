@@ -93,7 +93,7 @@ async def global_list(country: str = None):
             'INNER JOIN user_levels AS ul ' \
                 'ON acc.username = ul.username ' \
             'WHERE global_score > 0 ' + cond_country + \
-            'GROUP BY acc.username, acc.discriminator ' \
+            'GROUP BY acc.username ' \
             'ORDER BY page_count DESC, global_score DESC, page_count DESC'
     result = await database.fetch_all(query)
     accounts = [dict(account) for account in result]
@@ -105,10 +105,8 @@ async def global_list(country: str = None):
         # Hide username, country and riddles for
         # non logged-in `hidden` players
         if account['hidden']:        
-            if not (user and account['username'] == user.username
-                    and account['discriminator'] == user.discriminator):
+            if not user and account['username'] == user.username:
                 account['username'] = 'Anonymous'
-                account['discriminator'] = '0000'
                 account['country'] = 'ZZ'
                 continue
 
@@ -120,8 +118,7 @@ async def global_list(country: str = None):
         account['riddle_progress'] = {}
         for riddle in riddles:
             # Check if player is creator of current riddle
-            if riddle['creator_username'] == account['username'] \
-                    and riddle['creator_disc'] == account['discriminator']:
+            if riddle['creator_username'] == account['username']:
                 account['created_riddles'].append(riddle)
                 continue
             
@@ -129,11 +126,11 @@ async def global_list(country: str = None):
 
             # Search for riddles already played
             query = 'SELECT * FROM riddle_accounts ' \
-                    'WHERE riddle = :riddle ' \
-                        'AND username = :username AND discriminator = :disc'
-            values = {'riddle': riddle['alias'],
-                    'username': account['username'],
-                    'disc': account['discriminator']}
+                    'WHERE riddle = :riddle AND username = :username'
+            values = {
+                'riddle': riddle['alias'],
+                'username': account['username']
+            }
             played = await database.fetch_one(query, values)
             if not played:
                 continue
@@ -145,7 +142,6 @@ async def global_list(country: str = None):
                             'SELECT level_name FROM user_levels ' \
                             'WHERE riddle = :riddle ' \
                                 'AND username = :username ' \
-                                'AND discriminator = :disc ' \
                                 'AND completion_time IS NOT NULL)'
             result = await database.fetch_one(query, values)
             completed = (result is None)
@@ -153,8 +149,7 @@ async def global_list(country: str = None):
                 # Get number of achievements user has gotten on riddle
                 query = 'SELECT COUNT(*) as count FROM user_achievements ' \
                         'WHERE riddle = :riddle ' \
-                            'AND username = :username ' \
-                            'AND discriminator = :disc '
+                            'AND username = :username '
                 result = await database.fetch_one(query, values)
                 
                 # Append riddle to list of mastered or completed ones

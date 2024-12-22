@@ -33,13 +33,10 @@ async def admin_auth(alias: str):
     query = '''
         SELECT * FROM riddles
         WHERE alias = :alias
-            AND creator_username = :username AND creator_disc = :disc
+            AND creator_username = :username
             AND has_admin_rights IS TRUE
     '''
-    values = {
-        'alias': alias,
-        'username': user.name, 'disc': user.discriminator
-    }
+    values = {'alias': alias, 'username': user.name}    
     is_creator = await database.fetch_one(query, values)
     if is_creator:
         return
@@ -48,7 +45,7 @@ async def admin_auth(alias: str):
     ok = await bot_request(
         'is-member-and-has-permissions',
         guild_id=result['guild_id'],
-        username=user.name, disc=user.discriminator
+        username=user.name
     )
     if ok != "True":
         abort(401)

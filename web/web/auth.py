@@ -30,7 +30,7 @@ def discord_session_init(app: Quart):
     # Discord OAuth2 configs
     app.config['DISCORD_CLIENT_ID'] = 803127673165053993
     app.config['DISCORD_CLIENT_SECRET'] = os.getenv('DISCORD_CLIENT_SECRET')
-    app.config['DISCORD_REDIRECT_URI'] = 'https://riddler.app/callback'
+    app.config['DISCORD_REDIRECT_URI'] = f"https://{os.getenv('DOMAIN_NAME')}/callback'
     app.config['DISCORD_BOT_TOKEN'] = os.getenv('DISCORD_TOKEN')
 
     # Create session object
@@ -67,9 +67,9 @@ async def register():
     # If account has already been created, nothing to do here
     query = '''
         SELECT * FROM accounts
-        WHERE username = :username AND discriminator = :disc
+        WHERE username = :username
     '''
-    values = {'username': user.name, 'disc': user.discriminator}
+    values = {'username': user.name}
     already_created = await database.fetch_one(query, values)
     if already_created:
         return redirect(url_for('info.info_page', page='about'))
@@ -86,8 +86,8 @@ async def register():
 
     # Insert value on accounts table
     query = '''
-        INSERT INTO accounts (username, discriminator, country)
-        VALUES (:username, :disc, :country)
+        INSERT INTO accounts (username, country)
+        VALUES (:username :country)
     '''
     values['country'] = form['country']
     await database.execute(query, values)
@@ -119,13 +119,13 @@ async def callback():
         discord.revoke()
         return redirect('/login')
 
-    # If user doesn't have an account on database, do registration
+    # Search for user's account in database
     user = await discord.get_user()
     query = '''
         SELECT * FROM accounts
-        WHERE username = :name AND discriminator = :disc
+        WHERE username = :name
     '''
-    values= {'name': user.name, 'disc': user.discriminator}
+    values= {'name': user.name}
     account = await database.fetch_one(query, values)
     if not account:
         return redirect(url_for('.register'))

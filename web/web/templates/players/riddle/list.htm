@@ -33,8 +33,10 @@
             </div>
             <div class="player">
               <a href="#">
-                {% set tag = player['username'] + '#' + player['discriminator'] %}
-                {% set url = avatar_urls[tag] if tag in avatar_urls else '/static/images/locked.png' %}
+                {% set url = (
+                  avatar_urls[player['username']] if player['username'] in avatar_urls
+                  else '/static/images/locked.png'
+                ) %}
                 <img class="avatar" src="{{ url }}">
               </a>
               <div>
