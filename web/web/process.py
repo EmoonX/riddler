@@ -16,7 +16,7 @@ process = Blueprint('process', __name__)
 
 
 @process.route('/process', methods=['POST', 'OPTIONS'])
-async def process_url(username=None, disc=None, url=None):
+async def process_url(username=None, url=None):
     '''Process an URL sent by browser extension.'''
 
     # Flag function call as automated or not

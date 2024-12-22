@@ -114,9 +114,8 @@ class User(commands.Cog):
 
     @commands.Cog.listener()
     async def on_user_update(self, before: DiscordUser, after: DiscordUser):
-        '''If username changes, update user\'s Discord guild nicknames;
-        if either it or discriminator change, send a request to webserver
-        to update user-related DB tables.'''
+        '''If username changes, update user\'s Discord guild nicknames
+        and send a request to webserver to update user-related DB tables.'''
 
         if before.name != after.name:
             # Username was changed, so update nicks on every guild user is in
@@ -138,26 +137,16 @@ class User(commands.Cog):
                         '[%s] (403) Can\'t change nick of "%s"',
                         guild.name, member.name
                     )
-        if (
-            before.name != after.name or
-            before.discriminator != after.discriminator
-        ):
-            # Username and/or discriminator were changed, so update tables
+        if before.name != after.name:
+            # Username was changed, so update tables
             query = '''
                 UPDATE accounts
                 SET username = :name_new
                 WHERE username = :name_old
             '''
-            values = {
-                'name_new': after.name, 'disc_new': after.discriminator,
-                'name_old': before.name, 'disc_old': before.discriminator
-            }
+            values = {'name_new': after.name, 'name_old': before.name}
             await database.execute(query, values)
-            logging.info(
-                'User %s#%s is now known as %s#%s',
-                before.name, before.discriminator,
-                after.name, after.discriminator
-            )
+            logging.info(f"User {before.name} is now known as {after.name}")
 
 
 def setup(bot: commands.Bot):

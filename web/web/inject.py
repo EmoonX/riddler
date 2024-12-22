@@ -168,9 +168,9 @@ async def context_processor():
         countries.sort()
         return countries
 
-    async def get_user_country(username: str = None, disc: str = None):
+    async def get_user_country(username: str = None):
         '''Ǵet user's country code.
-        If no username or disc is given, use current user.'''
+        If no username is given, use current user.'''
 
         if not username:
             user = await discord.get_user()

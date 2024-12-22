@@ -12,10 +12,7 @@ async def is_member_of_guild(request):
     data = request.rel_url.query
     guild = get(bot.guilds, id=int(data['guild_id']))
     if guild:
-        member = get(
-            guild.members,
-            name=data['username'], discriminator=data['disc']
-        )
+        member = get(guild.members, name=data['username'])
         if member:
             return web.Response(text="True")
     return web.Response(text="False")
@@ -31,10 +28,7 @@ async def is_member_and_has_permissions(request):
     if not guild:
         # No associated guild
         return web.Response(text="False")
-    member = get(
-        guild.members,
-        name=data['username'], discriminator=data['disc']
-    )
+    member = get(guild.members, name=data['username'])
     if not member:
         # Not a member
         return web.Response(text="False")
@@ -77,8 +71,7 @@ async def get_avatar_url(request):
 
     members = bot.get_all_members()
     username = request.rel_url.query['username']
-    disc = request.rel_url.query['disc']
-    user = get(members, name=username, discriminator=disc)
+    user = get(members, name=username)
     url = (
         str(user.avatar_url) if user
         else '/static/images/locked.png'
@@ -105,9 +98,8 @@ async def fetch_avatar_urls(request):
     # Build dict of pairs (DiscordTag -> URL)
     urls = {}
     for member in members:
-        tag = member.name + '#' + member.discriminator
         url = str(member.avatar_url)
-        urls[tag] = url
+        urls[member.name] = url
 
     # Convert dict to JSON format and return response with it
     data = json.dumps(urls)

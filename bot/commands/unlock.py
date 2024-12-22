@@ -31,8 +31,8 @@ class UnlockHandler:
     in_riddle_guild: bool
     '''If player is member of the riddle guild per se.'''
 
-    def __init__(self, alias: str, username: str, disc: str):
-        '''Build handler for guild `alias` and member `username#disc`.'''
+    def __init__(self, alias: str, username: str):
+        '''Build handler for guild `alias` and member `username`.'''
 
         self.alias = alias
         riddle = riddles[alias]
@@ -43,17 +43,14 @@ class UnlockHandler:
         # Check player guild membership
         self.in_riddle_guild = False
         if riddle.guild:
-            self.member = get(
-                riddle.guild.members,
-                name=username, discriminator=disc
-            )
+            self.member = get(riddle.guild.members, name=username)
             self.in_riddle_guild = (self.member is not None)
 
         # Use Wonderland membership as replacement
         if not self.in_riddle_guild:
             # Not a member of specific riddle guild, so use another one
             members = bot.get_all_members()
-            self.member = get(members, name=username, discriminator=disc)
+            self.member = get(members, name=username)
 
     async def _send(
         self, text: str, channel: abc.Messageable = None, **kwargs
@@ -70,9 +67,7 @@ class UnlockHandler:
             SELECT * FROM accounts
             WHERE username = :username
         '''
-        values = {
-            'username': self.member.name, 'disc': self.member.discriminator
-        }
+        values = {'username': self.member.name}
         result = await database.fetch_one(query, values)
         silent = result['silence_notifs']
         if silent:
@@ -358,8 +353,9 @@ async def multi_update_nickname(riddle: str, member: Member):
                 )
         '''
         values = {
-            'riddle': riddle, 'set_name': set_name,
-            'username': member.name, 'disc': member.discriminator
+            'riddle': riddle,
+            'set_name': set_name,
+            'username': member.name
         }
         set_completed = await database.fetch_one(query, values)
         if not set_completed:

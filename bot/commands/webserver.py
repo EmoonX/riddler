@@ -58,7 +58,7 @@ async def unlock(request):
     # Build unlock handler for guild member
     data = request.rel_url.query
     alias = data['alias']
-    unlock_handler = UnlockHandler(alias, data['username'], data['disc'])
+    unlock_handler = UnlockHandler(alias, data['username'])
 
     # Parse JSON params into dicts
     params = {}
@@ -107,10 +107,7 @@ async def unlock(request):
                 AND username = :username
                 AND completion_time IS NOT NULL
         '''
-        values = {
-            'riddle': alias,
-            'username': data['username'], 'disc': data['disc']
-        }
+        values = {'riddle': alias, 'username': data['username']}
         result = await database.fetch_one(query, values)
         user_completed_count = result['cnt']
         if total_level_count == user_completed_count:
