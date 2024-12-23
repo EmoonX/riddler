@@ -27,16 +27,14 @@
           </div>
           <div class="player">
             <a href="#">
-              {% set url = (
-                avatar_urls[player['username']] if player['username'] in avatar_urls
-                else '/static/images/locked.png'
-              ) %}
+              {% set url = avatar_urls[player['username']] or '/static/images/locked.png' %}
               <img class="avatar" src="{{ url }}">
             </a>
             <div>
+              {% set name = player['display_name'] or player['username'] %}
               {% set color = get_score_ranked_color(player) %}
               {% set country_name = country_names[player['country']] %}
-              <a class="username" href="#" style="color: {{ color }}; text-shadow: 0 0 1em {{ color }}">{{ player['username'] }}</a><!--
+              <a class="username" href="#" style="color: {{ color }}; text-shadow: 0 0 1em {{ color }}">{{ name }}</a><!--
            --><a class="country" href="/players/{{ player['country'] }}" title="{{ country_name }}"><img class="flag" src="/static/flags/{{ player['country'] }}.png"></a>
             </div>
           </div>

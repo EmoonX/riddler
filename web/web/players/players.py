@@ -151,19 +151,22 @@ async def riddle_list(alias: str, country: str = None):
     # Get players data from database
     cond_country = 'WHERE country = :country ' if country else ''
     query = f'''
-        SELECT result.*, acc.country, acc.global_score, acc.hidden FROM (
-            (
-                SELECT *, 999999 AS `index`, 2 AS filter
-                FROM riddle_accounts AS racc
-                WHERE racc.riddle = :riddle
-                    AND current_level = "🏅"
-            ) UNION ALL (
-                SELECT racc.*, lv.`index`, 1 AS filter
-                FROM riddle_accounts AS racc INNER JOIN levels AS lv
-                    ON current_level = lv.name
-                WHERE racc.riddle = :riddle AND lv.riddle = :riddle
-            )
-        ) AS result
+        SELECT result.*,
+            acc.display_name, acc.country,
+            acc.global_score, acc.hidden
+            FROM (
+                (
+                    SELECT *, 999999 AS `index`, 2 AS filter
+                    FROM riddle_accounts AS racc
+                    WHERE racc.riddle = :riddle
+                        AND current_level = "🏅"
+                ) UNION ALL (
+                    SELECT racc.*, lv.`index`, 1 AS filter
+                    FROM riddle_accounts AS racc INNER JOIN levels AS lv
+                        ON current_level = lv.name
+                    WHERE racc.riddle = :riddle AND lv.riddle = :riddle
+                )
+            ) AS result
         INNER JOIN accounts AS acc
         ON result.username = acc.username
         {cond_country}
