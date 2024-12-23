@@ -467,9 +467,9 @@ class _PathHandler:
         # Try to insert new page in `user_pages`
         tnow = datetime.utcnow()
         query = '''
-            INSERT INTO user_pages VALUES (
-                :riddle, :username, 0, :level_name, :path, :time
-            )
+            INSERT INTO user_pages
+                (riddle, username, level_name, `path`, access_time)
+            VALUES (:riddle, :username, :level_name, :path, :time)
         '''
         values = values | {'path': self.path, 'time': tnow}
         try:
@@ -532,7 +532,8 @@ class _PathHandler:
         time = datetime.utcnow()
         query = '''
             INSERT INTO user_achievements
-            VALUES (:riddle, :username, 0, :title, :time)
+                (riddle, username, title, unlock_time)
+            VALUES (:riddle, :username, :title, :time)
         '''
         values = {
             'riddle': self.riddle_alias,
@@ -568,9 +569,8 @@ class _PathHandler:
         # Record found page and respective user
         tnow = datetime.utcnow()
         query = '''
-            INSERT INTO found_pages
-                (riddle, `path`, username, discriminator, access_time)
-            VALUES (:riddle, :path, :username, 0, :time)
+            INSERT INTO found_pages (riddle, `path`, username, access_time)
+            VALUES (:riddle, :path, :username, :time)
         '''
         values = {
             'riddle': self.riddle_alias, 'path': self.path,
@@ -623,8 +623,8 @@ class _LevelHandler:
         tnow = datetime.utcnow()
         query = '''
             INSERT INTO user_levels
-                (riddle, username, discriminator, level_name, find_time)
-            VALUES (:riddle, :username, 0, :level_name, :time)
+                (riddle, username, level_name, find_time)
+            VALUES (:riddle, :username, :level_name, :time)
         '''
         values = {
             'riddle': self.ph.riddle_alias,
@@ -743,7 +743,8 @@ class _LevelHandler:
             WHERE riddle = :riddle AND name = :level_name
         '''
         values = {
-            'riddle': self.ph.riddle_alias, 'level_name': self.level['name']
+            'riddle': self.ph.riddle_alias,
+            'level_name': self.level['name']
         }
         await database.execute(query, values)
 
