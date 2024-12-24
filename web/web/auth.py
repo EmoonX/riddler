@@ -28,7 +28,7 @@ def discord_session_init(app: Quart):
     '''Configure and create Discord OAuth2 object.'''
 
     # Discord OAuth2 configs
-    app.config['DISCORD_CLIENT_ID'] = 803127673165053993
+    app.config['DISCORD_CLIENT_ID'] = os.getenv('DISCORD_CLIENT_ID')
     app.config['DISCORD_CLIENT_SECRET'] = os.getenv('DISCORD_CLIENT_SECRET')
     app.config['DISCORD_REDIRECT_URI'] = f"https://{os.getenv('DOMAIN_NAME')}/callback"
     app.config['DISCORD_BOT_TOKEN'] = os.getenv('DISCORD_TOKEN')
@@ -67,9 +67,9 @@ async def register():
     # If account has already been created, nothing to do here
     query = '''
         SELECT * FROM accounts
-        WHERE username = :username
+        WHERE discord_id = :discord_id
     '''
-    values = {'username': user.name}
+    values = {'discord_id': user.id}
     already_created = await database.fetch_one(query, values)
     if already_created:
         return redirect(url_for('info.info_page', page='about'))
@@ -86,11 +86,17 @@ async def register():
 
     # Insert value on accounts table
     query = '''
-        INSERT INTO accounts (username, country)
-        VALUES (:username :country)
+        INSERT INTO accounts (display_name, username, discord_id, country)
+        VALUES (:display_name, :username, :discord_id, :country)
     '''
-    values['country'] = form['country']
+    values |= {
+        'display_name': user.display_name,
+        'username': user.name,
+        'country': form['country'],
+    }
     await database.execute(query, values)
+    
+    await _post_callback()
 
     # Redirect to post-registration page
     return redirect(url_for('home.homepage'))
@@ -130,12 +136,60 @@ async def callback():
     if not account:
         return redirect(url_for('.register'))
 
-    # Save account database info on session dict
-    session['country'] = account['country']
+    await _post_callback()
 
     # Otherwise, redirect to post-login page
     url = data.get('redirect_url', '/')
     return redirect(url)
+
+
+async def _post_callback():
+    '''Procedures to be done post-callback.'''
+    
+    user = await discord.fetch_user()
+    query = '''
+        UPDATE accounts
+        SET discord_id = :discord_id
+        WHERE username = :name
+    '''
+    values = {'discord_id': user.id, 'name': user.name}
+    await database.execute(query, values)
+    
+    print(user.avatar_url)
+    
+    return
+
+    # Get pure base64 data from URL and convert it to image
+    mime, data = imgdata.split(',', maxsplit=1)
+    mime += ','
+    data = b64decode(data)
+    img = Image.open(BytesIO(data))
+
+    if folder == 'cheevos':
+        # Center and crop cheevo image 1:1
+        left, top, right, bottom = (0, 0, img.width, img.height)
+        if img.width > img.height:
+            left = (img.width - img.height) / 2
+            right = left + img.height
+        elif img.height > img.width:
+            top = (img.height - img.width) / 2
+            bottom = top + img.width
+        box = (left, top, right, bottom)
+        img = img.crop(box)
+
+        # Resize cheevo image to 200x200
+        size = (300, 300)
+        img = img.resize(size)
+
+    avatars_dir = f"/static/avatars"
+    if not os.path.isdir(avatars_dir):
+        os.makedirs(avatars_dir)
+
+    # Save image on riddle's thumbs folder
+    path = f"{avatars_dir}/{user.id}.png"
+    img.save(path)
+    print(f"[{alias}] Image {filename} successfully saved.")
+
 
 
 @auth.get('/logout')

@@ -139,22 +139,28 @@ async def context_processor():
         user = await discord.get_user()
         return user
 
-    async def get_avatar_url(username: str):
+    async def get_avatar_url(username: str = None, discord_id: int = None):
         '''Returns user's avatar url from a request sent to bot.'''
-        url = await bot_request('get-avatar-url', username=username)
+        url = await bot_request('get-avatar-url', discord_id=discord_id)
         return url
 
     async def fetch_avatar_urls(guild_id: int = None):
-        '''Fetch avatar URLs from bot request, parse then and return a dict.
-        If `guild` is present, fetch only from given guild;
-        otherwise, return all avatars bot has access.'''
+
 
         # data = None
         # if guild_id:
         # if False:
         #     data = await bot_request('fetch-avatar-urls', guild_id=guild_id)
         # else:
-        data = await bot_request('fetch-avatar-urls')
+        # data = await bot_request('fetch-avatar-urls')
+        
+        query = '''
+            SELECT discord_id FROM accounts
+            WHERE discord_id IS NOT NULL
+        '''
+        result = await database.fetch_all(query)
+        discord_ids = [row['discord_id'] for row in result]
+        data = await bot_request('fetch-avatar-urls', discord_ids=discord_ids)
         urls = json.loads(data)
         return urls
 
