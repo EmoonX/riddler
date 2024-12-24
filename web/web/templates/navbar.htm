@@ -84,7 +84,7 @@
         <nav class="dropdown">
           {% set avatar = '' %}
           <button class="nav-button profile">
-            <img class="avatar-small" src="{{ get_avatar_url(username=user.id) }}">{{ user.display_name }}
+            <img class="avatar-small" src="{{ get_avatar_url(discord_id=user.id) }}">{{ user.display_name }}
           </button>
           <div class="menu">
             <!--<a href="#" class="nav-button">Public info</a>-->
