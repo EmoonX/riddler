@@ -2,7 +2,7 @@ import json
 from copy import deepcopy
 
 from quart import Blueprint, request, render_template
-from quart_discord import requires_authorization
+from quartcord import requires_authorization
 from pymysql.err import IntegrityError
 
 from admin.admin_auth import admin_auth

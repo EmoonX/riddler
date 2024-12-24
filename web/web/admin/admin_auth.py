@@ -1,5 +1,5 @@
 from quart import abort
-from quart_discord import requires_authorization
+from quartcord import requires_authorization
 from werkzeug.exceptions import HTTPException
 
 from auth import discord

@@ -4,7 +4,7 @@ import re
 from pymysql.err import IntegrityError
 
 from quart import Blueprint, request, jsonify
-from quart_discord.models import User
+from quartcord.models import User
 
 from auth import discord
 from riddle import level_ranks, cheevo_ranks

@@ -1,5 +1,5 @@
 from quart import Blueprint, request, render_template
-from quart_discord import requires_authorization
+from quartcord import requires_authorization
 
 from auth import discord
 from inject import country_names

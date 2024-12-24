@@ -2,7 +2,7 @@ from copy import deepcopy
 import json
 
 from quart import Blueprint, render_template
-from quart_discord import requires_authorization
+from quartcord import requires_authorization
 
 from auth import discord
 from util.db import database

@@ -12,6 +12,6 @@ pycountry>=20.7.3
 PyMySQL==0.9.3
 python-dotenv>=0.15.0
 Quart>=0.15.1
-Quart_Discord>=2.1.4
+quartcord>=1.0.1
 sqlalchemy>=1.3.23
 uvicorn[standard]>=0.15.0

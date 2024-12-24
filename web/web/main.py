@@ -9,7 +9,7 @@ sys.path.append('..')
 sys.path.append('../..')
 
 from quart import Quart, session, request, redirect, url_for
-from quart_discord import Unauthorized
+from quartcord import Unauthorized
 from dotenv import load_dotenv
 
 # Quart app object

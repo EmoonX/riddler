@@ -5,7 +5,7 @@ from quart import (
     render_template, redirect, url_for,
 )
 from quart.sessions import SecureCookieSessionInterface
-from quart_discord import DiscordOAuth2Session, exceptions
+from quartcord import DiscordOAuth2Session, exceptions
 from oauthlib.oauth2.rfc6749.errors import (
     InvalidGrantError, MismatchingStateError
 )

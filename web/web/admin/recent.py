@@ -1,5 +1,5 @@
 from quart import Blueprint, abort
-from quart_discord import requires_authorization
+from quartcord import requires_authorization
 
 from admin.admin_auth import root_auth
 from util.db import database
