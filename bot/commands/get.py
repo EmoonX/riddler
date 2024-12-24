@@ -1,6 +1,7 @@
 import json
 
 from aiohttp import web
+from discord.ext import commands
 from discord.utils import get
 
 from bot import bot
@@ -50,7 +51,7 @@ async def get_riddle_icon_url(request):
     guild = get(bot.guilds, id=guild_id)
     if not guild:
         return web.Response(status=404)
-    url = str(guild.icon_url)
+    url = str(guild.icon)
     return web.Response(text=url)
 
 
@@ -60,7 +61,7 @@ async def fetch_riddle_icon_urls(_request):
 
     urls = {}
     for guild in bot.guilds:
-        url = str(guild.icon_url)
+        url = str(guild.icon)
         urls[guild.id] = url
     data = json.dumps(urls)
     return web.Response(text=data)
@@ -69,11 +70,13 @@ async def fetch_riddle_icon_urls(_request):
 async def get_avatar_url(request):
     '''Get avatar URL from a user by their Discord handle.'''
 
-    members = bot.get_all_members()
-    username = request.rel_url.query['username']
-    user = get(members, name=username)
+    # members = bot.get_all_members()
+    # username = request.rel_url.query['username']
+    # user = get(members, name=username)
+    discord_id = request.rel_url.query['discord_id']
+    print(discord_id)
     url = (
-        str(user.avatar_url) if user
+        str((await bot.fetch_user(discord_id)).avatar) if discord_id != '0'
         else '/static/images/locked.png'
     )
     return web.Response(text=url)
@@ -93,12 +96,14 @@ async def fetch_avatar_urls(request):
         members = guild.members
     else:
         # Get members from all guilds bot has access
-        members = bot.get_all_members()
+        # members = bot.get_all_members()
+        data = request.rel_url.query.get('discord_ids')
+        members = [await bot.fetch_user(discord_id) for discord_id in json.loads(data)]
 
-    # Build dict of pairs (DiscordTag -> URL)
+    # Build dict of (username -> URL)
     urls = {}
     for member in members:
-        url = str(member.avatar_url)
+        url = str(member.avatar)
         urls[member.name] = url
 
     # Convert dict to JSON format and return response with it
@@ -106,5 +111,5 @@ async def fetch_avatar_urls(request):
     return web.Response(text=data)
 
 
-def setup(_):
+async def setup(_):
     pass

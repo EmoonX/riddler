@@ -1,6 +1,7 @@
+import glob
+import logging
 import os
 import sys
-import logging
 
 from dotenv import load_dotenv
 
@@ -25,6 +26,21 @@ async def on_ready():
 
     # Build riddles dict
     await build_riddles()
+    
+    # Iterate through command modules and automatically load extensions
+    commands_dir = os.getcwd() + '/commands'
+    os.chdir(commands_dir)
+    for path in glob.glob('**/*.py', recursive=True):
+        if path.endswith('.py'):
+            if 'mark' in path or 'send' in path:
+                continue
+            name = path.removesuffix('.py').replace('/', '.')
+            name = 'commands.' + name
+            if name in ('commands.get', 'commands.webserver'):
+                logging.info('Loading extension %s...', name)
+                await bot.load_extension(name)
+    
+    # await tree.sync()
 
     logging.info('> All clear.')
 

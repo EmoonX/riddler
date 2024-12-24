@@ -13,7 +13,7 @@ from commands.get import (
 )
 from commands.unlock import UnlockHandler
 from commands.update import insert, update
-from commands.wonderland import update_score_role
+# from commands.wonderland import update_score_role
 from util.db import database
 
 
@@ -127,13 +127,14 @@ async def unlock(request):
 
     if 'points' in params and unlock_handler.member:
         # Update Wonderland guild score-based role, if the case
-        await update_score_role(unlock_handler.member)
+        pass
+        # await update_score_role(unlock_handler.member)
 
     return web.Response(status=200)
 
 
-def setup(bot):
+async def setup(bot):
     '''Add cog and run webserver loop.'''
     _web = WebServer(bot)
-    bot.add_cog(_web)
-    bot.loop.create_task(_web.webserver())
+    await bot.add_cog(_web)
+    await bot.loop.create_task(_web.webserver())
