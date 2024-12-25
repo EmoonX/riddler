@@ -1,4 +1,5 @@
 import json
+from typing import overload
 
 import country_converter as coco
 from flag import flag
@@ -12,7 +13,30 @@ from webclient import bot_request
 from util.db import database
 
 
-async def get_riddles(unlisted=False):
+@overload
+async def get_display_name(user: dict):
+    ...
+
+@overload
+async def get_display_name(username: str):
+    ...
+
+async def get_display_name(user):
+    '''Get display name from either username or user dict.'''
+
+    if isinstance(user, str) or 'display_name' not in user:
+        username = user if isinstance(user, str) else user['username']
+        query = '''
+            SELECT display_name, username FROM accounts
+            WHERE username = :username
+        '''
+        values = {'username': username}
+        user = await database.fetch_one(query, values)
+    
+    return user['display_name'] or user['username']
+
+
+async def get_riddles(unlisted: bool = False):
     '''Return list of all riddles from DB.
 
     :param unlisted: if True, returns also unlisted riddles'''
@@ -214,11 +238,15 @@ async def context_processor():
 
     # Dict for extra variables
     extra = {
-        'level_ranks': level_ranks, 'cheevo_ranks': cheevo_ranks,
-        'get_riddles': get_riddles, 'get_achievements': get_achievements,
+        'get_display_name': get_display_name,
+        'get_riddles': get_riddles,
+        'get_achievements': get_achievements,
+        'level_ranks': level_ranks,
+        'cheevo_ranks': cheevo_ranks,
         'country_names': country_names,
         'is_admin_of': is_admin_of,
-        'get_emoji_flag': flag, 'pycountries': pycountry.countries,
+        'get_emoji_flag': flag,
+        'pycountries': pycountry.countries,
     }
-    # Return concatenated dict with pairs ("var" -> var_value)
+    # Return concatenated dict with pairs (var -> var_value)
     return locals() | extra
