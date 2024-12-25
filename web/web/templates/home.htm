@@ -27,7 +27,7 @@
                 else '/static/images/locked.png'
               ) %}
               <img class="avatar" src="{{ url }}">
-              {{ player['username'] }}
+              {{ get_display_name(player) }}
             </a>
             <div>
               <!-- {% set country_name = country_names[player['country']] %} -->
@@ -38,7 +38,8 @@
             {% else %}
               is playing
             {% endif %}
-              <a class="riddle" href="{{ riddle['front_page'] }}" target="_blank">
+              {% set url = url_for('players.riddle_list', alias=riddle['alias']) %}
+              <a class="riddle" href="{{ url }}" target="_blank">
                 <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
                 {{ riddle['full_name'] }}
               </a>

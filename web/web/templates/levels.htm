@@ -138,7 +138,7 @@
               ) %}
               <figure>
                 <img width="50" height="50" class="avatar-small" src="{{ url }}">
-                <figcaption>{{ player['username'] }}</figcaption>
+                <figcaption>{{ get_display_name(player) }}</figcaption>
               </figure>
             </a>
           {% else %}

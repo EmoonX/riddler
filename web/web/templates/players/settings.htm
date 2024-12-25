@@ -1,6 +1,6 @@
 {% extends 'layout.htm' %}
 {% set country = get_user_country() %}
-{% block title %}{{ get_emoji_flag(country) }} {{ user.name }} | Settings{% endblock %}
+{% block title %}Settings | {{ get_display_name(user.name) }}{% endblock %}
 {% block extra %}
     <script src="/static/scripts/settings.js"></script>
 {% endblock %}
