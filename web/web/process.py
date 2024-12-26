@@ -20,7 +20,7 @@ async def process_url(username=None, url=None):
     '''Process an URL sent by browser extension.'''
 
     # Flag function call as automated or not
-    auto = (url is not None)
+    auto = url is not None
 
     if not auto and not await discord.authorized:
         # Not logged in
@@ -138,10 +138,10 @@ class _PathHandler:
             # If a folder itself, add "index.htm[l]" to path's end
             self.path += 'index.' + riddle['html_extension']
         else:
-            # If no extension, append explicit ".htm" to the end
+            # If no extension, append explicit ".htm[l]" to the end
             has_dot = self.path.count('.')
             if not has_dot:
-                self.path += '.htm'
+                self.path += f".{riddle['html_extension']}"
 
         return self
 
