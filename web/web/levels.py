@@ -15,26 +15,14 @@ levels = Blueprint('levels', __name__)
 @requires_authorization
 async def level_list(alias: str):
     '''Fetch list of levels, showing only applicable public info.'''
-
-    # Discord user and base values for SQL queries
-    user = await discord.get_user()
-    base_values = {'riddle': alias, 'username': user.name}
     
-    # Get riddle level data
-    query = '''
-        SELECT * FROM levels WHERE riddle = :riddle
-        ORDER BY is_secret, `index`
-    '''
-    result = await database.fetch_all(query, {'riddle': alias})
-    levels_list = [dict(row) for row in result]
-
-    # Build level dict
-    levels_dict = {}
-    for level in levels_list:
+    async def _populate_level_data(level: dict):
+        '''Retrieve level data and add to dict.'''
+        
         level['beaten'] = False
         level['unlocked'] = False
         if not user:
-            continue
+            return
 
         # Retrieve level unlocking and completion info
         query = '''
@@ -150,8 +138,34 @@ async def level_list(alias: str):
         values = {'riddle': alias, 'name': level['name']}
         result = await database.fetch_all(query, values)
         level['users'] = [dict(level) for level in result]
+    
+    async def _add_credentials(level: dict):
+        '''Add credentials for level's front path, if any.'''
+        for folder_path in reversed(credentials):
+            # Iterate in reverse to pick the innermost dir first
+            if level['path'].startswith(folder_path):
+                level |= credentials[folder_path]
+                return
 
-        # Append level to its set subdict
+    # Discord user and base values for SQL queries
+    user = await discord.get_user()
+    base_values = {'riddle': alias, 'username': user.name}
+    
+    # Get riddle level data
+    query = '''
+        SELECT * FROM levels
+        WHERE riddle = :riddle
+        ORDER BY is_secret, `index`
+    '''
+    result = await database.fetch_all(query, {'riddle': alias})
+    levels_list = [dict(row) for row in result]
+    credentials = await _get_credentials(alias)    
+
+    # Build level dict
+    levels_dict = {}
+    for level in levels_list:
+        await _populate_level_data(level)
+        await _add_credentials(level)
         if not level['level_set'] in levels_dict:
             levels_dict[level['level_set']] = []
         levels_dict[level['level_set']].append(level)
@@ -180,7 +194,6 @@ async def get_pages(alias: str, level_name: str = None) -> str:
         ORDER BY SUBSTRING_INDEX(`path`, ".", -1)
     """
     values = {'riddle': alias, 'username': user.name}
-    
     if level_name:
         values['level_name'] = level_name
     result = await database.fetch_all(query, values)
@@ -206,7 +219,8 @@ async def get_pages(alias: str, level_name: str = None) -> str:
         pages[level] = {'/': deepcopy(base)}
         for data in level_paths:
             parent = pages[level]['/']
-            segments = data['path'].split('/')[1:]
+            path = data['path']
+            segments = path.split('/')[1:]
             for seg in segments:
                 children = parent['children']
                 if seg not in children:
@@ -216,10 +230,15 @@ async def get_pages(alias: str, level_name: str = None) -> str:
                         children[seg] = data
                 parent['filesFound'] += 1
                 parent = children[seg]
-
-    # Get recursively total file count for each folder
-    query = 'SELECT * FROM level_pages WHERE riddle = :riddle'
+    
+    # Recursively calculate total file count for each folder
+    # and record credentials based on innermost protected directory
+    query = '''
+        SELECT * FROM level_pages
+        WHERE riddle = :riddle
+    '''
     pages_data = await database.fetch_all(query, {'riddle': alias})
+    credentials = await _get_credentials(alias)
     for data in pages_data:
         level = data['level_name']
         if not level or level not in pages:
@@ -232,9 +251,16 @@ async def get_pages(alias: str, level_name: str = None) -> str:
             if not seg in parent['children']:
                 # Avoid registering locked folders/pages
                 break
+            greatparent = parent
             parent = parent['children'][seg]
             path = path + '/' + seg
             parent['path'] = path
+            if path in credentials:
+                parent['username'] = credentials[path]['username']
+                parent['password'] = credentials[path]['password']
+            elif 'username' in greatparent:
+                parent['username'] = greatparent['username']
+                parent['password'] = greatparent['password']
 
     # Return JSON dump
     return json.dumps(pages)
@@ -337,3 +363,22 @@ async def rate(alias: str, level_name: str, rating: int):
     # Return new rating data
     text = ' '.join(map(str, (average, count, rating)))
     return text, 200
+
+
+async def _get_credentials(alias: str) -> dict:
+    '''Fetch dict of level credentials (folder_path -> un/pw).'''
+    
+    query = '''
+        SELECT * FROM level_credentials
+        WHERE riddle = :riddle
+    '''
+    result = await database.fetch_all(query, {'riddle': alias})
+    credentials = {
+        row['folder_path']: {
+            'username': row['username'],
+            'password': row['password'],
+        }
+        for row in result
+    }
+    
+    return credentials

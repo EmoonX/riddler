@@ -32,7 +32,12 @@
           </div>
         {% if level['unlocked'] %}
           <div class="thumb">
-            <a href="{{ riddle['root_path'] }}{{ level['path'] }}" target="_blank">
+            {% set url = riddle['root_path'] + level['path'] %}
+            {% if 'username' in level %}
+              {% set credentials = level['username'] + ':' + level['password'] %}
+              {% set url = url.replace('://', '://' + credentials + '@') %}
+            {% endif %}
+            <a href="{{ url }}" target="_blank">
             {% if level['image'] %}
               <img class="level" src="/static/thumbs/{{ alias }}/{{ level['image'] }}">
             {% else %}
