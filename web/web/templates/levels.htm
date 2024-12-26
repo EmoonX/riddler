@@ -1,6 +1,6 @@
 {% extends 'layout.htm' %}
 {% set riddle = get_riddle(alias) %}
-{% block title %}Levels | {{ riddle['full_name'] }}{% endblock %}
+{% block title %}Levels ⬩ {{ riddle['full_name'] }}{% endblock %}
 {% block extra %}
     <script type="module" src="/static/scripts/levels.js"></script>
     <script type="module" src="/static/scripts/explorer.js"></script>

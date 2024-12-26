@@ -1,9 +1,9 @@
 {% extends 'layout.htm' %}
 {% set riddle = get_riddle(alias) %}
-{% block title %}Countries leaderboard | {{ riddle['full_name'] }}{% endblock %}
+{% block title %}Countries ⬩ {{ riddle['full_name'] }}{% endblock %}
 {% block content %}
     <main>
-      <h1>Countries leaderboard</h1>
+      <h1>Countries</h1>
       <section class="list players countries">
         {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
       {% for country in countries %}

@@ -1,15 +1,15 @@
 {% extends 'layout.htm' %}
 {% set riddle = get_riddle(alias) %}
-{% set flag = '🗺️' %}
 {% if country %}
   {% set flag = get_emoji_flag(country) %}
+  {% set flag_title = flag + ' ⬩ ' %}
+  {% set flag_html = (' ⬩ <span class="flag">' + flag + '</span>')|safe %}
 {% endif %}
-{% set flag_html = ('<span class="flag">' + flag + '</span> | ')|safe %}
-{% block title %}{{ flag }} | Leaderboard | {{ riddle['full_name'] }}{% endblock %}
+{% block title %}{{ flag_title }}Leaderboard ⬩ {{ riddle['full_name'] }}{% endblock %}
 {% block content %}
     <main>
       <main>
-        <h1>{{ flag_html }}Leaderboard</h1>
+        <h1>Leaderboard{{ flag_html }}</h1>
         <section class="list players">
           {% set avatar_urls = fetch_avatar_urls(riddle['guild_id']) %}
           {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
