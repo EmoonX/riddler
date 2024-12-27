@@ -70,11 +70,11 @@ async def fetch_riddle_icon_urls(_request):
 async def get_avatar_url(request):
     '''Get avatar URL from a user by their Discord handle.'''
 
-    # members = bot.get_all_members()
-    # username = request.rel_url.query['username']
-    # user = get(members, name=username)
     user_id = int(request.rel_url.query['discord_id'])
-    url = await bot.get_user(user_id)
+    user = bot.get_user(user_id)
+    if not user:
+        user = bot.fetch_user(user_id)
+    url = user.display_avatar.url
     return web.Response(text=url)
 
 
@@ -102,8 +102,7 @@ async def get_all_avatar_urls(request):
     # Build dict of (username -> URL)
     urls = {}
     for user in users:
-        url = str(user.avatar)
-        urls[user.name] = url
+        urls[user.name] = user.display_avatar.url
 
     # Convert dict to JSON format and return response with it
     data = json.dumps(urls)
