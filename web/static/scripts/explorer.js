@@ -129,10 +129,17 @@ export function changeDir(explorer, folderPath, admin) {
       const accessTime = row['access_time'];
       accessTimeMessage = `&#10;↳ found on ${accessTime}`;
     }
-    const img = `<img src="/static/icons/extensions/${name}.png">`;
-    const fc = `<figcaption>${page}</figcaption>`;
-    const figure = `<figure ${current}
-        title="${path}${accessTimeMessage}">${img}${fc}</figure>`;
+    const figure = `
+      <figure
+        ${current}
+        title="${path}${accessTimeMessage}"
+        data-username=${row['username']}
+        data-password=${row['password']}
+      >
+        <img src="/static/icons/extensions/${name}.png">
+        <figcaption>${page}</figcaption>
+      </figure>
+    `;
 
     // Append current level files in correct order
     // (current folders -> other folders -> current files -> other files)

@@ -28,7 +28,12 @@ function doubleClickIcon() {
         $(this).find('figcaption').text();
     const endpoint = location.href + '/get-root-path';
     $.get(endpoint, rootPath => {
-      const url = rootPath + path;
+      let url = rootPath + path;
+      if ($(this).attr('data-username')) {
+        let username = $(this).attr('data-username');
+        let password = $(this).attr('data-password');
+        url = url.replace('://', `://${username}:${password}@`);
+      }
       window.open(url, '_blank');
     });    
   } else {
