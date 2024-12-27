@@ -86,8 +86,8 @@ async def register():
 
     # Insert value on accounts table
     query = '''
-        INSERT INTO accounts (display_name, username, discord_id, country)
-        VALUES (:display_name, :username, :discord_id, :country)
+        INSERT INTO accounts (display_name, username, country)
+        VALUES (:display_name, :username, :country)
     '''
     values |= {
         'display_name': user.display_name,
@@ -146,50 +146,19 @@ async def callback():
 async def _post_callback():
     '''Procedures to be done post-callback.'''
     
-    user = await discord.fetch_user()
+    user = await discord.get_user()
+    avatar_file = user.avatar_url.rsplit('/', 1)[-1].split('?')[0]
     query = '''
         UPDATE accounts
-        SET discord_id = :discord_id
+        SET discord_id = :discord_id, avatar_file = :avatar_file
         WHERE username = :name
     '''
-    values = {'discord_id': user.id, 'name': user.name}
+    values = {
+        'discord_id': user.id,
+        'avatar_file': avatar_file,
+        'name': user.name,
+    }
     await database.execute(query, values)
-    
-    print(user.avatar_url)
-    
-    return
-
-    # Get pure base64 data from URL and convert it to image
-    mime, data = imgdata.split(',', maxsplit=1)
-    mime += ','
-    data = b64decode(data)
-    img = Image.open(BytesIO(data))
-
-    if folder == 'cheevos':
-        # Center and crop cheevo image 1:1
-        left, top, right, bottom = (0, 0, img.width, img.height)
-        if img.width > img.height:
-            left = (img.width - img.height) / 2
-            right = left + img.height
-        elif img.height > img.width:
-            top = (img.height - img.width) / 2
-            bottom = top + img.width
-        box = (left, top, right, bottom)
-        img = img.crop(box)
-
-        # Resize cheevo image to 200x200
-        size = (300, 300)
-        img = img.resize(size)
-
-    avatars_dir = f"/static/avatars"
-    if not os.path.isdir(avatars_dir):
-        os.makedirs(avatars_dir)
-
-    # Save image on riddle's thumbs folder
-    path = f"{avatars_dir}/{user.id}.png"
-    img.save(path)
-    print(f"[{alias}] Image {filename} successfully saved.")
-
 
 
 @auth.get('/logout')
