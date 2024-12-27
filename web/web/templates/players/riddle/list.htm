@@ -11,7 +11,7 @@
       <main>
         <h1>Leaderboard{{ flag_html }}</h1>
         <section class="list players">
-          {% set avatar_urls = fetch_avatar_urls(riddle['guild_id']) %}
+          {% set avatar_urls = get_all_avatar_urls(riddle['guild_id']) %}
           {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
       {% for player in accounts + [creator_account] if player %}
         {% if loop.index > accounts|length %}

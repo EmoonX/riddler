@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 
+import discord
 from dotenv import load_dotenv
 
 # Allow util folder to be visible
@@ -48,4 +49,5 @@ async def on_ready():
 if __name__ == '__main__':
     # Start bot with secret token
     token = os.getenv('DISCORD_TOKEN')
+    bot.status = discord.Status.dnd
     bot.run(token)

@@ -10,7 +10,7 @@
       <hr>
       <h3>Recent player activity</h3>
       <section class="list players recent-progress">
-        {% set avatar_urls = fetch_avatar_urls() %}
+        {% set avatar_urls = get_all_avatar_urls() %}
         {% set riddles = fetch_riddles() %}
       {% for player in recent_progress %}
         <div class="row">

@@ -11,7 +11,7 @@
       <h1>Levels</h1>
       {% set total = 100 %}
       {% set accounts = get_accounts(alias) %}
-      {% set avatar_urls = fetch_avatar_urls(riddle['guild_id']) %}
+      {% set avatar_urls = get_all_avatar_urls(riddle['guild_id']) %}
     {% for set_name, set in levels.items() %}
     {% if set_name %}
       <h2>{{ set_name }}</h2>

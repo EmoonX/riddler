@@ -9,7 +9,7 @@
     <main>
       <h1>Leaderboard{{ flag_html }}</h1>
       <section class="list players">
-        {% set avatar_urls = fetch_avatar_urls() %}
+        {% set avatar_urls = get_all_avatar_urls() %}
         {% set riddles = fetch_riddles() %}
         {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
         {% set badges = {'created': '👑', 'mastered': '💎', 'completed': '🏅'} %}

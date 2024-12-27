@@ -168,8 +168,7 @@ async def context_processor():
         url = await bot_request('get-avatar-url', discord_id=discord_id)
         return url
 
-    async def fetch_avatar_urls(guild_id: int = None):
-
+    async def get_all_avatar_urls(guild_id: int = None):
 
         # data = None
         # if guild_id:
@@ -179,13 +178,21 @@ async def context_processor():
         # data = await bot_request('fetch-avatar-urls')
         
         query = '''
-            SELECT discord_id FROM accounts
+            SELECT username, discord_id, avatar_file FROM accounts
             WHERE discord_id IS NOT NULL
         '''
         result = await database.fetch_all(query)
-        discord_ids = [row['discord_id'] for row in result]
-        data = await bot_request('fetch-avatar-urls', discord_ids=discord_ids)
+        discord_ids = set(row['discord_id'] for row in result)
+        
+        data = await bot_request('get-all-avatar-urls', discord_ids=discord_ids)
         urls = json.loads(data)
+        
+        for row in result:
+            if row['username'] in urls or not row['avatar_file']:
+                continue
+            url = f"https://cdn.discordapp.com/avatars/{row['discord_id']}/{row['avatar_file']}"
+            urls[row['username']] = url
+        
         return urls
 
     def get_sorted_countries():

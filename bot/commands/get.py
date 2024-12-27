@@ -73,42 +73,50 @@ async def get_avatar_url(request):
     # members = bot.get_all_members()
     # username = request.rel_url.query['username']
     # user = get(members, name=username)
-    discord_id = request.rel_url.query['discord_id']
-    print(discord_id)
-    url = (
-        str((await bot.fetch_user(discord_id)).avatar) if discord_id != '0'
-        else '/static/images/locked.png'
-    )
+    user_id = int(request.rel_url.query['discord_id'])
+    url = await bot.get_user(user_id)
     return web.Response(text=url)
 
 
-async def fetch_avatar_urls(request):
-    '''Fetch avatar URLs and return a dict of them. If `guild`
-    is given, fetch all user avatars from a given guild;
-    otherwise, just fetch avatars from all guilds.'''
+async def get_all_avatar_urls(request):
+    '''Get all reachable avatar URLs and return a dict of them.
+    If `guild_id` is given in request, fetch all user avatars
+    from a given guild; otherwise, just fetch avatars from all guilds.'''
 
     guild_id = request.rel_url.query.get('guild_id')
-    members = None
     if guild_id:
         # Get all given guild members
         guild_id = int(guild_id)
         guild = get(bot.guilds, id=guild_id)
-        members = guild.members
+        user = guild.members
     else:
-        # Get members from all guilds bot has access
-        # members = bot.get_all_members()
+        # Get avatars from all available user IDs
         data = request.rel_url.query.get('discord_ids')
-        members = [await bot.fetch_user(discord_id) for discord_id in json.loads(data)]
+        user_ids = map(int, json.loads(data))
+        users = []
+        for user_id in user_ids:
+            user = bot.get_user(user_id)
+            if user:
+                users.append(user)
 
     # Build dict of (username -> URL)
     urls = {}
-    for member in members:
-        url = str(member.avatar)
-        urls[member.name] = url
+    for user in users:
+        url = str(user.avatar)
+        urls[user.name] = url
 
     # Convert dict to JSON format and return response with it
     data = json.dumps(urls)
     return web.Response(text=data)
+
+
+
+async def _get_avatar_url(user_id: int) -> str:
+    if user_id == 0:
+        return '/static/images/locked.png'
+
+    user = await bot.fetch_user(user_id)
+    return str(user.avatar)
 
 
 async def setup(_):

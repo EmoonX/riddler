@@ -9,7 +9,7 @@ from discord.ext import commands
 from commands.get import (
     is_member_of_guild, is_member_and_has_permissions,
     get_riddle_icon_url, fetch_riddle_icon_urls,
-    get_avatar_url, fetch_avatar_urls,
+    get_avatar_url, get_all_avatar_urls,
 )
 from commands.unlock import UnlockHandler
 from commands.update import insert, update
@@ -36,7 +36,7 @@ class WebServer(commands.Cog):
         app.router.add_get('/get-riddle-icon-url', get_riddle_icon_url)
         app.router.add_get('/fetch-riddle-icon-urls', fetch_riddle_icon_urls)
         app.router.add_get('/get-avatar-url', get_avatar_url)
-        app.router.add_get('/fetch-avatar-urls', fetch_avatar_urls)
+        app.router.add_get('/get-all-avatar-urls', get_all_avatar_urls)
         app.router.add_get('/insert', insert)
         app.router.add_get('/update', update)
         app.router.add_get('/unlock', unlock)
