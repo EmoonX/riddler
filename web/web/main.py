@@ -1,6 +1,7 @@
 import asyncio
 from asyncio.events import AbstractEventLoop
 from datetime import datetime, timedelta
+import logging
 import sys
 from ssl import SSLError
 
@@ -8,9 +9,9 @@ from ssl import SSLError
 sys.path.append('..')
 sys.path.append('../..')
 
+from dotenv import load_dotenv
 from quart import Quart, session, request, redirect, url_for
 from quartcord import Unauthorized
-from dotenv import load_dotenv
 
 # Quart app object
 app = Quart(__name__, static_folder='../static')
@@ -37,12 +38,13 @@ from countries import countries
 from get import get
 from home import home
 from info import info
+from inject import context_processor
 from levels import levels
+import log
 from players.players import players
 from players.account import account
 from players.profile import profile
 from process import process
-from inject import context_processor
 from util.db import database
 
 for blueprint in (
@@ -80,6 +82,9 @@ async def before():
     # Define exception handler for async loop
     loop = asyncio.get_event_loop()
     loop.set_exception_handler(_exception_handler)
+    
+    # Use uvicorn log formatting on gunicorn
+    logging.config.dictConfig(log.config)
 
 
 @app.after_request
