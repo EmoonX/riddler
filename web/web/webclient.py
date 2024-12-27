@@ -6,12 +6,14 @@ import aiohttp
 async def bot_request(path: str, **kwargs) -> str:
     '''Send HTTP to webserver running on Discord bot.'''
 
-    # Correctly prepare values to JSON format
+    # Correctly prepare values to conforming JSON format
     url = 'http://localhost:4757/' + path
     for param, value in kwargs.items():
-        if type(value) in (list, dict):
+        if isinstance(value, (dict, list, set, tuple)):
+            if isinstance(value, set):
+                value = list(value)
             kwargs[param] = json.dumps(value)
-        elif type(value) == bool or value is None:
+        elif isinstance(value, bool) or value is None:
             kwargs[param] = int(bool(value))
 
     # Send request and return response
