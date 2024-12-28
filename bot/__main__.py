@@ -4,6 +4,7 @@ import os
 import sys
 
 import discord
+import discord.state
 from dotenv import load_dotenv
 
 # Allow util folder to be visible
@@ -24,6 +25,20 @@ async def on_ready():
     '''Procedures upon bot initialization.'''
 
     logging.info('> Bot up and running!')
+    
+    def _get_activity():
+        if custom_status := os.getenv('DISCORD_CUSTOM_STATUS'):
+            return discord.Activity(
+                type=discord.ActivityType.custom,
+                name='Custom Status',
+                state=custom_status,
+            )
+        return None
+    
+    await bot.change_presence(
+        status=discord.Status.dnd,
+        activity=_get_activity()
+    )
 
     # Build riddles dict
     await build_riddles()
@@ -49,5 +64,4 @@ async def on_ready():
 if __name__ == '__main__':
     # Start bot with secret token
     token = os.getenv('DISCORD_TOKEN')
-    bot.status = discord.Status.dnd
     bot.run(token)
