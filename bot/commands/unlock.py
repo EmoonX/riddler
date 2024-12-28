@@ -1,8 +1,10 @@
 import logging
+from typing import Optional
 
-from discord import abc, Guild, Member, File
-from discord.utils import get
+from discord import Guild, Member, File
+from discord.abc import Messageable
 from discord.errors import Forbidden
+from discord.utils import get
 
 from bot import bot
 from riddle import riddles, get_ancestor_levels
@@ -53,7 +55,10 @@ class UnlockHandler:
             self.member = get(members, name=username)
 
     async def _send(
-        self, text: str, channel: abc.Messageable = None, **kwargs
+        self,
+        text: str,
+        channel: Optional[Messageable] = None,
+        **kwargs,
     ):
         '''Try to send a message to member/channel.
         If they/it do(es)n't accept DMs from bot, ignore.'''
@@ -92,8 +97,10 @@ class UnlockHandler:
             )
 
     async def advance(self, level: dict):
-        '''Advance to level when player arrives at its front page.
-        "reached" role is granted to user and thus access to channel(s).'''
+        '''
+        Advance to designated level.
+        "reached-" role is granted to user and thus access to channel(s).
+        '''
 
         if level['is_secret']:
             # Log reaching secret and send message to member
@@ -422,10 +429,10 @@ async def multi_update_nickname(riddle: str, member: Member):
     if set_progress:
         sep = ', ' if len(set_progress) <= 2 else ' '
         s = sep.join(set_progress)
-        if s not in ('🏅', '🐸'):
-            s = f"({s})" if riddle == 'kermit' else f"[{s}]"
+        if s != '🏅':
+            s = f"⁅{s}⁆"
     await update_nickname(member, s)
 
 
-def setup(_):
+async def setup(_):
     pass

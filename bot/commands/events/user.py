@@ -149,6 +149,6 @@ class User(commands.Cog):
             logging.info(f"User {before.name} is now known as {after.name}")
 
 
-def setup(bot: commands.Bot):
+async def setup(bot: commands.Bot):
     '''Add cog every time extension (module) is (re)loaded.'''
-    bot.add_cog(User(bot))
+    await bot.add_cog(User(bot))

@@ -195,5 +195,5 @@ async def update(request):
     return web.Response(status=200)
 
 
-def setup(_):
+async def setup(_):
     pass

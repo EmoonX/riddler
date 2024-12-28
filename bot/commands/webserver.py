@@ -13,12 +13,12 @@ from commands.get import (
 )
 from commands.unlock import UnlockHandler
 from commands.update import insert, update
-# from commands.wonderland import update_score_role
+from commands.wonderland import update_score_role
 from util.db import database
 
 
 class WebServer(commands.Cog):
-    '''`aiohttp` webserver to process HTTP requests from webapp.'''
+    '''`aiohttp` webserver to process HTTP requests from web app.'''
 
     def __init__(self, bot):
         self.bot = bot
@@ -31,7 +31,8 @@ class WebServer(commands.Cog):
         app = web.Application()
         app.router.add_get('/is-member-of-guild', is_member_of_guild)
         app.router.add_get(
-            '/is-member-and-has-permissions', is_member_and_has_permissions
+            '/is-member-and-has-permissions',
+            is_member_and_has_permissions
         )
         app.router.add_get('/get-riddle-icon-url', get_riddle_icon_url)
         app.router.add_get('/fetch-riddle-icon-urls', fetch_riddle_icon_urls)
@@ -93,7 +94,7 @@ async def unlock(request):
     # Special procedures to be done upon score increase
     methods = ['beat', 'cheevo_found', 'game_completed']
     if params['method'] in methods:
-        # Check if player completed all levels
+        # Check if player has completed all levels
         query = '''
             SELECT COUNT(*) AS cnt FROM levels
             WHERE riddle = :riddle
@@ -111,7 +112,7 @@ async def unlock(request):
         result = await database.fetch_one(query, values)
         user_completed_count = result['cnt']
         if total_level_count == user_completed_count:
-            # Check if player unlocked all achievements
+            # Check if player has unlocked all achievements
             query = '''
                 SELECT * FROM achievements
                 WHERE riddle = :riddle AND title NOT IN (
@@ -121,14 +122,13 @@ async def unlock(request):
             '''
             has_unfound_cheevos = await database.fetch_one(query, values)
 
-            # If nothing was found, then player got everything
+            # If nothing was found, then player has gotten everything
             if not has_unfound_cheevos:
                 await unlock_handler.game_mastered()
 
     if 'points' in params and unlock_handler.member:
         # Update Wonderland guild score-based role, if the case
-        pass
-        # await update_score_role(unlock_handler.member)
+        await update_score_role(unlock_handler.member)
 
     return web.Response(status=200)
 

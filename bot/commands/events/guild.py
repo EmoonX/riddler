@@ -74,6 +74,6 @@ class Guild(commands.Cog):
         )
 
 
-def setup(bot: commands.Bot):
+async def setup(bot: commands.Bot):
     '''Add cog every time extension (module) is (re)loaded.'''
-    bot.add_cog(Guild(bot))
+    await bot.add_cog(Guild(bot))

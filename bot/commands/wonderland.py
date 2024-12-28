@@ -94,6 +94,6 @@ async def update_score_role(member: Member):
             await member.remove_roles(old_role)
 
 
-def setup(_bot: commands.Bot):
+async def setup(_bot: commands.Bot):
     '''Add cog every time extension (module) is (re)loaded.'''
-    _bot.add_cog(Wonderland(_bot))
+    await _bot.add_cog(Wonderland(_bot))

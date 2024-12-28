@@ -33,8 +33,10 @@ class Interaction(discord.Interaction):
             await self.followup.send(message)
         
 
-
 @bot.tree.error
 async def on_error(interaction: Interaction, error: AppCommandError | Exception):
     await interaction.on_error()
 
+
+async def setup(_):
+    pass

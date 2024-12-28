@@ -27,6 +27,7 @@ async def on_ready():
     logging.info('> Bot up and running!')
     
     def _get_activity():
+        '''Get optional custom status message from env variable.'''
         if custom_status := os.getenv('DISCORD_CUSTOM_STATUS'):
             return discord.Activity(
                 type=discord.ActivityType.custom,
@@ -51,12 +52,9 @@ async def on_ready():
             if 'mark' in path or 'send' in path:
                 continue
             name = path.removesuffix('.py').replace('/', '.')
-            name = 'commands.' + name
-            good = 'get', 'webserver', 'extra'
-            concat = lambda name: f"commands.{name}"
-            if name in map(concat, good):
-                logging.info('Loading extension %s...', name)
-                await bot.load_extension(name)
+            name = f"commands.{name}"
+            logging.info('Loading extension %s…', name)
+            await bot.load_extension(name)
 
     logging.info('> All clear.')
 
