@@ -1,7 +1,5 @@
-import os
-
 import discord
-from discord import app_commands, Intents
+from discord import Intents
 from discord.ext import commands
 
 
@@ -22,7 +20,3 @@ class Bot(commands.Bot):
 
 # Global bot object to be used on other modules
 bot: commands.Bot = Bot()
-
-@bot.tree.command(name="ping", description="...")
-async def _ping(interaction: discord.Interaction) -> None:
-    await interaction.response.send_message("pong")

@@ -52,11 +52,11 @@ async def on_ready():
                 continue
             name = path.removesuffix('.py').replace('/', '.')
             name = 'commands.' + name
-            if name in ('commands.get', 'commands.webserver'):
+            good = 'get', 'webserver', 'extra'
+            concat = lambda name: f"commands.{name}"
+            if name in map(concat, good):
                 logging.info('Loading extension %s...', name)
                 await bot.load_extension(name)
-    
-    # await tree.sync()
 
     logging.info('> All clear.')
 

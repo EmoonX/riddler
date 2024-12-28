@@ -1,8 +1,7 @@
+from discord import app_commands
 from discord.ext import commands
-from discord_slash import (
-    cog_ext, SlashContext, SlashCommandOptionType as OptType
-)
-from discord_slash.utils.manage_commands import create_option
+
+from commands.util import Interaction
 
 
 class Extra(commands.Cog):
@@ -10,24 +9,24 @@ class Extra(commands.Cog):
 
     def __init__(self, bot):
         self.bot = bot
-
-    @cog_ext.cog_slash(name='ping')
-    async def ping(self, ctx: SlashContext):
+    
+    @app_commands.command()
+    async def ping(self, interaction: Interaction):
         '''Ping-pong with measurable latency.'''
         latency = 1000 * self.bot.latency
-        await ctx.send(f"Pong! ({latency:.2f} ms)")
+        await interaction.send(f"Pong! ({latency:.2f} ms)")
 
-    @cog_ext.cog_slash(
-        name='balthify',
-        options=[create_option(
-            name='text',
-            description='Text to be converted.',
-            option_type=OptType.from_type(str),
-            required=True,
-        )],
-    )
-    async def balthify(self, ctx: SlashContext, text: str):
-        '''Turn text into Balthazar-speak!'''
+    @app_commands.command()
+    async def balthify(self, interaction: Interaction, text: str):
+        '''
+        Turn text into Balthazar-speak.
+        
+        Args:
+            interaction:
+                The interaction object.
+            text:
+                Text to be converted.
+        '''
 
         # Transform text into uppercase, remove spaces
         # and punctuation and keep numbers
@@ -41,10 +40,11 @@ class Extra(commands.Cog):
 
         # Send message (or placeholder)
         if not text:
-            text = '_This message was intentionally left blank._'
-        await ctx.send(text)
+            text = '_Message intentionally left blank._'
+        
+        await interaction.send(text)
 
 
-def setup(bot: commands.Bot):
+async def setup(bot: commands.Bot):
     '''Add cog every time extension (module) is (re)loaded.'''
-    bot.add_cog(Extra(bot))
+    await bot.add_cog(Extra(bot))
