@@ -114,11 +114,15 @@ class User(commands.Cog):
 
     @commands.Cog.listener()
     async def on_user_update(self, before: DiscordUser, after: DiscordUser):
-        '''If username changes, update user\'s Discord guild nicknames
-        and send a request to webserver to update user-related DB tables.'''
-
-        if before.name != after.name:
-            # Username was changed, so update nicks on every guild user is in
+        '''
+        If username and/or global name change,
+        update user\'s guild nicknames and user-related DB tables.
+        '''
+        
+        async def _name_update(name_before: str, name_after: str):
+            '''Run updates for either username or global name changes.'''
+            
+            # Update nicks for every guild user is in
             for guild in self.bot.guilds:
                 member = guild.get_member(before.id)
                 if not member or not member.nick:
@@ -137,8 +141,8 @@ class User(commands.Cog):
                         '[%s] (403) Can\'t change nick of "%s"',
                         guild.name, member.name
                     )
-        if before.name != after.name:
-            # Username was changed, so update tables
+
+            # Update database
             query = '''
                 UPDATE accounts
                 SET username = :name_new
@@ -147,6 +151,13 @@ class User(commands.Cog):
             values = {'name_new': after.name, 'name_old': before.name}
             await database.execute(query, values)
             logging.info(f"User {before.name} is now known as {after.name}")
+
+        if before.name != after.name:
+            # Username has changed
+            _name_update(before.name, after.name)
+        if before.global_name != after.global_name:
+            # Global name has changed
+            _name_update(before.global_name, after.global_name)
 
 
 async def setup(bot: commands.Bot):

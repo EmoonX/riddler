@@ -322,7 +322,7 @@ async def update_nickname(member: Member, s: str):
     '''Update user's nickname to reflect current level.
     In case it exceeds 32 characters, shorten the member's name to fit.'''
 
-    name = member.name
+    name = member.global_name
     total = len(name) + 1 + len(s)
     if total > 32:
         excess = total - 32
