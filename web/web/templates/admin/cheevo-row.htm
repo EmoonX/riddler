@@ -17,7 +17,7 @@
   </div>
   <div>
     <fieldset class="rank">
-      <legend title="ℹ️ Select rank according to achievement's difficulty or importance.&#10;&#10;[🥉] 'Dumb' and/or easy-to-reach cheevos;&#10;[🥈] Substancial ones that require creativity and/or out-of-the-box thinking;&#10;[🥇] Good challenges like secret levels or very well hidden eggs;&#10;[💎] Should be reserved for the best among the best (like reaching a vital game's landmark).">Rank</legend>
+      <legend title="ℹ️ Select rank according to achievement's difficulty or importance.&#10;&#10;[🥉] 'Dumb' and/or easy-to-reach cheevos;&#10;[🥈] Substantial ones that require creativity and/or out-of-the-box thinking;&#10;[🥇] Good challenges like secret levels or very well hidden eggs;&#10;[💎] Should be reserved for the best among the best (like reaching a vital game's landmark).">Rank</legend>
     {% for rank, info in cheevo_ranks.items()|reverse %}
       <label title="{{ info['emoji'] }}: {{ info['description'] }}" style="color: {{ info['color'] }}">
         {% if rank == cheevo['rank'] %}

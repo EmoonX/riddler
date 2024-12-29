@@ -21,7 +21,7 @@ cheevo_ranks = {
     ),
     'B': g(
         '🥈', 100, 50, 'lightcyan',
-        'Substancial ones that require creativity '
+        'Substantial ones that require creativity '
             'and/or out-of-the-box thinking.'
     ),
     'A': g(
