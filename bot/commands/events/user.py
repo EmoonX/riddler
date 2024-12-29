@@ -118,10 +118,25 @@ class User(commands.Cog):
         If username and/or global name change,
         update user\'s guild nicknames and user-related DB tables.
         '''
-        
-        async def _name_update(name_before: str, name_after: str):
-            '''Run updates for either username or global name changes.'''
-            
+
+        async def _update_database(field: str):
+            '''Update database for either username or global name changes.'''
+            query = f""" 
+                UPDATE accounts
+                SET {field} = :name_new
+                WHERE discord_id = :discord_id
+            """
+            values = {
+                'name_new': (
+                    after.name if field == 'username'
+                    else after.global_name
+                ),
+                'discord_id': after.id
+            }
+            await database.execute(query, values)
+
+        if before.name != after.name:
+            # Username has changed
             # Update nicks for every guild user is in
             for guild in self.bot.guilds:
                 member = guild.get_member(before.id)
@@ -141,23 +156,17 @@ class User(commands.Cog):
                         '[%s] (403) Can\'t change nick of "%s"',
                         guild.name, member.name
                     )
-
-            # Update database
-            query = '''
-                UPDATE accounts
-                SET username = :name_new
-                WHERE username = :name_old
-            '''
-            values = {'name_new': after.name, 'name_old': before.name}
-            await database.execute(query, values)
-            logging.info(f"User {before.name} is now known as {after.name}")
-
-        if before.name != after.name:
-            # Username has changed
-            _name_update(before.name, after.name)
+            
+            await _update_database('username')
+            logging.info(f"Username update: {before.name} -> {after.name}")
+            
         if before.global_name != after.global_name:
             # Global name has changed
-            _name_update(before.global_name, after.global_name)
+            await _update_database('display_name')
+            logging.info(
+                "Display name update: "
+                f"{before.global_name} -> {after.global_name}"
+            )
 
 
 async def setup(bot: commands.Bot):
