@@ -1,5 +1,7 @@
-from quart import Blueprint, request, render_template, abort
+from quart import abort, Blueprint, redirect, render_template
 from jinja2.exceptions import TemplateNotFound
+
+from inject import get_riddles
 
 # Create app blueprint
 info = Blueprint('info', __name__)
@@ -15,8 +17,13 @@ async def info_page(page: str):
     except TemplateNotFound:
         if page == 'process':
             abort(405)
-        else:
-            abort(404)
+        
+        # Possibly a riddle front page
+        aliases = [riddle['alias'] for riddle in await get_riddles()]
+        if page in aliases:
+            return redirect(f"/{page}/players")
+        
+        abort(404)
 
 
 @info.get('/thedudedude')
