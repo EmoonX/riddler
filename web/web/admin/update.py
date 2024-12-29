@@ -2,9 +2,8 @@ from quart import Blueprint, abort
 from quartcord import requires_authorization
 
 from admin.admin_auth import admin_auth, root_auth
-from auth import discord
+from inject import get_riddles
 from riddle import level_ranks, cheevo_ranks
-from webclient import bot_request
 from util.db import database
 
 # Create app blueprint
@@ -21,14 +20,10 @@ async def update_all_riddles():
     if not ok:
         abort(401)
 
-    # Get all riddle aliases from DB
-    query = 'SELECT * FROM riddles'
-    result = await database.fetch_all(query)
-    riddles = {riddle['alias']: riddle for riddle in result}
-
     # Run update_all on every riddle
-    for row in result:
-        alias = row['alias']
+    riddles = await get_riddles()
+    for riddle in riddles:
+        alias = riddle['alias']
         response = await update_all(alias)
         if response[1] != 200:
             return response
@@ -36,13 +31,9 @@ async def update_all_riddles():
     # Update separately players' global scores
     query = 'UPDATE accounts SET global_score = 0'
     await database.execute(query)
-    query = 'SELECT * FROM riddle_accounts'
+    query = 'SELECT username, score FROM riddle_accounts'
     riddle_accounts = await database.fetch_all(query)
     for row in riddle_accounts:
-        riddle = riddles[row['riddle']]
-        if riddle['unlisted']:
-            # Ignore unlisted riddles
-            continue
         query = '''
             UPDATE accounts
             SET global_score = global_score + :score
@@ -125,23 +116,6 @@ async def update_scores(alias: str):
         '''
         values |= {'score': new_score}
         await database.execute(query, values)
-
-        # If riddle is listed, update player's global score
-        query = 'SELECT * FROM riddles WHERE alias = :alias'
-        values = {'alias': alias}
-        riddle = await database.fetch_one(query, values)
-        if not riddle['unlisted']:
-            query = '''
-                UPDATE accounts
-                SET global_score = (global_score - :cur + :new)
-                WHERE username = :name
-            '''
-            new_values = {
-                'cur': cur_score,
-                'new': new_score,
-                'name': acc['username']
-            }
-            await database.execute(query, new_values)
 
     return 'SUCCESS :)', 200
 
