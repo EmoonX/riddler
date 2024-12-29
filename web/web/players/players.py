@@ -1,4 +1,5 @@
 from functools import cmp_to_key
+from typing import Optional
 
 from quart import Blueprint, render_template
 
@@ -13,11 +14,11 @@ players = Blueprint('players', __name__)
 
 @players.get('/players')
 @players.get('/players/<country>')
-async def global_list(country: str = None):
+async def global_list(country: Optional[str] = None):
     '''Global (and country-wise) players list.'''
 
-    # Get riddle data from database (minus unlisted ones) as a dict
-    query = 'SELECT * FROM riddles WHERE unlisted IS FALSE'
+    # Get riddle data from database
+    query = 'SELECT * FROM riddles'
     result = await database.fetch_all(query)
     riddles = {riddle['alias']: dict(riddle) for riddle in result}
 
@@ -35,12 +36,16 @@ async def global_list(country: str = None):
 
     # Init dict of (handle -> player info)
     accounts = {}
-    cond_country = 'AND country = :country' if country else ''
     query = f"""
         SELECT acc.*, SUM(page_count), MAX(last_page_time)
         FROM accounts AS acc INNER JOIN riddle_accounts AS racc
             ON acc.username = racc.username
-        WHERE global_score > 0 {cond_country}
+        WHERE
+            (
+                global_score > 0
+                OR acc.username IN (SELECT creator_username FROM riddles)
+            )
+            {'AND country = :country' if country else ''}
         GROUP BY acc.username
         ORDER BY global_score DESC, page_count DESC, last_page_time DESC
     """
@@ -77,10 +82,10 @@ async def global_list(country: str = None):
     # Get session user, if any
     user = await discord.get_user() if discord.user_id else None
 
-    for handle, player in accounts.items():
+    for username, player in accounts.items():
         # Hide username, country and riddles for non logged-in `hidden` players
         if player['hidden']:
-            if not user and player['username'] == user.username:
+            if not user and username == user.username:
                 player['username'] = 'Anonymous'
                 player['country'] = 'ZZ'
                 continue
@@ -92,7 +97,7 @@ async def global_list(country: str = None):
         player['other_riddles'] = []
         for alias, riddle in riddles.items():
             # Check if player is creator of current riddle
-            if (riddle['creator_username'] == player['username']):
+            if (riddle['creator_username'] == username):
                 player['created_riddles'].append(riddle)
                 continue
 
@@ -123,7 +128,7 @@ async def global_list(country: str = None):
 
 @players.get('/<alias>/players')
 @players.get('/<alias>/players/<country>')
-async def riddle_list(alias: str, country: str = None):
+async def riddle_list(alias: str, country: Optional[str] = None):
     '''Riddle (and country-wise) player lists.'''
 
     # Get riddle data from database
@@ -154,21 +159,26 @@ async def riddle_list(alias: str, country: str = None):
         SELECT result.*,
             acc.display_name, acc.country,
             acc.global_score, acc.hidden
-            FROM (
-                (
-                    SELECT *, 999999 AS `index`, 2 AS filter
-                    FROM riddle_accounts AS racc
-                    WHERE racc.riddle = :riddle
-                        AND current_level = "🏅"
-                ) UNION ALL (
-                    SELECT racc.*, lv.`index`, 1 AS filter
-                    FROM riddle_accounts AS racc INNER JOIN levels AS lv
-                        ON current_level = lv.name
-                    WHERE racc.riddle = :riddle AND lv.riddle = :riddle
-                )
-            ) AS result
+        FROM (
+            (
+                SELECT *, 999999 AS `index`, 2 AS filter
+                FROM riddle_accounts AS racc
+                WHERE (racc.riddle = :riddle AND current_level = "🏅")
+                    OR racc.username = (
+                        SELECT username FROM riddles AS r
+                        WHERE r.alias = :riddle
+                            AND racc.username = r.creator_username
+                    ) 
+            ) UNION ALL (
+                SELECT racc.*, lv.`index`, 1 AS filter
+                FROM riddle_accounts AS racc
+                INNER JOIN levels AS lv
+                    ON current_level = lv.name
+                WHERE racc.riddle = :riddle AND lv.riddle = :riddle
+            )
+        ) AS result
         INNER JOIN accounts AS acc
-        ON result.username = acc.username
+            ON result.username = acc.username
         {cond_country}
         ORDER BY score DESC, last_page_time DESC
         LIMIT 1000
@@ -222,8 +232,7 @@ async def riddle_list(alias: str, country: str = None):
                 account['username'] = 'Anonymous'
                 account['country'] = 'ZZ'
 
-    # Pluck creator account from main list to show it separately 👑
-    # Also, remove 0-score accounts.
+    # Pluck 0-score and creator accounts from main list
     creator_account = None
     aux = []
     for account in accounts:
