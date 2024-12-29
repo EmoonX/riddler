@@ -4,17 +4,17 @@
     <main>
       <h1>Privacy Policy</h1>
       
-      <p>This is nothing more than a simple page to disclose extension/website privacy policies to everyone including Google, the biggest tracking company in the world. In other words, it's here to guarantee that neither the extension nor the website collects more data from you than what's needed. You can pretty much ignore it if you're <s>anybody but Google bots</s> a player. <em>All hail Google!</em></p>
+      <p>This is nothing more than a simple page to disclose extension/website privacy policies to everyone including Google, the biggest tracking company in the world. In other words, it's here to guarantee that neither the extension nor the website collects more data from you than what's needed.</p>
 
       <h2>Browser extension</h2>
-      <p>Riddler collects accessed pages' URLs as they are visited by players, <em>but only on riddle sites</em>. This works by having the <code>webRequest</code> permission enabled just on catalogued domains, granted by clicking <strong>Update hosts</strong> (button) in the extension's popup menu. Such action has to be done by a so-called "user gesture", since it's the only way apparently Chrome allows granting of optional permissions to extensions.</p>
+      <p>Riddler collects accessed pages' URLs upon player browsing, <em>but only in riddles' websites</em>. Such whitelisting works by having the <code>webRequest</code> permission enabled for specific designated domains, which in turn is triggered by clicking the <strong>Update hosts</strong> (button) on the extension's popup menu. Such action has to be done by a so-called "user gesture", since it's the portable browser way of granting optional permissions to extensions.</p>
       
       <h2>Discord OAuth2</h2>
-      <p>The only OAuth2 system scope requested is <code>identity</code>, which grants access to the logged user's Discord username and avatar. Such info is required for identifying which user is logged in, and thus applying needed processing and database changes to them (and only them).</p>
+      <p>The only OAuth2 system scope requested is <code>identity</code>, which grants access to the logged user's Discord basic info (e.g display name and avatar). Such info is required for identifying you, the player, and thus apply needed processing and database changes.</p>
 
       <hr>
 
       <p>By using Riddler, extension and website, you hereby consent to the aforementioned Privacy Policy and Riddler's (small) usage of your data.</p>
-      <p style="text-align: right">― Emoon, 2021</p>
+      <p style="text-align: right">― Riddler, 2025</p>
     </main>
 {% endblock %}
