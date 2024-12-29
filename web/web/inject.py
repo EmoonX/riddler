@@ -41,11 +41,10 @@ async def get_riddles(unlisted: bool = False):
 
     :param unlisted: if True, returns also unlisted riddles'''
 
-    query = ''
-    if not unlisted:
-        query = 'SELECT * FROM riddles WHERE unlisted IS FALSE'
-    else:
-        query = 'SELECT * FROM riddles'
+    query = f"""
+        SELECT * FROM riddles
+        {'WHERE unlisted IS FALSE' if not unlisted else ''}
+    """
     riddles = await database.fetch_all(query)
     return riddles
 
