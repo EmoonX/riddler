@@ -20,3 +20,12 @@ class Bot(commands.Bot):
 
 # Global bot object to be used on other modules
 bot: commands.Bot = Bot()
+
+@bot.command()
+async def sync(ctx):
+    print("sync command")
+    if ctx.author.id == 315940379553955844:
+        await bot.tree.sync()
+        await ctx.send('Command tree synced.')
+    else:
+        await ctx.send('You must be the owner to use this command!')
