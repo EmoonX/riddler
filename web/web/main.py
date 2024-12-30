@@ -10,7 +10,7 @@ sys.path.append('..')
 sys.path.append('../..')
 
 from dotenv import load_dotenv
-from quart import Quart, session, request, redirect, url_for
+from quart import redirect, request, session, Quart, url_for
 from quartcord import Unauthorized
 
 # Quart app object
@@ -40,7 +40,6 @@ from home import home
 from info import info
 from inject import context_processor
 from levels import levels
-import log
 from players.players import players
 from players.account import account
 from players.profile import profile
@@ -66,25 +65,32 @@ app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 
 # Enable browser debug messages
-app.config['DEBUG'] = True
+# app.config['DEBUG'] = True
 
 
 @app.before_request
 async def before():
-    '''Procedures to be done upon app start.'''
+    '''Procedures to be done before each request.'''
     
-    # Make decorator work as @app.before_first_request instead
-    app.before_request_funcs[None].remove(before)
-    
-    # Connect to MySQL database
-    await database.connect()
+    async def _before_first_request():
+        '''Procedures to be done solely on app startup.'''
+        
+        # Connect to MySQL database
+        await database.connect()
 
-    # Define exception handler for async loop
-    loop = asyncio.get_event_loop()
-    loop.set_exception_handler(_exception_handler)
+        # Define exception handler for async loop
+        loop = asyncio.get_event_loop()
+        loop.set_exception_handler(_exception_handler)
     
-    # Use uvicorn log formatting on gunicorn
-    logging.config.dictConfig(log.config)
+    if not hasattr(before, 'first_request_done'):
+        # First request for app process
+        await _before_first_request()
+        before.first_request_done = True
+    
+    # Remove single trailing slash for paths outside root
+    rp = request.path
+    if rp != '/' and rp.endswith('/') and not rp.endswith('//'):
+        return redirect(rp[:-1])
 
 
 @app.after_request
