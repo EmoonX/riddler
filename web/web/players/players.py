@@ -144,14 +144,18 @@ async def riddle_list(alias: str, country: Optional[str] = None):
         url = f"/static/riddles/{alias}.png"
     riddle['icon_url'] = url
 
-    # Get total number of riddle achievements
+    # Get all level and achievement required non-sensitive info from riddle
+    values = {'riddle': alias}
     query = '''
-        SELECT COUNT(*) as count FROM achievements
+        SELECT `name` FROM levels
         WHERE riddle = :riddle
     '''
-    values = {'riddle': alias}
-    result = await database.fetch_one(query, values)
-    riddle['cheevo_count'] = result['count']
+    levels = await database.fetch_all(query, values)
+    query = '''
+        SELECT `title`, description, image, `rank` FROM achievements
+        WHERE riddle = :riddle
+    '''
+    cheevos = await database.fetch_all(query, values)
 
     # Get players data from database
     cond_country = 'WHERE country = :country ' if country else ''
@@ -159,24 +163,22 @@ async def riddle_list(alias: str, country: Optional[str] = None):
         SELECT result.*,
             acc.display_name, acc.country,
             acc.global_score, acc.hidden
-        FROM (
-            (
-                SELECT *, 999999 AS `index`, 2 AS filter
-                FROM riddle_accounts AS racc
-                WHERE (racc.riddle = :riddle AND current_level = "🏅")
-                    OR racc.username = (
-                        SELECT username FROM riddles AS r
-                        WHERE r.alias = :riddle
-                            AND racc.username = r.creator_username
-                    ) 
-            ) UNION ALL (
-                SELECT racc.*, lv.`index`, 1 AS filter
-                FROM riddle_accounts AS racc
-                INNER JOIN levels AS lv
-                    ON current_level = lv.name
-                WHERE racc.riddle = :riddle AND lv.riddle = :riddle
-            )
-        ) AS result
+        FROM ((
+            SELECT *, 999999 AS `index`, 2 AS filter
+            FROM riddle_accounts AS racc
+            WHERE (racc.riddle = :riddle AND current_level = "🏅")
+                OR racc.username = (
+                    SELECT username FROM riddles AS r
+                    WHERE r.alias = :riddle
+                        AND racc.username = r.creator_username
+                ) 
+        ) UNION ALL (
+            SELECT racc.*, lv.`index`, 1 AS filter
+            FROM riddle_accounts AS racc
+            INNER JOIN levels AS lv
+                ON current_level = lv.name
+            WHERE racc.riddle = :riddle AND lv.riddle = :riddle
+        )) AS result
         INNER JOIN accounts AS acc
             ON result.username = acc.username
         {cond_country}
@@ -212,14 +214,20 @@ async def riddle_list(alias: str, country: Optional[str] = None):
         account['cheevos'] = await get_achievements(alias, account)
 
         if account['current_level'] == '🏅':
-            # Show 💎 if player has gotten all possible cheevos on riddle
+            # Show 💎 if player has gotten all possible points in riddle
             query = '''
-                SELECT COUNT(*) as count FROM user_achievements
-                WHERE riddle = :riddle AND username = :username
+                SELECT COUNT(*) as count FROM ((
+                    SELECT `level_name` AS name FROM user_levels
+                    WHERE riddle = :riddle AND username = :username
+                        AND completion_time IS NOT NULL
+                ) UNION ALL (
+                    SELECT `title` AS name FROM user_achievements
+                    WHERE riddle = :riddle AND username = :username
+                )) AS result
             '''
             values |= {'riddle': alias}
             result = await database.fetch_one(query, values)
-            if result['count'] == riddle['cheevo_count']:
+            if result['count'] == len(levels) + len(cheevos):
                 account['current_level'] = '💎'
 
         # Hide username and country for non logged-in `hidden` players
@@ -244,15 +252,13 @@ async def riddle_list(alias: str, country: Optional[str] = None):
 
     def _account_cmp(a, b):
         '''Compare accounts first by score and then page count.'''
-        if a['score'] == b['score']:
-            a_count = a['page_count'] if 'page_count' in a else 0
-            b_count = b['page_count'] if 'page_count' in b else 0
-            return 1 if a_count < b_count else -1
-        return 1 if a['score'] < b['score'] else -1
+        a_count = a.get('page_count', 0)
+        b_count = b.get('page_count', 0)
+        return -1 if (a['score'], a_count) < (b['score'], b_count) else +1
 
     # Sort account list using custom key above
     cmp_key = cmp_to_key(_account_cmp)
-    accounts.sort(key=cmp_key)
+    accounts = sorted(accounts, key=cmp_key, reverse=True)
 
     # Render page with account info
     return await render_template(
