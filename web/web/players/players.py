@@ -7,6 +7,7 @@ from auth import discord
 from inject import get_achievements
 from webclient import bot_request
 from util.db import database
+from util.riddle import remove_ancestor_levels
 
 # Create app blueprint
 players = Blueprint('players', __name__)
@@ -144,13 +145,15 @@ async def riddle_list(alias: str, country: Optional[str] = None):
         url = f"/static/riddles/{alias}.png"
     riddle['icon_url'] = url
 
-    # Get all level and achievement required non-sensitive info from riddle
-    values = {'riddle': alias}
+
+    # Get riddle level count & achievement info
     query = '''
-        SELECT `name` FROM levels
+        SELECT COUNT(*) AS count FROM levels
         WHERE riddle = :riddle
     '''
-    levels = await database.fetch_all(query, values)
+    values = {'riddle': alias}
+    result = await database.fetch_one(query, values)
+    level_count = result['count']
     query = '''
         SELECT `title`, description, image, `rank` FROM achievements
         WHERE riddle = :riddle
@@ -158,35 +161,27 @@ async def riddle_list(alias: str, country: Optional[str] = None):
     cheevos = await database.fetch_all(query, values)
 
     # Get players data from database
-    cond_country = 'WHERE country = :country ' if country else ''
-    query = f'''
-        SELECT result.*,
+    query = f"""
+        SELECT racc.*,
             acc.display_name, acc.country,
             acc.global_score, acc.hidden
-        FROM ((
-            SELECT *, 999999 AS `index`, 2 AS filter
-            FROM riddle_accounts AS racc
-            WHERE (racc.riddle = :riddle AND current_level = "🏅")
-                OR racc.username = (
-                    SELECT username FROM riddles AS r
-                    WHERE r.alias = :riddle
-                        AND racc.username = r.creator_username
-                ) 
-        ) UNION ALL (
-            SELECT racc.*, lv.`index`, 1 AS filter
-            FROM riddle_accounts AS racc
-            INNER JOIN levels AS lv
-                ON current_level = lv.name
-            WHERE racc.riddle = :riddle AND lv.riddle = :riddle
-        )) AS result
+        FROM riddle_accounts racc
         INNER JOIN accounts AS acc
-            ON result.username = acc.username
-        {cond_country}
-        ORDER BY score DESC, last_page_time DESC
+            ON racc.username = acc.username
+        WHERE riddle = :riddle 
+            {'AND country = :country' if country else ''}
+            AND (
+                racc.score > 0
+                OR racc.username IN (
+                    SELECT creator_username FROM riddles
+                    WHERE alias = racc.riddle
+                )
+            )
+        ORDER BY score DESC, last_page_time ASC
         LIMIT 1000
-    '''
+    """
     if country:
-        values['country'] = country
+        values |= {'country': country}
     result = await database.fetch_all(query, values)
     accounts = [dict(account) for account in result]
 
@@ -200,6 +195,7 @@ async def riddle_list(alias: str, country: Optional[str] = None):
             # Logged user is respective riddle's admin
             riddle_admin = True
 
+    players_by_level = {}
     for account in accounts:
         # Get player country
         query = '''
@@ -210,25 +206,55 @@ async def riddle_list(alias: str, country: Optional[str] = None):
         result = await database.fetch_one(query, values)
         account['country'] = result['country']
 
-        # Fetch achievement dict
-        account['cheevos'] = await get_achievements(alias, account)
+        #
+        query = f"""
+            SELECT level_name FROM user_levels ul
+            WHERE riddle = :riddle
+                AND username = :username
+                AND (
+                    completion_time IS NULL
+                    OR level_name IN (
+                        SELECT final_level FROM level_sets
+                        WHERE riddle = :riddle
+                    )
+                    OR level_name IN (
+                        SELECT level_name FROM level_requirements
+                        WHERE riddle = :riddle
+                        GROUP BY level_name
+                        HAVING COUNT(*) >= 2
+                    )
+                ) AND level_name NOT IN (
+                    SELECT name FROM levels lv
+                    WHERE ul.riddle = lv.riddle
+                        AND ul.level_name = lv.name
+                        AND is_secret IS TRUE
+                )
+        """
+        values |= {'riddle': alias}
+        result = await database.fetch_all(query, values)
+        for row in result:
+            name = row['level_name']
+            if name not in players_by_level:
+                players_by_level[name] = set()
+            players_by_level[name].add(account['username'])
 
-        if account['current_level'] == '🏅':
-            # Show 💎 if player has gotten all possible points in riddle
-            query = '''
-                SELECT COUNT(*) as count FROM ((
-                    SELECT `level_name` AS name FROM user_levels
-                    WHERE riddle = :riddle AND username = :username
-                        AND completion_time IS NOT NULL
-                ) UNION ALL (
-                    SELECT `title` AS name FROM user_achievements
-                    WHERE riddle = :riddle AND username = :username
-                )) AS result
-            '''
-            values |= {'riddle': alias}
-            result = await database.fetch_one(query, values)
-            if result['count'] == len(levels) + len(cheevos):
-                account['current_level'] = '💎'
+        # Show 💎 if player has gotten all possible points in riddle
+        query = '''
+            SELECT COUNT(*) as count FROM ((
+                SELECT `level_name` AS name FROM user_levels
+                WHERE riddle = :riddle AND username = :username
+                    AND completion_time IS NOT NULL
+            ) UNION ALL (
+                SELECT `title` AS name FROM user_achievements
+                WHERE riddle = :riddle AND username = :username
+            )) AS result
+        '''
+        result = await database.fetch_one(query, values)
+        if result['count'] == level_count + len(cheevos):
+            account['current_level'] = '💎'
+
+        # Add achievements dict
+        account['cheevos'] = await get_achievements(alias, account)
 
         # Hide username and country for non logged-in `hidden` players
         # (ignored if current player is respective riddle's admin)
@@ -240,6 +266,17 @@ async def riddle_list(alias: str, country: Optional[str] = None):
                 account['username'] = 'Anonymous'
                 account['country'] = 'ZZ'
 
+    players_by_level =  await remove_ancestor_levels(alias, players_by_level)
+    current_levels = {}
+    for level, players in players_by_level.items():
+        for username in players:
+            if not username in current_levels:
+                current_levels[username] = []
+            current_levels[username].append(level)
+    for account in accounts:
+        levels = current_levels[account['username']]
+        account['current_level'] = ' | '.join(levels)
+
     # Pluck 0-score and creator accounts from main list
     creator_account = None
     aux = []
@@ -250,7 +287,7 @@ async def riddle_list(alias: str, country: Optional[str] = None):
             aux.append(account)
     accounts = aux
 
-    def _account_cmp(a, b):
+    def _account_cmp(a: dict, b: dict) -> int:
         '''Compare accounts first by score and then page count.'''
         a_count = a.get('page_count', 0)
         b_count = b.get('page_count', 0)
