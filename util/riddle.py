@@ -79,7 +79,7 @@ async def remove_ancestor_levels(riddle: str, players_by_level: dict) -> dict:
     query = '''
         SELECT lv.name FROM levels lv
         INNER JOIN level_sets ls
-            ON lv.level_set = ls.name
+            ON lv.riddle = ls.riddle AND lv.level_set = ls.name
         WHERE lv.riddle = :riddle
         ORDER BY ls.`index`, lv.`index`
     '''

@@ -132,7 +132,7 @@
             </figure>
           {% endif %}
           </div>
-          <div class="currently-in hoverable-figures">
+          <div class="currently-on hoverable-figures">
         {% for user in level['users'][:9] %}
           {% if loop.index < 9 or level['users']|length == 9 %}
             {% set player = accounts[user['username']] %}

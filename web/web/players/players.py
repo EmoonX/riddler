@@ -213,6 +213,16 @@ async def riddle_list(alias: str, country: Optional[str] = None):
                 AND username = :username
                 AND (
                     completion_time IS NULL
+                    OR (
+                        completion_time IS NOT NULL
+                        AND level_name NOT IN (
+                            SELECT lr.level_name FROM level_requirements lr
+                            INNER JOIN user_levels u2
+                                ON lr.riddle = u2.riddle
+                                AND lr.level_name = u2.level_name
+                            WHERE requires = ul.level_name
+                        )
+                    )
                     OR level_name IN (
                         SELECT final_level FROM level_sets
                         WHERE riddle = :riddle
@@ -266,16 +276,17 @@ async def riddle_list(alias: str, country: Optional[str] = None):
                 account['username'] = 'Anonymous'
                 account['country'] = 'ZZ'
 
-    players_by_level =  await remove_ancestor_levels(alias, players_by_level)
-    current_levels = {}
+    players_by_level = await remove_ancestor_levels(alias, players_by_level)
+    current_levels = {acc['username']: [] for acc in accounts}
     for level, players in players_by_level.items():
+        aux = level.split()
+        if len(aux) >= 2:
+            small = ' '.join(aux[:-1])
+            level = f"<span class=\"small\">{small}</span>{aux[-1]}"
         for username in players:
-            if not username in current_levels:
-                current_levels[username] = []
             current_levels[username].append(level)
     for account in accounts:
-        levels = current_levels[account['username']]
-        account['current_level'] = ' | '.join(levels)
+        account['current_level'] = current_levels[account['username']]
 
     # Pluck 0-score and creator accounts from main list
     creator_account = None

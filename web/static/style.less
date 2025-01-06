@@ -896,15 +896,21 @@ section.list.players > .row {
     > figcaption {
       line-height: 100%;
     }
-    &.current-level {
-      width: 120px;
+    &.current-level > .levels {
+      display: flex;
+      justify-content: center;
+      align-items: end;
+      gap: .05em;
+      width: 160px;
+      font-size: 1.3em;
 
       > var {
-        font-size: 1.6em;
-        letter-spacing: 0.1em;
+        text-align: center;
+        letter-spacing: .05em;
 
-        &::first-letter {
-          letter-spacing: 0.1em;
+        > .small {
+          display: block;
+          font-size: .5em;
         }
       }
     }
@@ -1244,7 +1250,7 @@ section.list.levels > .row {
       }
     }
   }
-  > .currently-in {
+  > .currently-on {
     display: grid;
     grid-template-rows: 33% 33% 33%;
     grid-template-columns: 33% 33% 33%;

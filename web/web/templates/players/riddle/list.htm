@@ -45,12 +45,23 @@
               </div>
             </div>
             <figure class="current-level">
-            {% if player['current_level'] not in ('💎', '🏅') %}
+            {% if player['current_level'] == '💎' %}
+              <var style="text-shadow: 0 0 0.4em teal, 0 0 0.8em teal, 0 0 1.2em teal;">
+                💎
+              </var>
+            {% else %}
               <figcaption>Currently on</figcaption>
-            {% elif player['current_level'] == '💎' %}
-              {% set style_mastered = 'style="text-shadow: 0 0 0.4em teal, 0 0 0.8em teal, 0 0 1.2em teal;"'|safe %}
+              <div class="levels">
+              {% for level in player['current_level'] %}
+                {% if loop.index > 1 %}
+                  ⬩
+                {% endif %}
+                <var>
+                  {{ level|safe }}
+                </var>
+              {% endfor %}
+              </div>
             {% endif %}
-              <var {{ style_mastered }}>{{ player['current_level'] }}</var>
             </figure>
             <figure class="score">
               {% set score = player['score'] %}
