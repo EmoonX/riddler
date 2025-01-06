@@ -47,7 +47,9 @@
             <figure class="current-level">
           {% if player['current_level'] == '💎' %}
               <div class="levels">
-                <div class="mastered">
+                <div class="milestone mastered"
+                  title="⮞ Mastered {{ riddle['full_name'] }}&#10;({{ player['mastered_on'] }})"
+                >
                   💎
                 </div>
               </div>
@@ -58,9 +60,14 @@
                   ⬩
               {% endif %}
                 <div class="level">
-                {% if level in player['completed_milestones'] and set_emoji[level] %}
-                  <div class="milestone">
-                    {{ set_emoji[level] }}
+                {% if level in player['completed_milestones'] and sets_by_final_level[level] %}
+                  {% set set_name = sets_by_final_level[level]['name'] %}
+                  {% set set_emoji = sets_by_final_level[level]['emoji'] %}
+                  {% set completion_time = player['completed_milestones'][level]['completion_time'] %}
+                  <div class="milestone"
+                    title="⮞ Finished {{ set_name }}&#10;(level {{ level }} completed on {{ completion_time }})"
+                  >
+                    {{ set_emoji }}
                   </div>
                 {% endif %}
                   <var>

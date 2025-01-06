@@ -161,11 +161,11 @@ async def riddle_list(alias: str, country: Optional[str] = None):
 
     # Get riddle level set info
     query = '''
-        SELECT final_level, emoji FROM level_sets
+        SELECT name, final_level, emoji FROM level_sets
         WHERE riddle = :riddle
     '''
-    level_sets = await database.fetch_all(query, values)
-    set_emoji = {set_['final_level']: set_['emoji'] for set_ in level_sets}
+    result = await database.fetch_all(query, values)
+    sets_by_final_level = {row['final_level']: row for row in result}
 
     # Get players data from database
     query = f"""
@@ -192,7 +192,7 @@ async def riddle_list(alias: str, country: Optional[str] = None):
     result = await database.fetch_all(query, values)
     accounts = {
         acc['username']: dict(acc) | {
-            'current_level': [], 'completed_milestones': set()
+            'current_level': [], 'completed_milestones': {}
         }
         for acc in result
     }
@@ -218,7 +218,7 @@ async def riddle_list(alias: str, country: Optional[str] = None):
         result = await database.fetch_one(query, values)
         account['country'] = result['country']
 
-        #
+        # Retrieve player's milestones and furthest reached levels
         query = f"""
             SELECT level_name, completion_time FROM user_levels ul
             WHERE riddle = :riddle
@@ -253,14 +253,14 @@ async def riddle_list(alias: str, country: Optional[str] = None):
                 )
         """
         values |= {'riddle': alias}
-        result = await database.fetch_all(query, values)
-        for row in result:
-            level = row['level_name']
-            if level not in players_by_level:
-                players_by_level[level] = set()
-            players_by_level[level].add(username)
-            if row['completion_time']:
-                account['completed_milestones'].add(level)
+        levels = await database.fetch_all(query, values)
+        for level in levels:
+            name = level['level_name']
+            if name not in players_by_level:
+                players_by_level[name] = set()
+            players_by_level[name].add(username)
+            if level['completion_time']:
+                account['completed_milestones'][name] = level
 
         # Add achievements dict
         account['cheevos'] = await get_achievements(alias, account)
@@ -286,21 +286,23 @@ async def riddle_list(alias: str, country: Optional[str] = None):
     for username, account in accounts.items():
         # Show 💎 if player has gotten all possible points in riddle
         query = '''
-            SELECT COUNT(*) as count FROM ((
-                SELECT `level_name` AS name FROM user_levels
+            SELECT COUNT(*) as count, MAX(score_time) AS latest_time
+            FROM ((
+                SELECT `level_name` AS name, completion_time AS score_time
+                FROM user_levels
                 WHERE riddle = :riddle AND username = :username
                     AND completion_time IS NOT NULL
             ) UNION ALL (
-                SELECT `title` AS name FROM user_achievements
+                SELECT `title` AS name, unlock_time AS score_time
+                FROM user_achievements
                 WHERE riddle = :riddle AND username = :username
             )) AS result
         '''
         values = {'riddle': alias, 'username': username}
         result = await database.fetch_one(query, values)
-        account['current_level'] = (
-            '💎' if result['count'] == level_count + len(cheevos)
-            else account['current_level']
-        )
+        if result['count'] == level_count + len(cheevos):
+            account['current_level'] = '💎'
+            account['mastered_on'] = result['latest_time']
 
     # Pluck 0-score and creator accounts from main list
     creator_account = None
@@ -326,5 +328,6 @@ async def riddle_list(alias: str, country: Optional[str] = None):
     return await render_template(
         'players/riddle/list.htm',
         alias=alias, creator_account=creator_account,
-        accounts=accounts, country=country, set_emoji=set_emoji
+        accounts=accounts, country=country,
+        sets_by_final_level=sets_by_final_level,
     )
