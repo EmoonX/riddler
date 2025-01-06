@@ -157,17 +157,23 @@ async def level_list(alias: str):
         WHERE riddle = :riddle
         ORDER BY is_secret, `index`
     '''
-    result = await database.fetch_all(query, {'riddle': alias})
+    values = {'riddle': alias}
+    result = await database.fetch_all(query, values)
     levels_list = [dict(row) for row in result]
     credentials = await _get_credentials(alias)    
 
-    # Build level dict
-    levels_dict = {}
+    # Get riddle level sets
+    query = '''
+        SELECT name FROM level_sets
+        WHERE riddle = :riddle
+    '''
+    level_sets = await database.fetch_all(query, values)
+
+    # Build sets & levels dict
+    levels_dict = {set_['name']: [] for set_ in level_sets}
     for level in levels_list:
         await _populate_level_data(level)
         await _add_credentials(level)
-        if not level['level_set'] in levels_dict:
-            levels_dict[level['level_set']] = []
         levels_dict[level['level_set']].append(level)
 
     # Pass better named dict to template
