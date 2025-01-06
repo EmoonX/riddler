@@ -45,25 +45,39 @@
               </div>
             </div>
             <figure class="current-level">
-            {% if player['current_level'] == '💎' %}
+          {% if player['current_level'] == '💎' %}
               <div class="levels">
-                <var style="text-shadow: 0 0 0.4em teal, 0 0 0.8em teal, 0 0 1.2em teal;">
+                <div class="mastered">
                   💎
-                </var>
+                </div>
               </div>
-            {% else %}
-              <figcaption>Currently on</figcaption>
+          {% else %}
               <div class="levels">
-              {% for level in player['current_level'] %}
-                {% if loop.index > 1 %}
+            {% for level in player['current_level'] %}
+              {% if loop.index > 1 %}
                   ⬩
+              {% endif %}
+                <div class="level">
+                {% if level in player['completed_milestones'] and set_emoji[level] %}
+                  <div class="milestone">
+                    {{ set_emoji[level] }}
+                  </div>
                 {% endif %}
-                <var>
-                  {{ level|safe }}
-                </var>
-              {% endfor %}
+                  <var>
+                  {% set aux = level.split() %}
+                  {% set ns = namespace(level='') %}
+                  {% for word in aux %}
+                    {% if word|length > 3 %}
+                      {% set word = '<span class="small">' + word + '</span>' %}
+                    {% endif %}
+                    {% set ns.level = ns.level + ' ' + word %}
+                  {% endfor %}
+                    {{ ns.level|safe }}
+                  </var>
+                </div>
+            {% endfor %}
               </div>
-            {% endif %}
+          {% endif %}
             </figure>
             <figure class="score">
               {% set score = player['score'] %}
