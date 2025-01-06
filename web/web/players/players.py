@@ -248,21 +248,6 @@ async def riddle_list(alias: str, country: Optional[str] = None):
                 players_by_level[name] = set()
             players_by_level[name].add(account['username'])
 
-        # Show 💎 if player has gotten all possible points in riddle
-        query = '''
-            SELECT COUNT(*) as count FROM ((
-                SELECT `level_name` AS name FROM user_levels
-                WHERE riddle = :riddle AND username = :username
-                    AND completion_time IS NOT NULL
-            ) UNION ALL (
-                SELECT `title` AS name FROM user_achievements
-                WHERE riddle = :riddle AND username = :username
-            )) AS result
-        '''
-        result = await database.fetch_one(query, values)
-        if result['count'] == level_count + len(cheevos):
-            account['current_level'] = '💎'
-
         # Add achievements dict
         account['cheevos'] = await get_achievements(alias, account)
 
@@ -285,8 +270,26 @@ async def riddle_list(alias: str, country: Optional[str] = None):
             level = f"<span class=\"small\">{small}</span>{aux[-1]}"
         for username in players:
             current_levels[username].append(level)
+    
     for account in accounts:
-        account['current_level'] = current_levels[account['username']]
+        # Show 💎 if player has gotten all possible points in riddle
+        query = '''
+            SELECT COUNT(*) as count FROM ((
+                SELECT `level_name` AS name FROM user_levels
+                WHERE riddle = :riddle AND username = :username
+                    AND completion_time IS NOT NULL
+            ) UNION ALL (
+                SELECT `title` AS name FROM user_achievements
+                WHERE riddle = :riddle AND username = :username
+            )) AS result
+        '''
+        values = {'riddle': alias, 'username': account['username']}
+        result = await database.fetch_one(query, values)
+        account['current_level'] = (
+            '💎' if result['count'] == level_count + len(cheevos)
+            else current_levels[account['username']]
+        )
+        print(result['count'], level_count + len(cheevos))
 
     # Pluck 0-score and creator accounts from main list
     creator_account = None
