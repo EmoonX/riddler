@@ -689,7 +689,7 @@ section.list > .row {
   z-index: 100;
   display: flex;
   flex-direction: row;
-  justify-content: space-around;
+  justify-content: space-between;
   margin: 0 -80px;
   padding: 0 80px;
   background-image: linear-gradient(
@@ -889,106 +889,104 @@ section.list.players > .row {
       }
     }
   }
-  > figure {
-    justify-content: space-evenly;
-    padding: 15px 0;
+  > .current-levels {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    width: 150px;
+    font-size: 1.3em;
+    z-index: 999;
 
-    > figcaption {
-      line-height: 100%;
-    }
-    &.current-level > .levels {
+    > .levels {
       display: flex;
-      justify-content: center;
+      justify-content: space-around;
       align-items: end;
-      gap: .1em;
-      width: 160px;
-      font-size: 1.3em;
+      gap: .2em;
+      width: 100%;
 
-      .milestone {
-        position: absolute;
-        top: 0;
-        z-index: 999;
-        display: flex;
-        flex-direction: column;
-        justify-content: end;
-        align-items: center;
-        margin: 0;
-        width: 100%;
-        height: 100%;
-        font-size: 1.1em;
-        text-shadow: 0 0 .4em deeppink, 0 0 .8em deeppink;
-        cursor: help;
-      }
-      .mastered {
-        position: static;
-        text-shadow: 0 0 .4em teal, 0 0 .8em teal, 0 0 1.2em teal;
-        font-size: 1.1em;
-      }
-      > .level {
-        position: relative;
-        min-width: 2.2em;
+      > * {
+        min-width: 1.6em;
 
-        > var {
+        &[title] {
+          text-decoration: underline;
+          text-decoration-style: dotted;
+          text-decoration-color: rgba(255, 255, 221, .6);
+          cursor: help;
+        }
+        &.milestone {
           display: flex;
           flex-direction: column;
           justify-content: center;
-          letter-spacing: .05em;
+          font-size: 1.1em;
+          text-shadow: 0 0 .4em deeppink, 0 0 .8em deeppink;
+          text-decoration-color: rgba(255, 20, 147, .3);
 
-          > .small {
-            display: block;
-            font-size: .5em;
+          &.mastered {
+            text-shadow: 0 0 .4em teal, 0 0 .8em teal, 0 0 1.2em teal;
+            text-decoration-color: rgba(0, 128, 128, .5);
           }
         }
-        > .milestone + var {
-          opacity: .1;
+      }
+      var.level {
+        display: flex;
+        flex-direction: column;
+        gap: .1em;
+        margin: 0;
+        letter-spacing: .05em;
+  
+        > .small {
+          font-size: .5em;
         }
       }
     }
-    &.score {
-      position: relative;
-      align-items: flex-end;
-      width: 120px;
+  }
+  > figure.score {
+    position: relative;
+    justify-content: space-evenly;
+    align-items: flex-end;
+    width: 120px;
+    padding: 15px 0;
 
-      > .recent-score {
-        @keyframes glow {
-          from { opacity: 1; }
-          to { opacity: 0.5; }
-        }
+    > .recent-score {
+      @keyframes glow {
+        from { opacity: 1; }
+        to { opacity: 0.5; }
+      }
+      position: absolute;
+      top: 0.15em;
+      right: 0.25em;
+      font-size: 1.1em;
+      font-style: italic;
+      color: aliceblue;
+      text-shadow: 0 0 0.4em crimson, 0 0 0.8em crimson;
+      animation: glow 1s ease-in infinite alternate;
+    }
+    var {
+      margin: 0;
+      text-shadow: 0 0 8px green, 0 0 16px green, 0 0 24px green;
+
+      &.points {
+        position: relative;
+        display: flex;
+        justify-content: flex-end;
+        align-items: center;
+        width: 100%;
+        font-family: digital-mono;
+        font-size: 1.5em;
+      }
+      > var.zeroes {
         position: absolute;
-        top: 0.15em;
-        right: 0.25em;
-        font-size: 1.1em;
-        font-style: italic;
-        color: aliceblue;
-        text-shadow: 0 0 0.4em crimson, 0 0 0.8em crimson;
-        animation: glow 1s ease-in infinite alternate;
+        right: 0;
+        letter-spacing: inherit;
+        font-family: inherit;
+        font-size: inherit;
+        opacity: .1;
+        user-select: none;
       }
-      var {
-        margin: 0;
-        text-shadow: 0 0 8px green, 0 0 16px green, 0 0 24px green;
-
-        &.points {
-          position: relative;
-          display: flex;
-          justify-content: flex-end;
-          align-items: center;
-          width: 100%;
-          font-family: digital-mono;
-          font-size: 1.5em;
-        }
-        > var.zeroes {
-          position: absolute;
-          right: 0;
-          letter-spacing: inherit;
-          font-family: inherit;
-          font-size: inherit;
-          opacity: 0.1;
-          user-select: none;
-        }
-      }
-      > figcaption {
-        margin-right: 0.5em;
-      }
+    }
+    > figcaption {
+      margin-right: .5em;
+      line-height: 100%;
     }
   }
   > .honors {
