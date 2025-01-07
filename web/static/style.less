@@ -856,7 +856,7 @@ section.list.players > .row {
 
   > .rank {
     width: 60px;
-    font-size: 1.5em;
+    font-size: 1.3em;
   }
   > .player {
     flex-direction: row;
@@ -894,49 +894,67 @@ section.list.players > .row {
     flex-direction: column;
     justify-content: center;
     width: 150px;
-    font-size: 1.3em;
     z-index: 999;
 
     > .levels {
       display: flex;
-      justify-content: space-around;
+      justify-content: center;
       align-items: end;
-      gap: .2em;
-      width: 100%;
+      gap: .1em;
+      font-size: 1.5em;
 
-      > * {
-        min-width: 1.6em;
+      > .wrapper {
+        display: flex;
+        flex-direction: row;
+        justify-content: center;
+        width: 50px;
 
-        &[title] {
-          text-decoration: underline;
-          text-decoration-style: dotted;
-          text-decoration-color: rgba(255, 255, 221, .6);
-          cursor: help;
-        }
-        &.milestone {
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          font-size: 1.1em;
-          text-shadow: 0 0 .4em deeppink, 0 0 .8em deeppink;
-          text-decoration-color: rgba(255, 20, 147, .3);
+        &:not(:only-child) {
+          font-size: 1em;
 
-          &.mastered {
-            text-shadow: 0 0 .4em teal, 0 0 .8em teal, 0 0 1.2em teal;
-            text-decoration-color: rgba(0, 128, 128, .5);
+          &:first-child {
+            justify-content: end;
+            margin-right: .3em;
+          }
+          &:last-child {
+            justify-content: start;
+            margin-left: .3em;
           }
         }
-      }
-      var.level {
-        display: flex;
-        flex-direction: column;
-        gap: .1em;
-        margin: 0;
-        letter-spacing: .05em;
-  
-        > .small {
-          font-size: .5em;
+        > * {
+          &[title] {
+            text-decoration: underline;
+            text-decoration-style: dotted;
+            text-decoration-color: rgba(255, 255, 221, .6);
+            cursor: help;
+          }
+          &.milestone {
+            filter: drop-shadow(0 0 .2em deeppink);
+            text-decoration-color: rgba(255, 20, 147, .3);
+
+            &.mastered {
+              filter: drop-shadow(0 0 .2em teal);
+              text-decoration-color: rgba(0, 128, 128, .5);
+            }
+          }
         }
+        > var.level {
+          gap: .1em;
+          margin: 0;
+          width: min-content;
+          letter-spacing: .05em;
+          text-shadow: 0 0 .4em deeppink, 0 0 .8em deeppink;
+        }
+        .small {
+          font-size: 1em;
+          line-height: normal;
+        }
+        .smaller {
+          font-size: .6em;
+        }
+      }
+      > .separator {
+        font-size: .8em;
       }
     }
   }

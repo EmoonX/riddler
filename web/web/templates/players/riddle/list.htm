@@ -47,15 +47,17 @@
             <div class="current-levels">
               <div class="levels">
           {% if player['current_level'] == '💎' %}
-                {% set tooltip = '❖ Mastered {0}&#10;'.format(riddle['full_name']) %}
-                {% set tooltip = tooltip + '⮚ Date of mastery: {0}'.format(player['mastered_on']) %}
-                <div class="milestone mastered" title="{{ tooltip|safe }}">
-                  💎
+                <div class="wrapper">
+                  {% set tooltip = '❖ Mastered {0}&#10;'.format(riddle['full_name']) %}
+                  {% set tooltip = tooltip + '⮚ Date of mastery: {0}'.format(player['mastered_on']) %}
+                  <div class="milestone mastered" title="{{ tooltip|safe }}">
+                    💎
+                  </div>
                 </div>
           {% else %}
             {% for level in player['current_level'] %}
               {% if loop.index > 1 %}
-                  ⬩
+                <div class="separator">⬩</div>
               {% endif %}
               {% if level in player['completed_milestones'] %}
                 {% set completion_time = player['completed_milestones'][level]['completion_time'] %}
@@ -67,23 +69,31 @@
                 {% set tooltip = (tooltip or '') + '⮚ Completed level {0} on {1}'.format(level, completion_time) %}
                 {% set title = 'title="{0}"'.format(tooltip) %}
               {% endif %}
-              {% if set_emoji %}
-                <div class="milestone" {{ title|safe }}>
-                  {{ set_emoji }}
-                </div>
-              {% else %}
-                <var class="level" {{ title|safe }}>
-                {% set aux = level.split() %}
-                {% set ns = namespace(level='') %}
-                {% for word in aux %}
-                  {% if word|length > 3 %}
-                    {% set word = '<span class="small">' + word + '</span>' %}
+                <div class="wrapper">
+                {% if player['current_level']|length > 1 %}
+                  {% set small = ' small' %}
+                {% endif %}
+                {% if set_emoji %}
+                  <div class="milestone{{ small }}" {{ title|safe }}>
+                    {{ set_emoji }}
+                  </div>
+                {% else %}
+                  {% set aux = level.split() %}
+                  {% if aux|length > 1 %}
+                    {% set small = ' small' %}
                   {% endif %}
-                  {% set ns.level = ns.level + ' ' + word %}
-                {% endfor %}
-                  {{ ns.level|safe }}
-                </var>
-              {% endif %}
+                  <var class="level{{ small }}" {{ title|safe }}>
+                  {% set ns = namespace(level='') %}
+                  {% for word in aux %}
+                    {% if word|length > 3 %}
+                      {% set word = '<span class="smaller">' + word + '</span>' %}
+                    {% endif %}
+                    {% set ns.level = ns.level + ' ' + word %}
+                  {% endfor %}
+                    {{ ns.level|safe }}
+                  </var>
+                {% endif %}
+                </div>
             {% endfor %}
           {% endif %}
               </div>
