@@ -8,9 +8,10 @@ from discord.utils import get
 from discord.errors import Forbidden
 
 from bot import bot
-from riddle import riddles, get_ancestor_levels
+from riddle import riddles
 from commands.unlock import multi_update_nickname
 from util.db import database
+from util.riddle import get_ancestor_levels
 
 
 async def insert(request):

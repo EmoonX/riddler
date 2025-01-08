@@ -30,15 +30,15 @@ class Riddle:
         if riddle['guild_id']:
             self.guild = get(bot.guilds, id=int(riddle['guild_id']))
 
-            # Get riddle's level info from database query
-            self.levels = OrderedDict()
-            for level in levels:
-                id = level['name']
-                self.levels[id] = level
-            self.secret_levels = OrderedDict()
-            for level in secret_levels:
-                id = level['name']
-                self.secret_levels[id] = level
+        # Get riddle's level info from database query
+        self.levels = {}
+        for level in levels:
+            id = level['name']
+            self.levels[id] = level
+        self.secret_levels = {}
+        for level in secret_levels:
+            id = level['name']
+            self.secret_levels[id] = level
 
 
 # Global dict of (guild_alias -> riddle) which bot supervises
@@ -65,47 +65,3 @@ async def build_riddles():
         secret_levels = await database.fetch_all(query, values)
         riddle = Riddle(row, levels, secret_levels)
         riddles[row['alias']] = riddle
-
-
-async def get_ancestor_levels(riddle: str, root_level: dict):
-    '''Build set of ancestor levels (just Discord names)
-    by applying a reverse BFS in requirements DAG.'''
-
-    ancestor_levels = set()
-    queue = [root_level]
-    while queue:
-        # Get top level from queue
-        level = queue.pop(0)
-        discord_name = level['discord_name']
-
-        # Don't search node's children if level is final in set
-        # (except if this is the root level itself, of course)
-        query = '''
-            SELECT * FROM level_sets
-            WHERE riddle = :riddle AND final_level = :level_name
-        '''
-        values = {'riddle': riddle, 'level_name': level['name']}
-        is_final_in_set = await database.fetch_one(query, values)
-        if is_final_in_set and len(ancestor_levels) > 1:
-            continue
-
-        # Fetch level requirements and add unseen ones to queue
-        query = '''
-            SELECT * FROM level_requirements
-            WHERE riddle = :riddle AND level_name = :level_name
-        '''
-        result = await database.fetch_all(query, values)
-        for row in result:
-            query = '''
-                SELECT * FROM levels
-                WHERE riddle = :riddle and name = :level_name
-            '''
-            values['level_name'] = row['requires']
-            level = await database.fetch_one(query, values)
-            if level['discord_name'] not in ancestor_levels:
-                queue.append(dict(level))
-
-        # Add level to set
-        ancestor_levels.add(discord_name)
-
-    return ancestor_levels

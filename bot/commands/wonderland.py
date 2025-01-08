@@ -49,9 +49,10 @@ async def update_score_role(member: Member):
 
     # Get Wonderland's member object from received Member
     wonderland = get(bot.guilds, name="Riddler's Wonderland II")
-    member = get(wonderland.members, id=member.id)
-    if not member:
-        # Not a member of Wonderland
+    if wonderland:
+        member = get(wonderland.members, id=member.id)
+    if not wonderland or not member:
+        # No reachable Wonderland or not a member of it
         return
 
     # Get player global score from DB
