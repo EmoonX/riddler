@@ -9,7 +9,7 @@ info = Blueprint('info', __name__)
 
 @info.get('/<page>')
 async def info_page(page: str):
-    '''Simply show a info page by rendering its immediate template.
+    '''Show a front/info page by rendering its immediate template.
     Throws 404/405 if such template doesn't exist.'''
     path = 'info/%s.htm' % page
     try:
@@ -19,7 +19,8 @@ async def info_page(page: str):
             abort(405)
         
         # Possibly a riddle front page
-        aliases = [riddle['alias'] for riddle in await get_riddles()]
+        riddles = await get_riddles(unlisted=True)
+        aliases = [riddle['alias'] for riddle in riddles]
         if page in aliases:
             return redirect(f"/{page}/players")
         

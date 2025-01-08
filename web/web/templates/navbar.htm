@@ -9,9 +9,15 @@
           <div class="menu riddles">
           {% for riddle in riddles %}
             {% set riddle = get_riddle(riddle['alias']) %}
-            {% set page = 'players.riddle_list' %}
-            <a href="{{ url_for(page, alias=riddle['alias']) }}" class="riddle">
-              <figure {% if riddle['unlisted'] %} style="opacity: 0.3;" {% endif %}>
+            {% set url = '/' + riddle['alias'] %}
+            {% set current_url = url_for(request.endpoint, **request.view_args) %}
+            {% if alias %}
+              {% if not current_url.startswith('/admin') or is_admin_of(riddle['alias']) %}
+                {% set url = current_url.replace(alias, riddle['alias'], 1) %}
+              {% endif %}
+            {% endif %}
+            <a href="{{ url }}" class="riddle">
+              <figure {% if riddle['unlisted'] %} style="opacity: .3;" {% endif %}>
                 <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
                 <figcaption>{{ riddle['short_name'] }}</figcaption>
               </figure>

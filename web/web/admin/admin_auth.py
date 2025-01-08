@@ -9,7 +9,7 @@ from util.db import database
 
 @requires_authorization
 async def root_auth() -> bool:
-    '''Check if you are... Emoon.'''
+    '''Check if you are...'''
     user = await discord.get_user()
     return user.id == 315940379553955844
 
@@ -26,10 +26,10 @@ async def admin_auth(alias: str):
 
     # Big boss can access everything 8)
     user = await discord.get_user()
-    if user.id == 315940379553955844:
-        return
+    if await root_auth():
+        return 
 
-    # Check if user is riddle's creator/admin and has rights for it
+    # Check if user is riddle's admin and has rights for it
     query = '''
         SELECT * FROM riddles
         WHERE alias = :alias
@@ -37,8 +37,8 @@ async def admin_auth(alias: str):
             AND has_admin_rights IS TRUE
     '''
     values = {'alias': alias, 'username': user.name}    
-    is_creator = await database.fetch_one(query, values)
-    if is_creator:
+    is_riddle_admin = bool(await database.fetch_one(query, values))
+    if is_riddle_admin:
         return
 
     # Otherwise, check if user has enough permissions in given guild
