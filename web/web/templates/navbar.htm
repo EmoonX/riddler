@@ -93,9 +93,10 @@
             <img class="avatar-small" src="{{ get_avatar_url(discord_id=user.id) }}">{{ user.display_name }}
           </button>
           <div class="menu">
+            {% set redirect_url = request.url if '/admin' not in request.url else '/' %}
             <!--<a href="#" class="nav-button">Public info</a>-->
             <a href="{{ url_for('account.settings') }}" class="nav-button">Settings</a>
-            <a href="{{ url_for('players_auth.logout', redirect_url=(request.url)) }}" class="nav-button">Logout</a>
+            <a href="{{ url_for('players_auth.logout', redirect_url=(redirect_url)) }}" class="nav-button">Logout</a>
           </div>
         </nav>
       {% endif %}
