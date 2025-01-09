@@ -15,6 +15,7 @@ from commands.unlock import UnlockHandler
 from commands.update import insert, update
 from commands.wonderland import update_score_role
 from util.db import database
+from util.riddle import has_player_mastered_riddle
 
 
 class WebServer(commands.Cog):
@@ -91,40 +92,11 @@ async def unlock(request):
         logging.error(tb)
         return web.Response(status=500)
 
-    # Special procedures to be done upon score increase
+    # Check for riddle mastery upon score increase
     methods = ['beat', 'cheevo_found', 'game_completed']
     if params['method'] in methods:
-        # Check if player has completed all levels
-        query = '''
-            SELECT COUNT(*) AS cnt FROM levels
-            WHERE riddle = :riddle
-        '''
-        values = {'riddle': alias}
-        result = await database.fetch_one(query, values)
-        total_level_count = result['cnt']
-        query = '''
-            SELECT COUNT(*) AS cnt FROM user_levels
-            WHERE riddle = :riddle
-                AND username = :username
-                AND completion_time IS NOT NULL
-        '''
-        values = {'riddle': alias, 'username': data['username']}
-        result = await database.fetch_one(query, values)
-        user_completed_count = result['cnt']
-        if total_level_count == user_completed_count:
-            # Check if player has unlocked all achievements
-            query = '''
-                SELECT * FROM achievements
-                WHERE riddle = :riddle AND title NOT IN (
-                    SELECT title FROM user_achievements
-                    WHERE riddle = :riddle AND username = :username
-                )
-            '''
-            has_unfound_cheevos = await database.fetch_one(query, values)
-
-            # If nothing was found, then player has gotten everything
-            if not has_unfound_cheevos:
-                await unlock_handler.game_mastered()
+        if has_player_mastered_riddle(alias, data['username']):
+            await unlock_handler.game_mastered()
 
     if 'points' in params and unlock_handler.member:
         # Update Wonderland guild score-based role, if the case
