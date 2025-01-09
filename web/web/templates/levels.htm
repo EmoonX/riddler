@@ -21,17 +21,17 @@
         <div class="row">
           <div>
             <div>
-            <var class='name'>{{ level['name'] }}</var>
-          {% if level['latin_name'] %}
-            <var class='latin-name'>({{ level['latin_name'] }})</var>
+              <var class="level-name">{{ level['name'] }}</var>
+            {% if level['latin_name'] %}
+              <var class="latin-name">({{ level['latin_name'] }})</var>
+            {% endif %}  
+            </div>
+          {% if level['pages_found'] %}
+            <div class="menu-button">☰</div>
           {% endif %}
           </div>
-        {% if level['unlocked'] %}
-          <div class="menu-button">☰</div>
-        {% endif %}
-          </div>
-        {% if level['unlocked'] %}
           <div class="thumb">
+        {% if level['unlocked'] %}
             {% set url = riddle['root_path'] + level['path'] %}
             {% if 'username' in level %}
               {% set credentials = level['username'] + ':' + level['password'] %}
@@ -44,12 +44,10 @@
               <img class="level" width="100" height="100" src="/static/images/locked.png">
             {% endif %}
             </a>
-          </div>
         {% else %}
-          <div class="thumb">
             <img class="level" width="100" height="100" src="/static/images/locked.png">
-          </div>
         {% endif %}
+          </div>
           <div class="info">
             <figure class="rank">
             {% if level['beaten'] %}
@@ -69,7 +67,7 @@
               <figcaption style="color: gray"><span class="rank-letter">?</span>-rank (?? points)</figcaption>
             {% endif %}
             </figure>
-          {% if level['unlocked'] %}
+          {% if level['pages_found'] %}
             <figure class="page-count">
               {% if level['pages_found'] and level['pages_found'] == level['pages_total'] %}
                 {% set check = '<span class="check">✅</span>'|safe %}
@@ -168,7 +166,7 @@
           </div>
         </div>
         <div class="page-explorer">
-        {% if level['unlocked'] %}
+        {% if level['pages_found'] %}
           {% set folder = level['topmost_folder'] %}
           <nav>
             <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">{{ folder }}</div>

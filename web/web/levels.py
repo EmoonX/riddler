@@ -18,11 +18,6 @@ async def level_list(alias: str):
     
     async def _populate_level_data(level: dict):
         '''Retrieve level data and add to dict.'''
-        
-        level['beaten'] = False
-        level['unlocked'] = False
-        if not user:
-            return
 
         # Retrieve level unlocking and completion info
         query = '''
@@ -33,9 +28,11 @@ async def level_list(alias: str):
                 AND level_name = :level_name
         '''
         values = base_values | {'level_name': level['name']}
-        user_data = await database.fetch_one(query, values)
-        level['beaten'] = (user_data and user_data['completion_time'])
-        level['unlocked'] = level['beaten']
+        user_level_data = await database.fetch_one(query, values)
+        level['unlocked'] = user_level_data is not None
+        level['beaten'] = bool(
+            level['unlocked'] and user_level_data['completion_time']
+        )
 
         # _, status = await admin.auth(alias)
         # if status == 200:
@@ -46,42 +43,6 @@ async def level_list(alias: str):
         #     if result:
         #         level['rating_given'] = result['rating_given']
         # else:
-
-        if not level['beaten']:
-            # Level appears on list iff user reached its front page(s)
-            query = '''
-                SELECT * FROM levels
-                WHERE riddle = :riddle AND name = :level_name
-            '''
-            values = {'riddle': alias, 'level_name': level['name']}
-            path = await database.fetch_val(query, values, 'path')
-            query = '''
-                SELECT * FROM user_pages
-                WHERE riddle = :riddle
-                    AND username = :username
-                    AND (
-                        :path = `path`
-                        OR :path LIKE CONCAT(\'%"\', `path`, \'"%\')
-                    )
-            '''
-            values = base_values | {'path': path}
-            result = await database.fetch_one(query, values)
-            level['unlocked'] = (result is not None)
-
-        else:
-            # Get level rating:
-            level['rating_given'] = user_data['rating_given']
-
-            # Get total file count for level
-            query = '''
-                SELECT COUNT(*) AS count FROM level_pages
-                WHERE riddle = :riddle AND level_name = :level
-                GROUP BY riddle, level_name
-            '''
-            values = {'riddle': alias, 'level': level['name']}
-            level['pages_total'] = await database.fetch_val(
-                query, values, 'count'
-            )
 
         if level['unlocked']:
             if level['path'][0] == '[':
@@ -103,36 +64,52 @@ async def level_list(alias: str):
                         break
                 if level['path'][0] == '[':
                     level['path'] = ''  # safeguard
+        
+        if level['beaten']:
+            # Get level rating:
+            level['rating_given'] = user_level_data['rating_given']
 
-            # Get player's current found pages count for level
+            # Get total file count for level
             query = '''
-                SELECT `path` FROM user_pages
-                WHERE riddle = :riddle
-                    AND username = :username
-                    AND level_name = :level
+                SELECT COUNT(*) AS count FROM level_pages
+                WHERE riddle = :riddle AND level_name = :level
+                GROUP BY riddle, level_name
             '''
-            values = base_values | {'level': level['name']}
-            pages_data = await database.fetch_all(query, values)
-            if pages_data:
-                found_pages = [row['path'] for row in pages_data]
-                level['pages_found'] = len(found_pages)
+            values = {'riddle': alias, 'level': level['name']}
+            level['pages_total'] = await database.fetch_val(
+                query, values, 'count'
+            )
 
-                # Get topmost folder by longest
-                # common prefix of all found level pages
-                longest_prefix = found_pages[0].rsplit('/', 1)[0] + '/'
-                for path in found_pages[1:]:
-                    k = min(len(path), len(longest_prefix))
-                    for i in range(k):
-                        if path[i] != longest_prefix[i]:
-                            longest_prefix = longest_prefix[:i]
-                            break
-                level['topmost_folder'] = longest_prefix
+        # Get player's current found pages count for level
+        query = '''
+            SELECT `path` FROM user_pages
+            WHERE riddle = :riddle
+                AND username = :username
+                AND level_name = :level
+        '''
+        values = base_values | {'level': level['name']}
+        pages_data = await database.fetch_all(query, values)
+        if pages_data:
+            found_pages = [row['path'] for row in pages_data]
+            level['pages_found'] = len(found_pages)
+
+            # Get topmost folder by longest
+            # common prefix of all found level pages
+            longest_prefix = found_pages[0].rsplit('/', 1)[0] + '/'
+            for path in found_pages[1:]:
+                k = min(len(path), len(longest_prefix))
+                for i in range(k):
+                    if path[i] != longest_prefix[i]:
+                        longest_prefix = longest_prefix[:i]
+                        break
+            level['topmost_folder'] = longest_prefix
 
         # Register list of users currently working on level
         query = '''
             SELECT * FROM user_levels
             WHERE riddle = :riddle
-                AND level_name = :name AND completion_time IS NULL
+                AND level_name = :name
+                AND completion_time IS NULL
             ORDER BY find_time DESC
         '''
         values = {'riddle': alias, 'name': level['name']}
@@ -142,7 +119,7 @@ async def level_list(alias: str):
     async def _add_credentials(level: dict):
         '''Add credentials for level's front path, if any.'''
         for folder_path in reversed(credentials):
-            # Iterate in reverse to pick the innermost dir first
+            # Iterate in reverse to pick the innermost dir
             if level['path'].startswith(folder_path):
                 level |= credentials[folder_path]
                 return
@@ -191,12 +168,11 @@ async def get_pages(alias: str, level_name: str = None) -> str:
 
     # Build dict of (level -> paths) from user database data
     user = await discord.get_user()
-    level_cond = 'AND level_name = :level_name' if level_name else ''
     query = f"""
         SELECT level_name, path, access_time FROM user_pages
         WHERE riddle = :riddle
             AND username = :username
-            {level_cond}
+            {'AND level_name = :level_name' if level_name else ''}
         ORDER BY SUBSTRING_INDEX(`path`, ".", -1)
     """
     values = {'riddle': alias, 'username': user.name}
@@ -375,7 +351,7 @@ async def _get_credentials(alias: str) -> dict:
     '''Fetch dict of level credentials (folder_path -> un/pw).'''
     
     query = '''
-        SELECT * FROM level_credentials
+        SELECT * FROM riddle_credentials
         WHERE riddle = :riddle
     '''
     result = await database.fetch_all(query, {'riddle': alias})

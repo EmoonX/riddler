@@ -71,10 +71,9 @@ export function changeDir(explorer, folderPath, admin) {
   const prev = explorer.prev()
   const levelName =
     admin ?
-    prev.find('.name input').val() :
-    prev.find('.name').text()
+    prev.find('.level-name input').val() :
+    prev.find('.level-name').text()
   ;
-  console.log(levelName);
   const folder = getFolderEntry(folderPath, levelName, admin);
 
   // Get sorted (by extension and then name) pages object

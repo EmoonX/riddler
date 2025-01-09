@@ -82,7 +82,7 @@
                   {% if aux|length > 1 %}
                     {% set small = ' small' %}
                   {% endif %}
-                  <var class="level{{ small }}" {{ title|safe }}>
+                  <var class="level-name{{ small }}" {{ title|safe }}>
                   {% set ns = namespace(level='') %}
                   {% for word in aux %}
                     {% if word|length > 3 %}
