@@ -40,13 +40,8 @@ export function toggleExplorer() {
 export function getFolderEntry(path, level, admin) {
   // Get pages dictionary entry corresponding to bottom folder in path
   const segments = path.split('/').slice(1, -1);
-  var folder;
-  if (admin) {
-    // Admin
-    folder = pages['/'];
-  } else {
-    folder = pages[level]['/'];
-  }
+  console.log(level);
+  let folder = admin ?  pages['/'] : pages[level]['/'];
   segments.forEach(seg => {
     folder = folder['children'][seg];
   });
@@ -69,11 +64,11 @@ export function changeDir(explorer, folderPath, admin) {
 
   // Get level and folder entry
   const prev = explorer.prev()
-  const levelName =
+  const levelName = (
     admin ?
     prev.find('.level-name input').val() :
     prev.find('.level-name').text()
-  ;
+  ).trim();
   const folder = getFolderEntry(folderPath, levelName, admin);
 
   // Get sorted (by extension and then name) pages object
