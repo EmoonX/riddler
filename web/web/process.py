@@ -2,11 +2,14 @@ from datetime import datetime
 import json
 import re
 from pymysql.err import IntegrityError
+from typing import Optional, Tuple
+from urllib.parse import urlsplit
 
 from quart import Blueprint, request, jsonify
 from quartcord.models import User
 
 from auth import discord
+from inject import get_riddles
 from riddle import level_ranks, cheevo_ranks
 from webclient import bot_request
 from util.db import database
@@ -110,11 +113,16 @@ class _PathHandler:
     '''Real status code of requested page (either 200 or 404).'''
 
     @classmethod
-    async def build(cls, user: User, url: str, status_code: str) -> object:
+    async def build(
+        cls, user: User, url: str, status_code: str
+    ) -> Optional[object]:
         '''Build handler from DB's user info and URL info.'''
 
         # Get riddle and path info from URL
-        riddle, path = await cls._get_riddle_and_path(url)
+        try:
+            riddle, path = await cls._get_riddle_and_path(url)
+        except TypeError:
+            return None
 
         # Save basic riddle + user info
         self = cls()
@@ -146,37 +154,37 @@ class _PathHandler:
         return self
 
     @staticmethod
-    async def _get_riddle_and_path(url: str) -> dict:
+    async def _get_riddle_and_path(url: str) -> Optional[Tuple[dict, str]]:
         '''Retrieve riddle and path from given URL.'''
 
-        # Domain and path for URL
-        aux = url.split('/', 3)[2:]
-        url_domain = aux[0].replace('www.', '')
-        url_path = '/' + aux[1]
+        # Parse URL into hostname and path parts
+        parsed_url = urlsplit(url)
 
-        # Build dict of (root_paths -> riddle)
-        query = 'SELECT * FROM riddles'
-        riddles = await database.fetch_all(query)
+        # Build dict of {root_path: riddle}
+        riddles = await get_riddles(unlisted=True)
         root_paths = {}
         for riddle in riddles:
-            if riddle['root_path'][0] != '[':
-                root_paths[riddle['root_path']] = riddle
-            for path in riddle['root_path'].split('"')[1::2]:
-                root_paths[path] = riddle
+            try:
+                for root_path in json.loads(riddle['root_path']):
+                    root_paths |= {root_path: riddle}
+            except json.decoder.JSONDecodeError:
+                root_paths |= {riddle['root_path']: riddle}
 
         for root_path, riddle in root_paths.items():
-            # Riddle domain and root path
-            aux = (root_path + '/').split('/', 3)[2:]
-            riddle_domain = aux[0].replace('www.', '')
-            riddle_path = '/' + aux[1]
-            if riddle_domain == url_domain:
-                # Build relative path from root
-                url_path = (
-                    '/' + url_path[len(riddle_path):]
-                        if url_path.startswith(riddle_path)
-                    else ('../' * (riddle_path.count('/') - 1)) + url_path
-                )
-                return riddle, url_path
+            parsed_root = urlsplit(root_path)
+            if parsed_root.hostname == parsed_url.hostname:
+                # Build relative path from root (with "../"s if needed)
+                root_segments = parsed_root.path.split('/')
+                url_segments = parsed_url.path.split('/')
+                smallest_len = idx = min(len(root_segments), len(url_segments))
+                for i in range(smallest_len):
+                    if root_segments[i] != url_segments[i]:
+                        idx = i
+                        break
+                root_suffix = '/'.join(root_segments[idx:])
+                url_suffix = '/'.join(url_segments[idx:])
+                path = f"{'/'.join(['..'] * len(root_segments[idx:]))}/{url_suffix}"
+                return riddle, path
 
     async def build_player_riddle_data(self) -> bool:
         '''Build player riddle data from DB, creating it if nonexistent.'''
