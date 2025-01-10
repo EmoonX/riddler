@@ -1,0 +1,17 @@
+{% set aux = level_name.split() %}
+{% set ns = namespace(level='', has_smaller=False) %}
+{% for word in aux %}
+  {% if word|length >= 4 and not ns.has_smaller %}
+    {% if aux|length > 1 %}
+      {% set word = '<span class="smaller">%s</span>' % word %}
+    {% endif %}
+    {% set ns.has_smaller = True %}
+  {% endif %}
+  {% set ns.level = '%s %s' % (ns.level, word) %}
+{% endfor %}
+{% if aux|length > 1 or ns.has_smaller %}
+  {% set smaller = ' smaller' %}
+{% endif %}
+<var class="level-name{{ smaller }}" {{ title|safe }}>
+  {{ ns.level|safe }}
+</var>

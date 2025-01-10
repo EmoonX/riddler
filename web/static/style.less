@@ -337,10 +337,33 @@ var, .menu-button {
   font-style: normal;
   letter-spacing: 0.15em;
   text-shadow: 0 0 8px crimson, 0 0 16px crimson, 0 0 24px crimson;
-}
 
+  &.level-name, &.latin-name {
+    display: flex;
+    flex-direction: column;
+    gap: .1em;
+    margin: 0;
+    line-height: normal;
+    font-size: 1.5em;
+    word-spacing: 100%;
+    letter-spacing: .05em;
+    text-shadow: 0 0 .4em deeppink, 0 0 .8em deeppink;
+  }
+  &.latin-name {
+    font-size: .75em;
+    font-style: italic;
+    letter-spacing: .15em;
+  }
+  &.smaller {
+    font-size: 1.3em;
+  }
+}
 :not(dd) > var {
   margin: 0 0.2em;
+}
+
+.smaller {
+  font-size: .65em;
 }
 
 code {
@@ -901,13 +924,13 @@ section.list.players > .row {
       justify-content: center;
       align-items: end;
       gap: .1em;
-      font-size: 1.5em;
+      font-size: 1.2em;
 
       > .wrapper {
         display: flex;
         flex-direction: row;
         justify-content: center;
-        width: 50px;
+        width: 60px;
 
         &:not(:only-child) {
           font-size: 1em;
@@ -915,10 +938,18 @@ section.list.players > .row {
           &:first-child {
             justify-content: end;
             margin-right: .3em;
+
+            > var.level-name {
+              text-align: right;
+            }
           }
           &:last-child {
             justify-content: start;
             margin-left: .3em;
+
+            > var.level-name {
+              text-align: left;
+            }
           }
         }
         > * {
@@ -929,28 +960,18 @@ section.list.players > .row {
             cursor: help;
           }
           &.milestone {
-            filter: drop-shadow(0 0 .2em deeppink);
+            font-size: 1.2em;
             text-decoration-color: rgba(255, 20, 147, .3);
+            filter: drop-shadow(0 0 .2em deeppink);
 
             &.mastered {
-              filter: drop-shadow(0 0 .2em teal);
               text-decoration-color: rgba(0, 128, 128, .5);
+              filter: drop-shadow(0 0 .2em teal);
             }
           }
         }
-        > var.level {
-          gap: .1em;
-          margin: 0;
+        > var.level-name {
           width: min-content;
-          letter-spacing: .05em;
-          text-shadow: 0 0 .4em deeppink, 0 0 .8em deeppink;
-        }
-        .small {
-          font-size: 1em;
-          line-height: normal;
-        }
-        .smaller {
-          font-size: .6em;
         }
       }
       > .separator {
@@ -1205,19 +1226,15 @@ section.list.levels > .row {
     width: 150px;
 
     > div {
+      display: flex;
+      flex-direction: column;
+      gap: .5em;
       max-width: 100%;
-
-      var.name {
-        font-size: 1.5em;
-      }
-      var.latin-name {
-        font-size: 0.8em;
-        font-style: italic;
-      }
     }
   }
   .menu-button {
     font-size: 1.4em;
+    text-shadow: 0 0 .4em deeppink, 0 0 .8em deeppink;
     cursor: pointer;
   }
   > .thumb {

@@ -21,7 +21,8 @@
         <div class="row">
           <div>
             <div>
-              <var class="level-name">{{ level['name'] }}</var>
+              {% set level_name = level['name'] %}
+              {% include 'util/level-name.htm' %}
             {% if level['latin_name'] %}
               <var class="latin-name">({{ level['latin_name'] }})</var>
             {% endif %}  

@@ -78,20 +78,8 @@
                     {{ set_emoji }}
                   </div>
                 {% else %}
-                  {% set aux = level.split() %}
-                  {% if aux|length > 1 %}
-                    {% set small = ' small' %}
-                  {% endif %}
-                  <var class="level-name{{ small }}" {{ title|safe }}>
-                  {% set ns = namespace(level='') %}
-                  {% for word in aux %}
-                    {% if word|length > 3 %}
-                      {% set word = '<span class="smaller">' + word + '</span>' %}
-                    {% endif %}
-                    {% set ns.level = ns.level + ' ' + word %}
-                  {% endfor %}
-                    {{ ns.level|safe }}
-                  </var>
+                  {% set level_name = level %}
+                  {% include 'util/level-name.htm' %}
                 {% endif %}
                 </div>
             {% endfor %}
