@@ -95,7 +95,7 @@ async def unlock(request):
     # Check for riddle mastery upon score increase
     methods = ['beat', 'cheevo_found', 'game_completed']
     if params['method'] in methods:
-        if has_player_mastered_riddle(alias, data['username']):
+        if await has_player_mastered_riddle(alias, data['username']):
             await unlock_handler.game_mastered()
 
     if 'points' in params and unlock_handler.member:
