@@ -135,7 +135,7 @@ function doubleClickIcon() {
   const explorer = $(this).parents('.page-explorer');
   const page = $(this).find('figcaption').text();
   const j = page.lastIndexOf('.');
-  if (j != -1) {
+  if (j != -1 && j != page.length - 1) {
     // Register file path as level front's one
     if (! $(this).hasClass('current')) {
       // Highlight file beforehand if necessary

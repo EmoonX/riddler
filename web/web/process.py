@@ -183,7 +183,8 @@ class _PathHandler:
                         break
                 root_suffix = '/'.join(root_segments[idx:])
                 url_suffix = '/'.join(url_segments[idx:])
-                path = f"{'/'.join(['..'] * len(root_segments[idx:]))}/{url_suffix}"
+                parent_count = len(root_segments[idx:])
+                path = f"/{'/'.join((['..'] * parent_count) + [url_suffix])}"
                 return riddle, path
 
     async def build_player_riddle_data(self) -> bool:

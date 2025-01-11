@@ -72,17 +72,17 @@ export function changeDir(explorer, folderPath, admin) {
 
   // Show credentials if current folder has associated un/pw
   const credentials = explorer.find('.credentials');
-  if (folder['username']) {
+  if (folder.username) {
     credentials.toggle(true);
-    credentials.find('.username').text(folder['username']);
-    credentials.find('.password').text(folder['password']);
+    credentials.find('.username').text(folder.username);
+    credentials.find('.password').text(folder.password);
   } else {
     credentials.toggle(false);
   }
 
   // Get sorted (by extension and then name) pages object
   const pages =
-    Object.keys(folder['children'])
+    Object.keys(folder.children)
     .sort((a, b) => {
       const i = a.lastIndexOf('.');
       const j = b.lastIndexOf('.');
@@ -101,7 +101,7 @@ export function changeDir(explorer, folderPath, admin) {
       }
     }).reduce(
       (obj, key) => {
-        obj[key] = folder['children'][key];
+        obj[key] = folder.children[key];
         return obj;
       },
       {}
@@ -111,7 +111,7 @@ export function changeDir(explorer, folderPath, admin) {
   $.each(pages, (page, row) => {
     var name = 'folder';
     const j = page.lastIndexOf('.');
-    if (j != -1) {
+    if (j != -1 && j != page.length - 1) {
       name = page.substr(j + 1);
     }
     var current = '';
@@ -202,7 +202,7 @@ export function folderUp() {
     // Nothing to do if already on top folder
     return
   }
-  const re = /\w+\/$/g;
+  const re = /[^/]+\/$/g;
   const folder = node.text().replace(re, '');
   const admin = explorer.parents('.list').hasClass('admin');
   changeDir(explorer, folder, admin);

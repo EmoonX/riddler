@@ -21,7 +21,7 @@ function doubleClickIcon() {
 
   const page = $(this).find('figcaption').text();
   const j = page.lastIndexOf('.');
-  if (j != -1) {
+  if (j != -1 && j != page.length - 1) {
     // Open desired page in new tab
     const explorer = $(this).parents('.page-explorer');
     const path = explorer.find('.path').text() +
