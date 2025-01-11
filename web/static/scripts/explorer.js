@@ -40,7 +40,6 @@ export function toggleExplorer() {
 export function getFolderEntry(path, level, admin) {
   // Get pages dictionary entry corresponding to bottom folder in path
   const segments = path.split('/').slice(1, -1);
-  console.log(level);
   let folder = admin ?  pages['/'] : pages[level]['/'];
   segments.forEach(seg => {
     folder = folder['children'][seg];
@@ -52,9 +51,9 @@ export function changeDir(explorer, folderPath, admin) {
   // Change current directory
 
   // Update directory on field
-  const node = explorer.find('.path');
-  node.text(folderPath);
-
+  const pathNode = explorer.find('.path');
+  pathNode.text(folderPath);
+  
   // Erase previous files from <div>
   const files = explorer.find('.files');
   files.empty();
@@ -66,10 +65,20 @@ export function changeDir(explorer, folderPath, admin) {
   const prev = explorer.prev()
   const levelName = (
     admin ?
-    prev.find('.level-name input').val() :
+    prev.find('.name input').val() :
     prev.find('.level-name').text()
   ).trim();
   const folder = getFolderEntry(folderPath, levelName, admin);
+
+  // Show credentials if current folder has associated un/pw
+  const credentials = explorer.find('.credentials');
+  if (folder['username']) {
+    credentials.toggle(true);
+    credentials.find('.username').text(folder['username']);
+    credentials.find('.password').text(folder['password']);
+  } else {
+    credentials.toggle(false);
+  }
 
   // Get sorted (by extension and then name) pages object
   const pages =

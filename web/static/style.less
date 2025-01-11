@@ -421,6 +421,10 @@ hr {
   }
 }
 
+[title] {
+  cursor: help;
+}
+
 /* ------------------------------------------------------------------------- */
 /* -- User lists -- */
 
@@ -789,7 +793,7 @@ section.list > .row {
       }
     }
   }
-  img.thumb, label[title], fieldset {
+  img.thumb, fieldset {
     cursor: help;
   }
   textarea {
@@ -1413,6 +1417,7 @@ section.list.levels > .page-explorer {
 
   > nav {
     display: flex;
+    align-items: center;
     height: 60px;
     margin: 0 -50px;
     padding: 0 100px;
@@ -1447,11 +1452,14 @@ section.list.levels > .page-explorer {
       display: inline-block;
       margin: 15px 0;
       padding: 5px 15px;
-      min-width: 400px;
+      width: 400px;
       border-radius: 20px;
       background-color: white;
       line-height: 20px;
       font-size: 0.8em;
+      white-space: nowrap;
+      overflow-x: auto;
+      text-overflow: ellipsis;
 
       ::selection {
         background-color: skyblue;
@@ -1468,6 +1476,20 @@ section.list.levels > .page-explorer {
       > var {
         font-size: 1.5em;
         font-style: italic;
+      }
+    }
+    > .credentials {
+      margin-left: auto;
+      padding: .2em .5em;
+      border-radius: .7em;
+      background-color: rgba(255, 255, 255, .05);
+      font-family: calculator;
+      font-size: .9em;
+      color: #ffd;
+
+      &::selection {
+        background-color: transparent;
+        color: currentColor;
       }
     }
   }

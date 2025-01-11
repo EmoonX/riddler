@@ -170,10 +170,17 @@
         {% if level['pages_found'] %}
           {% set folder = level['topmost_folder'] %}
           <nav>
-            <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png"><div class="path">{{ folder }}</div>
+            <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png">
+            <div class="path">{{ folder }}</div>
           {% if level['beaten'] %}
-            <div class="completion"><span class="check">✅</span><var class="found"></var><var>/</var><var class="total"></var> level files found in this folder</div>
+            <div class="completion">
+              <span class="check">✅</span>
+              <var class="found"></var><var>/</var><var class="total"></var> level files found in folder
+            </div>
           {% endif %}
+            <div class="credentials" title="Credentials for current folder">
+              🔒 <span class="username"></span> : <span class="password"></span>
+            </div>
           </nav>
           <div class="files">
             <!-- JS will append files here -->
