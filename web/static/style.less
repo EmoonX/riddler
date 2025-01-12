@@ -823,17 +823,22 @@ section.list > .row {
     transition: opacity 0.5s;
   }
   &:hover, &.active {
-    .thumb img {
-      @keyframes breath {
-        0% { transform: scale(1) }
-        50% { transform: scale(1.05) }
-        100% { transform: scale(1) }
-      }
-      animation: breath 1s infinite;
-      animation-timing-function: ease;
+    .icon {
+      transform: scale(1) !important;
     }
     &:before {
       opacity: 1;
+    }
+  }
+  &:hover {
+    .thumb img, .level-name, .latin-name {
+      @keyframes breath {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.15); }
+        100% { transform: scale(1); }
+      }
+      animation: breath 1s infinite;
+      animation-timing-function: ease;
     }
   }
 }
@@ -1222,18 +1227,49 @@ section.list.countries > .row {
 /* ------------------------------------------------------------------------- */
 /* -- Levels lists -- */
 
+section.list.levels {
+  > .row:not(:first-child) {
+    margin-top: 0px;
+
+    &.active {
+      margin-top: 50px !important;
+    }
+  }
+}
+
 section.list.levels > .row {
   height: 10em;
+  border-top: 1px solid;
+  border-bottom: 1px solid;
+  border-image: linear-gradient(
+    to right,
+    transparent,
+    rgba(255, 255, 221, .12) 10% 90%,
+    transparent
+  );
+  border-image-slice: 1;
   font-size: 1.5rem;
 
   > :first-child {
     width: 150px;
 
-    > div {
-      display: flex;
-      flex-direction: column;
-      gap: .5em;
-      max-width: 100%;
+    a {
+      position: relative;
+      text-decoration: none;
+
+      > div {
+        display: flex;
+        flex-direction: column;
+        gap: .5em;
+      }
+      .icon {
+        position: absolute;
+        top: -.2em;
+        right: -1em;
+        transform: scale(0);
+        filter: drop-shadow(0 0 .4em deeppink);
+        transition: transform .2s;
+      }
     }
   }
   .menu-button {
@@ -1245,25 +1281,17 @@ section.list.levels > .row {
     position: absolute;
     z-index: -999;
     margin-left: -80px;
-    width: 55%;
-    height: 98%;
+    width: 60%;
+    height: 100%;
     background-repeat: no-repeat;
     background-position-y: 50%;
     background-size: cover;
     mask: linear-gradient(
       to right,
-      transparent 5%,
+      transparent 8%,
       rgba(255, 255, 255, .6) 50%,
-      transparent 95%
+      transparent 92%
     );
-
-    img.level {
-      max-width: 150px;
-      max-height: 150px;
-      border: thin solid rgba(255, 255, 221, 0.5);
-      border-radius: 5px;
-      box-shadow: 0 0 0.5em rgba(255, 255, 221, 0.5);
-    }
   }
   > .info {
     width: 200px;
@@ -1364,8 +1392,10 @@ section.list.levels > .row {
       }
     }
   }
-  &:hover .rank span {
-    transform: rotate(360deg);
+  &:hover {
+    .rank span {
+      transform: rotate(360deg);
+    }
   }
   &.active {
     border-top: thin solid;
@@ -1384,24 +1414,6 @@ section.list.levels > .row {
 
 /* ------------------------------------------------------------------------- */
 /* -- Level Explorer -- */
-
-section.list.levels {
-  > .row:not(:first-child) {
-    margin-top: 0px;
-
-    &.active {
-      margin-top: 50px !important;
-    }
-  }
-  > .row:nth-child(4n + 3) {
-    background-image: linear-gradient(
-      to right,
-      transparent,
-      rgba(127, 127, 127, 0.25) 15% 85%,
-      transparent
-    );
-  }
-}
 
 section.list.levels > .page-explorer {
   position: static;
