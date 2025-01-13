@@ -19,20 +19,15 @@ async def level_list(alias: str):
     async def _populate_level_data(level: dict):
         '''Retrieve level data and add to dict.'''
 
-        # Retrieve level unlocking and completion info
-        query = '''
-            SELECT username, rating_given, completion_time
-            FROM user_levels
-            WHERE riddle = :riddle
-                AND username = :username
-                AND level_name = :level_name
-        '''
-        values = base_values | {'level_name': level['name']}
-        user_level_data = await database.fetch_one(query, values)
-        level['unlocked'] = user_level_data is not None
-        level['beaten'] = bool(
-            level['unlocked'] and user_level_data['completion_time']
-        )
+        # Add level unlocking and completion info
+        user_level = user_level_data.get(level['name'])
+        level['unlocked'] = user_level is not None
+        if not level['unlocked']:
+            level['unlocked'] = (
+                not level['has_requirements']
+                and not level['is_secret']
+            )
+        level['beaten'] = bool(user_level and user_level['completion_time'])
 
         # _, status = await admin.auth(alias)
         # if status == 200:
@@ -66,19 +61,18 @@ async def level_list(alias: str):
                     level['path'] = ''  # safeguard
         
         if level['beaten']:
-            # Get level rating:
-            level['rating_given'] = user_level_data['rating_given']
+            # Get level rating
+            user_level = user_level_data[level['name']]
+            level['rating_given'] = user_level['rating_given']
 
             # Get total file count for level
             query = '''
-                SELECT COUNT(*) AS count FROM level_pages
+                SELECT COUNT(*) FROM level_pages
                 WHERE riddle = :riddle AND level_name = :level
                 GROUP BY riddle, level_name
             '''
             values = {'riddle': alias, 'level': level['name']}
-            level['pages_total'] = await database.fetch_val(
-                query, values, 'count'
-            )
+            level['pages_total'] = await database.fetch_val(query, values)
 
         # Get player's current found pages count for level
         query = '''
@@ -117,20 +111,20 @@ async def level_list(alias: str):
         level['users'] = [dict(level) for level in result]
     
     async def _add_credentials(level: dict):
-        '''Add credentials for level's front path, if any.'''
+        '''Add credentials (if any) for level's front path.'''
         for folder_path in reversed(credentials):
             # Iterate in reverse to pick the innermost dir
             if level['path'].startswith(folder_path):
                 level |= credentials[folder_path]
                 return
-
-    # Discord user and base values for SQL queries
-    user = await discord.get_user()
-    base_values = {'riddle': alias, 'username': user.name}
     
     # Get riddle level data
     query = '''
-        SELECT * FROM levels
+        SELECT *, EXISTS(
+            SELECT level_name FROM level_requirements lr
+            WHERE riddle = :riddle AND lv.name = lr.level_name
+        ) AS has_requirements
+        FROM levels lv
         WHERE riddle = :riddle
         ORDER BY is_secret, `index`
     '''
@@ -145,6 +139,16 @@ async def level_list(alias: str):
         WHERE riddle = :riddle
     '''
     level_sets = await database.fetch_all(query, values)
+
+    # Retrieve user-specific level data
+    user = await discord.get_user()
+    query = '''
+        SELECT level_name, completion_time, rating_given FROM user_levels
+        WHERE riddle = :riddle AND username = :username
+    '''
+    base_values = values | {'username': user.name}
+    result = await database.fetch_all(query, base_values)
+    user_level_data = {row['level_name']: row for row in result}
 
     # Build sets & levels dict
     levels_dict = {set_['name']: [] for set_ in level_sets}
