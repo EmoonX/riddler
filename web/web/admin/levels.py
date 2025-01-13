@@ -1,14 +1,19 @@
-import json
 from copy import deepcopy
+import json
+import os
+from pathlib import Path
+import shutil
 
+from pymysql.err import IntegrityError
 from quart import Blueprint, request, render_template
 from quartcord import requires_authorization
-from pymysql.err import IntegrityError
+import requests
 
 from admin.admin_auth import admin_auth
 from admin.util import save_image
-from webclient import bot_request
+from inject import get_riddle
 from util.db import database
+from webclient import bot_request
 
 # Create app blueprint
 admin_levels = Blueprint('admin_levels', __name__)
@@ -332,45 +337,140 @@ async def update_pages(alias: str):
     # Check for right permissions
     await admin_auth(alias)
 
-    async def _insert(path: str, level: str = None):
+    async def _insert(path: str, level: str | None = None):
         '''Insert path into DB, possibly attached to a level.'''
 
         query = '''
-            SET FOREIGN_KEY_CHECKS = 0;
             INSERT INTO level_pages (`riddle`, `path`, `level_name`)
-                VALUES (:riddle, :path, :level);
-            SET FOREIGN_KEY_CHECKS = 1;
+                VALUES (:riddle, :path, :level_name);
         '''
-        values = {'riddle': alias, 'path': path, 'level': level}
+        values = {'riddle': alias, 'path': path, 'level_name': level}
+
         try:
-            # Add page to riddle database
-            # (foreign keys are disabled to accept level a priori)
+            # Add page as part of the level
             await database.execute(query, values)
-            s = f" ({level})" if level else ''
-            print(
-                f"> \033[1m[{alias}]\033[0m "
-                f"Added page \033[1m{path}{s}\033[0m to database!"
-            )
+            s = f"\033[3m{path}\033[0m ({level})"
+            _log(f"Added page {s} to database!")
+
         except IntegrityError:
-            # Page already present, so nothing to do
-            print(
-                f"> \033[1m[{alias}]\033[0m "
-                f"Skipping page \033[1m{path}\033[0m... "
-            )
+            # Page already present, update level if doable
+            if level:
+                query = '''
+                    UPDATE level_pages
+                    SET level_name = :level_name
+                    WHERE riddle = :riddle AND `path` = :path
+                '''
+                success = await database.execute(query, values)
+                if success:
+                    _log(f"Updated level for page \033[3m{path}\033[0m ({level})…")
+                    return
+
+            _log(f"Skipping page \033[3m{path}\033[0m ({level})…")
+    
+    def _is_image(path: str) -> bool:
+        '''Check if path points to an image file.'''
+        _, ext = os.path.splitext(path)
+        return ext in ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp')
+    
+    def _log(msg: str):
+        '''Log message.'''
+        print(f"> \033[1m[{alias}]\033[0m {msg}")
 
     # Receive text data and split it between levels (if any)
     data = (await request.data).decode('utf-8').split('#')
+    riddle = await get_riddle(alias)
+    has_levels = bool(len(data) > 1)
+    if has_levels:
+        del data[0]  # remove initial ''
+        previous_level = None
+    
+    idx = 0
     for i, text in enumerate(data):
-        # Get level info (or None), remove undesired
-        # characters and insert individual pages into db
-        level = None if i == 0 else text.split('\n')[0].strip()
-        pages = list(filter(
-            None, text.replace('\r', '').replace('\\', '/').split('\n')
-        ))
+        # Build list of pages' paths in suitable format
+        lines = text.replace('\r', '').replace('\\', '/').split('\n')
+        pages = lines[1:]
+
+        if has_levels:
+            # Get level info (given '#' is present)
+            if '--' in lines[0]:
+                level, level_set = map(
+                    lambda s: s.strip(), lines[0].split('--')
+                )
+            else:
+                level = lines[0].strip()
+
+            # Update index based on level name
+            if level and not level.isspace():
+                idx = int(level)
+            else:
+                idx += 1
+                level = str(idx)
+
+        image_filename: str | None = None
+        if has_levels and _is_image(pages[1]):
+            # Fetch image from riddle website and save it to `thumbs/{alias}`
+            image_url = f"{riddle['root_path']}{pages[1]}"
+            print(
+                f"> \033[1m[{alias}]\033[0m "
+                f"Fetching level image from \033[3m{image_url}\033[0m… ",
+                end=''
+            )
+            res = requests.get(image_url, stream=True)
+            print(f"\033[1m{'OK' if res.ok else res.status_code}\033[0m")
+            if res.ok:
+                image_filename = os.path.basename(pages[1])
+                image_dir = f"../static/thumbs/{alias}"
+                image_path = f"{image_dir}/{image_filename}"
+                Path(image_dir).mkdir(parents=True, exist_ok=True)
+                with open(image_path, 'wb') as image_file:
+                    shutil.copyfileobj(res.raw, image_file)
+        
+        if has_levels:
+            # Insert new level (if indeed new)
+            try:
+                query = '''
+                    INSERT INTO levels (
+                        riddle, level_set, `index`, name,
+                        `path`, image, discord_name
+                    ) VALUES (
+                        :riddle, :level_set, :index, :name,
+                        :path, :image, :discord_name
+                    )
+                '''
+                values = {
+                    'riddle': alias,
+                    'level_set': level_set,
+                    'index': idx,
+                    'name': level,
+                    'path': pages[0],
+                    'image': image_filename,
+                    'discord_name': level.lower().replace(' ', '-')
+                }
+                await database.execute(query, values)
+                _log(f"Added level \033[1m{level}\033[0m to database!")
+            except IntegrityError:
+                _log(f"Level \033[1m{level}\033[0m already in database…")
+        
+            if previous_level:
+                # Set previous level's answer as current one's front path
+                query = '''
+                    UPDATE levels
+                    SET answer = :answer
+                    WHERE riddle = :riddle AND name = :name
+                '''
+                values = {'riddle': alias, 'name': previous_level, 'answer': pages[0]}
+                await database.execute(query, values)
+            
+            previous_level = level
+        
+        # Insert individual pages
         for path in pages:
-            if not ('/' in path and '.' in path[-5:]):
-                continue
             path = path.strip()
+            if not path:
+                continue
+            if '/' not in path or '.' not in path[-5:]:
+                _log(f"Skipping wrong format page: \033[3m{path}\033[0m")
+                continue
             await _insert(path, level)
 
     return 'OK', 200

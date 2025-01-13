@@ -13,27 +13,29 @@ from webclient import bot_request
 from util.db import database
 
 
-@overload
-async def get_display_name(user: dict):
-    ...
+async def get_riddle(alias: str) -> dict:
+    '''Return riddle info + icon from a given alias.'''
 
-@overload
-async def get_display_name(username: str):
-    ...
+    # Get DB row data
+    query = 'SELECT * FROM riddles WHERE alias = :alias'
+    riddle = await database.fetch_one(query, {'alias': alias})
+    if not riddle:
+        return None
 
-async def get_display_name(user):
-    '''Get display name from either username or user dict.'''
+    # Account for multi-root-path riddles
+    riddle = dict(riddle)
+    if riddle['root_path'][0] == '[':
+        riddle['root_path'] = riddle['root_path'].split('"')[1]
 
-    if isinstance(user, str) or 'display_name' not in user:
-        username = user if isinstance(user, str) else user['username']
-        query = '''
-            SELECT display_name, username FROM accounts
-            WHERE username = :username
-        '''
-        values = {'username': username}
-        user = await database.fetch_one(query, values)
-    
-    return user['display_name'] or user['username']
+    # Get icon URL by bot request
+    url = await bot_request(
+        'get-riddle-icon-url', guild_id=riddle['guild_id']
+    )
+    if not url:
+        url = f"/static/riddles/{alias}.png"
+    riddle['icon_url'] = url
+
+    return riddle
 
 
 async def get_riddles(unlisted: bool = False):
@@ -81,32 +83,31 @@ async def get_achievements(alias: str, user: dict = None) -> dict:
     return cheevos_by_rank
 
 
+@overload
+async def get_display_name(user: dict):
+    ...
+
+@overload
+async def get_display_name(username: str):
+    ...
+
+async def get_display_name(user):
+    '''Get display name from either username or user dict.'''
+
+    if isinstance(user, str) or 'display_name' not in user:
+        username = user if isinstance(user, str) else user['username']
+        query = '''
+            SELECT display_name, username FROM accounts
+            WHERE username = :username
+        '''
+        values = {'username': username}
+        user = await database.fetch_one(query, values)
+    
+    return user['display_name'] or user['username']
+
+
 async def context_processor():
     '''Inject variables and functions in Jinja.'''
-
-    async def get_riddle(alias):
-        '''Return riddle info + icon from a given alias.'''
-
-        # Get DB row data
-        query = 'SELECT * FROM riddles WHERE alias = :alias'
-        riddle = await database.fetch_one(query, {'alias': alias})
-        if not riddle:
-            return None
-
-        # Account for multi-root-path riddles
-        riddle = dict(riddle)
-        if riddle['root_path'][0] == '[':
-            riddle['root_path'] = riddle['root_path'].split('"')[1]
-
-        # Get icon URL by bot request
-        url = await bot_request(
-            'get-riddle-icon-url', guild_id=riddle['guild_id']
-        )
-        if not url:
-            url = f"/static/riddles/{alias}.png"
-        riddle['icon_url'] = url
-
-        return riddle
 
     async def fetch_riddles():
         '''Return all riddles info + icons.'''
@@ -245,6 +246,7 @@ async def context_processor():
     # Dict for extra variables
     extra = {
         'get_display_name': get_display_name,
+        'get_riddle': get_riddle,
         'get_riddles': get_riddles,
         'get_achievements': get_achievements,
         'level_ranks': level_ranks,

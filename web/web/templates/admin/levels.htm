@@ -13,7 +13,11 @@
         <section class="list levels admin">
         {% for level in levels %}
           {% set index = loop.index %}
-          {% set image = '/static/thumbs/' + alias + '/' + level['image'] %}
+          {% if level['image'] %}
+            {% set image = '/static/thumbs/' + alias + '/' + level['image'] %}
+          {% else %}
+            {% set image = '/static/locked.png' %}
+          {% endif %}
           {% include 'admin/level-row.htm' %}
         {% endfor %}
         </section>
