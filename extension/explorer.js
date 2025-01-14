@@ -1,5 +1,5 @@
 /** Base server URL. */
-const SERVER_URL = 'https://riddler.app';
+const SERVER_URL = 'https://emoon.dev';
 
 /** All player riddle data. */
 let riddles = {};
@@ -7,72 +7,62 @@ let riddles = {};
 /** Current riddle alias. */
 let currentRiddle;
 
-/** Inits page explorer for current visited riddle level. */
-export function initExplorer() {
-  const DATA_URL = SERVER_URL + '/get-user-riddle-data';
-  $.get(DATA_URL, json => {
-    const riddlesData = JSON.parse(json);
-    console.log(riddlesData);
-    currentRiddle = riddlesData.currentRiddle;
-    $.each(riddlesData.riddles, (_, data) => {
-      buildRiddle(data);
-    });
-    sendMessageToPopup();
-  });
-}
-
 /** Builds riddle dict from riddle and levels JSON data. */
-function buildRiddle(data) {
-  const alias = data.alias;
-  const pagesUrl = SERVER_URL + `/${alias}/levels/get-pages`;
-  $.get(pagesUrl, json => {
-    const pagesData = JSON.parse(json);
-    riddles[alias] = data;
-    const riddle = riddles[alias];
-    riddle.iconUrl = `${SERVER_URL}/static/riddles/${alias}.png`;
-    riddle.shownLevel = riddle.visitedLevel;
-    riddle.levels = {};
-    $.each(pagesData, (levelName, pages) => {
-      const level = {
-        name: levelName,
-        pages: pages,
-      }
-      riddle.levels[levelName] = level;
+async function buildRiddle(riddle) {
+  const pagesUrl = SERVER_URL + `/${riddle.alias}/levels/get-pages`;
+  await fetch(pagesUrl)
+    .then(response => response.text())
+    .then(body => {
+      riddle.iconUrl = `${SERVER_URL}/static/riddles/${riddle.alias}.png`;
+      riddle.shownLevel = riddle.visitedLevel;
+      riddle.levels = {};
+      const pagesData = JSON.parse(body);
+      Object.entries(pagesData).forEach(([levelName, pages]) => {
+        const level = {
+          name: levelName,
+          pages: pages,
+        };
+        riddle.levels[levelName] = level;
+      });
+      Object.entries(riddle.levelOrdering).forEach(([i, levelName]) => {
+        let previousName = null;
+        if (i > 0) {
+          previousName = riddle.levelOrdering[i-1];
+          riddle.levels[previousName].next = levelName;
+        }
+        riddle.levels[levelName].previous = previousName;
+      });
     });
-    $.each(riddle.levelOrdering, (i, levelName) => {
-      let previousName = null;
-      if (i > 0) {
-        previousName = riddle.levelOrdering[i-1];
-        riddle.levels[previousName].next = levelName;
-      }
-      riddle.levels[levelName].previous = previousName;
-    });
-  });
+  riddles[riddle.alias] = riddle;
 }
 
 /** Updates current dict with possibly new riddle, level and/or page. */
-export function updateRiddleData(alias, levelName) {
+export async function updateRiddleData(alias, levelName) {
   currentRiddle = alias;
   if (!(alias in riddles) || !(levelName in riddles[alias].levels)) {
     // Add new riddle and/or level
     const DATA_URL = SERVER_URL + `/get-user-riddle-data/${alias}`;
-    $.get(DATA_URL, json => {
-      const data = JSON.parse(json);
-      buildRiddle(data);
-    });
+    await fetch(DATA_URL)
+      .then(response => response.text())
+      .then(body => {
+        const data = JSON.parse(body);
+        buildRiddle(data);
+      });
   } else {
     // Add (possibly) new page
     const pagesUrl = SERVER_URL + `/${alias}/levels/get-pages/${levelName}`;
-    $.get(pagesUrl, json => {
-      const pagesData = JSON.parse(json);
-      const riddle = riddles[alias];
-      riddle.visitedLevel = levelName
-      riddle.shownLevel = levelName;
-      $.each(pagesData, (levelName, pages) => {
-        const level = riddle.levels[levelName];
-        level.pages = pages;
+    await fetch(pagesUrl)
+      .then(response => response.text())
+      .then(body => {
+        const pagesData = JSON.parse(body);
+        const riddle = riddles[alias];
+        riddle.visitedLevel = levelName
+        riddle.shownLevel = levelName;
+        Object.entries(pagesData).forEach(([levelName, pages]) => {
+          const level = riddle.levels[levelName];
+          level.pages = pages;
+        });
       });
-    });
   }
 }
 
@@ -130,7 +120,10 @@ function getFileFigureHtml(object, filename, count) {
   }
   const html = `
     <figure class="file ${state}"
-      title="${object.path}" style="margin-left: ${margin}"
+      title="${object.path}"
+      data-username="${object.username}"
+      data-password="${object.password}"
+      style="margin-left: ${margin}"
     >
       ${img}${fc}${fileCount}
     </figure>
@@ -139,7 +132,7 @@ function getFileFigureHtml(object, filename, count) {
 }
 
 /** Changes displayed level to previous or next one, upon arrow click. */
-function changeLevel() {
+export function changeLevel() {
   const riddle = riddles[currentRiddle];
   let level = riddle.levels[riddle.shownLevel];
   const levelName =
@@ -155,7 +148,7 @@ function changeLevel() {
 }
 
 /** Selects file and unselect the other ones, as in a file explorer. */
-function clickFile() {
+export function clickFile() {
   const files = $(this).parents('.page-explorer').find('figure.file');
   files.each(function () {
     $(this).removeClass('active');
@@ -164,17 +157,24 @@ function clickFile() {
 }
 
 /** Handles double clicking files or folders. */
-function doubleClickFile() {
+export async function doubleClickFile() {
   const page = $(this).find('figcaption').text();
   const j = page.lastIndexOf('.');
-  if (j != -1) {
+  if (j != -1 && j != page.length - 1) {
     // Open desired page in new tab
     const path = $(this).attr('title');
-    const endpoint = SERVER_URL + `/${currentRiddle}/levels/get-root-path`;
-    $.get(endpoint, rootPath => {
-      const url = rootPath + path;
-      window.open(url, '_blank');
-    });
+    const endpoint = `${SERVER_URL}/${currentRiddle}/levels/get-root-path`;
+    await fetch(endpoint)
+      .then(response => response.text())
+      .then(rootPath => {
+        let url = rootPath + path;
+        if ($(this).attr('data-username')) {
+          let username = $(this).attr('data-username');
+          let password = $(this).attr('data-password');
+          url = url.replace('://', `://${username}:${password}@`);
+        }
+        window.open(url, '_blank');
+      });
   } else {
     // Open or collapse folder, showing/hiding inner files
     const files = $(this).next('.folder-files');
@@ -182,10 +182,18 @@ function doubleClickFile() {
   }
 }
 
-$(_ => {
-  $('#level').on('click', '.previous:not(.disabled)', changeLevel);
-  $('#level').on('click', '.next:not(.disabled)', changeLevel);
-  $('.page-explorer').on('click', 'figure.file', clickFile);
-  $('.page-explorer').on('dblclick', 'figure.file', doubleClickFile);
-});
-  
+(async () => {
+  // Inits page explorer for currently visited riddle level
+  const DATA_URL = SERVER_URL + '/get-user-riddle-data';
+  await fetch(DATA_URL)
+    .then(response => response.text())
+    .then(async body => {
+      const riddlesData = JSON.parse(body);
+      currentRiddle = riddlesData.currentRiddle;
+      Object.entries(riddlesData.riddles).forEach(async ([alias, riddle]) => {
+        console.log(`[${alias}] Building riddle data…`);
+        await buildRiddle(riddle);
+      });
+      sendMessageToPopup();
+    });
+})();
