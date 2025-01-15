@@ -16,16 +16,24 @@ async function buildRiddle(riddle) {
       riddle.iconUrl = `${SERVER_URL}/static/riddles/${riddle.alias}.png`;
       riddle.shownSet = riddle.lastVisitedSet;
       riddle.shownLevel = riddle.lastVisitedLevel;
-      for (const [setName, levelSet] of Object.entries(riddle.levels)) {
-        let previousName = null;
+      const setsArray = Object.keys(riddle.levels);
+      let previousSetName = null;
+      let previousLevelName = null;
+      for (const [setIdx, setName] of Object.entries(setsArray)) {
+        const levelSet = riddle.levels[setName];
         for (const [levelName, level] of Object.entries(levelSet)) {
           level.pages = pagesData[levelName];
-          if (previousName) {
-            riddle.levels[setName][previousName].next = levelName;
-          }
-          level.previous = previousName;
-          previousName = levelName;
-        }
+          if (previousLevelName) {
+            const previousLevel =
+              riddle.levels[previousSetName][previousLevelName];
+            level.previousLevel = previousLevelName;
+            previousLevel.nextLevel = levelName;
+            level.previousSet = previousSetName
+            level.nextSet = setsArray[Number(setIdx) + 1];
+          } 
+          previousLevelName = levelName;
+          previousSetName = setName;
+        }        
       }
     });
   riddles[riddle.alias] = riddle;
@@ -124,19 +132,55 @@ function getFileFigureHtml(object, filename, count) {
   return html;
 }
 
+/** 
+ * Changes displayed level set to previous or next one,
+ * upon double arrow click.
+ */
+export function changeLevelSet() {
+  const riddle = riddles[currentRiddle];
+  let level = riddle.levels[riddle.shownSet][riddle.shownLevel];
+  const setName =
+    $(this).is('#previous-set') ?
+    level.previousSet :
+    level.nextSet;
+  const levelName = Object.keys(riddle.levels[setName])[0];
+  level = Object.values(riddle.levels[setName])[0];
+  riddle.shownSet = setName;
+  riddle.shownLevel = levelName;
+  updatePopupNavigation(riddle, level, setName, levelName);
+}
+
 /** Changes displayed level to previous or next one, upon arrow click. */
 export function changeLevel() {
   const riddle = riddles[currentRiddle];
-  let level = riddle.levels[riddle.shownSet][riddle.shownLevel];
-  const levelName =
-    $(this).hasClass('previous') ?
-      level.previous : level.next;
-  // riddle.shownSet = 
+  let levelSet = riddle.levels[riddle.shownSet];
+  let level = levelSet[riddle.shownLevel];
+  let [setName, levelName] = [riddle.shownSet, null];
+  if ($(this).is('#previous-level')) {
+    const firstInSet = Object.keys(levelSet).at(0);
+    if (riddle.shownLevel === firstInSet) {
+      setName = level.previousSet;
+    }
+    levelName = level.previousLevel
+  } else {
+    const lastInSet = Object.keys(levelSet).at(-1);
+    if (riddle.shownLevel === lastInSet) {
+      setName = level.nextSet;
+    }
+    levelName = level.nextLevel;
+  }
+  level = riddle.levels[setName][levelName];
+  updatePopupNavigation(riddle, level, setName, levelName);
+}
+
+function updatePopupNavigation(riddle, level, setName, levelName) {
+  riddle.shownSet = setName;
   riddle.shownLevel = levelName;
-  level = riddle.levels[riddle.shownSet][levelName];
-  $('#level > var.current').text(levelName);
-  $('#level > .previous').toggleClass('disabled', !level.previous);
-  $('#level > .next').toggleClass('disabled', !level.next);
+  $('#level > var#current-level').text(levelName);
+  $('#level > #previous-set').toggleClass('disabled', !level.previousSet);
+  $('#level > #previous-level').toggleClass('disabled', !level.previousLevel);
+  $('#level > #next-level').toggleClass('disabled', !level.nextLevel);
+  $('#level > #next-set').toggleClass('disabled', !level.nextSet);
   $('.page-explorer').empty();
   insertFiles($('.page-explorer'), level.pages['/'], -1);
 }
@@ -186,7 +230,6 @@ export async function doubleClickFile() {
       Object.entries(riddlesData.riddles).forEach(async ([alias, riddle]) => {
         console.log(`[${alias}] Building riddle data…`);
         await buildRiddle(riddle);
-        console.log(riddle);
       });
       sendMessageToPopup();
     });

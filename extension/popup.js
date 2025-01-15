@@ -1,5 +1,6 @@
 import {  
   changeLevel,
+  changeLevelSet,
   clickFile,
   doubleClickFile,
   insertFiles,
@@ -38,8 +39,10 @@ $(_ => {
   $('[name=update-hosts]').on('click', updateHosts);
 
   // Set explorer events
-  $('#level').on('click', '.previous:not(.disabled)', changeLevel);
-  $('#level').on('click', '.next:not(.disabled)', changeLevel);
+  $('#level').on('click', '#previous-set:not(.disabled)', changeLevelSet);
+  $('#level').on('click', '#next-set:not(.disabled)', changeLevelSet);
+  $('#level').on('click', '#previous-level:not(.disabled)', changeLevel);
+  $('#level').on('click', '#next-level:not(.disabled)', changeLevel);
   $('.page-explorer').on('click', 'figure.file', clickFile);
   $('.page-explorer').on('dblclick', 'figure.file', doubleClickFile);
 
@@ -64,12 +67,18 @@ $(_ => {
       $('#riddle > .icons img.current').attr('src', riddle.iconUrl);
       $('#riddle > .full-name').text(riddle.fullName);
       $('#riddle a').attr('href', explorerURL);
-      $('#level > var.current').text(levelName);
-      if (!level.previous) {
-        $('#level > .previous').addClass('disabled');
+      $('#level > var#current-level').text(levelName);
+      if (!level.previousSet) {
+        $('#level > #previous-set').addClass('disabled');
       }
-      if (!level.next) {
-        $('#level > .next').addClass('disabled');
+      if (!level.previousLevel) {
+        $('#level > #previous-level').addClass('disabled');
+      }
+      if (!level.nextLevel) {
+        $('#level > #next-level').addClass('disabled');
+      }
+      if (!level.nextSet) {
+        $('#level > #next-set').addClass('disabled');
       }
       // Build HTML for list of files of currently visited level
       const levelPages = level.pages['/'];
