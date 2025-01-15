@@ -2,7 +2,7 @@ import { updateRiddleData } from './explorer.js';
 
 /** Wildcard URLs to be matched. */
 const filter = {
-  urls: ['*://*/*']
+  urls: ['*://*/*'],
 };
 
 /** Time of last login request. */
@@ -48,6 +48,29 @@ async function sendToProcess(visitedUrl, statusCode) {
       }
     })
 }
+
+function foo() {
+  
+}
+
+chrome.webRequest.onAuthRequired.addListener(async (details, foo) => {
+  // Send a process request to server whenever response is received
+  if (details.url.includes('emoon.dev')) {
+    return;
+  }
+  console.log(details.realm);
+
+  // const tab = (await chrome.tabs.query({ active: true }))[0]
+  chrome.runtime.onConnect.addListener(port => {
+    console.log('Connected to ???.js...');
+    port.postMessage({
+      greeting: details.realm,
+    });
+  });
+
+  foo({cancel: true});
+
+}, filter, ['asyncBlocking']);
 
 chrome.webRequest.onHeadersReceived.addListener(async details => {
   // Send a process request to server whenever response is received
