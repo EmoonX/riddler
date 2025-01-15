@@ -63,7 +63,29 @@ figure {
 /* -- Header and navbar -- */
 
 header {
-  background-color: rgba(64, 64, 64, 0.95);
+  position: relative;
+
+  &::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    z-index: -999;
+    width: 100%;
+    height: 100%;
+    background-image: linear-gradient(
+      to bottom,
+      transparent 5%,
+      rgba(199, 21, 133, .2) 50%,
+      transparent 95%
+    );
+    mask: linear-gradient(
+      to right,
+      transparent 0%,
+      #fff 50%,
+      transparent 100%
+    );
+    backdrop-filter: blur(1em);
+  }
 }
 
 header > nav {
@@ -79,7 +101,7 @@ header > nav {
     font-size: 1.8em;
     font-weight: normal;
     text-decoration: none;
-    text-shadow: 0 0 0.5em white;
+    text-shadow: 0 0 .5em white;
   }
   .dropdown {
     position: relative;
@@ -92,24 +114,25 @@ header > nav {
       font-size: 1.3em;
       color: white;
 
-      &:hover {
-        border-bottom: thin solid rgba(255, 255, 255, 0.5);
-      }
-      &.burger {
-        font-size: 1.8em;
+      &.riddles, &.burger {
+        width: 150px;
+
+        &.burger {
+          font-size: 1.8em;
+        }
       }
     }
-    > div {
+    > .menu {
       position: absolute;
       top: 100px;
       display: none;
       z-index: 1;
       width: 100%;
-      border: thin solid white;
-      border-top: thin solid rgba(64, 64, 64, 0.5);
-      border-radius: 0 0 15px 15px;
-      background-color: rgba(64, 64, 64, 0.95);
+      border: 1px solid rgba(255, 255, 255, .2);
+      border-radius: 15px;
+      background-color: rgba(64, 64, 64, .1);
       font-size: 0.8em;
+      backdrop-filter: blur(1em) saturate(0%);
 
       &.riddles {
         grid-template-columns: 1fr 1fr 1fr 1fr;
@@ -137,8 +160,9 @@ header > nav {
       }
     }
     .menu {
-      width: 250px;
-      font-size: 0.6em;
+      width: max-content;
+      padding: .5em 1em;
+      font-size: .6em;
       z-index: 8000;
 
       > .nav-button {
@@ -146,7 +170,8 @@ header > nav {
         justify-content: center;
         align-items: center;
         width: 100%;
-        height: 80px;
+        height: 50px;
+        line-height: 50px;
         font-size: 1.1em;
       }
     }
@@ -155,10 +180,10 @@ header > nav {
       display: flex;
       align-items: center;
       width: 400px;
-      border: medium solid rgba(127, 127, 127, 0.2);
+      border: medium solid rgba(127, 127, 127, .05);
       border-width: 0 thick;
       border-radius: 0.5em;
-      background-color: rgba(127, 127, 127, 0.2);
+      background-color: rgba(127, 127, 127, .1);
       font-size: 0.9em;
       text-transform: none;
 
@@ -175,24 +200,24 @@ header > nav {
         font-size: 1.5em;
       }
       + .menu {
-        width: 400px;
+        right: 0;
+        width: 250px;
       }
     }
   }
   .nav-button {
     display: block;
-    width: 100px;
+    width: 100%;
     height: 100px;
-    line-height: 100px;
     padding: 0;
+    line-height: 100px;
     font-weight: bold;
     text-align: center;
-    text-transform: uppercase;
     text-decoration: none;
     color: white;
     text-shadow: 0 0 0.4em white;
     cursor: pointer;
-    transition: background-color 0.3s;
+    transition: text-shadow .2s;
 
     &.riddle {
       display: flex;
@@ -207,7 +232,7 @@ header > nav {
       text-transform: none;
 
       + .menu {
-        width: 100%;
+        width: 150px;
       }
     }
     > img.icon {
@@ -220,7 +245,7 @@ header > nav {
       font-size: 1.5em;
     }
     &:hover {
-      background-color: rgba(127, 127, 127, 0.5);
+      text-shadow: 0 0 .4em white, 0 0 .8em white, 0 0 1.2em white;
     }
   }
   .blank {
@@ -830,17 +855,17 @@ section.list > .row {
       opacity: 1;
     }
   }
-  &:hover {
-    .thumb img, .level-name, .latin-name {
-      @keyframes breath {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.15); }
-        100% { transform: scale(1); }
-      }
-      animation: breath 1s infinite;
-      animation-timing-function: ease;
-    }
-  }
+  // &:hover {
+  //   .thumb img, .level-name, .latin-name {
+  //     @keyframes breath {
+  //       0% { transform: scale(1); }
+  //       50% { transform: scale(1.15); }
+  //       100% { transform: scale(1); }
+  //     }
+  //     animation: breath 1s infinite;
+  //     animation-timing-function: ease;
+  //   }
+  // }
 }
 
 section.new {

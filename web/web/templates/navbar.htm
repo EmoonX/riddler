@@ -1,10 +1,10 @@
     <header>
       <nav>
-        <a class="title" href="/" title="Homepage">
+        <a class="title" href="/">
           Riddler
         </a>
         <nav class="dropdown">
-          <button class="nav-button">⋮</button>
+          <button class="nav-button riddles">⋮</button>
           {% set riddles = get_riddles(unlisted=True) %}
           <div class="menu riddles">
           {% for riddle in riddles %}
