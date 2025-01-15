@@ -36,89 +36,89 @@ async def get_riddle_hosts():
 
 @get.get('/get-user-riddle-data')
 @get.get('/get-user-riddle-data/<alias>')
-async def get_user_riddle_data(alias: str = '%'):
-    '''Get riddle data for authenticated user.
-    If `alias` is passed, restrict results to just given riddle.'''
+async def get_user_riddle_data(alias: str | None = None):
+    '''
+    Get riddle data for authenticated user.
+    If `alias` is passed, restrict results to just given riddle.
+    '''
 
-    # Get player and riddle data from DB
-    riddles = {}
     user = await discord.get_user()
     values = {'username': user.name}
-    if alias == '%':
+    if not alias:
+        # Get currently being played riddle from DB (if any)
         query = '''
-            SELECT * FROM riddles
-            WHERE alias IN (
+            SELECT alias FROM riddles
+            WHERE alias = (
                 SELECT current_riddle FROM accounts
                 WHERE username = :username
             )
         '''
-        current_riddle = await database.fetch_one(query, values)
+        current_riddle = await database.fetch_val(query, values)
         if not current_riddle:
             return 'No riddle being played...', 404
+
+    # Build initial riddle(s) dict
     query = '''
-        SELECT * FROM riddles r
-        WHERE alias IN (
-            SELECT riddle FROM user_levels ul
-            WHERE r.alias = ul.riddle AND username = :username
-        ) AND alias LIKE :alias
+        SELECT alias, full_name AS fullName FROM riddles
+        WHERE alias LIKE :riddle
     '''
-    values['alias'] = alias
+    values = {'riddle': alias or '%'}
+    result = await database.fetch_all(query, values)
+    riddles = {
+        row['alias']: dict(row) | {'levels': {}}
+        for row in result
+    }
+
+    # Fetch list of levels found/unlocked/solved by user (with correct ordering)
+    query = '''
+        SELECT
+            up.riddle, ls.name AS set_name, up.level_name,
+            find_time, completion_time
+        FROM user_pages up
+            LEFT JOIN user_levels ul
+                ON up.riddle = ul.riddle AND up.level_name = ul.level_name
+                    AND up.username = ul.username
+            INNER JOIN levels lv
+                ON up.riddle = lv.riddle AND up.level_name = lv.name
+            INNER JOIN level_sets ls
+                ON up.riddle = ls.riddle AND lv.level_set = ls.name
+        WHERE up.riddle LIKE :riddle AND up.username = :username
+        ORDER BY ls.`index`, lv.`index`
+    '''
+    values |= {'username': user.name}
     result = await database.fetch_all(query, values)
     for row in result:
-        _alias, full_name = row['alias'], row['full_name']
-        riddles[_alias] = {
-            'alias': _alias, 'fullName': full_name, 'levelOrdering': [],
+        _alias = row['riddle']
+        set_name, level_name = row['set_name'], row['level_name']
+        levels = riddles[_alias]['levels']
+        if not set_name in levels:
+            levels[set_name] = {}
+        levels[set_name][level_name] = {
+            'unlocked': row['find_time'] is not None,
+            'beaten': row['completion_time'] is not None,
         }
-    # Build set of solved levels
-    query = '''
-        SELECT * FROM user_levels
-        WHERE riddle LIKE :alias
-            AND username = :username
-    '''
-    result = await database.fetch_all(query, values)
-    for row in result:
-        _alias, level_name = row['riddle'], row['level_name']
-        if not _alias in riddles:
-            continue
-        if not 'solvedLevels' in riddles[_alias]:
-            riddles[_alias]['solvedLevels'] = {}
-        if row['completion_time']:
-            riddles[_alias]['solvedLevels'][level_name] = True
 
-    # Get last visited levels for each riddle
+    # Get last visited level/set for riddle(s)
     query = '''
-        SELECT * FROM riddle_accounts
-        WHERE riddle LIKE :alias
-            AND username = :username
+        SELECT ra.riddle, last_visited_level, lv.level_set
+        FROM riddle_accounts ra INNER JOIN levels lv
+            ON ra.riddle = lv.riddle AND last_visited_level = lv.name
+        WHERE ra.riddle LIKE :riddle AND username = :username
     '''
     result = await database.fetch_all(query, values)
     for row in result:
-        _alias, last_visited = row['riddle'], row['last_visited_level']
-        if last_visited:
-            riddles[_alias]['visitedLevel'] = last_visited
-
-    # Get level ordering for navigating levels in extension
-    query = '''
-        SELECT * FROM levels lv
-        WHERE `name` IN (
-            SELECT level_name FROM user_levels ul
-            WHERE ul.riddle = lv.riddle
-                AND username = :username
-        ) AND riddle LIKE :alias
-        ORDER BY is_secret, `index`
-    '''
-    result = await database.fetch_all(query, values)
-    for row in result:
-        _alias, level_name = row['riddle'], row['name']
-        riddles[_alias]['levelOrdering'].append(level_name)
+        _alias, level = row['riddle'], row['last_visited_level']
+        if level:
+            riddles[_alias]['lastVisitedSet'] = row['level_set']
+            riddles[_alias]['lastVisitedLevel'] = level
 
     # Create and return JSON dict with data
-    if alias == '%':
-        data = {'riddles': riddles, 'currentRiddle': current_riddle['alias']}
+    if not alias:
+        data = {'riddles': riddles, 'currentRiddle': current_riddle}
     else:
-        data = riddles[alias] if alias in riddles else {}
-    data = json.dumps(data)
-    return data
+        data = riddles.get(alias, {})
+
+    return json.dumps(data)
 
 
 @get.get('/get-current-riddle-data')

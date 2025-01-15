@@ -44,7 +44,7 @@ async function sendToProcess(visitedUrl, statusCode) {
         console.log(
           `[${data.riddle}] Page "${data.path}" (${data.levelName}) found`
         );
-        await updateRiddleData(data.riddle, data.levelName);
+        await updateRiddleData(data.riddle, data.setName, data.levelName);
       }
     })
 }

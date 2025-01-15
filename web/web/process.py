@@ -47,7 +47,7 @@ async def process_url(username=None, url=None):
         ph = await _PathHandler.build(user, url, status_code)
         if not ph:
             # Not inside root path (e.g forum or admin pages)
-            return 'Not part of root path', 403
+            return 'Not part of root path', 412
         ok = await ph.build_player_riddle_data()
         if not ok:
             return 'Banned player', 403
@@ -80,7 +80,10 @@ async def process_url(username=None, url=None):
                     f"({tnow})"
             )
             response = jsonify(
-                riddle=ph.riddle_alias, levelName=ph.path_level, path=ph.path
+                riddle=ph.riddle_alias,
+                setName=ph.path_level_set,
+                levelName=ph.path_level,
+                path=ph.path
             )
             return response
 
@@ -108,6 +111,9 @@ class _PathHandler:
 
     path_level: str
     '''Level to which path corresponds to, or `None` if N/A.'''
+
+    path_level_set: str
+    '''Level set the path's level is part of, or `None` if N/A.'''
 
     status_code: int
     '''Real status code of requested page (either 200 or 404).'''
@@ -192,11 +198,11 @@ class _PathHandler:
 
         # Ignore progress for banned players :)
         query = '''
-            SELECT * FROM accounts
+            SELECT banned FROM accounts
             WHERE username = :username
         '''
         values = {'username': self.username}
-        banned = await database.fetch_val(query, values, 'banned')
+        banned = await database.fetch_val(query, values)
         if banned:
             return False
 
@@ -296,6 +302,7 @@ class _PathHandler:
         '''
         values = {'riddle': self.riddle_alias, 'level_name': self.path_level}
         level = await database.fetch_one(query, values)
+        self.path_level_set = level['level_set']
 
         # Search for a level which has the current path as front
         query = '''

@@ -57,8 +57,9 @@ $(_ => {
 
       // Show current riddle info in extension's popup
       const riddle = riddles[alias];
-      const levelName = riddle.visitedLevel;
-      const level = riddle.levels[levelName];
+      const setName = riddle.lastVisitedSet;
+      const levelName = riddle.lastVisitedLevel;
+      const level = riddle.levels[setName][levelName];
       const explorerURL = `https://emoon.dev/${alias}/levels`;
       $('#riddle > .icons img.current').attr('src', riddle.iconUrl);
       $('#riddle > .full-name').text(riddle.fullName);

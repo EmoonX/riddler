@@ -9,59 +9,52 @@ let currentRiddle;
 
 /** Builds riddle dict from riddle and levels JSON data. */
 async function buildRiddle(riddle) {
-  const pagesUrl = SERVER_URL + `/${riddle.alias}/levels/get-pages`;
+  const pagesUrl = `${SERVER_URL}/${riddle.alias}/levels/get-pages`;
   await fetch(pagesUrl)
-    .then(response => response.text())
-    .then(body => {
+    .then(response => response.json())
+    .then(pagesData => {
       riddle.iconUrl = `${SERVER_URL}/static/riddles/${riddle.alias}.png`;
-      riddle.shownLevel = riddle.visitedLevel;
-      riddle.levels = {};
-      const pagesData = JSON.parse(body);
-      Object.entries(pagesData).forEach(([levelName, pages]) => {
-        const level = {
-          name: levelName,
-          pages: pages,
-        };
-        riddle.levels[levelName] = level;
-      });
-      Object.entries(riddle.levelOrdering).forEach(([i, levelName]) => {
+      riddle.shownSet = riddle.lastVisitedSet;
+      riddle.shownLevel = riddle.lastVisitedLevel;
+      for (const [setName, levelSet] of Object.entries(riddle.levels)) {
         let previousName = null;
-        if (i > 0) {
-          previousName = riddle.levelOrdering[i-1];
-          riddle.levels[previousName].next = levelName;
+        for (const [levelName, level] of Object.entries(levelSet)) {
+          level.pages = pagesData[levelName];
+          if (previousName) {
+            riddle.levels[setName][previousName].next = levelName;
+          }
+          level.previous = previousName;
+          previousName = levelName;
         }
-        riddle.levels[levelName].previous = previousName;
-      });
+      }
     });
   riddles[riddle.alias] = riddle;
 }
 
 /** Updates current dict with possibly new riddle, level and/or page. */
-export async function updateRiddleData(alias, levelName) {
+export async function updateRiddleData(alias, setName, levelName) {
   currentRiddle = alias;
-  if (!(alias in riddles) || !(levelName in riddles[alias].levels)) {
+  if (!riddles[alias].levels[setName][levelName]) {
     // Add new riddle and/or level
-    const DATA_URL = SERVER_URL + `/get-user-riddle-data/${alias}`;
+    const DATA_URL = `${SERVER_URL}/get-user-riddle-data/${alias}`;
     await fetch(DATA_URL)
-      .then(response => response.text())
-      .then(body => {
-        const data = JSON.parse(body);
+      .then(response => response.json())
+      .then(data => {
         buildRiddle(data);
       });
   } else {
     // Add (possibly) new page
-    const pagesUrl = SERVER_URL + `/${alias}/levels/get-pages/${levelName}`;
+    const pagesUrl = `${SERVER_URL}/${alias}/levels/get-pages/${levelName}`;
     await fetch(pagesUrl)
-      .then(response => response.text())
-      .then(body => {
-        const pagesData = JSON.parse(body);
+      .then(response => response.json())
+      .then(pagesData => {
         const riddle = riddles[alias];
-        riddle.visitedLevel = levelName
-        riddle.shownLevel = levelName;
-        Object.entries(pagesData).forEach(([levelName, pages]) => {
-          const level = riddle.levels[levelName];
+        riddle.lastVisitedSet = riddle.shownSet = setName;
+        riddle.lastVisitedLevel = riddle.shownLevel = levelName;
+        for (const [levelName, pages] of Object.entries(pagesData)) {
+          const level = riddle.levels[setName][levelName];
           level.pages = pages;
-        });
+        }
       });
   }
 }
@@ -97,7 +90,7 @@ export function insertFiles(parent, object, count) {
   }
 }
 
-/** Generates `<figure>` HTML tag for given file oject. */
+/** Generates `<figure>` HTML tag for given file object. */
 function getFileFigureHtml(object, filename, count) {
   let type = 'folder';
   if (!object.folder) {
@@ -112,9 +105,9 @@ function getFileFigureHtml(object, filename, count) {
   let fileCount = '';
   if (object.folder) {
     const riddle = riddles[currentRiddle];
-    const levelSolved = riddle.shownLevel in riddle.solvedLevels;
+    const level = riddle.levels[riddle.shownSet][riddle.shownLevel];
     const filesFound = object.filesFound;
-    const filesTotal = levelSolved ? object.filesTotal : '??';
+    const filesTotal = level.beaten ? object.filesTotal : '??';
     fileCount =
       `<div class="file-count">(${filesFound} / ${filesTotal})</div>`;
   }
@@ -134,12 +127,13 @@ function getFileFigureHtml(object, filename, count) {
 /** Changes displayed level to previous or next one, upon arrow click. */
 export function changeLevel() {
   const riddle = riddles[currentRiddle];
-  let level = riddle.levels[riddle.shownLevel];
+  let level = riddle.levels[riddle.shownSet][riddle.shownLevel];
   const levelName =
     $(this).hasClass('previous') ?
       level.previous : level.next;
+  // riddle.shownSet = 
   riddle.shownLevel = levelName;
-  level = riddle.levels[levelName];
+  level = riddle.levels[riddle.shownSet][levelName];
   $('#level > var.current').text(levelName);
   $('#level > .previous').toggleClass('disabled', !level.previous);
   $('#level > .next').toggleClass('disabled', !level.next);
@@ -184,15 +178,15 @@ export async function doubleClickFile() {
 
 (async () => {
   // Inits page explorer for currently visited riddle level
-  const DATA_URL = SERVER_URL + '/get-user-riddle-data';
+  const DATA_URL = `${SERVER_URL}/get-user-riddle-data`;
   await fetch(DATA_URL)
-    .then(response => response.text())
-    .then(async body => {
-      const riddlesData = JSON.parse(body);
+    .then(response => response.json())
+    .then(async riddlesData => {
       currentRiddle = riddlesData.currentRiddle;
       Object.entries(riddlesData.riddles).forEach(async ([alias, riddle]) => {
         console.log(`[${alias}] Building riddle data…`);
         await buildRiddle(riddle);
+        console.log(riddle);
       });
       sendMessageToPopup();
     });
