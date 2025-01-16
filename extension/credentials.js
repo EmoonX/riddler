@@ -13,7 +13,9 @@ port.onMessage.addListener(async data => {
     .then(response => response.text())
     .then(html => {
       const box = $($.parseHTML(html));
-      box.find('.realm').text(data.realm);
-      document.write(box[0].outerHTML);
+      const boxCss = chrome.runtime.getURL('credentials.css');
+      box.find('.realm').text(`"${data.realm}"`);
+      $('head').append(` <link rel="stylesheet" href="${boxCss}">` )
+      $('body').append(box[0].outerHTML)
     });
 });
