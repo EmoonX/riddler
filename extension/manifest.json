@@ -24,6 +24,13 @@
   },
   "content_scripts" : [{
     "matches": ["<all_urls>"],
-    "js" : ["credentials.js"]
-  }]
+    "js": ["credentials.js", "thirdParty/jquery.min.js"],
+    "type": "module"
+  }],
+  "web_accessible_resources": [
+    {
+      "resources": ["credentials.html"],
+      "matches": ["<all_urls>"]
+    }
+  ]
 }

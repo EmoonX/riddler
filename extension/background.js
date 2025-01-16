@@ -49,10 +49,6 @@ async function sendToProcess(visitedUrl, statusCode) {
     })
 }
 
-function foo() {
-  
-}
-
 chrome.webRequest.onAuthRequired.addListener(async (details, foo) => {
   // Send a process request to server whenever response is received
   if (details.url.includes('emoon.dev')) {
@@ -64,7 +60,7 @@ chrome.webRequest.onAuthRequired.addListener(async (details, foo) => {
   chrome.runtime.onConnect.addListener(port => {
     console.log('Connected to ???.js...');
     port.postMessage({
-      greeting: details.realm,
+      realm: details.realm,
     });
   });
 
