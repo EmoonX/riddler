@@ -200,19 +200,15 @@ export async function doubleClickFile() {
   const j = page.lastIndexOf('.');
   if (j != -1 && j != page.length - 1) {
     // Open desired page in new tab
+    const riddle = riddles[currentRiddle];
     const path = $(this).attr('title');
-    const endpoint = `${SERVER_URL}/${currentRiddle}/levels/get-root-path`;
-    await fetch(endpoint)
-      .then(response => response.text())
-      .then(rootPath => {
-        let url = rootPath + path;
-        if ($(this).attr('data-username')) {
-          let username = $(this).attr('data-username');
-          let password = $(this).attr('data-password');
-          url = url.replace('://', `://${username}:${password}@`);
-        }
-        window.open(url, '_blank');
-      });
+    let url = `${riddle.rootPath}${path}`;
+    if ($(this).attr('data-username')) {
+      let username = $(this).attr('data-username');
+      let password = $(this).attr('data-password');
+      url = url.replace('://', `://${username}:${password}@`);
+    }
+    window.open(url, '_blank');
   } else {
     // Open or collapse folder, showing/hiding inner files
     const files = $(this).next('.folder-files');

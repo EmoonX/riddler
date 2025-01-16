@@ -59,7 +59,8 @@ async def get_user_riddle_data(alias: str | None = None):
 
     # Build initial riddle(s) dict
     query = '''
-        SELECT alias, full_name AS fullName FROM riddles
+        SELECT alias, full_name AS fullName, root_path AS rootPath
+        FROM riddles
         WHERE alias LIKE :riddle
     '''
     values = {'riddle': alias or '%'}
