@@ -2,31 +2,34 @@
   "manifest_version": 3,
   "name": "Riddler",
   "description": "Browser extension for Riddler, the online riddle enhancer.",
-  "version": "0.4.7",
+  "version": "0.4.8",
 
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
   "permissions": [
-    "declarativeNetRequest",
     "webRequest",
     "webRequestAuthProvider"
   ],
   "host_permissions": [
-    "https://emoon.dev/process",
-    "*://*/*"
+    "https://emoon.dev/process"
+  ],
+  "optional_host_permissions": [
+    "<all_urls>"
   ],
   "action": {
     "default_icon": "images/letter-r-32.png",
     "default_title": "Riddler",
     "default_popup": "popup.html"
   },
-  "content_scripts" : [{
-    "matches": ["<all_urls>"],
-    "js": ["credentials.js", "thirdParty/jquery.min.js"],
-    "type": "module"
-  }],
+  "content_scripts" : [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["credentials.js", "thirdParty/jquery.min.js"],
+      "type": "module"
+    }
+  ],
   "web_accessible_resources": [
     {
       "resources": ["credentials.css", "credentials.html"],

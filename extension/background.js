@@ -2,7 +2,7 @@ import { updateRiddleData } from './explorer.js';
 
 /** Wildcard URLs to be matched. */
 const filter = {
-  urls: ['*://*/*'],
+  urls: ['<all_urls>'],
 };
 
 /** Time of last login request. */
@@ -49,28 +49,36 @@ async function sendToProcess(visitedUrl, statusCode) {
     })
 }
 
-chrome.webRequest.onAuthRequired.addListener(async (details, foo) => {
-  // Send a process request to server whenever response is received
-  if (details.url.includes('emoon.dev')) {
-    return;
-  }
-  console.log(details.realm);
-
-  // const tab = (await chrome.tabs.query({ active: true }))[0]
+/** Handle riddle auth attempts, prompting user with custom auth box. */
+chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
+  const parsedUrl = new URL(details.url);
+  let username = parsedUrl.searchParams.get('username');
+  let password = parsedUrl.searchParams.get('password');
   chrome.runtime.onConnect.addListener(port => {
-    console.log('Connected to ???.js...');
-    port.postMessage({
-      realm: details.realm,
-    });
+    console.log('Connected to credentials.js...');
+    if (username && password) {
+      // Query '?username=...&password=...' found, send to redirect
+      port.postMessage({
+        parsedUrl: parsedUrl,
+        username: username,
+        password: password,
+      });
+    } else {
+      // Request auth box with given (explicit) realm message
+      port.postMessage({
+        realm: details.realm,
+      });
+    }
   });
-
-  foo({cancel: true});
-
+  // Block browser's native auth dialog
+  asyncCallback({cancel: true});
 }, filter, ['asyncBlocking']);
 
+/** Send a process request to server whenever response is received. */
 chrome.webRequest.onHeadersReceived.addListener(async details => {
-  // Send a process request to server whenever response is received
-  if (details.url.includes('emoon.dev')) {
+  console.log(details);
+  const parsedUrl = new URL(details.url);
+  if (parsedUrl.hostname === 'emoon.dev') {
     return;
   }
   console.log(details.url, details.statusCode);
