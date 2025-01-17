@@ -8,30 +8,27 @@ import {
 } from './explorer.js';
 
 /** Updates host permissions on button click. */
-function updateHosts() {
-  console.log('Updating...?');
-  const HOSTS_URL = 'https://emoon.dev/get-riddle-hosts';
-  let hosts;
-  $.get({
-    // Async request because Firefox got... issues
-    url: HOSTS_URL,
-    async: false,
-    success: data => {
-      hosts = data.split(' ');
-      console.log(hosts);
-    },
-  });
-  chrome.permissions.request(
-    { origins: hosts },
-    granted => {
-      if (granted) {
-        console.log('OK!');
-      } else {
-        console.log('NO :(');
-        console.log(chrome.runtime.lastError);
-      }
-    }
-  );
+async function updateHosts() {
+  console.log('Updating hosts...');
+  const SERVER_URL = 'https://emoon.dev';
+  const url = `${SERVER_URL}/get-riddle-hosts`;
+  await fetch(url)
+    .then(response => response.json())
+    .then(hosts => {
+      console.log(`Hosts found:`);
+      console.log(Object.keys(hosts));
+      chrome.permissions.request(
+        { origins: Object.keys(hosts)},
+        granted => {
+          if (granted) {
+            console.log('Optional host permissions granted.');
+          } else {
+            console.log('Couldn\'t grant optional host permissions.');
+            console.log(chrome.runtime.lastError);
+          }
+        }
+      );
+    });
 }
 
 $(_ => {

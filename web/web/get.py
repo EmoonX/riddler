@@ -1,4 +1,5 @@
 import json
+from urllib.parse import urljoin, urlsplit
 
 from quart import Blueprint
 
@@ -15,23 +16,26 @@ get = Blueprint('get', __name__)
 async def get_riddle_hosts():
     '''Get list of riddle hosts from database.'''
 
-    # Get list of hosts
+    def _get_wildcard_pattern(root_path: str):
+        '''Return URL in '*://*.{root_path}/*' wildcard pattern.'''
+        parsed = urlsplit(root_path)
+        root_folder = f"{parsed.path}/"
+        return f"*://*.{parsed.hostname}{root_folder}*"
+
+    # Build dict of {wildcard_pattern -> alias} hosts
     riddles = await get_riddles(unlisted=False)
-    hosts = []
+    hosts = {}
     for riddle in riddles:
-        root_path = riddle['root_path']
-        if root_path[0] == '[':
-            root_path = ' '.join(root_path.split('"')[1::2])
-        hosts.append(root_path)
+        try:
+            for root_path in json.loads(riddle['root_path']):
+                wilcard_url = _get_wildcard_pattern(root_path)
+                hosts[wilcard_url] = riddle['alias']
+        except json.decoder.JSONDecodeError:
+            wilcard_url = _get_wildcard_pattern(riddle['root_path'])
+            hosts[wilcard_url] = riddle['alias']
 
-    # Set wildcard (*) to protocol, subdomain and path
-    for i, host in enumerate(hosts):
-        host = host.replace('https', '*').replace('http', '*')
-        hosts[i] = host[:4] + '*.' + host[4:] + '/*'
-
-    # Join hosts in a space-separated string and return text response
-    text = ' '.join(hosts)
-    return text
+    # Return JSON dict as response
+    return json.dumps(hosts)
 
 
 @get.get('/get-user-riddle-data')
