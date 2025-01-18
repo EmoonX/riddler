@@ -6,7 +6,7 @@ let port = chrome.runtime.connect(
 port.onMessage.addListener(async data => {
   console.log('Received data from background.js...')
   if (data.username && data.password) {
-    // Embed auth box's un/pw into the URL and redirect
+    // Embed auth box's un/pw into URL and redirect
     const url = data.parsedUrl;
     window.location.href =
       `${url.protocol}//` +
@@ -25,7 +25,7 @@ port.onMessage.addListener(async data => {
       const box = $($.parseHTML(html));
       const boxCss = chrome.runtime.getURL('credentials.css');
       box.find('.realm').text(`"${data.realm}"`);
-      $('head').append(` <link rel="stylesheet" href="${boxCss}">` )
-      $('body').append(box[0].outerHTML)
+      $('head').append(`<link rel="stylesheet" href="${boxCss}">`)
+      $('body').append(box[0].outerHTML);
     });
 });
