@@ -255,11 +255,16 @@ async def get_pages(alias: str, level_name: str = None) -> str:
 @levels.get('/<alias>/levels/get-root-path')
 async def get_root_path(alias: str):
     '''Get riddles' root URL path from DB.'''
-    query = 'SELECT * FROM riddles WHERE alias = :alias'
+    query = '''
+        SELECT root_path FROM riddles
+        WHERE alias = :alias
+    '''
     values = {'alias': alias}
-    root_path = await database.fetch_val(query, values, 'root_path')
-    if root_path[0] == '[':
-        root_path = root_path.split('"')[1]
+    root_path = await database.fetch_val(query, values)
+    try:
+        root_path = json.loads(root_path)[0]
+    except json.decoder.JSONDecodeError:
+        pass
     return root_path
 
 

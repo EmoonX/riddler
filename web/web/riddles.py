@@ -29,7 +29,7 @@ cheevo_ranks = {
         'Good challenges like secret levels or very well hidden eggs.'
     ),
     'S': g(
-        '💎', 500, 80, 'darkturquoise',
+        '💎', 800, 80, 'darkturquoise',
         'Should be reserved for the best among the best '
          '(like reaching a vital game\'s landmark).'
     )

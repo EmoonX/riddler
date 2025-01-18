@@ -1,18 +1,19 @@
 from datetime import datetime
 import json
 import re
-from pymysql.err import IntegrityError
 from typing import Optional, Tuple
 from urllib.parse import urlsplit
 
+from pymysql.err import IntegrityError
 from quart import Blueprint, request, jsonify
 from quartcord.models import User
 
 from auth import discord
-from inject import get_riddles
+from credentials import process_credentials
+from inject import get_riddle, get_riddles
 from riddle import level_ranks, cheevo_ranks
-from webclient import bot_request
 from util.db import database
+from webclient import bot_request
 
 # Create app blueprint
 process = Blueprint('process', __name__)
@@ -54,6 +55,9 @@ async def process_url(username=None, url=None):
 
         # Process received path
         ok = await ph.process()
+        if ph.credentials:
+            riddle = await get_riddle(ph.riddle_alias)
+            await process_credentials(riddle, ph.path, ph.credentials)
         if not ok and status_code != 404:
             # Page exists, but not (yet?) a level one
             message, status_code = 'Not a level page', 412
@@ -98,7 +102,7 @@ class _PathHandler:
     '''Alias of riddle hosted on URL domain.'''
 
     unlisted: bool
-    '''If riddle is currently unlisted.'''
+    '''Whether riddle is currently unlisted or not.'''
 
     username: str
     '''Username of logged in player.'''
@@ -115,6 +119,9 @@ class _PathHandler:
     path_level_set: str
     '''Level set the path's level is part of, or `None` if N/A.'''
 
+    credentials: dict[str, str] | None
+    '''HTTP basic auth URL-embedded credentials.'''
+
     status_code: int
     '''Real status code of requested page (either 200 or 404).'''
 
@@ -124,20 +131,10 @@ class _PathHandler:
     ) -> Optional[object]:
         '''Build handler from DB's user info and URL info.'''
 
-        # Get riddle and path info from URL
-        try:
-            riddle, path = await cls._get_riddle_and_path(url)
-        except TypeError:
-            return None
-
-        # Save basic riddle + user info
+        # Parse and save basic data + status code
         self = cls()
-        self.riddle_alias = riddle['alias']
-        self.unlisted = bool(riddle['unlisted'])
+        riddle = await self._parse_riddle_data_from_url(url)
         self.username = user.name
-
-        # Save relative path and status code
-        self.path = path
         self.status_code = status_code
 
         # Ignore content (GET variables) after '?'
@@ -159,12 +156,26 @@ class _PathHandler:
 
         return self
 
-    @staticmethod
-    async def _get_riddle_and_path(url: str) -> Optional[Tuple[dict, str]]:
-        '''Retrieve riddle and path from given URL.'''
+    async def _parse_riddle_data_from_url(self, url: str) -> dict | None:
+        '''Retrieve riddle, path and (possibly) credentials info from URL.'''
 
         # Parse URL into hostname and path parts
         parsed_url = urlsplit(url)
+
+        def _get_relative_path(root_path: str) -> str:
+            '''Build relative path from root (with "../"s if needed).''' 
+            root_segments = parsed_root.path.split('/')
+            url_segments = parsed_url.path.split('/')
+            smallest_len = idx = min(len(root_segments), len(url_segments))
+            for i in range(smallest_len):
+                if root_segments[i] != url_segments[i]:
+                    idx = i
+                    break
+            root_suffix = '/'.join(root_segments[idx:])
+            url_suffix = '/'.join(url_segments[idx:])
+            parent_count = len(root_segments[idx:])
+            path = f"/{'/'.join((['..'] * parent_count) + [url_suffix])}"
+            return path
 
         # Build dict of {root_path: riddle}
         riddles = await get_riddles(unlisted=True)
@@ -176,22 +187,23 @@ class _PathHandler:
             except json.decoder.JSONDecodeError:
                 root_paths |= {riddle['root_path']: riddle}
 
+        # Search for matching hostname (if any) and save data
         for root_path, riddle in root_paths.items():
             parsed_root = urlsplit(root_path)
             if parsed_root.hostname == parsed_url.hostname:
-                # Build relative path from root (with "../"s if needed)
-                root_segments = parsed_root.path.split('/')
-                url_segments = parsed_url.path.split('/')
-                smallest_len = idx = min(len(root_segments), len(url_segments))
-                for i in range(smallest_len):
-                    if root_segments[i] != url_segments[i]:
-                        idx = i
-                        break
-                root_suffix = '/'.join(root_segments[idx:])
-                url_suffix = '/'.join(url_segments[idx:])
-                parent_count = len(root_segments[idx:])
-                path = f"/{'/'.join((['..'] * parent_count) + [url_suffix])}"
-                return riddle, path
+                path = _get_relative_path(parsed_root)
+                self.riddle_alias = riddle['alias']
+                self.unlisted = bool(riddle['unlisted'])
+                self.path = path
+                self.credentials = (
+                    {
+                        'username': parsed_url.username,
+                        'password': parsed_url.password
+                    } 
+                    if parsed_url.username and parsed_url.password
+                    else None
+                )
+                return riddle
 
     async def build_player_riddle_data(self) -> bool:
         '''Build player riddle data from DB, creating it if nonexistent.'''

@@ -21,10 +21,10 @@ load_dotenv(verbose=True)
 
 from auth import discord_session_init
 
-# Really unique secret key
+# Unique (?) secret key
 app.secret_key = (
     b'l\xdew\x80"\xb5Z\x8eQ\x93-\x15'
-        b'\xc9^\xc5\x97N\xb0l\xa5\x02\x15_\xfa'
+    b'\xc9^\xc5\x97N\xb0l\xa5\x02\x15_\xfa'
 )
 # Create Discord OAuth2 session object
 discord_session_init(app)
@@ -48,8 +48,8 @@ from util.db import database
 
 for blueprint in (
     admin_cheevos, admin_levels, admin_recent, admin_update,
-    auth, countries, get, home, info, levels,
-    players, account, profile, process,
+    account, auth, countries, get, home, info, levels,
+    players, process, profile,
 ):
     # Context processor for blueprint
     blueprint.context_processor(context_processor)
