@@ -1,6 +1,10 @@
 import os
+import warnings
 
 from databases import Database
+
+# Silence usual "Warning: Duplicate entry" from INSERT INTO queries
+warnings.filterwarnings('ignore', module=r"aiomysql")
 
 # Create asynchronous database object from connection URL
 host = os.getenv('MYSQL_HOST')
