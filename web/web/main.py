@@ -40,15 +40,16 @@ from home import home
 from info import info
 from inject import context_processor
 from levels import levels
-from players.players import players
 from players.account import account
+from players.export import export
+from players.players import players
 from players.profile import profile
 from process import process
 from util.db import database
 
 for blueprint in (
     admin_cheevos, admin_levels, admin_recent, admin_update,
-    account, auth, countries, get, home, info, levels,
+    account, auth, countries, export, get, home, info, levels,
     players, process, profile,
 ):
     # Context processor for blueprint

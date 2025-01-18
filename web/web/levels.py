@@ -1,7 +1,6 @@
 from copy import deepcopy
-import json
 
-from quart import Blueprint, render_template
+from quart import Blueprint, jsonify, render_template
 from quartcord import requires_authorization
 
 from auth import discord
@@ -166,7 +165,9 @@ async def level_list(alias: str):
 @levels.get('/<alias>/levels/get-pages')
 @levels.get('/<alias>/levels/get-pages/<level_name>')
 @requires_authorization
-async def get_pages(alias: str, level_name: str = None) -> str:
+async def get_pages(
+    alias: str, level_name: str = '%', json: bool = True
+) -> str:
     '''Return a recursive JSON of all user level folders and pages.
     If a level is specified, return only pages from that level instead.'''
 
@@ -176,12 +177,14 @@ async def get_pages(alias: str, level_name: str = None) -> str:
         SELECT level_name, path, access_time FROM user_pages
         WHERE riddle = :riddle
             AND username = :username
-            {'AND level_name = :level_name' if level_name else ''}
+            AND level_name LIKE :level_name
         ORDER BY SUBSTRING_INDEX(`path`, ".", -1)
     """
-    values = {'riddle': alias, 'username': user.name}
-    if level_name:
-        values['level_name'] = level_name
+    values = {
+        'riddle': alias,
+        'username': user.name,
+        'level_name': level_name,
+    }
     result = await database.fetch_all(query, values)
     user_page_data = [dict(row) for row in result]
     paths = {}
@@ -220,10 +223,11 @@ async def get_pages(alias: str, level_name: str = None) -> str:
     # Recursively calculate total file count for each folder
     # and record credentials based on innermost protected directory
     query = '''
-        SELECT * FROM level_pages
-        WHERE riddle = :riddle
+        SELECT level_name, `path` FROM level_pages
+        WHERE riddle = :riddle AND level_name LIKE :level_name
     '''
-    pages_data = await database.fetch_all(query, {'riddle': alias})
+    values = {'riddle': alias, 'level_name': level_name}
+    pages_data = await database.fetch_all(query, values)
     credentials = await _get_credentials(alias)
     for data in pages_data:
         level = data['level_name']
@@ -248,8 +252,7 @@ async def get_pages(alias: str, level_name: str = None) -> str:
                 parent['username'] = greatparent['username']
                 parent['password'] = greatparent['password']
 
-    # Return JSON dump
-    return json.dumps(pages)
+    return jsonify(pages) if json else pages
 
 
 @levels.get('/<alias>/levels/get-root-path')
