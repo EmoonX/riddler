@@ -65,8 +65,12 @@ app.context_processor(context_processor)
 app.jinja_env.trim_blocks = True
 app.jinja_env.lstrip_blocks = True
 
-# Enable browser debug messages
-# app.config['DEBUG'] = True
+# Prettify JSON
+app.json.compact = False
+app.json.ensure_ascii = False
+
+# Don't reorder JSON dicts in responses
+app.json.sort_keys = False
 
 
 @app.before_request

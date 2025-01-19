@@ -5,6 +5,7 @@ from quartcord import requires_authorization
 
 from auth import discord
 from util.db import database
+from util.levels import get_ordered_levels
 
 # Create app blueprint
 levels = Blueprint('levels', __name__)
@@ -171,7 +172,7 @@ async def get_pages(
     '''Return a recursive JSON of all user level folders and pages.
     If a level is specified, return only pages from that level instead.'''
 
-    # Build dict of (level -> paths) from user database data
+    # Fetch user page data
     user = await discord.get_user()
     query = f"""
         SELECT level_name, path, access_time FROM user_pages
@@ -187,15 +188,16 @@ async def get_pages(
     }
     result = await database.fetch_all(query, values)
     user_page_data = [dict(row) for row in result]
-    paths = {}
+
+     # Build dict of (level -> paths)
+    ordered_levels = await get_ordered_levels(alias)
+    paths = {level: [] for level in ordered_levels}
     for data in user_page_data:
         data['page'] = data['path'].rsplit('/', 1)[-1]
         data['folder'] = 0
         data['access_time'] = \
             data['access_time'].strftime('%Y/%b/%d at %H:%M (UTC)')
         level = data['level_name']
-        if not level in paths:
-            paths[level] = []
         paths[level].append(data)
 
     # Build recursive dict of folders and files
@@ -205,6 +207,8 @@ async def get_pages(
     }
     pages = {}
     for level, level_paths in paths.items():
+        if not level_paths:
+            continue
         pages[level] = {'/': deepcopy(base)}
         for data in level_paths:
             parent = pages[level]['/']
@@ -251,7 +255,7 @@ async def get_pages(
             elif 'username' in greatparent:
                 parent['username'] = greatparent['username']
                 parent['password'] = greatparent['password']
-
+ 
     return jsonify(pages) if json else pages
 
 
