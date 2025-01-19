@@ -164,10 +164,10 @@ async def level_list(alias: str):
 
 
 @levels.get('/<alias>/levels/get-pages')
-@levels.get('/<alias>/levels/get-pages/<level_name>')
+@levels.get('/<alias>/levels/get-pages/<requested_level>')
 @requires_authorization
 async def get_pages(
-    alias: str, level_name: str = '%', json: bool = True
+    alias: str, requested_level: str = '%', json: bool = True
 ) -> str:
     '''Return a recursive JSON of all user level folders and pages.
     If a level is specified, return only pages from that level instead.'''
@@ -186,7 +186,7 @@ async def get_pages(
     values = {
         'riddle': alias,
         'username': user.name,
-        'level_name': level_name,
+        'level_name': requested_level,
     }
     result = await database.fetch_all(query, values)
     for row in result:
@@ -199,7 +199,7 @@ async def get_pages(
             unlocked_levels[level_name] |= {'answer': row['answer']}
 
     # Fetch user page data
-    query = f'''
+    query = '''
         SELECT level_name, path, access_time FROM user_pages
         WHERE riddle = :riddle
             AND username = :username
@@ -211,14 +211,13 @@ async def get_pages(
 
      # Build dict of (level -> paths)
     ordered_levels = await get_ordered_levels(alias)
-    paths = {level: [] for level in ordered_levels}
+    paths = {level_name: [] for level_name in ordered_levels}
     for data in user_page_data:
         data['page'] = data['path'].rsplit('/', 1)[-1]
         data['folder'] = 0
         data['access_time'] = \
             data['access_time'].strftime('%Y/%b/%d at %H:%M (UTC)')
-        level = data['level_name']
-        paths[level].append(data)
+        paths[data['level_name']].append(data)
 
     # Build recursive dict of folders and files
     base = {
@@ -251,7 +250,7 @@ async def get_pages(
         SELECT level_name, `path` FROM level_pages
         WHERE riddle = :riddle AND level_name LIKE :level_name
     '''
-    values = {'riddle': alias, 'level_name': level_name}
+    values = {'riddle': alias, 'level_name': requested_level}
     pages_data = await database.fetch_all(query, values)
     credentials = await _get_credentials(alias)
     for data in pages_data:

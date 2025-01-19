@@ -19,7 +19,8 @@ class Export:
         riddles = await get_riddles(unlisted=True)
         for riddle in riddles:
             pages = await get_pages(riddle['alias'], json=False)
-            self.data[riddle['alias']] = pages
+            if pages:
+                self.data[riddle['alias']] = pages
         
         return self
 
@@ -33,21 +34,28 @@ class Export:
                 paths += _get_paths(child)
             return paths
 
-        for alias, riddle in self.data.items():
-            for level_name, level in riddle.items():
+        for riddle in self.data.values():
+            for level in riddle.values():
                 paths = _get_paths(level['/'])
-                level = []
+                pages = []
                 for access_time, path in sorted(paths):
-                    level.append({
+                    pages.append({
                         'path': path,
                         'access_time': access_time,
                     })
-                riddle[level_name]['pages'] = level
-                riddle[level_name] |= {
-                    'pages_found': riddle[level_name]['/']['filesFound'],
-                    'pages_total': riddle[level_name]['/']['filesTotal'],
-                }
-                del riddle[level_name]['/']
+
+                level |= {'pages': pages}
+                if 'front_page' in level:
+                    level |= {'front_page': level['front_page']}
+                    del level['image']
+                    if 'answer' in level:
+                        level |= {'answer': level['answer']}
+                                    
+                level |= {'pages_found': level['/']['filesFound']}
+                if {'front_page', 'answer'}.issubset(level.keys()):
+                    level |= {'pages_total': level['/']['filesTotal']}
+
+                del level['/']
 
         return jsonify(self.data)
 
