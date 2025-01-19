@@ -1,7 +1,6 @@
-import json
 from urllib.parse import urljoin, urlsplit
 
-from quart import Blueprint
+from quart import Blueprint, jsonify
 
 from auth import discord
 from inject import get_riddles
@@ -35,12 +34,12 @@ async def get_riddle_hosts():
             hosts[wilcard_url] = riddle['alias']
 
     # Return JSON dict as response
-    return json.dumps(hosts)
+    return jsonify(hosts)
 
 
 @get.get('/get-user-riddle-data')
 @get.get('/get-user-riddle-data/<alias>')
-async def get_user_riddle_data(alias: str | None = None):
+async def get_user_riddle_data(alias: str | None = None) -> str:
     '''
     Get riddle data for authenticated user.
     If `alias` is passed, restrict results to just given riddle.
@@ -123,7 +122,7 @@ async def get_user_riddle_data(alias: str | None = None):
     else:
         data = riddles.get(alias, {})
 
-    return json.dumps(data)
+    return jsonify(data)
 
 
 @get.get('/get-current-riddle-data')
@@ -158,5 +157,4 @@ async def get_current_riddle_data():
         'full_name': riddle['full_name'], 'icon_url': icon_url,
         'visited_level': riddle['last_visited_level'],
     }
-    data = json.dumps(data)
-    return data
+    return jsonify(data)

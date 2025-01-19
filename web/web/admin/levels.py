@@ -1,11 +1,10 @@
 from copy import deepcopy
-import json
 import os
 from pathlib import Path
 import shutil
 
 from pymysql.err import IntegrityError
-from quart import Blueprint, request, render_template
+from quart import Blueprint, jsonify, render_template, request
 from quartcord import requires_authorization
 import requests
 
@@ -317,7 +316,7 @@ async def get_pages(alias: str) -> str:
     #     folder['filesTotal'] = len(folder['files'])
 
     # Return JSON dump
-    return json.dumps(pages)
+    return json(pages)
 
 
 @admin_levels.get('/admin/<_alias>/level-row')

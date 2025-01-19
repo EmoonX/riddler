@@ -1,11 +1,11 @@
 import csv
-import json
 from typing import Self
 
-from quart import Blueprint
+from quart import Blueprint, jsonify
 
 from inject import get_riddles
 from levels import get_pages
+from util.levels import get_ordered_levels
 
 export = Blueprint('players_export', __name__)
 
@@ -18,7 +18,7 @@ class Export:
         self.data = {}
         riddles = await get_riddles(unlisted=True)
         for riddle in riddles:
-            pages = await get_pages(riddle['alias'], jsonize=False)
+            pages = await get_pages(riddle['alias'], json=False)
             self.data[riddle['alias']] = pages
         
         return self
@@ -49,7 +49,7 @@ class Export:
                 }
                 del riddle[level_name]['/']
 
-        return json.dumps(self.data, indent=2)
+        return jsonify(self.data)
 
 
 @export.route('/account/export-riddle-data')
