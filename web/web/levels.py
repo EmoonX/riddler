@@ -172,20 +172,40 @@ async def get_pages(
     '''Return a recursive JSON of all user level folders and pages.
     If a level is specified, return only pages from that level instead.'''
 
-    # Fetch user page data
+    # Fetch and build general unlocked level data
+    unlocked_levels = {}
     user = await discord.get_user()
-    query = f"""
-        SELECT level_name, path, access_time FROM user_pages
-        WHERE riddle = :riddle
+    query = '''
+        SELECT lv.name, lv.path, lv.image, lv.answer, ul.completion_time
+        FROM levels lv INNER JOIN user_levels ul
+            ON lv.riddle = ul.riddle AND lv.name = ul.level_name
+        WHERE lv.riddle = :riddle
             AND username = :username
-            AND level_name LIKE :level_name
-        ORDER BY SUBSTRING_INDEX(`path`, ".", -1)
-    """
+            AND lv.name LIKE :level_name
+    '''
     values = {
         'riddle': alias,
         'username': user.name,
         'level_name': level_name,
     }
+    result = await database.fetch_all(query, values)
+    for row in result:
+        level_name = row['name']
+        unlocked_levels[level_name] = {
+            'front_page': row['path'],
+            'image': row['image'],
+        }
+        if row['completion_time']:
+            unlocked_levels[level_name] |= {'answer': row['answer']}
+
+    # Fetch user page data
+    query = f'''
+        SELECT level_name, path, access_time FROM user_pages
+        WHERE riddle = :riddle
+            AND username = :username
+            AND level_name LIKE :level_name
+        ORDER BY SUBSTRING_INDEX(`path`, ".", -1)
+    '''
     result = await database.fetch_all(query, values)
     user_page_data = [dict(row) for row in result]
 
@@ -206,12 +226,13 @@ async def get_pages(
         'filesFound': 0, 'filesTotal': 0
     }
     pages = {}
-    for level, level_paths in paths.items():
+    for level_name, level_paths in paths.items():
         if not level_paths:
             continue
-        pages[level] = {'/': deepcopy(base)}
+        pages[level_name] = {'/': deepcopy(base)}
+        pages[level_name] |= unlocked_levels.get(level_name, {})
         for data in level_paths:
-            parent = pages[level]['/']
+            parent = pages[level_name]['/']
             path = data['path']
             segments = path.split('/')[1:]
             for seg in segments:
