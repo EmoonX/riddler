@@ -9,7 +9,7 @@ from discord.utils import get
 from bot import bot
 from riddle import riddles
 from util.db import database
-from util.riddle import get_ancestor_levels
+from util.levels import get_ancestor_levels
 
 
 class UnlockHandler:

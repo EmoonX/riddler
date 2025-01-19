@@ -11,7 +11,7 @@ from bot import bot
 from riddle import riddles
 from commands.unlock import multi_update_nickname
 from util.db import database
-from util.riddle import get_ancestor_levels
+from util.levels import get_ancestor_levels
 
 
 async def insert(request):

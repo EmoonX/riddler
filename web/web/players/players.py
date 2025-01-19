@@ -7,7 +7,8 @@ from auth import discord
 from inject import get_achievements
 from webclient import bot_request
 from util.db import database
-from util.riddle import has_player_mastered_riddle, remove_ancestor_levels
+from util.levels import remove_ancestor_levels
+from util.riddle import has_player_mastered_riddle
 
 # Create app blueprint
 players = Blueprint('players', __name__)
