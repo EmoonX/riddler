@@ -7,11 +7,11 @@ port.onMessage.addListener(async data => {
   console.log('Received data from background.js...')
   if (data.username && data.password) {
     // Embed auth box's un/pw into URL and redirect
-    const url = data.parsedUrl;
+    const parsedUrl = new URL(data.url);
     window.location.href =
-      `${url.protocol}//` +
-      `${url.username}:${url.password}@` +
-      `${url.hostname}${url.pathname}`;
+      `${parsedUrl.protocol}//` +
+      `${data.username}:${data.password}@` +
+      `${parsedUrl.hostname}${parsedUrl.pathname}`;
   }
   if (! data.realm) {
     // Gambiarra

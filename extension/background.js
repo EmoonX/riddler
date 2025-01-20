@@ -59,7 +59,7 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
     if (username && password) {
       // Query '?username=...&password=...' found, send to redirect
       port.postMessage({
-        parsedUrl: parsedUrl,
+        url: details.url,
         username: username,
         password: password,
       });
