@@ -137,13 +137,12 @@ class _PathHandler:
         self.username = user.name
         self.status_code = status_code
 
-        # Ignore content (GET variables) after '?'
-        self.path = self.path.split('?', 1)[0]
-
-        # Ignore occurrences of consecutive slashes and trailing #
-        self.path = re.sub('/{2,}', '/', self.path)
-        if self.path[-1] == '#':
-            self.path = self.path[:-1]
+        # Ignore occurrences of consecutive slashes
+        try:
+            self.path = re.sub('/{2,}', '/', self.path)
+        except AttributeError:
+            print(f"??? {url} ???")
+            raise
 
         if self.path[-1] == '/':
             # If a folder itself, add "index.htm[l]" to path's end
