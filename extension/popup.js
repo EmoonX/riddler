@@ -45,7 +45,7 @@ $(_ => {
 
   // Get message data from background.js
   let port = chrome.runtime.connect(
-    { name: 'Communication with background.js' }
+    { name: 'popup.js' }
   );
   port.onMessage.addListener(data => {
     console.log('Received data from background.js...');

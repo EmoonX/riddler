@@ -54,22 +54,33 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
   const parsedUrl = new URL(details.url);
   let username = parsedUrl.searchParams.get('username');
   let password = parsedUrl.searchParams.get('password');
-  chrome.runtime.onConnect.addListener(port => {
+
+  // Save this function so we can unlisten it later
+  credentialsHandler = (port => {
     console.log('Connected to credentials.js...');
+    let message;
     if (username && password) {
       // Query '?username=...&password=...' found, send to redirect
-      port.postMessage({
+      message = {
         url: details.url,
         username: username,
         password: password,
-      });
+      };
     } else {
       // Request auth box with given (explicit) realm message
-      port.postMessage({
+      message = {
         realm: details.realm,
-      });
+      };
     }
+    port.postMessage(message);
+    port.onMessage.addListener(async data => {
+      if (data.disconnect) {
+        chrome.runtime.onConnect.removeListener(credentialsHandler);
+      }
+    })
   });
+  chrome.runtime.onConnect.addListener(credentialsHandler);
+  
   // Block browser's native auth dialog
   asyncCallback({cancel: true});
 }, filter, ['asyncBlocking']);
