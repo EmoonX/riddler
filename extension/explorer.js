@@ -85,31 +85,43 @@ export function updateStateInPopup(_riddles, _currentRiddle) {
 }
 
 /** Recursively inserts files on parent with correct margin. */
-export function insertFiles(parent, object, count) {
-  for (const childFilename in object.children) {
-    const child = object.children[childFilename];
-    const figure = getFileFigureHtml(child, childFilename, count + 1);
-      parent.append(figure);
-    if (child.folder) {
-      const div = $('<div class="folder-files"></div>');
-      div.appendTo(parent);
-      insertFiles(div, child, count + 1);
+export function insertFiles(parent, object, offset, prefix) {
+  const basename = object.path.split('/').at(-1);
+  if (object.folder) {
+    const hasOnlyOneChild = Object.keys(object.children).length === 1;
+    if (hasOnlyOneChild) {
+      const child = Object.values(object.children)[0];
+      if (child.folder) {
+        prefix += `${basename}/`;
+        insertFiles(parent, child, offset, prefix);
+        return;
+      }
+    }
+  }
+  const token = `${prefix}${basename}` || '/';
+  const figure = getFileFigureHtml(object, token, offset);
+  parent.append(figure);
+  if (object.folder) {
+    const div = $('<div class="folder-files"></div>');
+    div.appendTo(parent);
+    for (const child of Object.values(object.children)) {
+      insertFiles(div, child, offset + 1, '');
     }
   }
 }
 
 /** Generates `<figure>` HTML tag for given file object. */
-function getFileFigureHtml(object, filename, count) {
+function getFileFigureHtml(object, token, offset) {
   let type = 'folder';
-  if (!object.folder) {
-    const i = filename.lastIndexOf('.');
-    type = filename.substr(i+1);
+  if (! object.folder) {
+    const i = token.lastIndexOf('.');
+    type = token.substr(i+1);
   }
   const url = `images/icons/extensions/${type}.png`;
   const state = (type == 'folder') ? 'open' : '';
-  const margin = `${0.4 * count}em`;
+  const margin = `${0.4 * offset}em`;
   const img = `<img src="${url}">`;
-  const fc = `<figcaption>${filename}</figcaption>`;
+  const fc = `<figcaption>${token}</figcaption>`;
   let fileCount = '';
   if (object.folder) {
     const riddle = riddles[currentRiddle];
@@ -182,7 +194,8 @@ function updatePopupNavigation(riddle, level, setName, levelName) {
   $('#level > #next-level').toggleClass('disabled', !level.nextLevel);
   $('#level > #next-set').toggleClass('disabled', !level.nextSet);
   $('.page-explorer').empty();
-  insertFiles($('.page-explorer'), level.pages['/'], -1);
+  console.log(level.pages['/']);
+  insertFiles($('.page-explorer'), level.pages['/'], 0, '');
 }
 
 /** Selects file and unselect the other ones, as in a file explorer. */

@@ -93,7 +93,6 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
 
 /** Send a process request to server whenever response is received. */
 chrome.webRequest.onHeadersReceived.addListener(async details => {
-  console.log(details);
   const parsedUrl = new URL(details.url);
   if (parsedUrl.hostname === 'emoon.dev') {
     return;

@@ -221,7 +221,7 @@ async def get_pages(
 
     # Build recursive dict of folders and files
     base = {
-        'children': {}, 'folder': 1,
+        'children': {}, 'folder': 1, 'path': '',
         'filesFound': 0, 'filesTotal': 0
     }
     pages = {}

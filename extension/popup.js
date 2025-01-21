@@ -78,8 +78,7 @@ $(_ => {
         $('#level > #next-set').addClass('disabled');
       }
       // Build HTML for list of files of currently visited level
-      const levelPages = level.pages['/'];
-      insertFiles($('.page-explorer'), levelPages, -1);
+      insertFiles($('.page-explorer'), level.pages['/'], -1, '');
     }
   });
 });
