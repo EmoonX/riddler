@@ -7,7 +7,6 @@ port.postMessage({'disconnect': true});
 /** Listener for whenever credentials are needed. */
 port.onMessage.addListener(async data => {
   console.log('Received data from background.js...');
-  console.log(data);
   if (data.username && data.password) {
     // Embed auth box's un/pw into URL and redirect
     const parsedUrl = new URL(data.url);
@@ -33,11 +32,12 @@ port.onMessage.addListener(async data => {
         const credentials = data.unlockedCredentials;
         box.find('.realm').text(`"${data.realm}"`);
         if (credentials) {
-          box.find('#username').attr('value', credentials.username);
-          box.find('#password').attr('value', credentials.password);
+          box.find('[name="username"]').attr('value', credentials.username);
+          box.find('[name="password"]').attr('value', credentials.password);
         }
         $('head').append(`<link rel="stylesheet" href="${boxCss}">`)
         $('body').append(box[0].outerHTML);
+        $('[name="username"]').trigger('focus');
       });
   }
 });

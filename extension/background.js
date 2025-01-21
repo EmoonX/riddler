@@ -62,24 +62,21 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
   // Save this function so we can unlisten it later
   credentialsHandler = (async port => {
     console.log('Connected to credentials.js...');
-    let message;
     if (username && password) {
       // Query '?username=...&password=...' found, send to redirect
-      message = {
+      port.postMessage({
         url: details.url,
         username: username,
         password: password,
-      };
-      port.postMessage(message);
+      });
     } else {
       // Request auth box with given (explicit) realm message
       sendToProcess(details.url, 401)
         .then(data => {
-          message = {
+          port.postMessage({
             realm: details.realm,
             unlockedCredentials: data.unlockedCredentials
-          }
-          port.postMessage(message);
+          });
         });
     }
     port.onMessage.addListener(async data => {
