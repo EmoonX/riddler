@@ -67,6 +67,58 @@ async def process_credentials(
     return True
 
 
+async def get_correct_credentials(
+    alias: str, path: str
+) -> dict[str, str] | None:
+
+    query = '''
+        SELECT * FROM riddle_credentials
+        WHERE riddle = :riddle
+    '''
+    values = {'riddle': alias}
+    all_credentials = await database.fetch_all(query, values)
+
+    parsed_path = path.split('/')
+    for row in reversed(all_credentials):
+        folder_path = row['folder_path']
+        parsed_folder_path = folder_path.split('/')
+        if parsed_folder_path == parsed_path[:len(parsed_folder_path)]:
+            # Credentials and innermost protect folder found
+            return {
+                'folder_path': folder_path,
+                'username': row['username'],
+                'password': row['password'],
+            }
+
+    # No credentials found at all
+    return None
+
+
+async def get_unlocked_credentials(alias: str, path: str) -> str | None:
+
+    correct_credentials = await get_correct_credentials(alias, path)
+    if not correct_credentials:
+        return None
+
+    user = await discord.get_user()
+    query = '''
+        SELECT 1 FROM user_credentials
+        WHERE riddle = :riddle
+            AND username = :username
+            AND folder_path = :folder_path
+    '''
+    values = {
+        'riddle': alias,
+        'username': user.name,
+        'folder_path': correct_credentials['folder_path'],
+    }
+    has_user_unlocked = await database.fetch_val(query, values)
+    if not has_user_unlocked:
+        return None
+    
+    return correct_credentials
+
+
 async def _record_new_credentials(
     alias: str, folder_path: str, username: str, password: str
 ):

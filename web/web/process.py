@@ -9,7 +9,7 @@ from quart import Blueprint, request, jsonify
 from quartcord.models import User
 
 from auth import discord
-from credentials import process_credentials
+from credentials import get_unlocked_credentials, process_credentials
 from inject import get_riddle, get_riddles
 from riddle import level_ranks, cheevo_ranks
 from util.db import database
@@ -83,15 +83,20 @@ async def process_url(username=None, url=None):
                     f"\033[1m{ph.username}\033[0m "
                     f"({tnow})"
             )
-            response = jsonify(
-                riddle=ph.riddle_alias,
-                setName=ph.path_level_set,
-                levelName=ph.path_level,
-                path=ph.path
-            )
-            return response
+            data = {
+                'riddle': ph.riddle_alias,
+                'setName': ph.path_level_set,
+                'levelName': ph.path_level,
+                'path': ph.path,
+            }
+            correct_credentials = \
+                await get_unlocked_credentials(ph.riddle_alias, ph.path)
+            if correct_credentials:
+                data |= {'unlockedCredentials': correct_credentials}            
+                
+            return jsonify(data)
 
-    # All clear
+    # Not 200-like status code, return 
     return message, status_code
 
 
