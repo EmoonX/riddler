@@ -119,11 +119,11 @@ function getFileFigureHtml(object, filename, count) {
     fileCount =
       `<div class="file-count">(${filesFound} / ${filesTotal})</div>`;
   }
+  // data-username="${object.username}"
+  // data-password="${object.password}"
   const html = `
     <figure class="file ${state}"
       title="${object.path}"
-      data-username="${object.username}"
-      data-password="${object.password}"
       style="margin-left: ${margin}"
     >
       ${img}${fc}${fileCount}

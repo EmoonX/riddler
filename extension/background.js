@@ -6,7 +6,7 @@ const filter = {
 };
 
 /** Time of last login request. */
-var t0;
+let t0;
 
 /** Sends user-visited URL and its status code to `/process` endpoint. */
 async function sendToProcess(visitedUrl, statusCode) {
@@ -20,6 +20,7 @@ async function sendToProcess(visitedUrl, statusCode) {
     contentType: 'text/uri-list',
     body: visitedUrl,
   };
+  let data;
   await fetch(url, params)
     .then(async response => {
       // Callbacks on successful and failed responses
@@ -40,14 +41,17 @@ async function sendToProcess(visitedUrl, statusCode) {
         return
       }
       if (response.ok) {
-        const data = await response.json();
+        data = await response.json();
         console.log(
           `[${data.riddle}] Page "${data.path}" (${data.levelName}) found`
         );
         await updateRiddleData(data.riddle, data.setName, data.levelName);
       }
-    })
+    });
+  return data;
 }
+
+let credentialsHandler = null;
 
 /** Handle riddle auth attempts, prompting user with custom auth box. */
 chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
@@ -56,7 +60,7 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
   let password = parsedUrl.searchParams.get('password');
 
   // Save this function so we can unlisten it later
-  credentialsHandler = (port => {
+  credentialsHandler = (async port => {
     console.log('Connected to credentials.js...');
     let message;
     if (username && password) {
@@ -66,13 +70,18 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
         username: username,
         password: password,
       };
+      port.postMessage(message);
     } else {
       // Request auth box with given (explicit) realm message
-      message = {
-        realm: details.realm,
-      };
+      sendToProcess(details.url, 401)
+        .then(data => {
+          message = {
+            realm: details.realm,
+            unlockedCredentials: data.unlockedCredentials
+          }
+          port.postMessage(message);
+        });
     }
-    port.postMessage(message);
     port.onMessage.addListener(async data => {
       if (data.disconnect) {
         chrome.runtime.onConnect.removeListener(credentialsHandler);
