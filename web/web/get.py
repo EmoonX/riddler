@@ -78,6 +78,7 @@ async def get_user_riddle_data(alias: str | None = None) -> str:
     query = '''
         SELECT
             up.riddle, ls.name AS set_name, up.level_name,
+            lv.path, lv.image, lv.answer,
             find_time, completion_time
         FROM user_pages up
             LEFT JOIN user_levels ul
@@ -102,6 +103,13 @@ async def get_user_riddle_data(alias: str | None = None) -> str:
             'unlocked': row['find_time'] is not None,
             'beaten': row['completion_time'] is not None,
         }
+        if (level := levels[set_name][level_name])['unlocked']:
+            level |= {
+                'frontPath': row['path'],
+                'image': row['image'],
+            }
+            if level['beaten']:
+                level |= {'answer': row['answer']}
 
     # Get last visited level/set for riddle(s)
     query = '''

@@ -98,27 +98,39 @@ export function insertFiles(parent, object, offset, prefix) {
       }
     }
   }
+
+  const riddle = riddles[currentRiddle];
+  const level = riddle.levels[riddle.shownSet][riddle.shownLevel];
   const token = `${prefix}${basename}` || '/';
-  const figure = getFileFigureHtml(object, token, offset);
+  const figure = getFileFigure(object, token, offset);
+  if (object.path === level.frontPath) {
+    // Highlight front page at first
+    figure.addClass('active');
+  }
   parent.append(figure);
+
   if (object.folder) {
     const div = $('<div class="folder-files"></div>');
     div.appendTo(parent);
+    if (level.frontPath && level.frontPath.indexOf(object.path) !== 0) {
+      // Leave only level's front page folder(s) initially open
+      div.toggle();
+    }
     for (const child of Object.values(object.children)) {
       insertFiles(div, child, offset + 1, '');
     }
   }
 }
 
-/** Generates `<figure>` HTML tag for given file object. */
-function getFileFigureHtml(object, token, offset) {
+/** Generates `<figure>`jQuery element from given file object. */
+function getFileFigure(object, token, offset) {
   let type = 'folder';
   if (! object.folder) {
     const i = token.lastIndexOf('.');
     type = token.substr(i+1);
   }
   const url = `images/icons/extensions/${type}.png`;
-  const state = (type == 'folder') ? 'open' : '';
+  const state = (type == 'folder') ? ' open' : '';
   const margin = `${0.4 * offset}em`;
   const img = `<img src="${url}">`;
   const fc = `<figcaption>${token}</figcaption>`;
@@ -133,15 +145,14 @@ function getFileFigureHtml(object, token, offset) {
   }
   // data-username="${object.username}"
   // data-password="${object.password}"
-  const html = `
-    <figure class="file ${state}"
+  return $(`
+    <figure class="file${state}"
       title="${object.path}"
       style="margin-left: ${margin}"
     >
       ${img}${fc}${fileCount}
     </figure>
-  `;
-  return html;
+  `);
 }
 
 /** 
