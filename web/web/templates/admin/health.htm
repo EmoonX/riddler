@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    {% set riddle = get_riddle(alias) %}
+    <meta charset="utf-8">
+    <title>Health Diagnostics ⬩ {{ riddle['full_name'] }}</title>
+    <link rel="icon" href="/static/icons/letter-r-icon.png">
+    <link rel="fluid-icon" href="/static/icons/letter-r-icon.png" title="Riddler">
+  </head>
+  <body>
+    <h1>Health Diagnostics ⬩ {{ riddle['full_name'] }}</h1>
+    {% for level_name, level in levels.items() %}
+      <h2>{{ level_name }}</h2>
+      <ul>
+      {% for path, page_data in level.items() %}
+        {% set status_code = page_data['status_code'] %}
+        {% if status_code == 200 %}
+          {% set status = 'OK' %}
+        {% else %}
+          {% set symbol = page_data['status_symbol'] %}
+          {% set status = '[{} {}]'.format(status_code, symbol) %}
+          {% set status = '<strong>{}</strong>'.format(status) %}
+        {% endif %}
+        <li>{{ path }}... {{ status|safe }}</li>
+      {% endfor %}
+      </ul>
+    {% endfor %}
+  </body>
+</html>
