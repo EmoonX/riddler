@@ -1,3 +1,4 @@
+from collections.abc import Iterator
 from copy import deepcopy
 
 from quart import Blueprint, jsonify, render_template
@@ -192,11 +193,11 @@ async def get_pages(
     for row in result:
         level_name = row['name']
         unlocked_levels[level_name] = {
-            'front_page': row['path'],
-            'image': row['image'],
+            # 'frontPage': row['path'],
+            # 'image': row['image'],
         }
-        if row['completion_time']:
-            unlocked_levels[level_name] |= {'answer': row['answer']}
+        # if row['completion_time']:
+        #     unlocked_levels[level_name] |= {'answer': row['answer']}
 
     # Fetch user page data
     query = '''
@@ -381,6 +382,15 @@ async def rate(alias: str, level_name: str, rating: int):
     # Return new rating data
     text = ' '.join(map(str, (average, count, rating)))
     return text, 200
+
+
+def absolute_paths(page_node: dict) -> Iterator[tuple[str, dict]]:
+    '''Iterator for `levels.get_pages` resulting page tree.'''
+    if not page_node['folder']:
+        yield (page_node['path'], page_node)
+        return
+    for child in page_node['children'].values():
+        yield from absolute_paths(child)
 
 
 async def _get_credentials(alias: str) -> dict:
