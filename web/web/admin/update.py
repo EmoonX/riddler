@@ -221,3 +221,83 @@ async def update_ratings(alias: str):
         await database.execute(query, values)
 
     return 'SUCCESS :)', 200
+
+
+@admin_update.get('/admin/<alias>/update-page-changes')
+@requires_authorization
+async def update_page_changes(alias: str):
+
+    # Check for admin permissions
+    await admin_auth(alias)
+
+    async def _update_page_level(path: str, new_level: str):
+        '''Update level for page with given path.'''
+        query = '''
+            UPDATE level_pages
+            SET level_name = :new_level
+            WHERE riddle = :riddle AND path = :path
+        '''
+        values = {'riddle': alias, 'path': path, 'new_level': new_level}
+        await database.execute(query, values)
+
+    query = '''
+        SELECT * FROM _page_changes
+        WHERE riddle = :riddle
+    '''
+    page_changes = await database.fetch_all(query, {'riddle': alias})
+    for page_change in page_changes:
+        path, new_path = page_change['path'], page_change['new_path']
+        level, new_level = page_change['level'], page_change['new_level']
+        if path:
+            # Remove level from old page
+            await _update_page_level(path, None)
+
+            if not new_path:
+                # Page wasn't moved but removed, nothing more to do
+                continue
+
+            if page_change['trivial_move']:
+                # "Trivial move" means path change was essentially
+                # due to logistics and not actually new/different content;
+                # therefore, grant new page to everyone who had the old one
+                query = '''
+                    SELECT username FROM user_pages
+                    WHERE riddle = :riddle AND path = :path
+                '''
+                values = {'riddle': alias, 'path': path}
+                players = await database.fetch_all(query, values)
+                query = '''
+                    INSERT IGNORE INTO user_pages
+                        (riddle, username, level_name, path)
+                    VALUES (:riddle, :username, :level_name, :new_path)
+                '''
+                values = [
+                    {
+                        'riddle': alias,
+                        'username': player['username'],
+                        'level_name': new_level or level,
+                        'new_path': new_path,
+                    }
+                    for player in players
+                ]
+                await database.execute_many(query, values)
+
+            # Possibly update level data in case old path was a front one
+            query = '''
+                UPDATE levels
+                SET path = :new_path
+                WHERE riddle = :riddle AND path = :path
+            '''
+            values = {'riddle': alias, 'path': path, 'new_path': new_path}
+            await database.execute(query, values)
+            query = '''
+                UPDATE levels
+                SET answer = :new_path
+                WHERE riddle = :riddle AND answer = :path
+            '''
+            await database.execute(query, values)
+                
+        # Add level to moved/new page
+        await _update_page_level(new_path, new_level or level)
+    
+    return 'SUCCESS :)', 200
