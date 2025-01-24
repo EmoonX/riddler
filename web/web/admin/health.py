@@ -1,4 +1,6 @@
-from quart import Blueprint, render_template
+from itertools import dropwhile
+
+from quart import Blueprint, render_template, request
 from quartcord import requires_authorization
 import requests
 from requests.auth import HTTPBasicAuth
@@ -29,10 +31,14 @@ async def health_diagnostics(alias: str | None = None):
         return symbols.get(status_code, '')
 
     pages = await get_pages(alias, json=False)
+    start_level = request.args.get('start', list(pages.keys())[0])
+    end_level = request.args.get('end')
+    backup_requested = bool(request.args.get('backup'))
 
     levels = {}
     riddle = await get_riddle(alias)
-    for level_name in pages:
+    for level_name in dropwhile(lambda k: k != start_level, pages):
+        # Start iterating at user-informed level (if any)
         levels[level_name] = {}
         for path, page_data in absolute_paths(pages[level_name]['/']):
             url = f"{riddle['root_path']}{path}"
@@ -42,7 +48,7 @@ async def health_diagnostics(alias: str | None = None):
                 password = credentials['password']
                 url = url.replace('://', f"://{username}:{password}@")
             headers = {
-                # Mask as real browser so certain hosts don't throw 412
+                # Impersonate real browser so certain hosts don't throw 412
                 'User-Agent': (
                     'Mozilla/5.0 (Windows NT 11.0; Win64; x64; rv:128.0) '
                     'Gecko/20100101 Firefox/128.0'
@@ -56,10 +62,15 @@ async def health_diagnostics(alias: str | None = None):
             }
             levels[level_name][path] = page_data
 
-            if res.ok:
+            if res.ok and backup_requested:
+                # Valid page, so employ backup if new/changed
                 page_backup = PageBackup(alias, path, res.content)
                 if await page_backup.record_hash():
                     page_backup.save()
+            
+        # Stop when reaching user-informed level (if any)
+        if level_name == end_level:
+            break
 
     return await render_template(
         'admin/health.htm',
