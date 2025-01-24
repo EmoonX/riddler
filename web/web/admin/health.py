@@ -10,6 +10,7 @@ from admin.backup import PageBackup
 from credentials import get_correct_credentials
 from inject import get_riddle
 from levels import absolute_paths, get_pages
+from util.db import database
 
 admin_health = Blueprint('admin_health', __name__)
 
@@ -30,17 +31,26 @@ async def health_diagnostics(alias: str | None = None):
         }
         return symbols.get(status_code, '')
 
-    pages = await get_pages(alias, json=False)
+    pages = await get_pages(alias, admin=True, json=False)
+    backup_requested = bool(request.args.get('backup'))
+    skip_existing = bool(request.args.get('skipExisting'))
     start_level = request.args.get('start', list(pages.keys())[0])
     end_level = request.args.get('end')
-    backup_requested = bool(request.args.get('backup'))
 
     levels = {}
     riddle = await get_riddle(alias)
     for level_name in dropwhile(lambda k: k != start_level, pages):
         # Start iterating at user-informed level (if any)
-        levels[level_name] = {}
         for path, page_data in absolute_paths(pages[level_name]['/']):
+            if skip_existing:
+                query = '''
+                    SELECT 1 FROM _page_hashes
+                    WHERE riddle = :riddle AND path = :path
+                '''
+                values = {'riddle': alias, 'path': path}
+                if await database.fetch_val(query, values):
+                    continue
+
             url = f"{riddle['root_path']}{path}"
             credentials = await get_correct_credentials(alias, path)
             if credentials:
@@ -60,6 +70,8 @@ async def health_diagnostics(alias: str | None = None):
                 'status_code': res.status_code,
                 'status_symbol': _get_status_symbol(res.status_code),
             }
+            if not level_name in levels:
+                levels[level_name] = {}
             levels[level_name][path] = page_data
 
             if res.ok and backup_requested:

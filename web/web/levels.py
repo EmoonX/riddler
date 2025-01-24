@@ -4,6 +4,7 @@ from copy import deepcopy
 from quart import Blueprint, jsonify, render_template
 from quartcord import requires_authorization
 
+from admin.admin_auth import is_admin_of
 from auth import discord
 from util.db import database
 from util.levels import get_ordered_levels
@@ -168,27 +169,36 @@ async def level_list(alias: str):
 @levels.get('/<alias>/levels/get-pages/<requested_level>')
 @requires_authorization
 async def get_pages(
-    alias: str, requested_level: str = '%', json: bool = True
+    alias: str, requested_level: str = '%',
+    admin: bool = False, json: bool = True
 ) -> str:
     '''Return a recursive JSON of all user level folders and pages.
     If a level is specified, return only pages from that level instead.'''
 
+    admin &= await is_admin_of(alias)
+
     # Fetch and build general unlocked level data
     unlocked_levels = {}
-    user = await discord.get_user()
-    query = '''
-        SELECT lv.name, lv.path, lv.image, lv.answer, ul.completion_time
-        FROM levels lv INNER JOIN user_levels ul
-            ON lv.riddle = ul.riddle AND lv.name = ul.level_name
-        WHERE lv.riddle = :riddle
-            AND username = :username
-            AND lv.name LIKE :level_name
-    '''
     values = {
         'riddle': alias,
-        'username': user.name,
         'level_name': requested_level,
     }
+    if admin:
+        query = '''
+            SELECT *, current_timestamp() AS completion_time FROM levels
+            WHERE riddle = :riddle AND name LIKE :level_name
+        '''
+    else:
+        user = await discord.get_user()
+        query = '''
+            SELECT lv.name, lv.path, lv.image, lv.answer, ul.completion_time
+            FROM levels lv INNER JOIN user_levels ul
+                ON lv.riddle = ul.riddle AND lv.name = ul.level_name
+            WHERE lv.riddle = :riddle
+                AND username = :username
+                AND lv.name LIKE :level_name
+        '''
+        values |= {'username': user.name}
     result = await database.fetch_all(query, values)
     for row in result:
         level_name = row['name']
@@ -200,13 +210,19 @@ async def get_pages(
         #     unlocked_levels[level_name] |= {'answer': row['answer']}
 
     # Fetch user page data
-    query = '''
-        SELECT level_name, path, access_time FROM user_pages
-        WHERE riddle = :riddle
-            AND username = :username
-            AND level_name LIKE :level_name
-        ORDER BY SUBSTRING_INDEX(`path`, ".", -1)
-    '''
+    if admin:
+        query = '''
+            SELECT *, current_timestamp() AS access_time FROM level_pages
+            WHERE riddle = :riddle AND level_name LIKE :level_name
+        '''
+    else:
+        query = '''
+            SELECT level_name, path, access_time FROM user_pages
+            WHERE riddle = :riddle
+                AND username = :username
+                AND level_name LIKE :level_name
+            ORDER BY SUBSTRING_INDEX(`path`, ".", -1)
+        '''
     result = await database.fetch_all(query, values)
     user_page_data = [dict(row) for row in result]
 
