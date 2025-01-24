@@ -4,7 +4,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 from admin.admin_auth import admin_auth
-from admin.backup import Backup
+from admin.backup import PageBackup
 from credentials import get_correct_credentials
 from inject import get_riddle
 from levels import absolute_paths, get_pages
@@ -57,8 +57,9 @@ async def health_diagnostics(alias: str | None = None):
             levels[level_name][path] = page_data
 
             if res.ok:
-                backup = Backup(alias, path, res.content)
-                await backup.record_page_hash()
+                page_backup = PageBackup(alias, path, res.content)
+                if await page_backup.record_hash():
+                    page_backup.save()
 
     return await render_template(
         'admin/health.htm',
