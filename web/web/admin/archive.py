@@ -35,7 +35,8 @@ class ArchivePage:
         return True
 
     def save(self):
-        full_path = f"../archive/{self.alias}{self.path}"
+        path = self.path.replace_all('..', '(parent)')
+        full_path = f"../archive/{self.alias}{path}"
         dir_path = os.path.dirname(full_path)
         Path(dir_path).mkdir(parents=True, exist_ok=True)
         with open(full_path, 'wb') as file:
