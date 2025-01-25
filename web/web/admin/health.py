@@ -72,7 +72,7 @@ async def health_diagnostics(alias: str | None = None):
             }
             if not level_name in levels:
                 levels[level_name] = {}
-            levels[level_name][path] = page_data
+            levels[level_name][path] = page_data | {'url': url}
 
             if res.ok and backup_requested:
                 # Valid page, so employ backup if new/changed

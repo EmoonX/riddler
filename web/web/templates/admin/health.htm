@@ -12,7 +12,6 @@
       <h2>{{ level_name }}</h2>
       <ul>
       {% for path, page_data in level.items() %}
-        {% set url = '{}{}'.format(riddle['root_path'], path) %}
         {% set status_code = page_data['status_code'] %}
         {% if status_code == 200 %}
           {% set status = 'OK' %}
@@ -21,7 +20,7 @@
           {% set status = '[{} {}]'.format(status_code, symbol) %}
           {% set status = '<strong>{}</strong>'.format(status) %}
         {% endif %}
-        <li><a href="{{ url }}">{{ path }}</a>... {{ status|safe }}</li>
+        <li><a href="{{ page_data['url'] }}">{{ path }}</a>... {{ status|safe }}</li>
       {% endfor %}
       </ul>
     {% endfor %}
