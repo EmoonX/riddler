@@ -8,7 +8,7 @@ from pymysql.err import IntegrityError
 from util.db import database
 
 
-class PageBackup:
+class ArchivePage:
 
     def __init__(self, alias: str, path: str, content: bytes):
         self.alias = alias
@@ -35,7 +35,7 @@ class PageBackup:
         return True
 
     def save(self):
-        full_path = f"../backup/{self.alias}{self.path}"
+        full_path = f"../archive/{self.alias}{self.path}"
         dir_path = os.path.dirname(full_path)
         Path(dir_path).mkdir(parents=True, exist_ok=True)
         with open(full_path, 'wb') as file:

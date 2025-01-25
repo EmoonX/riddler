@@ -6,7 +6,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 from admin.admin_auth import admin_auth
-from admin.backup import PageBackup
+from admin.archive import ArchivePage
 from credentials import get_correct_credentials
 from inject import get_riddle
 from levels import absolute_paths, get_pages
@@ -75,10 +75,10 @@ async def health_diagnostics(alias: str | None = None):
             levels[level_name][path] = page_data | {'url': url}
 
             if res.ok and backup_requested:
-                # Valid page, so employ backup if new/changed
-                page_backup = PageBackup(alias, path, res.content)
-                if await page_backup.record_hash():
-                    page_backup.save()
+                # Valid page, so archive it if new/changed
+                archive_page = ArchivePage(alias, path, res.content)
+                if await archive_page.record_hash():
+                    archive_page.save()
             
         # Stop when reaching user-informed level (if any)
         if level_name == end_level:
