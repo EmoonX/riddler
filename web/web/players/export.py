@@ -3,7 +3,7 @@ from datetime import datetime
 import json
 from typing import Self
 
-from quart import Blueprint, make_response, send_file
+from quart import Blueprint, Response, request, send_file
 
 from auth import discord, User
 from inject import get_riddles
@@ -49,20 +49,33 @@ class Export:
 
                 del level['/']
 
-    async def to_json(self) -> str:
+    async def download(self, format: str) -> Response:
+        format = format.lower()
+        self.filename += f".{format}"
+        match format:
+            case 'json':
+                text = await self._to_json()
+            case '':
+                message = 'No export format provided.'
+                return Response(message, status=422)
+            case _:
+                message = f"Invalid export format ({format})."
+                return Response(message, status=422)
 
-        self.filename += '.json'
-        text = json.dumps(self.data, indent=2)
-        response = await make_response(text)
+        response = Response(text)
         response.headers['Content-Disposition'] = \
             f"attachment; filename={self.filename}"
-
+        
         return response
+
+    async def _to_json(self) -> str:
+        return json.dumps(self.data, indent=2)
     
 
 @export.route('/account/export-riddle-data')
 async def export_user_riddle_data():
+    format = request.args.get('format', '')
     user = await discord.get_user()
     export = Export(user)
     await export.build_pages()
-    return await export.to_json()
+    return await export.download(format)
