@@ -7,14 +7,16 @@
 {% block content %}
     <main>
       <h1>Settings</h1>
-      <form method="post">
+      <section class="settings">
         <fieldset>
-          <legend>Personal info</legend>
-          <div>
-            <label class="icon"> Discord username
+          <legend>Account info</legend>
+          <form>
+            <label class="icon">
+              Discord username
               <input type="text" name="discord_username" value="{{ user.name }}" readonly>
             </label>
-            <label>Country
+            <label>
+              Country
               <input type="hidden" id="selected" value="{{ country }}">
               <select name="country" required>
                 <option disabled>-- Choose your country --</option>
@@ -27,10 +29,19 @@
               <img alt=" ">
               <figcaption></figcaption>
             </figure>
+            <input type="submit" value="Update">
+          </form>
+        </fieldset>
+        <fieldset>
+          <legend>Export riddle data</legend>
+          <p>Here you can export your own user riddle data in your preferred format, including all visited levels and pages.</p>
+          <div class="export-buttons">
+            <button onclick="location.href='/account/export-riddle-data?format=json'">JSON</button>
+            <button onclick="location.href='/account/export-riddle-data?format=csv'" disabled>CSV</button>
+            <button onclick="location.href='/account/export-riddle-data?format=html'" disabled>HTML</button>
           </div>
         </fieldset>
-        <input type="submit" value="Update">
-      </form>
-      <footer>{{ msg }}</footer>
+      </section>
     </main>
+    <footer>{{ msg }}</footer>
 {% endblock %}
