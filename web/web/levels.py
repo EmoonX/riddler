@@ -1,5 +1,6 @@
 from collections.abc import Iterator
 from copy import deepcopy
+import json
 
 from quart import Blueprint, jsonify, render_template
 from quartcord import requires_authorization
@@ -54,7 +55,7 @@ async def level_list(alias: str):
                 values = base_values | {'level_name': level['name']}
                 result = await database.fetch_all(query, values)
                 found_paths = set([row['path'] for row in result])
-                paths = level['path'].split('"')[1::2]
+                paths = json.loads(level['path'])
                 for path in paths:
                     if path in found_paths:
                         level['path'] = path
@@ -99,6 +100,11 @@ async def level_list(alias: str):
                         longest_prefix = longest_prefix[:i]
                         break
             level['topmost_folder'] = longest_prefix
+
+            if not level['path'] in found_pages:
+                # Fallback for when front path has changed
+                # but user hasn't accessed it yet
+                level['path'] = None
 
         # Register list of users currently working on level
         query = '''

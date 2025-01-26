@@ -21,8 +21,12 @@
         {% set level_name = level['name'] %}
         <div class="row">
           <div>
-          {% if level['unlocked'] %}
+          {% if level['unlocked'] and level['path'] %}
             {% set url = riddle['root_path'] + level['path'] %}
+            {% if 'username' in level %}
+              {% set credentials = level['username'] + ':' + level['password'] %}
+              {% set url = url.replace('://', '://' + credentials + '@') %}
+            {% endif %}
             <a href="{{ url }}" target="_blank">
           {% endif %}
             <div>
@@ -31,7 +35,7 @@
               <var class="latin-name">({{ level['latin_name'] }})</var>
             {% endif %}
             </div>
-          {% if level['unlocked'] %}
+          {% if level['unlocked'] and level['path'] %}
             {% include 'util/external-link.htm' %}
             </a>
           {% endif %}
@@ -40,15 +44,8 @@
           {% endif %}
           </div>
           {% set image = '' %}
-          {% if level['unlocked'] %}
-            {% set url = riddle['root_path'] + level['path'] %}
-            {% if 'username' in level %}
-              {% set credentials = level['username'] + ':' + level['password'] %}
-              {% set url = url.replace('://', '://' + credentials + '@') %}
-            {% endif %}
-            {% if level['image'] %}
-              {% set image = '/static/thumbs/{}/{}'.format(alias, level['image']) %}
-            {% endif %}
+          {% if level['unlocked'] and level['image'] %}
+            {% set image = '/static/thumbs/{}/{}'.format(alias, level['image']) %}
           {% endif %}
           <div class="thumb" style="background-image: url('{{ image }}');"></div>
           <div class="info">
@@ -72,7 +69,7 @@
             </figure>
           {% if level['pages_found'] %}
             <figure class="page-count">
-              {% if level['pages_found'] and level['pages_found'] == level['pages_total'] %}
+              {% if level['pages_found'] == level['pages_total'] %}
                 {% set check = '<span class="check">✅</span>'|safe %}
               {% endif %}
               {% set pages_total = '??' %}
