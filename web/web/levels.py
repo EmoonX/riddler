@@ -203,11 +203,11 @@ async def get_pages(
     for row in result:
         level_name = row['name']
         unlocked_levels[level_name] = {
-            # 'frontPage': row['path'],
-            # 'image': row['image'],
+            'frontPage': row['path'],
+            'image': row['image'],
         }
-        # if row['completion_time']:
-        #     unlocked_levels[level_name] |= {'answer': row['answer']}
+        if row['completion_time']:
+            unlocked_levels[level_name] |= {'answer': row['answer']}
 
     # Fetch user page data
     if admin:
