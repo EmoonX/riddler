@@ -298,7 +298,7 @@ async def get_pages(
                 parent['username'] = greatparent['username']
                 parent['password'] = greatparent['password']
  
-    return jsonify(pages) if as_json else pages
+    return json.dumps(pages) if as_json else pages
 
 
 @levels.get('/<alias>/levels/get-root-path')
