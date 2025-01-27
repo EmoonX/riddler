@@ -101,10 +101,10 @@ async def level_list(alias: str):
                         break
             level['topmost_folder'] = longest_prefix
 
-            if not level['path'] in found_pages:
+            if level['path'] not in found_pages:
                 # Fallback for when front path has changed
                 # but user hasn't accessed it yet
-                level['path'] = None
+                level['path'] = ''
 
         # Register list of users currently working on level
         query = '''
