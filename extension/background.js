@@ -1,4 +1,4 @@
-import { updateRiddleData } from './explorer.js';
+import { getPageNode, updateRiddleData } from './explorer.js';
 
 /** Wildcard URLs to be matched. */
 const filter = {
@@ -71,13 +71,16 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
       });
     } else {
       // Request auth box with given (explicit) realm message
-      sendToProcess(details.url, 401)
-        .then(data => {
-          port.postMessage({
-            realm: details.realm,
-            unlockedCredentials: data ? data.unlockedCredentials : null,
-          });
-        });
+      const pageNode = getPageNode(details.url);
+      const pathCredentials = 
+        pageNode ? {
+          username: pageNode.username,
+          password: pageNode.password,
+        } : null;
+      port.postMessage({
+        realm: details.realm,
+        unlockedCredentials: pathCredentials,
+      });
     }
     port.onMessage.addListener(async data => {
       if (data.disconnect) {
