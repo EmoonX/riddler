@@ -16,6 +16,7 @@ async function buildRiddle(riddle) {
       riddle.iconUrl = `${SERVER_URL}/static/riddles/${riddle.alias}.png`;
       riddle.shownSet = riddle.lastVisitedSet;
       riddle.shownLevel = riddle.lastVisitedLevel;
+      riddle.pagesByPath = {};
       const setsArray = Object.keys(riddle.levels);
       let previousSetName = null;
       let previousLevelName = null;
@@ -33,6 +34,7 @@ async function buildRiddle(riddle) {
           } 
           previousLevelName = levelName;
           previousSetName = setName;
+          updatePathsIndex(riddle, level.pages['/']);
         }        
       }
     });
@@ -42,7 +44,8 @@ async function buildRiddle(riddle) {
 /** Updates current dict with possibly new riddle, level and/or page. */
 export async function updateRiddleData(alias, setName, levelName) {
   currentRiddle = alias;
-  if (!riddles[alias].levels[setName][levelName]) {
+  const riddle = riddles[alias];
+  if (!riddle.levels[setName][levelName]) {
     // Add new riddle and/or level
     const DATA_URL = `${SERVER_URL}/get-user-riddle-data/${alias}`;
     await fetch(DATA_URL)
@@ -56,15 +59,41 @@ export async function updateRiddleData(alias, setName, levelName) {
     await fetch(pagesUrl)
       .then(response => response.json())
       .then(pagesData => {
-        const riddle = riddles[alias];
         riddle.lastVisitedSet = riddle.shownSet = setName;
         riddle.lastVisitedLevel = riddle.shownLevel = levelName;
         for (const [levelName, pages] of Object.entries(pagesData)) {
           const level = riddle.levels[setName][levelName];
           level.pages = pages;
+          updatePathsIndex(riddle, level.pages['/']);
         }
       });
   }
+}
+
+export function updatePathsIndex(riddle, pageNode) {
+  riddle.pagesByPath[pageNode.path] = pageNode;
+  if (pageNode.folder) {
+    for (const child of Object.values(pageNode['children'])) {
+      updatePathsIndex(riddle, child);
+    }
+  }
+}
+
+export function getPageNode(url) {
+  const riddle = riddles[currentRiddle];
+  const slashIndex = riddle.rootPath
+    .indexOf('/', riddle.rootPath.indexOf('://') + 3);
+  const rootFolder =
+    slashIndex == -1 ? '' : `${riddle.rootPath.substring(slashIndex)}`;
+  let path = url
+    .substring(url.indexOf('/', url.indexOf('://') + 3))
+    .replace(rootFolder, '');
+  if (path.at(-1) == '/' && path != '/') {
+    // Remove trailing slash from folder paths
+    path = path.slice(0, -1);
+  }
+  const pageNode = riddle.pagesByPath[path];
+  return pageNode;
 }
 
 /** Send message containing module data to popup.js. */
@@ -79,7 +108,7 @@ export function sendMessageToPopup() {
 }
 
 /** Updates module members in popup.js state. */
-export function updateStateInPopup(_riddles, _currentRiddle) {
+export function updateStateInPopup(_riddles, _currentRiddle, _pageNodes) {
   riddles = _riddles;
   currentRiddle = _currentRiddle;
 }
@@ -249,7 +278,7 @@ export async function doubleClickFile() {
       currentRiddle = riddlesData.currentRiddle;
       Object.entries(riddlesData.riddles).forEach(async ([alias, riddle]) => {
         console.log(`[${alias}] Building riddle data…`);
-        await buildRiddle(riddle);
+        buildRiddle(riddle);
       });
       sendMessageToPopup();
     });
