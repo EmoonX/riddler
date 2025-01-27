@@ -9,7 +9,11 @@ from quart import Blueprint, request, jsonify
 from quartcord.models import User
 
 from auth import discord
-from credentials import get_unlocked_credentials, process_credentials
+from credentials import (
+    get_path_credentials,
+    get_user_unlocked_credentials,
+    process_credentials,
+)
 from inject import get_riddle, get_riddles
 from riddle import level_ranks, cheevo_ranks
 from util.db import database
@@ -53,11 +57,19 @@ async def process_url(username=None, url=None):
         if not ok:
             return 'Banned player', 403
 
+        # Process received credentials (possibly none)
+        riddle = await get_riddle(ph.riddle_alias)
+        ok = await process_credentials(riddle, ph.path, ph.credentials)
+        if not ok:
+            # Grant access if user has unlocked protected folder before
+            unlocked_credentials = \
+                await get_user_unlocked_credentials(ph.riddle_alias, ph.path)
+            if not unlocked_credentials:
+                return 'Wrong or missing user credentials', 403
+        
         # Process received path
         ok = await ph.process()
-        if ph.credentials:
-            riddle = await get_riddle(ph.riddle_alias)
-            await process_credentials(riddle, ph.path, ph.credentials)
+
         if not ok and status_code != 404:
             # Page exists, but not (yet?) a level one
             message, status_code = 'Not a level page', 412
@@ -89,14 +101,14 @@ async def process_url(username=None, url=None):
                 'levelName': ph.path_level,
                 'path': ph.path,
             }
-            correct_credentials = \
-                await get_unlocked_credentials(ph.riddle_alias, ph.path)
-            if correct_credentials:
-                data |= {'unlockedCredentials': correct_credentials}            
+            unlocked_credentials = \
+                await get_user_unlocked_credentials(ph.riddle_alias, ph.path)
+            if unlocked_credentials:
+                data |= {'unlockedCredentials': unlocked_credentials}            
                 
             return jsonify(data)
 
-    # Not 200-like status code, return 
+    # Non 200-like status code, return 
     return message, status_code
 
 
@@ -124,7 +136,7 @@ class _PathHandler:
     path_level_set: str
     '''Level set the path's level is part of, or `None` if N/A.'''
 
-    credentials: dict[str, str] | None
+    credentials: tuple[str, str]
     '''HTTP basic auth URL-embedded credentials.'''
 
     status_code: int
@@ -200,12 +212,8 @@ class _PathHandler:
                 self.unlisted = bool(riddle['unlisted'])
                 self.path = path
                 self.credentials = (
-                    {
-                        'username': parsed_url.username,
-                        'password': parsed_url.password
-                    } 
-                    if parsed_url.username and parsed_url.password
-                    else None
+                    parsed_url.username or '',
+                    parsed_url.password or '',
                 )
                 return riddle
 

@@ -75,7 +75,7 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
         .then(data => {
           port.postMessage({
             realm: details.realm,
-            unlockedCredentials: data.unlockedCredentials
+            unlockedCredentials: data ? data.unlockedCredentials : null,
           });
         });
     }

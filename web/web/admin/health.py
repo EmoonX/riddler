@@ -7,7 +7,7 @@ from requests.auth import HTTPBasicAuth
 
 from admin.admin_auth import admin_auth
 from admin.archive import ArchivePage
-from credentials import get_correct_credentials
+from credentials import get_path_credentials
 from inject import get_riddle
 from levels import absolute_paths, get_pages
 from util.db import database
@@ -52,7 +52,7 @@ async def health_diagnostics(alias: str | None = None):
                     continue
 
             url = f"{riddle['root_path']}{path}"
-            credentials = await get_correct_credentials(alias, path)
+            credentials = await get_path_credentials(alias, path)
             if credentials:
                 username = credentials['username']
                 password = credentials['password']

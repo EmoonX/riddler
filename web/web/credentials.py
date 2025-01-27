@@ -10,12 +10,11 @@ from util.db import database
 
 
 async def process_credentials(
-    riddle: dict, path: str, credentials: dict[str, str]
+    riddle: dict, path: str, credentials: tuple[str, str]
 ) -> bool:
 
     alias = riddle['alias']
-    username = credentials['username']
-    password = credentials['password']
+    username, password = credentials
     user = await discord.get_user()
     tnow = datetime.utcnow()
 
@@ -33,18 +32,19 @@ async def process_credentials(
     url = f"{riddle['root_path']}{path}"
     res = requests.get(url)
     if res.ok:
-        # False alarm, path isn't protected at all
+        # Path isn't protected at all
         return True
 
     folder_path = os.path.dirname(path)
     res = requests.get(url, auth=HTTPBasicAuth(username, password))
     if res.status_code == 401:
-        # Wrong credentials received
-        _log_received_credentials(folder_path, success=False)
+        # Wrong or missing user credentials
+        if (username, password) != ('', ''):
+            _log_received_credentials(folder_path, success=False)
         return False
     
-    # Correct credentials for uncatalogued folder; record them
-    await _record_new_credentials(alias, folder_path, username, password)
+    # Correct credentials; possibly record them
+    await _record_credentials(alias, folder_path, username, password)
 
     # Catalogued folder and correct credentials,
     # so create user record if not there yet
@@ -67,7 +67,7 @@ async def process_credentials(
     return True
 
 
-async def get_correct_credentials(
+async def get_path_credentials(
     alias: str, path: str
 ) -> dict[str, str] | None:
 
@@ -94,10 +94,13 @@ async def get_correct_credentials(
     return None
 
 
-async def get_unlocked_credentials(alias: str, path: str) -> str | None:
+async def get_user_unlocked_credentials(
+    alias: str, path: str
+) -> dict[str, str] | None:
 
-    correct_credentials = await get_correct_credentials(alias, path)
-    if not correct_credentials:
+    path_credentials = await get_path_credentials(alias, path)
+    if not path_credentials:
+        # No credentials needed (or not recorded yet)
         return None
 
     user = await discord.get_user()
@@ -110,16 +113,16 @@ async def get_unlocked_credentials(alias: str, path: str) -> str | None:
     values = {
         'riddle': alias,
         'username': user.name,
-        'folder_path': correct_credentials['folder_path'],
+        'folder_path': path_credentials['folder_path'],
     }
     has_user_unlocked = await database.fetch_val(query, values)
     if not has_user_unlocked:
         return None
     
-    return correct_credentials
+    return path_credentials
 
 
-async def _record_new_credentials(
+async def _record_credentials(
     alias: str, folder_path: str, username: str, password: str
 ):
 
@@ -142,7 +145,7 @@ async def _record_new_credentials(
     }
     try:
         await database.execute(query, values)
-    except IntegrityError as e:
+    except IntegrityError:
         return
     else:
         user = await discord.get_user()
