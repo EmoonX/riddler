@@ -70,7 +70,7 @@ export async function updateRiddleData(alias, setName, levelName) {
   }
 }
 
-export function updatePathsIndex(riddle, pageNode) {
+function updatePathsIndex(riddle, pageNode) {
   riddle.pagesByPath[pageNode.path] = pageNode;
   if (pageNode.folder) {
     for (const child of Object.values(pageNode['children'])) {
@@ -79,19 +79,24 @@ export function updatePathsIndex(riddle, pageNode) {
   }
 }
 
-export function getPageNode(url) {
-  const riddle = riddles[currentRiddle];
-  const slashIndex = riddle.rootPath
-    .indexOf('/', riddle.rootPath.indexOf('://') + 3);
-  const rootFolder =
-    slashIndex == -1 ? '' : `${riddle.rootPath.substring(slashIndex)}`;
-  let path = url
-    .substring(url.indexOf('/', url.indexOf('://') + 3))
-    .replace(rootFolder, '');
-  if (path.at(-1) == '/' && path != '/') {
-    // Remove trailing slash from folder paths
-    path = path.slice(0, -1);
+function getRiddleAndPath(url) {
+  for (const riddle of Object.values(riddles)) {
+    const basePath = riddle.rootPath
+      .substring(riddle.rootPath.indexOf('://') + 3);
+    const index = url.indexOf(basePath);
+    if (index !== -1) {
+      let path = url.substring(index + basePath.length);
+      if (path.at(-1) == '/' && path != '/') {
+        // Remove trailing slash from folder paths
+        path = path.slice(0, -1);
+      }
+      return [riddle, path];
+    }
   }
+}
+
+export function getPageNode(url) {
+  let [riddle, path] = getRiddleAndPath(url);
   const pageNode = riddle.pagesByPath[path];
   return pageNode;
 }

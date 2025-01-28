@@ -11,7 +11,7 @@ from quartcord.models import User
 from auth import discord
 from credentials import (
     get_path_credentials,
-    get_user_unlocked_credentials,
+    get_unlocked_credentials,
     process_credentials,
 )
 from inject import get_riddle, get_riddles
@@ -62,8 +62,9 @@ async def process_url(username=None, url=None):
         ok = await process_credentials(riddle, ph.path, ph.credentials)
         if not ok:
             # Grant access if user has unlocked protected folder before
-            unlocked_credentials = \
-                await get_user_unlocked_credentials(ph.riddle_alias, ph.path)
+            unlocked_credentials = await get_unlocked_credentials(
+                ph.riddle_alias, user, ph.path
+            )
             if not unlocked_credentials:
                 return 'Wrong or missing user credentials', 403
         
@@ -102,7 +103,7 @@ async def process_url(username=None, url=None):
                 'path': ph.path,
             }
             unlocked_credentials = \
-                await get_user_unlocked_credentials(ph.riddle_alias, ph.path)
+                await get_unlocked_credentials(ph.riddle_alias, user, ph.path)
             if unlocked_credentials:
                 data |= {'unlockedCredentials': unlocked_credentials}            
                 

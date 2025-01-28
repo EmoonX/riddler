@@ -7,6 +7,7 @@ from quartcord import requires_authorization
 
 from admin.admin_auth import is_admin_of
 from auth import discord
+from credentials import get_all_unlocked_credentials
 from util.db import database
 from util.levels import get_ordered_levels
 
@@ -139,7 +140,8 @@ async def level_list(alias: str):
     values = {'riddle': alias}
     result = await database.fetch_all(query, values)
     levels_list = [dict(row) for row in result]
-    credentials = await _get_credentials(alias)    
+    user = await discord.get_user()
+    credentials = await get_all_unlocked_credentials(alias, user)
 
     # Get riddle level sets
     query = '''
@@ -149,7 +151,6 @@ async def level_list(alias: str):
     level_sets = await database.fetch_all(query, values)
 
     # Retrieve user-specific level data
-    user = await discord.get_user()
     query = '''
         SELECT level_name, completion_time, rating_given FROM user_levels
         WHERE riddle = :riddle AND username = :username
@@ -274,7 +275,8 @@ async def get_pages(
     '''
     values = {'riddle': alias, 'level_name': requested_level}
     pages_data = await database.fetch_all(query, values)
-    credentials = await _get_credentials(alias)
+    user = await discord.get_user() if not admin else None
+    credentials = await get_all_unlocked_credentials(alias, user)
     for data in pages_data:
         level = data['level_name']
         if not level or level not in pages:
@@ -412,22 +414,3 @@ def absolute_paths(page_node: dict) -> Iterator[tuple[str, dict]]:
         return
     for child in page_node['children'].values():
         yield from absolute_paths(child)
-
-
-async def _get_credentials(alias: str) -> dict:
-    '''Fetch dict of level credentials (folder_path -> un/pw).'''
-    
-    query = '''
-        SELECT * FROM riddle_credentials
-        WHERE riddle = :riddle
-    '''
-    result = await database.fetch_all(query, {'riddle': alias})
-    credentials = {
-        row['folder_path']: {
-            'username': row['username'],
-            'password': row['password'],
-        }
-        for row in result
-    }
-    
-    return credentials

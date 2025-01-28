@@ -5,7 +5,7 @@ from pymysql.err import IntegrityError
 import requests
 from requests.auth import HTTPBasicAuth
 
-from auth import discord
+from auth import discord, User
 from util.db import database
 
 
@@ -94,8 +94,8 @@ async def get_path_credentials(
     return None
 
 
-async def get_user_unlocked_credentials(
-    alias: str, path: str
+async def get_unlocked_credentials(
+    alias: str, user: User, path: str
 ) -> dict[str, str] | None:
 
     path_credentials = await get_path_credentials(alias, path)
@@ -103,7 +103,6 @@ async def get_user_unlocked_credentials(
         # No credentials needed (or not recorded yet)
         return None
 
-    user = await discord.get_user()
     query = '''
         SELECT 1 FROM user_credentials
         WHERE riddle = :riddle
@@ -120,6 +119,28 @@ async def get_user_unlocked_credentials(
         return None
     
     return path_credentials
+
+
+async def get_all_unlocked_credentials(
+    alias: str, user: User
+) -> dict[str, dict]:
+
+    query = '''
+        SELECT rc.folder_path, rc.username, rc.password
+        FROM riddle_credentials rc INNER JOIN user_credentials uc
+            ON rc.riddle = uc.riddle AND rc.folder_path = uc.folder_path
+        WHERE rc.riddle = :riddle AND uc.username = :username
+    '''
+    values = {'riddle': alias, 'username': user.name}
+    result = await database.fetch_all(query, values)
+    credentials = {
+        row['folder_path']: {
+            'username': row['username'],
+            'password': row['password'],
+        }
+        for row in result
+    }
+    return credentials
 
 
 async def _record_credentials(
