@@ -10,7 +10,10 @@ from util.db import database
 
 
 async def process_credentials(
-    riddle: dict, path: str, credentials: tuple[str, str]
+    riddle: dict,
+    path: str,
+    credentials: tuple[str, str],
+    status_code: int
 ) -> bool:
 
     alias = riddle['alias']
@@ -19,6 +22,8 @@ async def process_credentials(
     tnow = datetime.utcnow()
 
     def _log_received_credentials(folder_path: str, success: bool):
+        if not username:
+            return
         escape_code = 1 if success else 9
         print(
             f"\033[1m[{alias}]\033[0m "
@@ -29,37 +34,59 @@ async def process_credentials(
             f"({tnow})"
         )
 
+    path_credentials = await get_path_credentials(alias, path)
+    folder_path = path_credentials['folder_path']
+    if status_code == 401:
+        # User (almost certainly) couldn't access page, so don't even bother
+        shown_path = (
+            folder_path if path_credentials['username']
+            else os.path.dirname(path)
+        )
+        _log_received_credentials(shown_path, success=False)
+        return False
+
+    if not path_credentials['username'] and credentials == ('', ''):
+        # No credentials found, no credentials given and no 401 received,
+        # so we assume unprotected folder to avoid frequent HTTP checks
+        return True
+
+    correct_credentials = (
+        path_credentials['username'], path_credentials['password']
+    )
+    if credentials in [correct_credentials, ('', '')]:
+        # Grant access if user has unlocked protected folder before
+        if await has_unlocked_folder_credentials(alias, user, folder_path):
+            return True
+
+    # Possibly new/different credentials, so HTTP-double-check them
     url = f"{riddle['root_path']}{path}"
     res = requests.get(url)
     if res.ok:
         # Path isn't protected at all
+        if correct_credentials != ('', ''):
+            # Used to be protected, but not anymore
+            await _record_credentials(alias, folder_path, '', '')
         return True
 
-    folder_path = os.path.dirname(path)
     res = requests.get(url, auth=HTTPBasicAuth(username, password))
     if res.status_code == 401:
-        # Wrong or missing user credentials
-        if (username, password) != ('', ''):
-            _log_received_credentials(folder_path, success=False)
+        # Wrong user credentials
+        _log_received_credentials(folder_path, success=False)
         return False
     
-    # Correct credentials; possibly record them
+    # Correct unseen credentials; record them
     await _record_credentials(alias, folder_path, username, password)
 
-    # Catalogued folder and correct credentials,
-    # so create user record if not there yet
+    # Create new user record
     query = '''
-        INSERT IGNORE INTO user_credentials (
-            riddle, username, folder_path, access_time
-        ) VALUES (
-            :riddle, :username, :folder_path, :access_time
-        )
+        INSERT INTO user_credentials
+            (riddle, username, folder_path)
+        VALUES (:riddle, :username, :folder_path)
     '''
     values = {
         'riddle': alias,
         'username': user.name,
         'folder_path': folder_path,
-        'access_time': tnow,
     }
     await database.execute(query, values)
     _log_received_credentials(folder_path, success=True)
@@ -67,9 +94,7 @@ async def process_credentials(
     return True
 
 
-async def get_path_credentials(
-    alias: str, path: str
-) -> dict[str, str] | None:
+async def get_path_credentials(alias: str, path: str) -> dict[str, str]:
 
     query = '''
         SELECT * FROM riddle_credentials
@@ -91,17 +116,16 @@ async def get_path_credentials(
             }
 
     # No credentials found at all
-    return None
+    return {
+        'folder_path': '/',
+        'username': '',
+        'password': '',
+    }
 
 
-async def get_unlocked_credentials(
-    alias: str, user: User, path: str
-) -> dict[str, str] | None:
-
-    path_credentials = await get_path_credentials(alias, path)
-    if not path_credentials:
-        # No credentials needed (or not recorded yet)
-        return None
+async def has_unlocked_folder_credentials(
+    alias: str, user: User, folder_path: str
+) -> bool:
 
     query = '''
         SELECT 1 FROM user_credentials
@@ -112,13 +136,10 @@ async def get_unlocked_credentials(
     values = {
         'riddle': alias,
         'username': user.name,
-        'folder_path': path_credentials['folder_path'],
+        'folder_path': folder_path,
     }
     has_user_unlocked = await database.fetch_val(query, values)
-    if not has_user_unlocked:
-        return None
-    
-    return path_credentials
+    return has_user_unlocked
 
 
 async def get_all_unlocked_credentials(

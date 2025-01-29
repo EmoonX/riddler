@@ -11,7 +11,7 @@ from quartcord.models import User
 from auth import discord
 from credentials import (
     get_path_credentials,
-    get_unlocked_credentials,
+    has_unlocked_folder_credentials,
     process_credentials,
 )
 from inject import get_riddle, get_riddles
@@ -23,7 +23,7 @@ from webclient import bot_request
 process = Blueprint('process', __name__)
 
 
-@process.route('/process', methods=['POST', 'OPTIONS'])
+@process.post('/process')
 async def process_url(username=None, url=None):
     '''Process an URL sent by browser extension.'''
 
@@ -32,85 +32,75 @@ async def process_url(username=None, url=None):
 
     if not auto and not await discord.authorized:
         # Not logged in
-        status = 401 if request.method == 'POST' else 200
-        return 'Not logged in', status
+        status_code = 401 if request.method == 'POST' else 200
+        return 'Not logged in', status_code
 
-    if auto or request.method == 'POST':
-        # Receive url and status code from request
-        if not auto:
-            url = (await request.data).decode('utf-8')
-        status_code = request.headers.get('Statuscode', 200)
-        if status_code:
-            status_code = int(status_code)
+    # Receive url and status code from request
+    if not auto:
+        url = (await request.data).decode('utf-8')
+    status_code = int(request.headers.get('Statuscode', 200))
 
-        # Create path handler object and build player data
-        if not auto:
-            user = await discord.get_user()
-        else:
-            user = lambda: None
-            setattr(user, 'name', username)
-        ph = await _PathHandler.build(user, url, status_code)
-        if not ph:
-            # Not inside root path (e.g forum or admin pages)
-            return 'Not part of root path', 412
-        ok = await ph.build_player_riddle_data()
-        if not ok:
-            return 'Banned player', 403
+    # Create path handler object and build player data
+    if not auto:
+        user = await discord.get_user()
+    else:
+        user = lambda: None
+        setattr(user, 'name', username)
+    ph = await _PathHandler.build(user, url, status_code)
+    if not ph:
+        # Not inside root path (e.g forum or admin pages)
+        return 'Not part of root path', 412
+    ok = await ph.build_player_riddle_data()
+    if not ok:
+        return 'Banned player', 403
+    
+    # Process received credentials (possibly none)
+    riddle = await get_riddle(ph.riddle_alias)
+    ok = await process_credentials(riddle, ph.path, ph.credentials, status_code)
+    if not ok:
+        return 'Wrong or missing user credentials', 403
+    
+    # Process received path
+    ok = await ph.process()
 
-        # Process received credentials (possibly none)
-        riddle = await get_riddle(ph.riddle_alias)
-        ok = await process_credentials(riddle, ph.path, ph.credentials)
-        if not ok:
-            # Grant access if user has unlocked protected folder before
-            unlocked_credentials = await get_unlocked_credentials(
-                ph.riddle_alias, user, ph.path
-            )
-            if not unlocked_credentials:
-                return 'Wrong or missing user credentials', 403
+    if not ok and status_code not in [403, 404]:
+        # Page exists, but not (yet?) a level one
+        await ph.check_and_register_missing_page()
+        return 'Not a level page', 412
+
+    # Log received path with timestamp
+    tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+    if status_code in [403, 404]:
+        # Plain folder without index (403), or usual page not found (404)
+        print(
+            f"\033[1m[{ph.riddle_alias}]\033[0m "
+            f"Received path \033[3m\033[9m{ph.path}\033[0m\033[0m from "
+                f"\033[1m{ph.username}\033[0m "
+                f"({tnow})"
+        )
+        return 'Page not found', 404
+    
+    # Valid level page
+    print(
+        f"\033[1m[{ph.riddle_alias}]\033[0m "
+        f"Received path \033[3m\033[1m{ph.path}\033[0m\033[0m "
+            f"\033[1m({ph.path_level})\033[0m from "
+            f"\033[1m{ph.username}\033[0m "
+            f"({tnow})"
+    )
+    data = {
+        'riddle': ph.riddle_alias,
+        'setName': ph.path_level_set,
+        'levelName': ph.path_level,
+        'path': ph.path,
+    }
+    path_credentials = await get_path_credentials(ph.riddle_alias, ph.path)
+    if await has_unlocked_folder_credentials(
+        ph.riddle_alias, user, path_credentials['folder_path']
+    ):
+        data |= {'unlockedCredentials': path_credentials}            
         
-        # Process received path
-        ok = await ph.process()
-
-        if not ok and status_code != 404:
-            # Page exists, but not (yet?) a level one
-            message, status_code = 'Not a level page', 412
-            await ph.check_and_register_missing_page()
-
-        # Log received path with timestamp
-        tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-        if status_code == 404:
-            # Page not found
-            print(
-                f"\033[1m[{ph.riddle_alias}]\033[0m "
-                f"Received path \033[3m\033[9m{ph.path}\033[0m\033[0m from "
-                    f"\033[1m{ph.username}\033[0m "
-                    f"({tnow})"
-            )
-            message, status_code = 'Page not found', 404
-        elif status_code != 412:
-            # Valid level page
-            print(
-                f"\033[1m[{ph.riddle_alias}]\033[0m "
-                f"Received path \033[3m\033[1m{ph.path}\033[0m\033[0m "
-                    f"\033[1m({ph.path_level})\033[0m from "
-                    f"\033[1m{ph.username}\033[0m "
-                    f"({tnow})"
-            )
-            data = {
-                'riddle': ph.riddle_alias,
-                'setName': ph.path_level_set,
-                'levelName': ph.path_level,
-                'path': ph.path,
-            }
-            unlocked_credentials = \
-                await get_unlocked_credentials(ph.riddle_alias, user, ph.path)
-            if unlocked_credentials:
-                data |= {'unlockedCredentials': unlocked_credentials}            
-                
-            return jsonify(data)
-
-    # Non 200-like status code, return 
-    return message, status_code
+    return jsonify(data)
 
 
 class _PathHandler:
