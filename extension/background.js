@@ -38,9 +38,7 @@ async function sendToProcess(visitedUrl, statusCode) {
           // Not logged in, so open Discord auth page on new tab
           chrome.tabs.create({url: `${SERVER_URL}/login`});
         }
-        return
-      }
-      if (response.ok) {
+      } else if (response.ok) {
         data = await response.json();
         console.log(
           `[${data.riddle}] Page "${data.path}" (${data.levelName}) found`
@@ -101,7 +99,9 @@ chrome.webRequest.onHeadersReceived.addListener(async details => {
     return;
   }
   console.log(details.url, details.statusCode);
-  if ([200, 404].indexOf(details.statusCode) !== -1) { 
+
+  // Avoid trivial redirects (301) polluting `found_pages`
+  if (details.statusCode !== 301) {
     await sendToProcess(details.url, details.statusCode);
-  }  
+  }
 }, filter);
