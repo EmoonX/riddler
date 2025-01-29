@@ -101,19 +101,21 @@ async def get_path_credentials(alias: str, path: str) -> dict[str, str]:
         WHERE riddle = :riddle
     '''
     values = {'riddle': alias}
-    all_credentials = await database.fetch_all(query, values)
+    result = await database.fetch_all(query, values)
+    all_credentials = {row['folder_path']: row for row in result}
 
     parsed_path = path.split('/')
-    for row in reversed(all_credentials):
-        folder_path = row['folder_path']
-        parsed_folder_path = folder_path.split('/')
-        if parsed_folder_path == parsed_path[:len(parsed_folder_path)]:
+    while parsed_path:
+        path = '/'.join(parsed_path)
+        credentials = all_credentials.get(path)
+        if credentials:
             # Credentials and innermost protect folder found
             return {
-                'folder_path': folder_path,
-                'username': row['username'],
-                'password': row['password'],
+                'folder_path': path,
+                'username': credentials['username'],
+                'password': credentials['password'],
             }
+        parsed_path.pop()
 
     # No credentials found at all
     return {

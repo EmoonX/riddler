@@ -79,7 +79,7 @@ async def process_url(username=None, url=None):
                 f"({tnow})"
         )
         return 'Page not found', 404
-    
+
     # Valid level page
     print(
         f"\033[1m[{ph.riddle_alias}]\033[0m "
@@ -155,10 +155,9 @@ class _PathHandler:
         if self.path[-1] == '/':
             # If a folder itself, add "index.htm[l]" to path's end
             self.path += 'index.' + riddle['html_extension']
-        else:
+        elif status_code != 401:
             # If no extension, append explicit ".htm[l]" to the end
-            has_dot = self.path.count('.')
-            if not has_dot:
+            if not '.' in self.path:
                 self.path += f".{riddle['html_extension']}"
 
         return self
