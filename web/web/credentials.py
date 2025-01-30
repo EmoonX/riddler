@@ -173,10 +173,10 @@ async def _record_credentials(
     query = '''
         INSERT INTO found_credentials (
             riddle, folder_path, cred_username, cred_password,
-            acc_username, access_time
+            acc_username, unlock_time
         ) VALUES (
             :riddle, :folder_path, :cred_username, :cred_password,
-            :acc_username, :access_time
+            :acc_username, :unlock_time
         )
     '''
     values = {
@@ -185,7 +185,7 @@ async def _record_credentials(
         'cred_username': username,
         'cred_password': password,
         'acc_username': (await discord.get_user()).name,
-        'access_time': datetime.utcnow(),
+        'unlock_time': datetime.utcnow(),
     }
     try:
         await database.execute(query, values)
