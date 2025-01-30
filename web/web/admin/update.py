@@ -1,13 +1,16 @@
 from datetime import datetime
+import json
 
 from pymysql.err import IntegrityError
 from quart import Blueprint, abort
 from quartcord import requires_authorization
+import requests
 
 from admin.admin_auth import admin_auth, root_auth
-from inject import get_riddles
+from inject import get_accounts, get_riddles
 from riddle import level_ranks, cheevo_ranks
 from util.db import database
+from webclient import bot_request
 
 # Create app blueprint
 admin_update = Blueprint('admin', __name__)
@@ -48,14 +51,75 @@ async def update_all_riddles():
     return 'SUCCESS :)', 200
 
 
+@admin_update.get('/admin/update-discord-account-info')
+@requires_authorization
+async def update_discord_account_info():
+
+    # Check for root permissions
+    await root_auth()
+
+    accounts = await get_accounts()
+    for account in accounts.values():
+        if not account['discord_id']:
+            continue
+
+        if not account['display_name']:
+            # Old untracked account, needs update ASAP
+            data = await bot_request(
+                'fetch-account-info',
+                discord_id=account['discord_id']
+            )
+            info = json.loads(data)
+            query = '''
+                UPDATE accounts
+                SET username = :username,
+                    display_name = :display_name,
+                    avatar_url = :avatar_url
+                WHERE discord_id = :discord_id
+            '''
+            values = {
+                'username': info['username'],
+                'display_name': info['display_name'],
+                'avatar_url': avatar_url,
+                'discord_id': account['discord_id'],
+            }
+            print(values, flush=True)
+            await database.execute(query, values)
+
+        else:
+            url = account['avatar_url']
+            if not url.startswith('http'):
+                url = f"https://abc.com/{url}"
+            response = requests.get(url)
+            if response.status_code == 404:
+                # Outdated profile picture
+                avatar_url = await bot_request(
+                    'get-avatar-url',
+                    discord_id=account['discord_id']
+                )
+                query = '''
+                    UPDATE accounts
+                    SET avatar_url = :avatar_url
+                    WHERE discord_id = :discord_id
+                '''
+                values = {
+                    'avatar_url': avatar_url,
+                    'discord_id': account['discord_id'],
+                }
+                print(values, flush=True)
+                await database.execute(query, values)
+
+    return 'SUCCESS :)', 200
+
+
 @admin_update.get('/admin/<alias>/update-all')
 @requires_authorization
 async def update_all(alias: str):
     '''Wildcard route for running all update routines below.'''
 
     update_methods = (
-        update_scores, update_page_count,
-        update_completion_count, update_ratings,
+        update_scores, update_page_count, update_completion_count,
+        update_user_credentials, update_ratings,
     )
     for update in update_methods:
         response = await update(alias)

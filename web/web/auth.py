@@ -147,16 +147,26 @@ async def _post_callback():
     '''Procedures to be done post-callback.'''
     
     user = await discord.get_user()
-    avatar_file = user.avatar_url.rsplit('/', 1)[-1].split('?')[0]
+    
+    # This will be run only once, either on register or post-hiatus login
     query = '''
         UPDATE accounts
-        SET discord_id = :discord_id, avatar_file = :avatar_file
-        WHERE username = :name
+        SET discord_id = :discord_id
+        WHERE username = :username
+    '''
+    values = {'discord_id': user.id, 'username': user.name}
+    await database.execute(query, values)
+    
+    # Fallback if bot failed to pick previous name changes (e.g was down)
+    query = '''
+        UPDATE accounts
+        SET display_name = :display_name, avatar_url = :avatar_url
+        WHERE discord_id = :discord_id
     '''
     values = {
+        'display_name': user.display_name,
+        'avatar_url': avatar_url,
         'discord_id': user.id,
-        'avatar_file': avatar_file,
-        'name': user.name,
     }
     await database.execute(query, values)
 

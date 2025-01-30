@@ -83,6 +83,31 @@ async def get_achievements(alias: str, user: dict = None) -> dict:
     return cheevos_by_rank
 
 
+async def get_accounts(alias: str | None = None):
+    '''Get players data from database.
+
+    :param alias: if present, also get riddle-specific data.'''
+
+    if not alias:
+        query = 'SELECT * FROM accounts'
+        accounts = await database.fetch_all(query)
+    else:
+        query = '''
+            SELECT *
+            FROM accounts INNER JOIN riddle_accounts
+                ON accounts.username = riddle_accounts.username
+            WHERE riddle = :riddle
+        '''
+        values = {'riddle': alias}
+        accounts = await database.fetch_all(query, values)
+
+    accounts = {
+        account['username']: account
+        for account in accounts
+    }
+    return accounts
+
+
 @overload
 async def get_display_name(user: dict):
     ...
@@ -109,7 +134,7 @@ async def get_display_name(user):
 async def context_processor():
     '''Inject variables and functions in Jinja.'''
 
-    async def fetch_riddles():
+    async def fetch_riddles() -> list[dict]:
         '''Return all riddles info + icons.'''
 
         # Get DB row data
@@ -132,27 +157,6 @@ async def context_processor():
             riddles[row['alias']] = row
 
         return riddles
-
-    async def get_accounts(alias=''):
-        '''Get players data from database.
-
-        :param alias: if present, also get riddle-specific data.'''
-
-        accounts = []
-        if not alias:
-            query = 'SELECT * FROM accounts'
-            accounts = await database.fetch_all(query)
-        else:
-            query = '''
-                SELECT *
-                FROM accounts INNER JOIN riddle_accounts
-                ON accounts.username = riddle_accounts.username
-                WHERE riddle = :riddle
-            '''
-            values = {'riddle': alias}
-            accounts = await database.fetch_all(query, values)
-        accounts = {account['username']: account for account in accounts}
-        return accounts
 
     def is_authorized() -> bool:
         '''Return if the user is currently logged in.'''
@@ -178,7 +182,7 @@ async def context_processor():
         # data = await bot_request('fetch-avatar-urls')
         
         query = '''
-            SELECT username, discord_id, avatar_file FROM accounts
+            SELECT username, discord_id, avatar_url FROM accounts
             WHERE discord_id IS NOT NULL
         '''
         result = await database.fetch_all(query)
@@ -188,10 +192,9 @@ async def context_processor():
         urls = json.loads(data)
         
         for row in result:
-            if row['username'] in urls or not row['avatar_file']:
+            if row['username'] in urls or not row['avatar_url']:
                 continue
-            url = f"https://cdn.discordapp.com/avatars/{row['discord_id']}/{row['avatar_file']}"
-            urls[row['username']] = url
+            urls[row['username']] = row['avatar_url']
         
         return urls
 
@@ -245,10 +248,11 @@ async def context_processor():
 
     # Dict for extra variables
     extra = {
-        'get_display_name': get_display_name,
         'get_riddle': get_riddle,
         'get_riddles': get_riddles,
         'get_achievements': get_achievements,
+        'get_accounts': get_accounts,
+        'get_display_name': get_display_name,
         'level_ranks': level_ranks,
         'cheevo_ranks': cheevo_ranks,
         'country_names': country_names,
