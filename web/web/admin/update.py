@@ -1,3 +1,6 @@
+from datetime import datetime
+
+from pymysql.err import IntegrityError
 from quart import Blueprint, abort
 from quartcord import requires_authorization
 
@@ -13,7 +16,7 @@ admin_update = Blueprint('admin', __name__)
 @admin_update.get('/admin/update-all-riddles')
 @requires_authorization
 async def update_all_riddles():
-    '''Update everything on every single riddle.'''
+    '''Update everything in every single riddle.'''
 
     # Only root can do it!
     ok = await root_auth()
@@ -65,7 +68,7 @@ async def update_all(alias: str):
 @admin_update.get('/admin/<alias>/update-scores')
 @requires_authorization
 async def update_scores(alias: str):
-    '''Úpdates riddle players' score.'''
+    '''Úpdate riddle players' score.'''
 
     # Check for admin permissions
     await admin_auth(alias)
@@ -123,7 +126,7 @@ async def update_scores(alias: str):
 @admin_update.get('/admin/<alias>/update-page-count')
 @requires_authorization
 async def update_page_count(alias: str):
-    '''Úpdates riddle players' page count.'''
+    '''Úpdate riddle players' page count.'''
 
     # Check for admin permissions
     await admin_auth(alias)
@@ -158,7 +161,7 @@ async def update_page_count(alias: str):
 @admin_update.get('/admin/<alias>/update-completion')
 @requires_authorization
 async def update_completion_count(alias: str):
-    '''Úpdates riddle levelś' completion count.'''
+    '''Úpdate riddle levelś' completion count.'''
 
     # Check for admin permissions
     await admin_auth(alias)
@@ -186,10 +189,66 @@ async def update_completion_count(alias: str):
     return 'SUCCESS :)', 200
 
 
+@admin_update.get('/admin/<alias>/update-user-credentials')
+@requires_authorization
+async def update_user_credentials(alias: str):
+    '''
+    Update `user_credentials` with missing records,
+    i.e folder paths present in `user_pages` but not recorded yet.
+    '''
+
+    # Check for admin permissions
+    await admin_auth(alias)
+
+    query = '''
+        SELECT DISTINCT rc.*, up.username AS acc_username
+        FROM riddle_credentials rc INNER JOIN user_pages up
+            ON rc.riddle = up.riddle
+                AND up.path LIKE CONCAT(rc.folder_path, "/%")
+        WHERE rc.riddle = :riddle
+            AND folder_path NOT IN (
+                SELECT folder_path FROM user_credentials uc
+                WHERE up.username = uc.username
+            )
+        ORDER BY acc_username
+    '''
+    values = {'riddle': alias}
+    missing_credentials = await database.fetch_all(query, values)
+    if not missing_credentials:
+        return 'No missing user credentials to add.', 200
+
+    success = False
+    for credential in missing_credentials:
+        query = '''
+            INSERT INTO user_credentials
+                (riddle, username, folder_path)
+            VALUES (:riddle, :username, :folder_path)
+        '''
+        values |= {
+            'username': credential['acc_username'],
+            'folder_path': credential['folder_path']
+        }
+        try:
+            await database.execute(query, values)
+        except IntegrityError:
+            pass
+        else:
+            s = f"{credential['username']}:{credential['password']}"
+            tnow = datetime.utcnow()
+            print(
+                f"> \033[1m[{alias}]\033[0m "
+                f"Added credential \033[3m\033[1m{s}\033[0m "
+                f"for user \033[1m{credential['acc_username']}\033[0m "
+                f"({tnow})"
+            )
+    
+    return 'SUCCESS :)', 200
+
+
 @admin_update.get('/admin/<alias>/update-ratings')
 @requires_authorization
 async def update_ratings(alias: str):
-    '''Úpdates riddle levels' user ratings.'''
+    '''Úpdate riddle levels' user ratings.'''
 
     # Check for admin permissions
     await admin_auth(alias)
@@ -261,15 +320,17 @@ async def update_page_changes(alias: str):
                 # due to logistics and not actually new/different content;
                 # therefore, grant new page to everyone who had the old one
                 query = '''
-                    SELECT username FROM user_pages
+                    SELECT username, access_time FROM user_pages
                     WHERE riddle = :riddle AND path = :path
                 '''
                 values = {'riddle': alias, 'path': path}
                 players = await database.fetch_all(query, values)
                 query = '''
-                    INSERT IGNORE INTO user_pages
-                        (riddle, username, level_name, path)
-                    VALUES (:riddle, :username, :level_name, :new_path)
+                    INSERT IGNORE INTO user_pages (
+                        riddle, username, level_name, path, access_time
+                    ) VALUES (
+                        :riddle, :username, :level_name, :new_path, :access_time
+                    )
                 '''
                 values = [
                     {
@@ -277,6 +338,7 @@ async def update_page_changes(alias: str):
                         'username': player['username'],
                         'level_name': new_level or level,
                         'new_path': new_path,
+                        'access_time': player['access_time'],
                     }
                     for player in players
                 ]
