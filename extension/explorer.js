@@ -30,10 +30,14 @@ async function buildRiddle(riddle) {
             level.previousLevel = previousLevelName;
             previousLevel.nextLevel = levelName;
             level.previousSet = previousSetName
+          }
+          if (setName !== setsArray.at(-1)) {
             level.nextSet = setsArray[Number(setIdx) + 1];
-          } 
-          previousLevelName = levelName;
+          } else if (levelName !== Object.keys(levelSet).at(-1)) {
+            level.nextSet = setName;
+          }
           previousSetName = setName;
+          previousLevelName = levelName;
           updatePathsIndex(riddle, level.pages['/']);
         }        
       }
@@ -202,8 +206,15 @@ export function changeLevelSet() {
     $(this).is('#previous-set') ?
     level.previousSet :
     level.nextSet;
-  const levelName = Object.keys(riddle.levels[setName])[0];
-  level = Object.values(riddle.levels[setName])[0];
+  const levelName =
+    Object.keys(riddle.levels[setName]).at(
+      riddle.shownSet !== Object.keys(riddle.levels).at(-1) ?
+      0 :
+      ($(this).is('#previous-set') ? 0 : -1)
+    );
+  level = riddle.levels[setName][levelName];
+  console.log(levelName);
+  console.log(level);
   riddle.shownSet = setName;
   riddle.shownLevel = levelName;
   updatePopupNavigation(riddle, level, setName, levelName);
@@ -241,7 +252,6 @@ function updatePopupNavigation(riddle, level, setName, levelName) {
   $('#level > #next-level').toggleClass('disabled', !level.nextLevel);
   $('#level > #next-set').toggleClass('disabled', !level.nextSet);
   $('.page-explorer').empty();
-  console.log(level.pages['/']);
   insertFiles($('.page-explorer'), level.pages['/'], 0, '');
 }
 
