@@ -1,4 +1,8 @@
-import { getPageNode, updateRiddleData } from './explorer.js';
+import {
+  getPageNode,
+  getRiddleAndPath,
+  updateRiddleData,
+} from './explorer.js';
 
 /** Wildcard URLs to be matched. */
 const filter = {
@@ -53,6 +57,13 @@ let credentialsHandler = null;
 
 /** Handle riddle auth attempts, prompting user with custom auth box. */
 chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
+  const [riddle, path] = getRiddleAndPath(details.url);  
+  if (riddle.alias === 'notpron' && path.indexOf('/jerk2') === 0) {
+    // Fallback to browser's auth box when real auth is involved
+    // (no, pr0ners, I am NOT interested in hoarding your personal user data)
+    asyncCallback({cancel: false});
+    return;
+  }
   const parsedUrl = new URL(details.url);
   let username = parsedUrl.searchParams.get('username');
   let password = parsedUrl.searchParams.get('password');
@@ -69,16 +80,16 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
       });
     } else {
       // Request auth box with given (explicit) realm message
+      // and autocompleted credentials (if unlocked beforehand)
+      const message = {realm: details.realm};
       const pageNode = getPageNode(details.url);
-      const pathCredentials = 
-        pageNode ? {
+      if (pageNode.username) {
+        message.unlockedCredentials = {
           username: pageNode.username,
           password: pageNode.password,
-        } : null;
-      port.postMessage({
-        realm: details.realm,
-        unlockedCredentials: pathCredentials,
-      });
+        };
+      }
+      port.postMessage(message);
     }
     port.onMessage.addListener(async data => {
       if (data.disconnect) {
@@ -99,9 +110,9 @@ chrome.webRequest.onHeadersReceived.addListener(async details => {
     return;
   }
   console.log(details.url, details.statusCode);
-
-  // Avoid trivial redirects (301) polluting `found_pages`
-  if (details.statusCode !== 301) {
-    await sendToProcess(details.url, details.statusCode);
+  if (details.statusCode === 301) {
+    // Avoid trivial redirects (301) pollution
+    return;
   }
+  await sendToProcess(details.url, details.statusCode);
 }, filter);

@@ -79,14 +79,16 @@ function updatePathsIndex(riddle, pageNode) {
   }
 }
 
-function getRiddleAndPath(url) {
+export function getRiddleAndPath(url) {
+  const parsedUrl = new URL(url);
+  const cleanUrl = `${parsedUrl.hostname}${parsedUrl.pathname}`;
   for (const riddle of Object.values(riddles)) {
-    const basePath = riddle.rootPath
-      .substring(riddle.rootPath.indexOf('://') + 3);
-    const index = url.indexOf(basePath);
+    const parsedRoot = new URL(riddle.rootPath);
+    const cleanRoot = `${parsedRoot.hostname}${parsedRoot.pathname}`;
+    const index = cleanUrl.indexOf(cleanRoot);
     if (index !== -1) {
-      let path = url.substring(index + basePath.length);
-      if (path.at(-1) == '/' && path != '/') {
+      let path = cleanUrl.replace(cleanRoot, '');
+      if (path.at(-1) === '/' && path !== '/') {
         // Remove trailing slash from folder paths
         path = path.slice(0, -1);
       }
