@@ -114,5 +114,10 @@ chrome.webRequest.onHeadersReceived.addListener(async details => {
     // Avoid trivial redirects (301) pollution
     return;
   }
+  if (details.statusCode === 401) {
+    // Pluck wrong credentials from 401s,
+    // to avoid sending possibly mistakenly entered personal info
+    details.url = `${parsedUrl.origin}${parsedUrl.pathname}`;
+  }
   await sendToProcess(details.url, details.statusCode);
 }, filter);

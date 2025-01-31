@@ -19,17 +19,22 @@ async def process_credentials(
     alias = riddle['alias']
     username, password = credentials
     user = await discord.get_user()
-    tnow = datetime.utcnow()
 
     def _log_received_credentials(folder_path: str, success: bool):
-        if not username:
+
+        if success and not username:
             return
-        escape_code = 1 if success else 9
+
+        tnow = datetime.utcnow()
         print(
             f"\033[1m[{alias}]\033[0m "
-            f"Received credentials "
-            f"\033[3m\033[{escape_code}m{username}:{password}\033[0m\033[0m "
-            f"for \033[1m{folder_path}\033[0m "
+            + ((
+                'Received correct credentials '
+                f"\033[1m{username}:{password}\033[0m "
+            ) if success else (
+                'Received wrong credentials '
+            )) +
+            f"for \033[3m\033[1m{folder_path}\033[0m "
             f"from \033[1m{user.name}\033[0m "
             f"({tnow})"
         )
@@ -42,7 +47,7 @@ async def process_credentials(
             folder_path if path_credentials['username']
             else os.path.dirname(path)
         )
-        _log_received_credentials(shown_path, success=False)
+        # _log_received_credentials(shown_path, success=False)
         return False
 
     if not path_credentials['username'] and credentials == ('', ''):
@@ -79,7 +84,7 @@ async def process_credentials(
 
     # Create new user record
     query = '''
-        INSERT INTO user_credentials
+        INSERT IGNORE INTO user_credentials
             (riddle, username, folder_path)
         VALUES (:riddle, :username, :folder_path)
     '''
