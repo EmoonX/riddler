@@ -2,11 +2,13 @@ import json
 from urllib.parse import urljoin, urlsplit
 
 from quart import Blueprint, jsonify
+from quartcord import requires_authorization
 
 from auth import discord
 from inject import get_riddles
-from webclient import bot_request
+from levels import get_pages
 from util.db import database
+from webclient import bot_request
 
 # Create app blueprint
 get = Blueprint('get', __name__)
@@ -40,6 +42,7 @@ async def get_riddle_hosts():
 
 @get.get('/get-user-riddle-data')
 @get.get('/get-user-riddle-data/<alias>')
+@requires_authorization
 async def get_user_riddle_data(alias: str | None = None) -> str:
     '''
     Get riddle data for authenticated user.
@@ -74,7 +77,7 @@ async def get_user_riddle_data(alias: str | None = None) -> str:
         for row in result
     }
 
-    # Fetch list of levels found/unlocked/solved by user (with correct ordering)
+    # Fetch list of levels found/unlocked/beaten by user (with correct ordering)
     query = '''
         SELECT
             up.riddle, ls.name AS set_name, up.level_name,
@@ -135,6 +138,7 @@ async def get_user_riddle_data(alias: str | None = None) -> str:
 
 
 @get.get('/get-current-riddle-data')
+@requires_authorization
 async def get_current_riddle_data():
     '''Get currently being played riddle data for authenticated user.'''
 
@@ -167,3 +171,17 @@ async def get_current_riddle_data():
         'visited_level': riddle['last_visited_level'],
     }
     return jsonify(data)
+
+
+@get.get('/get-user-pages')
+@requires_authorization
+async def get_user_pages() -> str:
+    '''Get user-accessed pages from every riddle.'''
+
+    pages = {}
+    riddles = await get_riddles(unlisted=True)
+    for alias in [riddle['alias'] for riddle in riddles]:
+        page_tree = await get_pages(alias, as_json=False)
+        pages[alias] = page_tree
+
+    return jsonify(pages)

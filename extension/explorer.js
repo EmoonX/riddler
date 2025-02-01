@@ -8,40 +8,35 @@ let riddles = {};
 let currentRiddle;
 
 /** Builds riddle dict from riddle and levels JSON data. */
-async function buildRiddle(riddle) {
-  const pagesUrl = `${SERVER_URL}/${riddle.alias}/levels/get-pages`;
-  await fetch(pagesUrl)
-    .then(response => response.json())
-    .then(pagesData => {
-      riddle.iconUrl = `${SERVER_URL}/static/riddles/${riddle.alias}.png`;
-      riddle.shownSet = riddle.lastVisitedSet;
-      riddle.shownLevel = riddle.lastVisitedLevel;
-      riddle.pagesByPath = {};
-      const setsArray = Object.keys(riddle.levels);
-      let previousSetName = null;
-      let previousLevelName = null;
-      for (const [setIdx, setName] of Object.entries(setsArray)) {
-        const levelSet = riddle.levels[setName];
-        for (const [levelName, level] of Object.entries(levelSet)) {
-          level.pages = pagesData[levelName];
-          if (previousLevelName) {
-            const previousLevel =
-              riddle.levels[previousSetName][previousLevelName];
-            level.previousLevel = previousLevelName;
-            previousLevel.nextLevel = levelName;
-            level.previousSet = previousSetName
-          }
-          if (setName !== setsArray.at(-1)) {
-            level.nextSet = setsArray[Number(setIdx) + 1];
-          } else if (levelName !== Object.keys(levelSet).at(-1)) {
-            level.nextSet = setName;
-          }
-          previousSetName = setName;
-          previousLevelName = levelName;
-          updatePathsIndex(riddle, level.pages['/']);
-        }        
+async function buildRiddle(riddle, pages) {
+  riddle.iconUrl = `${SERVER_URL}/static/riddles/${riddle.alias}.png`;
+  riddle.shownSet = riddle.lastVisitedSet;
+  riddle.shownLevel = riddle.lastVisitedLevel;
+  riddle.pagesByPath = {};
+  const setsArray = Object.keys(riddle.levels);
+  let previousSetName = null;
+  let previousLevelName = null;
+  for (const [setIdx, setName] of Object.entries(setsArray)) {
+    const levelSet = riddle.levels[setName];
+    for (const [levelName, level] of Object.entries(levelSet)) {
+      level.pages = pages[levelName];
+      if (previousLevelName) {
+        const previousLevel =
+          riddle.levels[previousSetName][previousLevelName];
+        level.previousLevel = previousLevelName;
+        previousLevel.nextLevel = levelName;
+        level.previousSet = previousSetName
       }
-    });
+      if (setName !== setsArray.at(-1)) {
+        level.nextSet = setsArray[Number(setIdx) + 1];
+      } else if (levelName !== Object.keys(levelSet).at(-1)) {
+        level.nextSet = setName;
+      }
+      previousSetName = setName;
+      previousLevelName = levelName;
+      updatePathsIndex(riddle, level.pages['/']);
+    }        
+  }
   riddles[riddle.alias] = riddle;
 }
 
@@ -51,16 +46,18 @@ export async function updateRiddleData(alias, setName, levelName) {
   const riddle = riddles[alias];
   if (!riddle.levels[setName][levelName]) {
     // Add new riddle and/or level
-    const DATA_URL = `${SERVER_URL}/get-user-riddle-data/${alias}`;
-    await fetch(DATA_URL)
+    await fetch(`${SERVER_URL}/get-user-riddle-data/${alias}`)
       .then(response => response.json())
-      .then(data => {
-        buildRiddle(data);
+      .then(async riddleData => {
+        await fetch(`${SERVER_URL}/${alias}/levels/get-pages`)
+          .then(response => response.json())
+          .then(pagesData => {
+            buildRiddle(riddleData, pagesData);
+          });
       });
   } else {
     // Add (possibly) new page
-    const pagesUrl = `${SERVER_URL}/${alias}/levels/get-pages/${levelName}`;
-    await fetch(pagesUrl)
+    await fetch(`${SERVER_URL}/${alias}/levels/get-pages/${levelName}`)
       .then(response => response.json())
       .then(pagesData => {
         riddle.lastVisitedSet = riddle.shownSet = setName;
@@ -288,15 +285,18 @@ export async function doubleClickFile() {
 
 (async () => {
   // Inits page explorer for currently visited riddle level
-  const DATA_URL = `${SERVER_URL}/get-user-riddle-data`;
-  await fetch(DATA_URL)
+  await fetch(`${SERVER_URL}/get-user-riddle-data`)
     .then(response => response.json())
     .then(async riddlesData => {
       currentRiddle = riddlesData.currentRiddle;
-      Object.entries(riddlesData.riddles).forEach(async ([alias, riddle]) => {
-        console.log(`[${alias}] Building riddle data…`);
-        buildRiddle(riddle);
-      });
+      await fetch(`${SERVER_URL}/get-user-pages`)
+        .then(response => response.json())
+        .then(allPagesData => {
+          Object.entries(riddlesData.riddles).forEach(async ([alias, riddle]) => {
+            console.log(`[${alias}] Building riddle data…`);
+            buildRiddle(riddle, allPagesData[alias]);
+          });
+        });
       sendMessageToPopup();
     });
 })();
