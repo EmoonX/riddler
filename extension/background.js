@@ -121,3 +121,15 @@ chrome.webRequest.onHeadersReceived.addListener(async details => {
   }
   await sendToProcess(details.url, details.statusCode);
 }, filter);
+
+// Send regular pings to avoid service worker becoming inactive
+chrome.runtime.onConnect.addListener(port => {
+  const pingInterval = setInterval(() => {
+    port.postMessage({
+      status: "ping",
+    });
+  }, 10000);
+  port.onDisconnect.addListener(_ => {
+    clearInterval(pingInterval);
+  });
+});
