@@ -83,7 +83,11 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
       // Request auth box with given (explicit) realm message
       // and autocompleted credentials (if unlocked beforehand)
       const message = {realm: details.realm};
-      const pageNode = getPageNode(details.url);
+      let pageNode = getPageNode(details.url);
+      while (! pageNode) {
+        details.url = details.url.split('/').slice(0, -1).join('/');
+        pageNode = getPageNode(details.url);
+      }
       if (pageNode.username) {
         message.unlockedCredentials = {
           username: pageNode.username,
