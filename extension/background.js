@@ -1,6 +1,7 @@
 import {
   getPageNode,
   getRiddleAndPath,
+  initExplorer,
   updateRiddleData,
 } from './explorer.js';
 
@@ -133,3 +134,7 @@ chrome.runtime.onConnect.addListener(port => {
     clearInterval(pingInterval);
   });
 });
+
+(() => {
+  initExplorer();
+})();

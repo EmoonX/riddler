@@ -7,6 +7,24 @@ let riddles = {};
 /** Current riddle alias. */
 let currentRiddle;
 
+/** Inits page explorer for currently visited riddle level. */
+export async function initExplorer() {
+  await fetch(`${SERVER_URL}/get-user-riddle-data`)
+  .then(response => response.json())
+  .then(async riddlesData => {
+    currentRiddle = riddlesData.currentRiddle;
+    await fetch(`${SERVER_URL}/get-user-pages`)
+      .then(response => response.json())
+      .then(allPagesData => {
+        Object.entries(riddlesData.riddles).forEach(async ([alias, riddle]) => {
+          console.log(`[${alias}] Building riddle data…`);
+          buildRiddle(riddle, allPagesData[alias]);
+        });
+      });
+    sendMessageToPopup();
+  });
+}
+
 /** Builds riddle dict from riddle and levels JSON data. */
 async function buildRiddle(riddle, pages) {
   riddle.iconUrl = `${SERVER_URL}/static/riddles/${riddle.alias}.png`;
@@ -282,21 +300,3 @@ export async function doubleClickFile() {
     files.toggle();
   }
 }
-
-(async () => {
-  // Inits page explorer for currently visited riddle level
-  await fetch(`${SERVER_URL}/get-user-riddle-data`)
-    .then(response => response.json())
-    .then(async riddlesData => {
-      currentRiddle = riddlesData.currentRiddle;
-      await fetch(`${SERVER_URL}/get-user-pages`)
-        .then(response => response.json())
-        .then(allPagesData => {
-          Object.entries(riddlesData.riddles).forEach(async ([alias, riddle]) => {
-            console.log(`[${alias}] Building riddle data…`);
-            buildRiddle(riddle, allPagesData[alias]);
-          });
-        });
-      sendMessageToPopup();
-    });
-})();
