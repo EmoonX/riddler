@@ -7,10 +7,11 @@ import {
   updateStateInPopup,
 } from './explorer.js';
 
+const SERVER_URL = 'https://emoon.dev';
+
 /** Updates host permissions on button click. */
 async function updateHosts() {
   console.log('Updating hosts...');
-  const SERVER_URL = 'https://emoon.dev';
   await fetch(`${SERVER_URL}/get-riddle-hosts`)
     .then(response => response.json())
     .then(hosts => {
@@ -31,9 +32,6 @@ async function updateHosts() {
 }
 
 $(() => {
-  // Set "Update hosts" button click event
-  $('[name=update-hosts]').on('click', updateHosts);
-
   // Set explorer events
   $('#level').on('click', '#previous-set:not(.disabled)', changeLevelSet);
   $('#level').on('click', '#next-set:not(.disabled)', changeLevelSet);
@@ -41,6 +39,12 @@ $(() => {
   $('#level').on('click', '#next-level:not(.disabled)', changeLevel);
   $('.page-explorer').on('click', 'figure.file', clickFile);
   $('.page-explorer').on('dblclick', 'figure.file', doubleClickFile);
+
+  // Set button click events
+  $('[name=login]').on('click', () => {
+    window.open(`${SERVER_URL}/login`, '_blank');
+  });
+  $('[name=update-hosts]').on('click', updateHosts);
 
   // Get message data from background.js
   let port = chrome.runtime.connect(
@@ -53,6 +57,10 @@ $(() => {
       // Update explorer.js members
       const riddles = data.riddles;
       updateStateInPopup(riddles, alias);
+
+      // Toggle logged in riddle data
+      $('#currently-playing').toggle(true);
+      $('[name=login]').toggle(false);
 
       // Show current riddle info in extension's popup
       const riddle = riddles[alias];
