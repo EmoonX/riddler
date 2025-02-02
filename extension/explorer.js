@@ -19,17 +19,27 @@ export async function initExplorer(callback) {
   })
   .then(async riddlesData => {
     currentRiddle = riddlesData.currentRiddle;
+    await fetch(`${SERVER_URL}/${currentRiddle}/levels/get-pages`)
+      .then(response => response.json())
+      .then(pagesData => {
+        // Fetch current riddle before rest to ease popup wait time
+        const riddle = riddlesData.riddles[currentRiddle];
+        console.log(`[${currentRiddle}] Building riddle data…`);
+        buildRiddle(riddle, pagesData);
+        if (callback) {
+          callback();
+        }
+      });
     await fetch(`${SERVER_URL}/get-user-pages`)
       .then(response => response.json())
       .then(allPagesData => {
         for (const [alias, riddle] of Object.entries(riddlesData.riddles)) {
-          console.log(`[${alias}] Building riddle data…`);
-          buildRiddle(riddle, allPagesData[alias]);
+          if (alias != currentRiddle) {
+            console.log(`[${alias}] Building riddle data…`);
+            buildRiddle(riddle, allPagesData[alias]);
+          }
         }
       });
-    if (callback) {
-      callback();
-    }
   })
   .catch(exception => {
     riddles = null;
