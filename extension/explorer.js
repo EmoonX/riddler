@@ -1,27 +1,39 @@
 /** Base server URL. */
 const SERVER_URL = 'https://emoon.dev';
 
-/** All player riddle data. */
-let riddles = {};
+/** All the user riddle data. */
+export let riddles = null;
 
 /** Current riddle alias. */
 let currentRiddle;
 
-/** Inits page explorer for currently visited riddle level. */
-export async function initExplorer() {
+/** Inits explorer by fetching user riddle data and pages. */
+export async function initExplorer(callback) {
+  riddles = {};
   await fetch(`${SERVER_URL}/get-user-riddle-data`)
-  .then(response => response.json())
+  .then(response => {
+    if (response.status === 401) {
+      throw `Unable to retrieve riddle data from server (not logged in).`;
+    }
+    return response.json();
+  })
   .then(async riddlesData => {
     currentRiddle = riddlesData.currentRiddle;
     await fetch(`${SERVER_URL}/get-user-pages`)
       .then(response => response.json())
       .then(allPagesData => {
-        Object.entries(riddlesData.riddles).forEach(async ([alias, riddle]) => {
+        for (const [alias, riddle] of Object.entries(riddlesData.riddles)) {
           console.log(`[${alias}] Building riddle data…`);
           buildRiddle(riddle, allPagesData[alias]);
-        });
+        }
       });
-    sendMessageToPopup();
+    if (callback) {
+      callback();
+    }
+  })
+  .catch(exception => {
+    riddles = null;
+    console.log(exception);
   });
 }
 
@@ -114,6 +126,7 @@ export function getRiddleAndPath(url) {
       return [riddle, path];
     }
   }
+  return [null, null];
 }
 
 export function getPageNode(url) {
@@ -122,19 +135,16 @@ export function getPageNode(url) {
   return pageNode;
 }
 
-/** Send message containing module data to popup.js. */
-export function sendMessageToPopup() {
-  chrome.runtime.onConnect.addListener(port => {
-    console.log('Connected to popup.js...');
-    port.postMessage({
-      riddles: riddles,
-      currentRiddle: currentRiddle,
-    });
+/** Sends message containing riddle data to popup.js. */
+export function sendMessageToPopup(port) {
+  port.postMessage({
+    riddles: riddles,
+    currentRiddle: currentRiddle,
   });
 }
 
 /** Updates module members in popup.js state. */
-export function updateStateInPopup(_riddles, _currentRiddle, _pageNodes) {
+export function updateStateInPopup(_riddles, _currentRiddle) {
   riddles = _riddles;
   currentRiddle = _currentRiddle;
 }

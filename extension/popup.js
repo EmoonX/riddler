@@ -11,8 +11,7 @@ import {
 async function updateHosts() {
   console.log('Updating hosts...');
   const SERVER_URL = 'https://emoon.dev';
-  const url = `${SERVER_URL}/get-riddle-hosts`;
-  await fetch(url)
+  await fetch(`${SERVER_URL}/get-riddle-hosts`)
     .then(response => response.json())
     .then(hosts => {
       console.log(`Hosts found:`);
@@ -31,7 +30,7 @@ async function updateHosts() {
     });
 }
 
-$(_ => {
+$(() => {
   // Set "Update hosts" button click event
   $('[name=update-hosts]').on('click', updateHosts);
 
