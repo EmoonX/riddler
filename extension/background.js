@@ -1,4 +1,5 @@
 import {
+  clearRiddleData,
   getPageNode,
   getRiddleAndPath,
   initExplorer,
@@ -30,7 +31,7 @@ async function sendToProcess(visitedUrl, statusCode) {
   await fetch(`${SERVER_URL}/process`, params)
     .then(async response => {
       // Callbacks on successful and failed responses
-      if (response.status == 401) {
+      if (response.status === 401) {
         // // If current login request is less than 5 seconds
         // // after marked one, don't open a new login tab.
         // const tNow = new Date();
@@ -39,11 +40,13 @@ async function sendToProcess(visitedUrl, statusCode) {
         //   return;
         // }
         // t0 = tNow;
-
         // if (response.text() == 'Not logged in') {
         //   // Not logged in, so open Discord auth page on new tab
         //   chrome.tabs.create({url: `${SERVER_URL}/login`});
         // }
+
+        // Logged out, so possibly clear riddle data
+        clearRiddleData();
       } else if (response.ok) {
         data = await response.json();
         console.log(
@@ -127,8 +130,8 @@ chrome.webRequest.onHeadersReceived.addListener(async details => {
     // to avoid sending possibly mistakenly entered personal info
     details.url = `${parsedUrl.origin}${parsedUrl.pathname}`;
   }
-  if (riddles === null) {
-    // Fallback for when user logs in *after* extension is loaded
+  if (Object.keys(riddles).length === 0) {
+    // Fallback for when user logs in *after* the extension is loaded
     initExplorer(() => {
       sendToProcess(details.url, details.statusCode)
     });
@@ -158,7 +161,7 @@ chrome.runtime.onConnect.addListener(port => {
       return;
     }
     console.log('Connected to popup.js...');
-    if (riddles === null) {
+    if (Object.keys(riddles).length === 0) {
       // Fallback for when user logs in *after* extension is loaded
       initExplorer(() => {
         sendMessageToPopup(port);

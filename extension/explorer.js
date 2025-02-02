@@ -2,14 +2,14 @@
 const SERVER_URL = 'https://emoon.dev';
 
 /** All the user riddle data. */
-export let riddles = null;
+export let riddles = {};
 
 /** Current riddle alias. */
 let currentRiddle;
 
 /** Inits explorer by fetching user riddle data and pages. */
 export async function initExplorer(callback) {
-  riddles = {};
+  riddles.init = true;
   await fetch(`${SERVER_URL}/get-user-riddle-data`)
   .then(response => {
     if (response.status === 401) {
@@ -42,7 +42,7 @@ export async function initExplorer(callback) {
       });
   })
   .catch(exception => {
-    riddles = null;
+    delete riddles.init;
     console.log(exception);
   });
 }
@@ -318,5 +318,12 @@ export async function doubleClickFile() {
     // Open or collapse folder, showing/hiding inner files
     const files = $(this).next('.folder-files');
     files.toggle();
+  }
+}
+
+/** Clears user riddle data and puts extension in a logged out state. */
+export function clearRiddleData() {
+  for (const prop of Object.getOwnPropertyNames(riddles)) {
+    delete riddles[prop];
   }
 }
