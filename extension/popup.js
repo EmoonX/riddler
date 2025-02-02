@@ -64,17 +64,17 @@ $(() => {
       $('#riddle > .full-name').text(riddle.fullName);
       $('#riddle a').attr('href', explorerURL);
       $('#level > var#current-level').text(levelName);
-      if (!level.previousSet) {
-        $('#level > #previous-set').addClass('disabled');
+      if (level.previousSet) {
+        $('#level > #previous-set').removeClass('disabled');
       }
-      if (!level.previousLevel) {
-        $('#level > #previous-level').addClass('disabled');
+      if (level.previousLevel) {
+        $('#level > #previous-level').removeClass('disabled');
       }
-      if (!level.nextLevel) {
-        $('#level > #next-level').addClass('disabled');
+      if (level.nextLevel) {
+        $('#level > #next-level').removeClass('disabled');
       }
-      if (!level.nextSet) {
-        $('#level > #next-set').addClass('disabled');
+      if (level.nextSet) {
+        $('#level > #next-set').removeClass('disabled');
       }
       // Build HTML for list of files of currently visited level
       insertFiles($('.page-explorer'), level.pages['/'], -1, '');
