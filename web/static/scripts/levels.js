@@ -28,12 +28,12 @@ function doubleClickIcon() {
         $(this).find('figcaption').text();
     const endpoint = location.href + '/get-root-path';
     $.get(endpoint, rootPath => {
-      let url = rootPath + path;
-      if ($(this).attr('data-username')) {
-        let username = $(this).attr('data-username');
-        let password = $(this).attr('data-password');
-        url = url.replace('://', `://${username}:${password}@`);
-      }
+      const url = rootPath + path;
+      // if ($(this).attr('data-username')) {
+      //   let username = $(this).attr('data-username');
+      //   let password = $(this).attr('data-password');
+      //   url = url.replace('://', `://${username}:${password}@`);
+      // }
       // window.open(url, '_blank');
       const a = document.createElement("a");
       a.href = url;
