@@ -34,7 +34,12 @@ function doubleClickIcon() {
         let password = $(this).attr('data-password');
         url = url.replace('://', `://${username}:${password}@`);
       }
-      window.open(url, '_blank');
+      // window.open(url, '_blank');
+      const a = document.createElement("a");
+      a.href = url;
+      a.target = "_blank";
+      a.rel = "noreferrer";
+      a.click();
     });    
   } else {
     // Change current directory to folder's one

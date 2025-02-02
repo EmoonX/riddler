@@ -39,7 +39,7 @@
             <a href="{{ url_for('levels.level_list', alias=alias) }}" class="nav-button">Level explorer</a>
             <a href="{{ url_for('players.riddle_list', alias=alias) }}" class="nav-button">Leaderboard</a>
             <a href="{{ url_for('countries.riddle_list', alias=alias) }}" class="nav-button">Countries leaderboard</a>
-            <a href="{{ riddle['front_page'] }}" class="nav-button" target="_blank">
+            <a href="{{ riddle['front_page'] }}" class="nav-button" target="_blank" rel="noreferrer">
               <img class="icon" src="/static/icons/external-link.png">
               Front page
             </a>

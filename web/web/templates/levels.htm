@@ -27,7 +27,7 @@
               {% set credentials = level['username'] + ':' + level['password'] %}
               {% set url = url.replace('://', '://' + credentials + '@') %}
             {% endif %}
-            <a href="{{ url }}" target="_blank">
+            <a href="{{ url }}" target="_blank" rel="noreferrer">
           {% endif %}
             <div>
               {% include 'util/level-name.htm' %}
