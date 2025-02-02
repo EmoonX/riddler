@@ -7,9 +7,12 @@ export let riddles = {};
 /** Current riddle alias. */
 let currentRiddle;
 
+/** Lock for `initExplorer` (should run once and non-concurrently). */
+export let initNeeded = true;
+
 /** Inits explorer by fetching user riddle data and pages. */
 export async function initExplorer(callback) {
-  riddles.init = true;
+  initNeeded = false;
   await fetch(`${SERVER_URL}/get-user-riddle-data`)
   .then(response => {
     if (response.status === 401) {
@@ -42,7 +45,7 @@ export async function initExplorer(callback) {
       });
   })
   .catch(exception => {
-    delete riddles.init;
+    initNeeded = true;
     console.log(exception);
   });
 }
@@ -326,4 +329,5 @@ export function clearRiddleData() {
   for (const prop of Object.getOwnPropertyNames(riddles)) {
     delete riddles[prop];
   }
+  initNeeded = true;
 }
