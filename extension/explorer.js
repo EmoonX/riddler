@@ -123,12 +123,11 @@ function updatePathsIndex(riddle, pageNode) {
   }
 }
 
-export function getRiddleAndPath(url) {
-  const parsedUrl = new URL(url);
-  const cleanUrl = `${parsedUrl.hostname}${parsedUrl.pathname}`;
+/** Parses riddle and path from URL, based on root path match. */
+export function parseRiddleAndPath(url) {
+  const cleanUrl = url.split('/').splice(2).join('/');
   for (const riddle of Object.values(riddles)) {
-    const parsedRoot = new URL(riddle.rootPath);
-    const cleanRoot = `${parsedRoot.hostname}${parsedRoot.pathname}`;
+    const cleanRoot = riddle.rootPath.split('/').splice(2).join('/');
     const index = cleanUrl.indexOf(cleanRoot);
     if (index !== -1) {
       let path = cleanUrl.replace(cleanRoot, '');
@@ -142,8 +141,9 @@ export function getRiddleAndPath(url) {
   return [null, null];
 }
 
+/** Gets page tree node from URL. */
 export function getPageNode(url) {
-  let [riddle, path] = getRiddleAndPath(url);
+  let [riddle, path] = parseRiddleAndPath(url);
   const pageNode = riddle.pagesByPath[path];
   return pageNode;
 }

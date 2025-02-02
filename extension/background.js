@@ -1,8 +1,8 @@
 import {
   clearRiddleData,
   getPageNode,
-  getRiddleAndPath,
   initExplorer,
+  parseRiddleAndPath,
   riddles,
   sendMessageToPopup,
   updateRiddleData,
@@ -62,7 +62,7 @@ let credentialsHandler = null;
 
 /** Handle riddle auth attempts, prompting user with custom auth box. */
 chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
-  const [riddle, path] = getRiddleAndPath(details.url);
+  const [riddle, path] = parseRiddleAndPath(details.url);
   if (riddle && riddle.alias === 'notpron' && path.indexOf('/jerk2') === 0) {
     // Fallback to browser's auth box when real auth is involved
     // (no, pr0ners, I am NOT interested in hoarding your personal user data)
@@ -113,6 +113,12 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
   // Block browser's native auth dialog
   asyncCallback({cancel: true});
 }, filter, ['asyncBlocking']);
+
+chrome.webRequest.onBeforeSendHeaders.addListener(async details => {
+  if (details.url.indexOf('.htm') !== -1) {
+    console.log(details);
+  }
+}, filter, ['requestHeaders']);
 
 /** Send a process request to server whenever response is received. */
 chrome.webRequest.onHeadersReceived.addListener(async details => {
