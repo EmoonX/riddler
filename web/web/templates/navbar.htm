@@ -84,7 +84,7 @@
           </div>
         </nav>
       {% if not is_authorized() %}
-        <a class="nav-button" href="{{ url_for('players_auth.login', redirect_url=(request.url)) }}">Login</a>
+        <a class="nav-button" href="{{ url_for('players_auth.login', redirect_url=(request.url)) }}">Log in</a>
       {% else %}
         {% set user = get_session_user() %}
         <nav class="dropdown">
@@ -96,7 +96,7 @@
             {% set redirect_url = request.url if '/admin' not in request.url else '/' %}
             <!--<a href="#" class="nav-button">Public info</a>-->
             <a href="{{ url_for('account.settings') }}" class="nav-button">Settings</a>
-            <a href="{{ url_for('players_auth.logout', redirect_url=(redirect_url)) }}" class="nav-button">Logout</a>
+            <a href="{{ url_for('players_auth.logout', redirect_url=(redirect_url)) }}" class="nav-button">Log out</a>
           </div>
         </nav>
       {% endif %}
