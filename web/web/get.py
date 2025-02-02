@@ -1,7 +1,7 @@
 import json
 from urllib.parse import urljoin, urlsplit
 
-from quart import Blueprint, jsonify
+from quart import abort, Blueprint, jsonify
 from quartcord import requires_authorization
 
 from auth import discord
@@ -42,12 +42,15 @@ async def get_riddle_hosts():
 
 @get.get('/get-user-riddle-data')
 @get.get('/get-user-riddle-data/<alias>')
-@requires_authorization
 async def get_user_riddle_data(alias: str | None = None) -> str:
     '''
     Get riddle data for authenticated user.
     If `alias` is passed, restrict results to just given riddle.
     '''
+
+    if not discord.user_id:
+        # Raw 401 to avoid redirections to /login
+        abort(401)
 
     user = await discord.get_user()
     values = {'username': user.name}
