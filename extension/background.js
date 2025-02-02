@@ -60,12 +60,7 @@ let credentialsHandler = null;
 /** Handle riddle auth attempts, prompting user with custom auth box. */
 chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
   const [riddle, path] = getRiddleAndPath(details.url);
-  if (! riddle) {
-    // Possibly not logged in
-    asyncCallback({cancel: false});
-    return;
-  }
-  if (riddle.alias === 'notpron' && path.indexOf('/jerk2') === 0) {
+  if (riddle && riddle.alias === 'notpron' && path.indexOf('/jerk2') === 0) {
     // Fallback to browser's auth box when real auth is involved
     // (no, pr0ners, I am NOT interested in hoarding your personal user data)
     asyncCallback({cancel: false});
@@ -87,18 +82,20 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
       });
     } else {
       // Request auth box with given (explicit) realm message
-      // and autocompleted credentials (if unlocked beforehand)
+      // and autocompleted credentials (if logged in and unlocked beforehand)
       const message = {realm: details.realm};
-      let pageNode = getPageNode(details.url);
-      while (! pageNode) {
-        details.url = details.url.split('/').slice(0, -1).join('/');
-        pageNode = getPageNode(details.url);
-      }
-      if (pageNode.username) {
-        message.unlockedCredentials = {
-          username: pageNode.username,
-          password: pageNode.password,
-        };
+      if (riddle) {
+        let pageNode = getPageNode(details.url);
+        while (! pageNode) {
+          details.url = details.url.split('/').slice(0, -1).join('/');
+          pageNode = getPageNode(details.url);
+        }
+        if (pageNode.username) {
+          message.unlockedCredentials = {
+            username: pageNode.username,
+            password: pageNode.password,
+          };
+        }
       }
       port.postMessage(message);
     }
