@@ -87,7 +87,8 @@ async function buildRiddle(riddle, pages) {
 export async function updateRiddleData(alias, setName, levelName) {
   currentRiddle = alias;
   const riddle = riddles[alias];
-  if (!riddle.levels[setName][levelName]) {
+  const levelSet = riddle.levels[setName];
+  if (!levelSet || !levelSet[levelName]) {
     // Add new riddle and/or level
     await fetch(`${SERVER_URL}/get-user-riddle-data/${alias}`)
       .then(response => response.json())
