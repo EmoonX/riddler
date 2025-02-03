@@ -49,6 +49,7 @@ class Decipher(commands.Cog):
             # await _error_message(ctx, 'Too big of a word.')
             return
 
+        word = word.lower()
         valid_anagrams = set()
         for perm in permutations(word):
             if perm in word_set and perm not in valid_anagrams:
@@ -162,7 +163,7 @@ class Decipher(commands.Cog):
             shift: How many positions each char should be shifted
                 in the alphabet (sign infers direction).
         '''
-        text = await Util.caesar_base(text, shift)
+        text = Util.caesar_base(text, shift)
         await interaction.response.send_message(text)
 
     @group.command()
@@ -258,7 +259,7 @@ class Decipher(commands.Cog):
         Args:
             text: Text to be reversed.
         '''
-        await interaction.response.send_message(reversed(text))
+        await interaction.response.send_message(text[::-1])
 
     @group.command()
     async def rot13(self, interaction: Interaction, text: str):
