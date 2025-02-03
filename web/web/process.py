@@ -166,7 +166,7 @@ class _PathHandler:
         '''Retrieve riddle, path and (possibly) credentials info from URL.'''
 
         # Parse URL into hostname and path parts
-        parsed_url = urlsplit(url)
+        parsed_url = urlsplit(url.replace('://www.', '://'))
 
         def _get_relative_path(root_path: str) -> str:
             '''Build relative path from root (with "../"s if needed).''' 
@@ -195,7 +195,7 @@ class _PathHandler:
 
         # Search for matching hostname (if any) and save data
         for root_path, riddle in root_paths.items():
-            parsed_root = urlsplit(root_path)
+            parsed_root = urlsplit(root_path.replace('://www.', '://'))
             if parsed_root.hostname == parsed_url.hostname:
                 path = _get_relative_path(parsed_root)
                 self.riddle_alias = riddle['alias']
