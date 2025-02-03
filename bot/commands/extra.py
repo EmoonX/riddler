@@ -1,7 +1,5 @@
-from discord import app_commands
+from discord import app_commands, Interaction
 from discord.ext import commands
-
-from commands.util import Interaction
 
 
 class Extra(commands.Cog):
@@ -14,7 +12,7 @@ class Extra(commands.Cog):
     async def ping(self, interaction: Interaction):
         '''Ping-pong with measurable latency.'''
         latency = 1000 * self.bot.latency
-        await interaction.send(f"Pong! ({latency:.2f} ms)")
+        await interaction.response.send_message(f"Pong! ({latency:.2f} ms)")
 
     @app_commands.command()
     async def balthify(self, interaction: Interaction, text: str):
@@ -42,7 +40,7 @@ class Extra(commands.Cog):
         if not text:
             text = '_Message intentionally left blank._'
         
-        await interaction.send(text)
+        await interaction.response.send_message(text)
 
 
 async def setup(bot: commands.Bot):

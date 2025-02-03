@@ -4,12 +4,11 @@ import string
 from typing import Optional
 
 from bitarray import bitarray
-from discord import app_commands
+from discord import app_commands, Interaction
 from discord.ext import commands
 from nltk.corpus import words
 
 from bot import bot
-from commands.util import Interaction
 
 # Set of lowercase English words (as char tuples)
 
@@ -63,7 +62,7 @@ class Decipher(commands.Cog):
         else:
             text += '\nNone found...'
             
-        await interaction.send(text)
+        await interaction.response.send_message(text)
 
     @group.command()
     async def ascii_to_text(self, interaction: Interaction, ascii_codes: str):
@@ -81,7 +80,7 @@ class Decipher(commands.Cog):
             return
         ascii_list = ascii_codes.split()
         text = ''.join(chr(int(k)) for k in ascii_list)
-        await interaction.send(text)
+        await interaction.response.send_message(text)
 
     @group.command()
     async def atbash(self, interaction: Interaction, text: str):
@@ -98,7 +97,7 @@ class Decipher(commands.Cog):
                 char = chr((25 - (ord(char) - k)) + k)
             decoded_text[i] = char
         decoded_text = ''.join(decoded_text)
-        await interaction.send(decoded_text)
+        await interaction.response.send_message(decoded_text)
 
     @group.command()
     async def base64(self, interaction: Interaction, code: str):
@@ -124,7 +123,7 @@ class Decipher(commands.Cog):
         size = len(bits) // 8 * 8
         text = bits[:size].tobytes().decode('utf-8')
         
-        await interaction.send(text)
+        await interaction.response.send_message(text)
 
     @group.command()
     async def binary_to_text(self, interaction: Interaction, binary_code: str):
@@ -151,7 +150,7 @@ class Decipher(commands.Cog):
         if not text or text.isspace():
             # await _error_message(ctx, 'Empty message.')
             return
-        await interaction.send(text)
+        await interaction.response.send_message(text)
 
     @group.command()
     async def caesar(self, interaction: Interaction, text: str, shift: int):
@@ -164,7 +163,7 @@ class Decipher(commands.Cog):
                 in the alphabet (sign infers direction).
         '''
         text = await Util.caesar_base(text, shift)
-        await interaction.send(text)
+        await interaction.response.send_message(text)
 
     @group.command()
     async def crossword_solver(self, interaction: Interaction, pattern: str):
@@ -204,7 +203,7 @@ class Decipher(commands.Cog):
         else:
             text += '\nNone found...'
         
-        await interaction.send(text)
+        await interaction.response.send_message(text)
 
     @group.command()
     async def morse(self, interaction: Interaction, code: str):
@@ -249,7 +248,7 @@ class Decipher(commands.Cog):
 
         decoded_text = ' '.join(decoded_text)
         
-        await interaction.send(decoded_text)
+        await interaction.response.send_message(decoded_text)
 
     @group.command()
     async def reverse(self, interaction: Interaction, text: str):
@@ -259,7 +258,7 @@ class Decipher(commands.Cog):
         Args:
             text: Text to be reversed.
         '''
-        await interaction.send(reversed(text))
+        await interaction.response.send_message(reversed(text))
 
     @group.command()
     async def rot13(self, interaction: Interaction, text: str):
@@ -270,7 +269,7 @@ class Decipher(commands.Cog):
             text: Text to be shifted.
         '''
         decoded_text = Util.caesar_base(text, 13)
-        await interaction.send(decoded_text)
+        await interaction.response.send_message(decoded_text)
 
     @group.command()
     async def vigenere(self, interaction: Interaction, text: str, key: str):
@@ -294,7 +293,7 @@ class Decipher(commands.Cog):
                 decoded_chars[i] = char
                 j = (j + 1) % len(key)
         decoded_text = ''.join(decoded_chars)
-        await interaction.send(decoded_text)
+        await interaction.response.send_message(decoded_text)
     
 
 class Util:

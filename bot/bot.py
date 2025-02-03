@@ -10,7 +10,8 @@ class Bot(commands.Bot):
         '''Build default bot with "!" prefix and member intents.'''
 
         # Bot building (native discord.py commands won't be used)
-        intents = Intents.all()
+        intents = Intents.default()
+        intents.members = True
         super().__init__(command_prefix="!", intents=intents)
     
     async def setup_hook(self):
