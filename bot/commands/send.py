@@ -1,17 +1,18 @@
 from discord.ext import commands
 from discord.utils import get
 
-from bot import bot
-
 
 class Send(commands.Cog):
     '''Admin commands to send messages to members or channels.'''
+
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
 
     @commands.command()
     async def send(self, ctx):
         '''Send messages to member or channel.'''
 
-        guild = get(bot.guilds, name='Cipher: Crack the Code')
+        guild = get(self.bot.guilds, name='Emoon\'s server')
         member = get(guild.members, name=ctx.author.name)
         if not member or not member.guild_permissions.manage_guild:
             # You are not an admin of given guild
@@ -53,7 +54,7 @@ class Send(commands.Cog):
     async def broadcast(self, ctx):
         '''Send messages to all given role members.'''
 
-        guild = bot.guilds[0]
+        guild = self.bot.guilds[0]
         member = get(guild.members, name=ctx.author.name)
         if not member or not member.guild_permissions.administrator:
             # You are not an admin of given guild
@@ -79,6 +80,6 @@ class Send(commands.Cog):
                 await member.send(text)
 
 
-def setup(_bot: commands.Bot):
+async def setup(bot: commands.Bot):
     '''Add cog every time extension (module) is (re)loaded.'''
-    _bot.add_cog(Send(_bot))
+    await bot.add_cog(Send(bot))

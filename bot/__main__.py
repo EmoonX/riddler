@@ -37,7 +37,7 @@ async def on_ready():
         return None
     
     await bot.change_presence(
-        status=discord.Status.dnd,
+        status=discord.Status.invisible,
         activity=_get_activity()
     )
 
@@ -49,8 +49,6 @@ async def on_ready():
     os.chdir(commands_dir)
     for path in glob.glob('**/*.py', recursive=True):
         if path.endswith('.py'):
-            if 'mark' in path or 'send' in path:
-                continue
             name = path.removesuffix('.py').replace('/', '.')
             name = f"commands.{name}"
             logging.info('Loading extension %s…', name)
