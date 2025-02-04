@@ -5,6 +5,7 @@ import {
   parseRiddleAndPath,
   riddles,
   sendMessageToPopup,
+  SERVER_URL,
   updateRiddleData,
 } from './explorer.js';
 
@@ -18,7 +19,6 @@ let t0;
 
 /** Sends user-visited URL and its status code to `/process` endpoint. */
 async function sendToProcess(visitedUrl, statusCode) {
-  const SERVER_URL = 'https://emoon.dev';
   const params = {
     method: "post",
     headers: {
@@ -123,7 +123,7 @@ chrome.webRequest.onBeforeSendHeaders.addListener(async details => {
 /** Send a process request to server whenever response is received. */
 chrome.webRequest.onHeadersReceived.addListener(async details => {
   const parsedUrl = new URL(details.url);
-  if (parsedUrl.hostname === 'emoon.dev') {
+  if (parsedUrl.origin === SERVER_URL) {
     return;
   }
   console.log(details.url, details.statusCode);

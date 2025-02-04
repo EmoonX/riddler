@@ -4,10 +4,9 @@ import {
   clickFile,
   doubleClickFile,
   insertFiles,
+  SERVER_URL,
   updateStateInPopup,
 } from './explorer.js';
-
-const SERVER_URL = 'https://emoon.dev';
 
 /** Updates host permissions on button click. */
 async function updateHosts() {
@@ -67,7 +66,7 @@ $(() => {
       const setName = riddle.lastVisitedSet;
       const levelName = riddle.lastVisitedLevel;
       const level = riddle.levels[setName][levelName];
-      const explorerURL = `https://emoon.dev/${alias}/levels`;
+      const explorerURL = `${SERVER_URL}/${alias}/levels`;
       $('#riddle > .icons img.current').attr('src', riddle.iconUrl);
       $('#riddle > .full-name').text(riddle.fullName);
       $('#riddle a').attr('href', explorerURL);

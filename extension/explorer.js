@@ -1,5 +1,5 @@
 /** Base server URL. */
-const SERVER_URL = 'https://emoon.dev';
+export const SERVER_URL = 'https://riddler.app';
 
 /** All the user riddle data. */
 export let riddles = {};
