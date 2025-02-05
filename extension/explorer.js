@@ -1,5 +1,5 @@
 /** Base server URL. */
-export const SERVER_URL = 'https://riddler.app';
+export const SERVER_URL = 'https://emoon.dev';
 
 /** All the user riddle data. */
 export let riddles = {};
@@ -126,12 +126,23 @@ function updatePathsIndex(riddle, pageNode) {
 
 /** Parses riddle and path from URL, based on root path match. */
 export function parseRiddleAndPath(url) {
-  const cleanUrl = url.split('/').splice(2).join('/');
+  const parsedUrl = new URL(url);
   for (const riddle of Object.values(riddles)) {
-    const cleanRoot = riddle.rootPath.split('/').splice(2).join('/');
-    const index = cleanUrl.indexOf(cleanRoot);
-    if (index !== -1) {
-      let path = cleanUrl.replace(cleanRoot, '');
+    const parsedRoot = new URL(riddle.rootPath);
+    if (parsedRoot.hostname === parsedUrl.hostname) {
+      let urlTokens = parsedUrl.pathname.split('/');
+      let rootTokens = parsedRoot.pathname.split('/');
+      let path = '';
+      for (let i = 0; i < rootTokens.length; i++) {
+        if (urlTokens[i] !== rootTokens[i]) {
+          path += '/..';
+        }
+      }
+      for (let i = 0; i < urlTokens.length; i++) {
+        if (urlTokens[i] !== rootTokens[i]) {
+          path += `/${urlTokens[i]}`;
+        }
+      }      
       if (path.at(-1) === '/' && path !== '/') {
         // Remove trailing slash from folder paths
         path = path.slice(0, -1);

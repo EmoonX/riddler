@@ -91,9 +91,13 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
         let pageNode = getPageNode(details.url);
         while (! pageNode) {
           details.url = details.url.split('/').slice(0, -1).join('/');
+          if (details.url.indexOf('https://') === -1) {
+            // Page not in tree
+            break;
+          }
           pageNode = getPageNode(details.url);
         }
-        if (pageNode.username) {
+        if (pageNode && pageNode.username) {
           message.unlockedCredentials = {
             username: pageNode.username,
             password: pageNode.password,
