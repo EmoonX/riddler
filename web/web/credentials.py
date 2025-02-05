@@ -40,13 +40,12 @@ async def process_credentials(
         )
 
     path_credentials = await get_path_credentials(alias, path)
-    folder_path = path_credentials['folder_path']
+    folder_path = (
+        path_credentials['folder_path'] if path_credentials['username']
+        else os.path.dirname(path)
+    )
     if status_code == 401:
         # User (almost certainly) couldn't access page, so don't even bother
-        shown_path = (
-            folder_path if path_credentials['username']
-            else os.path.dirname(path)
-        )
         # _log_received_credentials(shown_path, success=False)
         return False
 
@@ -97,6 +96,59 @@ async def process_credentials(
     _log_received_credentials(folder_path, success=True)
 
     return True
+
+
+async def _record_credentials(
+    alias: str, folder_path: str, username: str, password: str
+):
+
+    query = '''
+        INSERT INTO found_credentials (
+            riddle, folder_path, cred_username, cred_password,
+            acc_username, unlock_time
+        ) VALUES (
+            :riddle, :folder_path, :cred_username, :cred_password,
+            :acc_username, :unlock_time
+        )
+    '''
+    values = {
+        'riddle': alias,
+        'folder_path': folder_path,
+        'cred_username': username,
+        'cred_password': password,
+        'acc_username': (await discord.get_user()).name,
+        'unlock_time': datetime.utcnow(),
+    }
+    try:
+        await database.execute(query, values)
+    except IntegrityError:
+        return
+    else:
+        user = await discord.get_user()
+        tnow = datetime.utcnow()
+        print(
+            f"> \033[1m[{alias}]\033[0m "
+            f"Found new credentials \033[1m{username}:{password}\033[0m "
+            f"for \033[1;3m{folder_path}\033[0m "
+            f"by \033[1m{user.name}\033[0m "
+            f"({tnow})"
+        )
+
+    # Register credentials as new ones
+    query = '''
+        INSERT IGNORE INTO riddle_credentials (
+            riddle, folder_path, username, password
+        ) VALUES (
+            :riddle, :folder_path, :username, :password
+        )
+    '''
+    values = {
+        'riddle': alias,
+        'folder_path': folder_path,
+        'username': username,
+        'password': password,
+    }
+    await database.execute(query, values)
 
 
 async def get_path_credentials(alias: str, path: str) -> dict[str, str]:
@@ -170,55 +222,3 @@ async def get_all_unlocked_credentials(
     }
     return credentials
 
-
-async def _record_credentials(
-    alias: str, folder_path: str, username: str, password: str
-):
-
-    query = '''
-        INSERT INTO found_credentials (
-            riddle, folder_path, cred_username, cred_password,
-            acc_username, unlock_time
-        ) VALUES (
-            :riddle, :folder_path, :cred_username, :cred_password,
-            :acc_username, :unlock_time
-        )
-    '''
-    values = {
-        'riddle': alias,
-        'folder_path': folder_path,
-        'cred_username': username,
-        'cred_password': password,
-        'acc_username': (await discord.get_user()).name,
-        'unlock_time': datetime.utcnow(),
-    }
-    try:
-        await database.execute(query, values)
-    except IntegrityError:
-        return
-    else:
-        user = await discord.get_user()
-        tnow = datetime.utcnow()
-        print(
-            f"> \033[1m[{alias}]\033[0m "
-            f"Found new credentials \033[1m{username}:{password}\033[0m "
-            f"for \033[1;3m{folder_path}\033[0m "
-            f"by \033[1m{user.name}\033[0m "
-            f"({tnow})"
-        )
-
-    # Register credentials as new ones
-    query = '''
-        INSERT IGNORE INTO riddle_credentials (
-            riddle, folder_path, username, password
-        ) VALUES (
-            :riddle, :folder_path, :username, :password
-        )
-    '''
-    values = {
-        'riddle': alias,
-        'folder_path': folder_path,
-        'username': username,
-        'password': password,
-    }
-    await database.execute(query, values)
