@@ -1,17 +1,17 @@
 import os
 
+import discord
+from oauthlib.oauth2.rfc6749.errors import (
+    InvalidGrantError, MismatchingStateError
+)
 from quart import (
     Quart, Blueprint, request, session,
     render_template, redirect, url_for,
 )
 from quart.sessions import SecureCookieSessionInterface
 from quartcord import DiscordOAuth2Session, exceptions
-from oauthlib.oauth2.rfc6749.errors import (
-    InvalidGrantError, MismatchingStateError
-)
 
 from countries import country_names
-from webclient import bot_request
 from util.db import database
 
 # Discord OAuth2 sessionz
@@ -19,6 +19,9 @@ discord: DiscordOAuth2Session
 
 # Interface for storing Quart session cookie
 session_cookie: SecureCookieSessionInterface
+
+# For type hinting in general
+User = discord.User
 
 # Create app blueprint
 auth = Blueprint('players_auth', __name__)
@@ -37,7 +40,7 @@ def discord_session_init(app: Quart):
     global discord
     discord = DiscordOAuth2Session(app)
 
-    async def _get_user():
+    async def _get_user() -> User:
         '''Return Discord OAuth2 user object.
         If token/cookie error is thrown, make user log in again.'''
         try:
@@ -67,9 +70,9 @@ async def register():
     # If account has already been created, nothing to do here
     query = '''
         SELECT * FROM accounts
-        WHERE discord_id = :discord_id
+        WHERE discord_id = :discord_id OR username = :username
     '''
-    values = {'discord_id': user.id}
+    values = {'discord_id': user.id, 'username': user.name}
     already_created = await database.fetch_one(query, values)
     if already_created:
         return redirect(url_for('info.info_page', page='about'))
@@ -86,14 +89,10 @@ async def register():
 
     # Insert value on accounts table
     query = '''
-        INSERT INTO accounts (display_name, username, country)
-        VALUES (:display_name, :username, :country)
+        INSERT INTO accounts (username, country)
+        VALUES (:username, :country)
     '''
-    values |= {
-        'display_name': user.display_name,
-        'username': user.name,
-        'country': form['country'],
-    }
+    values = {'username': user.name, 'country': form['country']}
     await database.execute(query, values)
     
     await _post_callback()
@@ -165,7 +164,7 @@ async def _post_callback():
     '''
     values = {
         'display_name': user.display_name,
-        'avatar_url': avatar_url,
+        'avatar_url': user.avatar_url,
         'discord_id': user.id,
     }
     await database.execute(query, values)
