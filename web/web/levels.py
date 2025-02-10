@@ -119,13 +119,13 @@ async def level_list(alias: str):
         result = await database.fetch_all(query, values)
         level['users'] = [dict(level) for level in result]
     
-    async def _add_credentials(level: dict):
-        '''Add credentials (if any) for level's front path.'''
-        for folder_path in reversed(credentials):
-            # Iterate in reverse to pick the innermost dir
-            if level['path'].startswith(folder_path):
-                level |= credentials[folder_path]
-                return
+    # async def _add_credentials(level: dict):
+    #     '''Add credentials (if any) for level's front path.'''
+    #     for folder_path in reversed(credentials):
+    #         # Iterate in reverse to pick the innermost dir
+    #         if level['path'].startswith(folder_path):
+    #             level |= credentials[folder_path]
+    #             return
     
     # Get riddle level data
     query = '''
@@ -140,8 +140,6 @@ async def level_list(alias: str):
     values = {'riddle': alias}
     result = await database.fetch_all(query, values)
     levels_list = [dict(row) for row in result]
-    user = await discord.get_user()
-    credentials = await get_all_unlocked_credentials(alias, user)
 
     # Get riddle level sets
     query = '''
@@ -151,6 +149,7 @@ async def level_list(alias: str):
     level_sets = await database.fetch_all(query, values)
 
     # Retrieve user-specific level data
+    user = await discord.get_user()
     query = '''
         SELECT level_name, completion_time, rating_given FROM user_levels
         WHERE riddle = :riddle AND username = :username
@@ -163,7 +162,7 @@ async def level_list(alias: str):
     levels_dict = {set_['name']: [] for set_ in level_sets}
     for level in levels_list:
         await _populate_level_data(level)
-        await _add_credentials(level)
+        # await _add_credentials(level)
         levels_dict[level['level_set']].append(level)
 
     # Pass better named dict to template
@@ -178,7 +177,7 @@ async def level_list(alias: str):
 async def get_pages(
     alias: str, requested_level: str = '%',
     admin: bool = False, as_json: bool = True
-) -> str:
+) -> dict | str:
     '''Return a recursive JSON of all user level folders and pages.
     If a level is specified, return only pages from that level instead.'''
 
@@ -201,7 +200,7 @@ async def get_pages(
             WHERE riddle = :riddle
                 AND username = :username
                 AND level_name LIKE :level_name
-            ORDER BY SUBSTRING_INDEX(`path`, ".", -1)
+            ORDER BY SUBSTRING_INDEX(path, ".", -1)
         '''
         values |= {'username': user.name}
     result = await database.fetch_all(query, values)

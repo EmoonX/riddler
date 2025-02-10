@@ -31,8 +31,8 @@ async def health_diagnostics(alias: str | None = None):
         }
         return symbols.get(status_code, '')
 
-    pages = await get_pages(alias, admin=True, json=False)
-    backup_requested = bool(request.args.get('backup'))
+    pages = await get_pages(alias, admin=True, as_json=False)
+    archive_requested = bool(request.args.get('archive'))
     skip_existing = bool(request.args.get('skipExisting'))
     start_level = request.args.get('start', list(pages.keys())[0])
     end_level = request.args.get('end')
@@ -74,7 +74,7 @@ async def health_diagnostics(alias: str | None = None):
                 levels[level_name] = {}
             levels[level_name][path] = page_data | {'url': url}
 
-            if res.ok and backup_requested:
+            if res.ok and archive_requested:
                 # Valid page, so archive it if new/changed
                 archive_page = ArchivePage(alias, path, res.content)
                 if await archive_page.record_hash():

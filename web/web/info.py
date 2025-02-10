@@ -15,9 +15,6 @@ async def info_page(page: str):
     try:
         return await render_template(path)
     except TemplateNotFound:
-        if page == 'process':
-            abort(405)
-        
         # Possibly a riddle front page
         riddles = await get_riddles(unlisted=True)
         aliases = [riddle['alias'] for riddle in riddles]
