@@ -189,6 +189,7 @@ async def get_pages(
         'level_name': requested_level,
     }
     if admin:
+        user = None
         query = '''
             SELECT *, current_timestamp() AS access_time FROM level_pages
             WHERE riddle = :riddle AND level_name LIKE :level_name
@@ -274,7 +275,6 @@ async def get_pages(
     '''
     values = {'riddle': alias, 'level_name': requested_level}
     pages_data = await database.fetch_all(query, values)
-    user = await discord.get_user() if not admin else None
     credentials = await get_all_unlocked_credentials(alias, user)
     for data in pages_data:
         level = data['level_name']

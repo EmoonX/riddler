@@ -212,9 +212,12 @@ async def get_all_unlocked_credentials(
         SELECT rc.folder_path, rc.username, rc.password
         FROM riddle_credentials rc INNER JOIN user_credentials uc
             ON rc.riddle = uc.riddle AND rc.folder_path = uc.folder_path
-        WHERE rc.riddle = :riddle AND uc.username = :username
+        WHERE rc.riddle = :riddle AND uc.username LIKE :username
     '''
-    values = {'riddle': alias, 'username': user.name}
+    values = {
+        'riddle': alias,
+        'username': user.name if user else '%',
+    }
     result = await database.fetch_all(query, values)
     credentials = {
         row['folder_path']: {
