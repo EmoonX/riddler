@@ -68,18 +68,21 @@ async def process_credentials(
     if res.ok:
         # Path isn't protected at all
         if correct_credentials != ('', ''):
-            # Used to be protected, but not anymore
+            # Used to be protected, but not anymore?
             await _record_credentials(alias, folder_path, '', '')
         return True
 
-    res = requests.get(url, auth=HTTPBasicAuth(username, password))
-    if res.status_code == 401:
-        # Wrong user credentials
-        _log_received_credentials(folder_path, success=False)
-        return False
+    if correct_credentials == ('???', '???'):
+        username, password = ('???', '???')
+    else:
+        res = requests.get(url, auth=HTTPBasicAuth(username, password))
+        if res.status_code == 401:
+            # Wrong user credentials
+            _log_received_credentials(folder_path, success=False)
+            return False
     
-    # Correct unseen credentials; record them
-    await _record_credentials(alias, folder_path, username, password)
+        # Correct unseen credentials; record them
+        await _record_credentials(alias, folder_path, username, password)
 
     # Create new user record
     query = '''
