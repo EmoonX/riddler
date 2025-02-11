@@ -11,6 +11,8 @@ info = Blueprint('info', __name__)
 async def info_page(page: str):
     '''Show a front/info page by rendering its immediate template.
     Throws 404/405 if such template doesn't exist.'''
+    if page.endswith('.html'):
+        page = page[:-len('.html')]
     path = 'info/%s.htm' % page
     try:
         return await render_template(path)
