@@ -219,7 +219,7 @@ function getFileFigure(object, token, offset) {
     const i = token.lastIndexOf('.');
     type = token.substr(i+1);
   }
-  const url = `images/icons/extensions/${type}.png`;
+  const url = `images/icons/extensions/${type.toLowerCase()}.png`;
   const state = (type == 'folder') ? ' open' : '';
   const margin = `${0.4 * offset}em`;
   const img = `<img src="${url}">`;
