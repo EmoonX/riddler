@@ -166,7 +166,9 @@ class _PathHandler:
         '''Retrieve riddle, path and (possibly) credentials info from URL.'''
 
         # Parse URL into hostname and path parts
-        parsed_url = urlsplit(url.replace('://www.', '://'))
+        parsed_url = urlsplit(
+            url.replace('://www.', '://').replace('@www.', '@')
+        )
 
         def _get_relative_path(root_path: str) -> str:
             '''Build relative path from root (with "../"s if needed).''' 
