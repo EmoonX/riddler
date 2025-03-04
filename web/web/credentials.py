@@ -39,16 +39,12 @@ async def process_credentials(
             f"({tnow})"
         )
 
-    path_credentials = await get_path_credentials(alias, path)
-    folder_path = (
-        path_credentials['folder_path'] if path_credentials['username']
-        else os.path.dirname(path)
-    )
     if status_code == 401:
         # User (almost certainly) couldn't access page, so don't even bother
-        # _log_received_credentials(shown_path, success=False)
+        # _log_received_credentials(os.path.dirname(path), success=False)
         return False
 
+    path_credentials = await get_path_credentials(alias, path)
     if not path_credentials['username'] and credentials == ('', ''):
         # No credentials found, no credentials given and no 401 received,
         # so we assume unprotected folder to avoid frequent HTTP checks
@@ -57,31 +53,37 @@ async def process_credentials(
     correct_credentials = (
         path_credentials['username'], path_credentials['password']
     )
+    folder_path = path_credentials['folder_path']
     if credentials in [correct_credentials, ('', '')]:
         # Grant access if user has unlocked protected folder before
         if await has_unlocked_folder_credentials(alias, user, folder_path):
             return True
 
-    # Possibly new/different credentials, so HTTP-double-check them
-    url = f"{riddle['root_path']}{path}"
-    res = requests.get(url)
-    if res.ok:
-        # Path isn't protected at all
-        if correct_credentials != ('', ''):
-            # Used to be protected, but not anymore?
-            await _record_credentials(alias, folder_path, '', '')
-        return True
-
     if correct_credentials == ('???', '???'):
         username, password = ('???', '???')
     else:
-        res = requests.get(url, auth=HTTPBasicAuth(username, password))
-        if res.status_code == 401:
-            # Wrong user credentials
-            _log_received_credentials(folder_path, success=False)
-            return False
+        # Possibly new/different credentials, so HTTP-double-check them
+        folder_path = path
+        while folder_path:
+            url = f"{riddle['root_path']}{os.path.dirname(folder_path)}"
+
+            res = requests.get(url)
+            if res.status_code != 401:
+                if folder_path == path:
+                    # Path isn't protected at all
+                    return True
+                break
+
+            res = requests.get(url, auth=HTTPBasicAuth(username, password))
+            if res.status_code == 401:
+                if folder_path == path:
+                    # Wrong user credentials
+                    return False
+                break
+
+            folder_path = os.path.dirname(folder_path)
     
-        # Correct unseen credentials; record them
+        # Correct credentials; possibly record them
         await _record_credentials(alias, folder_path, username, password)
 
     # Create new user record
@@ -105,6 +107,7 @@ async def _record_credentials(
     alias: str, folder_path: str, username: str, password: str
 ):
 
+    user = await discord.get_user()
     query = '''
         INSERT INTO found_credentials (
             riddle, folder_path, cred_username, cred_password,
@@ -119,7 +122,7 @@ async def _record_credentials(
         'folder_path': folder_path,
         'cred_username': username,
         'cred_password': password,
-        'acc_username': (await discord.get_user()).name,
+        'acc_username': user.name,
         'unlock_time': datetime.utcnow(),
     }
     try:
@@ -127,7 +130,6 @@ async def _record_credentials(
     except IntegrityError:
         return
     else:
-        user = await discord.get_user()
         tnow = datetime.utcnow()
         print(
             f"> \033[1m[{alias}]\033[0m "
