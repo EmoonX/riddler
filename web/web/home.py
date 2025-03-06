@@ -19,21 +19,23 @@ async def homepage():
     # Big number counters
     query = '''
         SELECT COUNT(*) count FROM riddles
-        WHERE unlisted IS FALSE
+        WHERE unlisted IS NOT TRUE
     '''
     riddle_count = await database.fetch_val(query, column='count')
     query = '''
         SELECT COUNT(*) count FROM levels
-        WHERE riddle IN (
-            SELECT alias FROM riddles WHERE unlisted IS FALSE
+        WHERE riddle NOT IN (
+            SELECT alias FROM riddles WHERE unlisted IS TRUE
         )
     '''
     level_count = await database.fetch_val(query, column='count')
     query = '''
         SELECT COUNT(*) count FROM level_pages
-        WHERE riddle IN (
-            SELECT alias FROM riddles WHERE unlisted IS FALSE
-        ) AND level_name IS NOT NULL and level_name != ''
+        WHERE
+            riddle NOT IN (
+                SELECT alias FROM riddles WHERE unlisted IS TRUE
+            )
+            AND level_name IS NOT NULL
     '''
     page_count = await database.fetch_val(query, column='count')
     query = '''
@@ -45,7 +47,8 @@ async def homepage():
     # Recent player progress (newly found pages)
     query = '''
         SELECT *, MAX(access_time) AS time FROM user_pages
-        WHERE TIMESTAMPDIFF(DAY, access_time, NOW()) < 2
+        WHERE
+            TIMESTAMPDIFF(MONTH, access_time, NOW()) < 30
             AND riddle NOT IN (
                 SELECT alias FROM riddles WHERE unlisted IS TRUE
             )
@@ -60,7 +63,7 @@ async def homepage():
         FROM user_levels u1 INNER JOIN (
             SELECT username, MAX(completion_time) AS max_time
             FROM user_levels
-            WHERE TIMESTAMPDIFF(DAY, completion_time, NOW()) < 2
+            WHERE TIMESTAMPDIFF(MONTH, completion_time, NOW()) < 30
             GROUP BY username
         ) u2
         ON u1.username = u2.username
