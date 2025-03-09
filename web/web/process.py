@@ -612,34 +612,39 @@ class _PathHandler:
         '''Check and possibly register non-level-associated
         page (which necessarily came from a valid request).'''
 
-        # Record found page and respective user
-        tnow = datetime.utcnow()
+        # Possibly record page as a new one (w/ respective level being NULL)
         query = '''
-            INSERT INTO found_pages (riddle, `path`, username, access_time)
-            VALUES (:riddle, :path, :username, :time)
+            INSERT INTO level_pages (riddle, path)
+            VALUES (:riddle, :path)
         '''
-        values = {
-            'riddle': self.riddle_alias, 'path': self.path,
-            'username': self.username, 'time': tnow,
-        }
+        values = {'riddle': self.riddle_alias, 'path': self.path}
         try:
             await database.execute(query, values)
+
+            # Record found page and the user who did it
+            tnow = datetime.utcnow()
+            query = '''
+                INSERT IGNORE INTO found_pages (
+                    riddle, path, username, access_time
+                ) VALUES (
+                    :riddle, :path, :username, :time
+                )
+            '''
+            values = {
+                'riddle': self.riddle_alias, 'path': self.path,
+                'username': self.username, 'time': tnow,
+            }
+            await database.execute(query, values)
+
+        except IntegrityError:
+            pass
+        else:
             print(
                 f"> \033[1m[{self.riddle_alias}]\033[0m "
                 f"Found new page \033[1m{self.path}\033[0m "
                     f"by \033[1m{self.username}\033[0m "
                     f"({tnow})"
             )
-            # Register page as a new one (with NULL level)
-            query = '''
-                INSERT INTO level_pages (riddle, `path`)
-                VALUES (:riddle, :path)
-            '''
-            values = {'riddle': self.riddle_alias, 'path': self.path}
-            await database.execute(query, values)
-
-        except IntegrityError:
-            pass
 
 
 class _LevelHandler:
