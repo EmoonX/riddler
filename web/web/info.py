@@ -36,7 +36,7 @@ async def thedude():
     last = 49
     inclusive = False
     query = 'SELECT * FROM levels ' \
-            'WHERE riddle = "cipher" AND `index` >= :first AND `index` <= :last AND is_secret IS FALSE'
+            'WHERE riddle = "cipher" AND `index` >= :first AND `index` <= :last AND is_secret IS NOT TRUE'
     values = {'first': first, 'last': last}
     levels = await database.fetch_all(query, values)
     for level in levels:
@@ -81,7 +81,7 @@ async def global_list(country: str = None):
 
     # Get riddles data from database
     query = 'SELECT * from riddles ' \
-            'WHERE unlisted IS FALSE'
+            'WHERE unlisted IS NOT TRUE'
     result = await database.fetch_all(query)
     riddles = [dict(riddle) for riddle in result]
 
@@ -145,7 +145,7 @@ async def global_list(country: str = None):
             # Check completion
             query = 'SELECT * FROM levels ' \
                     'WHERE riddle = :riddle ' \
-                        'AND is_secret IS FALSE AND `name` NOT IN ( ' \
+                        'AND is_secret IS NOT TRUE AND `name` NOT IN ( ' \
                             'SELECT level_name FROM user_levels ' \
                             'WHERE riddle = :riddle ' \
                                 'AND username = :username ' \

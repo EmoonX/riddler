@@ -54,7 +54,7 @@ async def build_riddles():
     for row in result:
         query = '''
             SELECT * FROM levels
-            WHERE riddle = :riddle AND is_secret IS FALSE
+            WHERE riddle = :riddle AND is_secret IS NOT TRUE
         '''
         values = {'riddle': row['alias']}
         levels = await database.fetch_all(query, values)

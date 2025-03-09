@@ -45,7 +45,7 @@ async def get_riddles(unlisted: bool = False):
 
     query = f"""
         SELECT * FROM riddles
-        {'WHERE unlisted IS FALSE' if not unlisted else ''}
+        {'WHERE unlisted IS NOT TRUE' if not unlisted else ''}
     """
     riddles = await database.fetch_all(query)
     return riddles
