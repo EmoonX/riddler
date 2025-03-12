@@ -48,7 +48,7 @@ async def admin_auth(alias: str):
         username=user.name
     )
     if ok != "True":
-        abort(401)
+        abort(403)
 
 
 async def is_admin_of(alias: str) -> bool:
