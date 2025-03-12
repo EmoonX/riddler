@@ -624,7 +624,7 @@ class _PathHandler:
             # Record found page and the user who did it
             tnow = datetime.utcnow()
             query = '''
-                INSERT IGNORE INTO found_pages (
+                INSERT IGNORE INTO _found_pages (
                     riddle, path, username, access_time
                 ) VALUES (
                     :riddle, :path, :username, :time

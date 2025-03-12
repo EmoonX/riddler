@@ -109,7 +109,7 @@ async def _record_credentials(
 
     user = await discord.get_user()
     query = '''
-        INSERT INTO found_credentials (
+        INSERT INTO _found_credentials (
             riddle, folder_path, cred_username, cred_password,
             acc_username, unlock_time
         ) VALUES (
