@@ -44,7 +44,7 @@ class ArchivePage:
             tnow = datetime.utcnow()
             print(
                 f"> \033[1m[{self.alias}]\033[0m "
-                f"Saved new page from \033[1;3m{self.path}\033[0m "
+                f"Saved new content from \033[1;3m{self.path}\033[0m "
                 f"with hash \033[1m{self.content_hash}\033[0m "
                 f"({tnow})",
                 flush=True

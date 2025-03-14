@@ -46,6 +46,18 @@ async def health_diagnostics(alias: str | None = None):
     riddle = await get_riddle(alias)
     for level_name in dropwhile(lambda k: k != start_level, pages):
         # Start iterating at user-informed level (if any)
+        if level_name:
+            print(
+                f"> \033[1m[{alias}]\033[0m "
+                f"Fetching page data for {level_name}...",
+                flush=True
+            )
+        else:
+            print(
+                f"> \033[1m[{alias}]\033[0m "
+                f"Fetching unlisted page data...",
+                flush=True
+            )
         for path, page_data in absolute_paths(pages[level_name]['/']):
             if skip_existing:
                 query = '''
@@ -58,7 +70,7 @@ async def health_diagnostics(alias: str | None = None):
 
             url = f"{riddle['root_path']}{path}"
             credentials = await get_path_credentials(alias, path)
-            if credentials:
+            if credentials['username']:
                 username = credentials['username']
                 password = credentials['password']
                 url = url.replace('://', f"://{username}:{password}@")
