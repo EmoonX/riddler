@@ -63,13 +63,21 @@ async def process_url(username=None, url=None):
     # Process received path
     ok = await ph.process()
 
+    tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     if not ok and status_code not in [403, 404]:
-        # Page exists, but not (yet?) a level one
-        await ph.check_and_register_missing_page()
+        # Page exists, but either locked for user or not a level one (yet?)
+        level_name = await ph.check_and_register_missing_page()
+        if level_name:
+            print(
+                f"\033[1m[{ph.riddle_alias}]\033[0m "
+                f"Received locked path \033[3m\033[9m{ph.path}\033[0m\033[0m "
+                    f"\033[1m({level_name})\033[0m from "
+                    f"\033[1m{ph.username}\033[0m "
+                    f"({tnow})"
+            )
         return 'Not a level page', 412
 
     # Log received path with timestamp
-    tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     if status_code in [403, 404]:
         # Plain folder without index (403), or usual page not found (404)
         print(
@@ -608,43 +616,53 @@ class _PathHandler:
             cheevo=dict(cheevo), points=points, page=self.path
         )
 
-    async def check_and_register_missing_page(self):
+    async def check_and_register_missing_page(self) -> str | None:
         '''Check and possibly register non-level-associated
         page (which necessarily came from a valid request).'''
 
-        # Possibly record page as a new one (w/ respective level being NULL)
+        # Check and retrieve (possibly NULL) level name if page already in DB
+        query = '''
+            SELECT level_name FROM level_pages
+            WHERE riddle = :riddle AND path = :path
+        '''
+        values = {'riddle': self.riddle_alias, 'path': self.path}
+        page = await database.fetch_one(query, values)
+        if page:
+            return page['level_name']
+
+        # Record page as a new one (w/ respective level being NULL)
         query = '''
             INSERT INTO level_pages (riddle, path)
             VALUES (:riddle, :path)
         '''
-        values = {'riddle': self.riddle_alias, 'path': self.path}
         try:
             await database.execute(query, values)
-
-            # Record found page and the user who did it
-            tnow = datetime.utcnow()
-            query = '''
-                INSERT IGNORE INTO _found_pages (
-                    riddle, path, username, access_time
-                ) VALUES (
-                    :riddle, :path, :username, :time
-                )
-            '''
-            values = {
-                'riddle': self.riddle_alias, 'path': self.path,
-                'username': self.username, 'time': tnow,
-            }
-            await database.execute(query, values)
-
         except IntegrityError:
-            pass
-        else:
-            print(
-                f"> \033[1m[{self.riddle_alias}]\033[0m "
-                f"Found new page \033[1m{self.path}\033[0m "
-                    f"by \033[1m{self.username}\033[0m "
-                    f"({tnow})"
+            # Avoid annoying errors due to concurrent requests
+            return None
+
+        # Record found page and the user who did it
+        tnow = datetime.utcnow()
+        query = '''
+            INSERT IGNORE INTO _found_pages (
+                riddle, path, username, access_time
+            ) VALUES (
+                :riddle, :path, :username, :time
             )
+        '''
+        values = {
+            'riddle': self.riddle_alias, 'path': self.path,
+            'username': self.username, 'time': tnow,
+        }
+        await database.execute(query, values)
+        print(
+            f"> \033[1m[{self.riddle_alias}]\033[0m "
+            f"Found new page \033[1m{self.path}\033[0m "
+                f"by \033[1m{self.username}\033[0m "
+                f"({tnow})"
+        )
+
+        return None
 
 
 class _LevelHandler:
