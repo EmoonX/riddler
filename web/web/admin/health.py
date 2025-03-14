@@ -31,7 +31,12 @@ async def health_diagnostics(alias: str | None = None):
         }
         return symbols.get(status_code, '')
 
-    pages = await get_pages(alias, admin=True, as_json=False)
+    pages = await get_pages(
+        alias,
+        include_unlisted=request.args.get('includeUnlisted'),
+        admin=True,
+        as_json=False,
+    )
     archive_requested = bool(request.args.get('archive'))
     skip_existing = bool(request.args.get('skipExisting'))
     start_level = request.args.get('start', list(pages.keys())[0])

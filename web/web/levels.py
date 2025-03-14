@@ -175,8 +175,11 @@ async def level_list(alias: str):
 @levels.get('/<alias>/levels/get-pages/<requested_level>')
 @requires_authorization
 async def get_pages(
-    alias: str, requested_level: str = '%',
-    admin: bool = False, as_json: bool = True
+    alias: str,
+    requested_level: str = '%',
+    include_unlisted: bool = False,
+    admin: bool = False,
+    as_json: bool = True
 ) -> dict | str:
     '''Return a recursive JSON of all user level folders and pages.
     If a level is specified, return only pages from that level instead.'''
@@ -184,28 +187,35 @@ async def get_pages(
     admin &= await is_admin_of(alias)
 
     # Fetch user page data
+    level_condition = 'level_name LIKE :level_name'
+    if include_unlisted:
+        level_condition = f"({level_condition} OR level_name IS NULL)"
     values = {
         'riddle': alias,
         'level_name': requested_level,
     }
     if admin:
         user = None
-        query = '''
+        query = f"""
             SELECT *, current_timestamp() AS access_time FROM level_pages
-            WHERE riddle = :riddle AND level_name LIKE :level_name
-        '''
+            WHERE riddle = :riddle AND {level_condition}
+        """
     else:
         user = await discord.get_user()
-        query = '''
+        query = f"""
             SELECT level_name, path, access_time FROM user_pages
             WHERE riddle = :riddle
                 AND username = :username
-                AND level_name LIKE :level_name
+                AND {level_condition}
             ORDER BY SUBSTRING_INDEX(path, ".", -1)
-        '''
+        """
         values |= {'username': user.name}
     result = await database.fetch_all(query, values)
-    user_page_data = {row['path']: dict(row) for row in result}
+    page_data = {}
+    for row in result:
+        page_data[row['path']] = dict(row)
+        if not row['level_name']:
+            page_data[row['path']]['level_name'] = 'Unlisted'
 
     # Fetch and build general unlocked level data
     unlocked_levels = {}
@@ -227,7 +237,7 @@ async def get_pages(
     for row in result:
         level_name = row['name']
         unlocked_levels[level_name] = {'image': row['image']}
-        if row['path'] in user_page_data:
+        if row['path'] in page_data:
             unlocked_levels[level_name] |= {'frontPage': row['path']}
         if row['completion_time']:
             unlocked_levels[level_name] |= {'answer': row['answer']}
@@ -235,7 +245,9 @@ async def get_pages(
      # Build dict of (level -> paths)
     ordered_levels = await get_ordered_levels(alias)
     paths = {level_name: [] for level_name in ordered_levels}
-    for data in user_page_data.values():
+    if include_unlisted:
+        paths |= {'Unlisted': []}
+    for data in page_data.values():
         data['page'] = data['path'].rsplit('/', 1)[-1]
         data['folder'] = 0
         data['access_time'] = \
@@ -269,16 +281,16 @@ async def get_pages(
     
     # Recursively calculate total file count for each folder
     # and record credentials based on innermost protected directory
-    query = '''
+    query = f"""
         SELECT level_name, `path` FROM level_pages
-        WHERE riddle = :riddle AND level_name LIKE :level_name
-    '''
+        WHERE riddle = :riddle AND {level_condition}
+    """
     values = {'riddle': alias, 'level_name': requested_level}
     pages_data = await database.fetch_all(query, values)
     credentials = await get_all_unlocked_credentials(alias, user)
     for data in pages_data:
         level = data['level_name']
-        if not level or level not in pages:
+        if (not include_unlisted and not level) or level not in pages:
             continue
         path = ''
         parent = pages[level]['/']
@@ -298,7 +310,7 @@ async def get_pages(
             elif 'username' in greatparent:
                 parent['username'] = greatparent['username']
                 parent['password'] = greatparent['password']
- 
+
     return json.dumps(pages) if as_json else pages
 
 
