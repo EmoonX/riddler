@@ -57,21 +57,27 @@ async def process_url(username=None, url=None):
     # Process received credentials (possibly none)
     riddle = await get_riddle(ph.riddle_alias)
     ok = await process_credentials(riddle, ph.path, ph.credentials, status_code)
+    tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     if not ok:
+        print(
+            f"\033[1m[{ph.riddle_alias}]\033[0m "
+            f"Received 401 at path \033[3m{ph.path}\033[0m from "
+                f"\033[1m{ph.username}\033[0m "
+                f"({tnow})"
+        )
         return 'Wrong or missing user credentials', 403
     
     # Process received path
     ok = await ph.process()
 
-    tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     if not ok and status_code not in [403, 404]:
         # Page exists, but either locked for user or not a level one (yet?)
         level_name = await ph.check_and_register_missing_page()
         if level_name:
             print(
                 f"\033[1m[{ph.riddle_alias}]\033[0m "
-                f"Received locked path \033[3m\033[9m{ph.path}\033[0m\033[0m "
-                    f"\033[1m({level_name})\033[0m from "
+                f"Received locked path \033[3m{ph.path}\033[0m "
+                    f"({level_name}) from "
                     f"\033[1m{ph.username}\033[0m "
                     f"({tnow})"
             )
