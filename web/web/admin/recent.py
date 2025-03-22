@@ -12,9 +12,7 @@ admin_recent = Blueprint('admin_recent', __name__)
 async def update_recent():
     '''Update players' last placements and recent scores.'''
 
-    ok = await root_auth()
-    if not ok:
-        abort(401)
+    await root_auth()
 
     # Update `last_placement` fields
     # in `accounts` with current player placements

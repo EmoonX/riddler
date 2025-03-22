@@ -8,7 +8,7 @@ import requests
 
 from admin.admin_auth import admin_auth, root_auth
 from inject import get_accounts, get_riddles
-from riddle import level_ranks, cheevo_ranks
+from riddles import level_ranks, cheevo_ranks
 from util.db import database
 from webclient import bot_request
 
@@ -22,9 +22,7 @@ async def update_all_riddles():
     '''Update everything in every single riddle.'''
 
     # Only root can do it!
-    ok = await root_auth()
-    if not ok:
-        abort(401)
+    await root_auth()
 
     # Run update_all on every riddle
     riddles = await get_riddles()
@@ -55,7 +53,6 @@ async def update_all_riddles():
 @requires_authorization
 async def update_discord_account_info():
 
-    # Check for root permissions
     await root_auth()
 
     accounts = await get_accounts()
@@ -88,8 +85,6 @@ async def update_discord_account_info():
 
         else:
             url = account['avatar_url']
-            if not url.startswith('http'):
-                url = f"https://abc.com/{url}"
             response = requests.get(url)
             if response.status_code == 404:
                 # Outdated profile picture
@@ -353,7 +348,7 @@ async def update_page_changes(alias: str):
     # Check for admin permissions
     await admin_auth(alias)
 
-    async def _update_page_level(path: str, new_level: str):
+    async def _update_page_level(path: str, new_level: str | None):
         '''Update level for page with given path.'''
         query = '''
             UPDATE level_pages
@@ -371,6 +366,7 @@ async def update_page_changes(alias: str):
     for page_change in page_changes:
         path, new_path = page_change['path'], page_change['new_path']
         level, new_level = page_change['level'], page_change['new_level']
+        print(path, new_path, level, new_level)
         if path:
             # Remove level from old page
             await _update_page_level(path, None)

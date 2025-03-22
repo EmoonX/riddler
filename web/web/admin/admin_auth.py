@@ -1,6 +1,6 @@
 from quart import abort
 from quartcord import requires_authorization
-from werkzeug.exceptions import HTTPException
+import werkzeug
 
 from auth import discord
 from webclient import bot_request
@@ -8,17 +8,18 @@ from util.db import database
 
 
 @requires_authorization
-async def root_auth() -> bool:
-    '''Check if you are really important.'''
+async def root_auth():
+    '''Assert you are really important.'''
     user = await discord.get_user()
     if user.id == 315940379553955844:
-        return True
+        return
     ok = await bot_request(
         'is-member-and-has-permissions',
         guild_id=859797827554770955,  # Wonderland
         username=user.name,
     )
-    return ok == 'True'
+    if ok != 'True':
+        abort(403)
 
 
 @requires_authorization
@@ -31,12 +32,16 @@ async def admin_auth(alias: str):
     if not result:
         abort(404)
 
-    # Big boss can access everything 8)
-    user = await discord.get_user()
-    if await root_auth():
-        return 
+    # Root can access everything
+    try:
+        await root_auth()
+    except werkzeug.exceptions.Forbidden:
+        pass
+    else:
+        return
 
     # Check if user is riddle's admin and has rights for it
+    user = await discord.get_user()
     query = '''
         SELECT * FROM riddles
         WHERE alias = :alias
@@ -59,12 +64,11 @@ async def admin_auth(alias: str):
 
 
 async def is_admin_of(alias: str) -> bool:
-    '''Quick boolean method to check
-    for admin rights for given riddle.'''
+    '''Check for admin rights on given riddle.'''
     if not await discord.authorized:
         return False
     try:
         await admin_auth(alias)
-    except HTTPException:
+    except werkzeug.exceptions.Forbidden:
         return False
     return True
