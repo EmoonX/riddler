@@ -178,8 +178,9 @@ async def get_pages(
     alias: str,
     requested_level: str = '%',
     include_unlisted: bool = False,
+    index_by_levels: bool = True,
+    as_json: bool = True,
     admin: bool = False,
-    as_json: bool = True
 ) -> dict | str:
     '''Return a recursive JSON of all user level folders and pages.
     If a level is specified, return only pages from that level instead.'''
@@ -259,14 +260,19 @@ async def get_pages(
         'children': {}, 'folder': 1, 'path': '/',
         'filesFound': 0, 'filesTotal': 0,
     }
-    pages = {}
+    if not index_by_levels:
+        base |= {'levels': {}}
+    pages = {} if index_by_levels else {'/': deepcopy(base)}
     for level_name, level_paths in paths.items():
         if not level_paths:
             continue
-        pages[level_name] = {'/': deepcopy(base)}
-        pages[level_name] |= unlocked_levels.get(level_name, {})
+        if index_by_levels:
+            level_pages = pages[level_name] = {'/': deepcopy(base)}
+        else:
+            level_pages = pages
+        level_pages |= unlocked_levels.get(level_name, {})
         for data in level_paths:
-            parent = pages[level_name]['/']
+            parent = level_pages['/']
             path = data['path']
             segments = path.split('/')[1:]
             for seg in segments:
@@ -289,17 +295,22 @@ async def get_pages(
     pages_data = await database.fetch_all(query, values)
     credentials = await get_all_unlocked_credentials(alias, user)
     for data in pages_data:
-        level = data['level_name']
-        if (not include_unlisted and not level) or level not in pages:
+        level_name = data['level_name']
+        if (
+            (not include_unlisted and not level_name)
+            or (index_by_levels and (level_name not in pages))
+        ):
             continue
         path = ''
-        parent = pages[level]['/']
+        parent = pages[level_name]['/'] if index_by_levels else pages['/']
         segments = data['path'].split('/')[1:]
         for seg in segments:
             parent['filesTotal'] += 1
             if not seg in parent['children']:
                 # Avoid registering locked folders/pages
                 break
+            if not index_by_levels:
+                parent['levels'][level_name] = True
             greatparent = parent
             parent = parent['children'][seg]
             path = path + '/' + seg

@@ -26,8 +26,8 @@ export function toggleExplorer() {
     if (explorer.hasClass('active')) {
       // Change to initial (front page) directory
       const node = explorer.find('.path');
-      const folder = node.text();
-      changeDir(explorer, folder, admin);
+      const folderPath = node.text();
+      changeDir(explorer, folderPath, admin);
 
       // Scroll page to accomodate view to margin-top
       $('html').animate({
@@ -37,9 +37,9 @@ export function toggleExplorer() {
   });
 }
 
-export function getFolderEntry(path, level, admin) {
+export function getFolderEntry(folderPath, level, admin) {
   // Get pages dictionary entry corresponding to bottom folder in path
-  const segments = path.split('/').slice(1, -1);
+  const segments = folderPath.split('/').slice(1, -1);
   let folder = admin ?  pages['/'] : pages[level]['/'];
   segments.forEach(seg => {
     folder = folder['children'][seg];

@@ -11,6 +11,7 @@ import requests
 from admin.admin_auth import admin_auth
 from admin.util import save_image
 from inject import get_riddle
+from levels import get_pages
 from util.db import database
 from webclient import bot_request
 
@@ -271,52 +272,18 @@ async def _update_levels(
 
 @admin_levels.get('/admin/<alias>/levels/get-pages')
 @requires_authorization
-async def get_pages(alias: str) -> str:
+async def get_admin_pages(alias: str) -> str:
     '''Return a recursive JSON of all riddle folders and pages.'''
 
     # Check for right permissions
     await admin_auth(alias)
 
-    # Build list of paths from database data
-    query = '''
-        SELECT * FROM level_pages
-        WHERE riddle = :riddle
-        ORDER BY `path`
-    '''
-    values = {'riddle': alias}
-    result = await database.fetch_all(query, values)
-    paths = []
-    for row in result:
-        row = dict(row)
-        row['page'] = row['path'].rsplit('/', 1)[-1]
-        row['folder'] = 0
-        paths.append(row)
-
-    # Build recursive dict of folders and files
-    base = {'children': {}, 'levels': {}, 'folder': 1}
-    pages = {'/': deepcopy(base)}
-    for row in paths:
-        parent = pages['/']
-        segments = row['path'].split('/')[1:]
-        for seg in segments:
-            levels = parent['levels']
-            if not row['level_name'] in levels:
-                levels[row['level_name']] = 0
-            levels[row['level_name']] += 1
-            children = parent['children']
-            if seg not in children:
-                if seg != row['page']:
-                    children[seg] = deepcopy(base)
-                else:
-                    children[seg] = row
-            parent = children[seg]
-
-    # # Save number of pages/files in folder
-    # for folder in folders.values():
-    #     folder['filesTotal'] = len(folder['files'])
-
-    # Return JSON dump
-    return json(pages)
+    return await get_pages(
+        alias,
+        index_by_levels=False,
+        as_json=True,
+        admin=True
+    )
 
 
 @admin_levels.get('/admin/<_alias>/level-row')

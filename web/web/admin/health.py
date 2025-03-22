@@ -34,8 +34,8 @@ async def health_diagnostics(alias: str | None = None):
     pages = await get_pages(
         alias,
         include_unlisted=request.args.get('includeUnlisted'),
-        admin=True,
         as_json=False,
+        admin=True,
     )
     archive_requested = bool(request.args.get('archive'))
     skip_existing = bool(request.args.get('skipExisting'))
