@@ -148,7 +148,7 @@ class UnlockHandler:
         name = level['name']
         if level['latin_name']:
             name += f" ({level['latin_name']})"
-        level_type = 'level' if not level['is_secret'] else 'secret_level'
+        level_type = 'level' if not level['is_secret'] else 'secret level'
         logging.info(
             ('\033[1m[%s]\033[0m \033[1m%s\033[0m '
                 'has completed %s \033[1m%s\033[0m'),
