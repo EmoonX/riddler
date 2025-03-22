@@ -7,7 +7,7 @@ level_ranks = {
     'C': f(100, 'lawngreen'),
     'B': f(200, 'gold'),
     'A': f(400, 'crimson'),
-    'S': f(1200, 'lightcyan')
+    'S': f(1000, 'lightcyan')
 }
 
 # Colors for achievements outline based on ranks

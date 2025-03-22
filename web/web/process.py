@@ -15,7 +15,7 @@ from credentials import (
     process_credentials,
 )
 from inject import get_riddle, get_riddles
-from riddle import level_ranks, cheevo_ranks
+from riddles import level_ranks, cheevo_ranks
 from util.db import database
 from webclient import bot_request
 

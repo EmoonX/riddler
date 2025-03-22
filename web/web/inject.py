@@ -8,7 +8,7 @@ from pycountry import pycountry
 from admin.admin_auth import is_admin_of
 from auth import discord
 from countries import country_names
-from riddle import level_ranks, cheevo_ranks, player_ranks
+from riddles import level_ranks, cheevo_ranks, player_ranks
 from webclient import bot_request
 from util.db import database
 
