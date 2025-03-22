@@ -31,76 +31,76 @@ function heartsMouseLeave() {
   });
 };
 
-function updateRating() {
+async function updateRating() {
   // Update ratings on database and reflect it immediatelly on page
 
   // Get level name and rating info
-  const levelName = $(this).parents('.row').find('.name').text();
+  const levelName = $(this).parents('.row').find('.level-name').text().trim();
   var rating = $(this).index() + 1;
 
   // Send an HTTP GET request
   const url = `levels/rate/${levelName}/${rating}`;
-  $.get(url, text => {  
-    // Update average and count rating fields
-    const values = text.split(' ');
-    const count = values[1];
-    var average = Number(values[0]);
-    average = String(Math.round(10 * average));
-    average = average[0] + '.' + average[1];
-    $(this).parents('.rating').find('.average').text(average);
-    $(this).parents('.rating').find('.count').text('(' + count + ')');
-
-    // Show or hide ratings depending if player rated or not
-    rating = values[2]
-    if (rating != 'None') {
-      $(this).parents('.hearts').removeClass('unrated');
-    } else {
-      $(this).parents('.hearts').addClass('unrated');
-      $(this).parents('.rating').find('.average').text('??');
-    }  
-    // Update ratings dictionary
-    average = Math.round(2 * average) / 2;
-    ratings[levelName] = 0;
-
-    // Updated filled-up hearts, if rated
-    if (rating != 'None') {
-      const dir = '/static/icons/'
-      for (var i = 0; i < 5; i++) {
-        var filename = dir;
-        if ((i+1) <= average) {
-          ratings[levelName] += 1.0;
-          filename += 'heart-full.png';
-        } else if ((i+1) - average == 0.5) {
-          ratings[levelName] += 0.5;
-          filename += 'heart-half.png';
-        } else {
-          filename += 'heart-empty.png';
-        }
-        const img = $(this).parent().children('img.heart').eq(i);
-        img.attr('src', filename);
-      }
-    }
-  
-    // Update current user's rating
-    var html = '(rate me!)';
-    if (rating != 'None') {
-      html = `(yours: <var>${rating}</var>)`;
-    }
-    const span = $(this).parents('.rating').find('figcaption > span');
-    span.html(html);
-
-    console.log(`[Rating] Level ${levelName} `
-          + `has been given ${rating} hearts!`);
-  })
-    .fail(response => {
-      console.log('[Rating] Error updating rating for level ${levelName}...')
-      if (response.status == 401) {
+  await fetch(url)
+    .then(response => {
+      if (response.status === 401) {
         // Go back to login page if trying to rate while not logged in
-        location.replace(`/login?redirect_url{location.href}`);
+        console.log('[Rating] Error updating rating for level ${levelName}...')
+        location.replace(`/login?redirect_url${location.href}`);
         return;
       }
-    }
-  );
+      return response.text();
+    })
+    .then(text => {
+      // Update average and count rating fields
+      const values = text.split(' ');
+      const count = values[1];
+      var average = Number(values[0]);
+      average = String(Math.round(10 * average));
+      average = average[0] + '.' + average[1];
+      $(this).parents('.rating').find('.average').text(average);
+      $(this).parents('.rating').find('.count').text('(' + count + ')');
+
+      // Show or hide ratings depending if player rated or not
+      rating = values[2]
+      if (rating != 'None') {
+        $(this).parents('.hearts').removeClass('unrated');
+      } else {
+        $(this).parents('.hearts').addClass('unrated');
+        $(this).parents('.rating').find('.average').text('??');
+      }  
+      // Update ratings dictionary
+      average = Math.round(2 * average) / 2;
+      ratings[levelName] = 0;
+
+      // Updated filled-up hearts, if rated
+      if (rating != 'None') {
+        const dir = '/static/icons/'
+        for (var i = 0; i < 5; i++) {
+          var filename = dir;
+          if ((i+1) <= average) {
+            ratings[levelName] += 1.0;
+            filename += 'heart-full.png';
+          } else if ((i+1) - average == 0.5) {
+            ratings[levelName] += 0.5;
+            filename += 'heart-half.png';
+          } else {
+            filename += 'heart-empty.png';
+          }
+          const img = $(this).parent().children('img.heart').eq(i);
+          img.attr('src', filename);
+        }
+      }
+      // Update current user's rating
+      var html = '(rate me!)';
+      if (rating != 'None') {
+        html = `(yours: <var>${rating}</var>)`;
+      }
+      const span = $(this).parents('.rating').find('figcaption > span');
+      span.html(html);
+
+      console.log(`[Rating] Level ${levelName} `
+            + `has been given ${rating} hearts!`);
+    });
 };
 
 $(_ => {

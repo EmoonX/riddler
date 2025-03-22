@@ -342,19 +342,26 @@ async def get_root_path(alias: str):
 
 
 @levels.get('/<alias>/levels/rate/<level_name>/<int:rating>')
+@requires_authorization
 async def rate(alias: str, level_name: str, rating: int):
     '''Update level rating upon user giving new one.'''
 
-    # Must not have logged out meanwhile
-    user = await discord.get_user()
-    if not user:
-        return 'Unauthorized', 401
-
     # Disallow phony ratings :)
     if not 1 <= rating <= 5:
-        return 'Funny guy, eh? :)', 403
+        return 'Funny guy, eh? :)', 400
+
+    # Get level's overall rating info
+    query = '''
+        SELECT * FROM levels
+        WHERE riddle = :riddle and name = :level_name
+    '''
+    values = {'riddle': alias, 'level_name': level_name}
+    level = await database.fetch_one(query, values)
+    if not level:
+        return f"[{alias}] Level {level_name} not found.", 404
 
     # Get user's previous rating
+    user = await discord.get_user()
     query = '''
         SELECT * FROM user_levels
         WHERE riddle = :riddle
@@ -366,18 +373,10 @@ async def rate(alias: str, level_name: str, rating: int):
         'username': user.name,
         'level_name': level_name,
     }
-    played_level = await database.fetch_one(query, values)
-    if not played_level or not played_level['completion_time']:
-        return 'Unauthorized', 401
-    rating_prev = played_level['rating_given']
-
-    # Get level's overall rating info
-    query = '''
-        SELECT * FROM levels
-        WHERE riddle = :riddle and name = :level_name
-    '''
-    values = {'riddle': alias, 'level_name': level_name}
-    level = await database.fetch_one(query, values)
+    user_level = await database.fetch_one(query, values)
+    if not user_level or not user_level['completion_time']:
+        return f"[{alias}] Level {level_name} not completed yet.", 403
+    rating_prev = user_level['rating_given']
 
     # Calculate new average and count
     total = 0
