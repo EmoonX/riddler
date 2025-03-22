@@ -92,7 +92,7 @@ class Decipher(commands.Cog):
     @group.command()
     async def ascii_to_text(self, interaction: Interaction, ascii_codes: str):
         '''
-        Convert ASCII codes to text.
+        Convert ASCII codes into text.
         
         Args:
             ascii_codes: Sequence of space-separated ASCII decimal codes.
@@ -153,7 +153,7 @@ class Decipher(commands.Cog):
     @group.command()
     async def binary_to_text(self, interaction: Interaction, binary_code: str):
         '''
-        Convert binary string(s) to ASCII character representation.
+        Convert binary string(s) into their ASCII character representation.
         
         Args:
             binary_code: Binary string of 0s and 1s (and possibly whitespace).
@@ -299,7 +299,7 @@ class Decipher(commands.Cog):
     @group.command()
     async def vigenere(self, interaction: Interaction, text: str, key: str):
         '''
-        Decode text using Vigenère method with given key.
+        Decode text using the Vigenère method with given key.
         
         Args:
             text: Vigenère-encoded ciphertext.
