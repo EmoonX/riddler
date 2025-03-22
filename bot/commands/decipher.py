@@ -133,12 +133,12 @@ class Decipher(commands.Cog):
             code: Base64-encoded text (valid characters: A-Z|a-z|+|/|= ).
         '''
 
-        alphabet = ''.join(
+        alphabet = ''.join([
             string.ascii_uppercase,
             string.ascii_lowercase,
             string.digits,
             '+/'
-        )
+        ])
         bits = bitarray()
         for char in code:
             k = alphabet.find(char)
