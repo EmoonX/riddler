@@ -1,3 +1,4 @@
+from copy import copy
 from itertools import permutations
 import re
 import string
@@ -295,6 +296,50 @@ class Decipher(commands.Cog):
         '''
         decoded_text = Util.caesar_base(text, 13)
         await interaction.response.send_message(decoded_text)
+
+    @group.command()
+    async def t9(self, interaction: Interaction, digits: int):
+        '''
+        Find suitable words from phone key input.
+        
+        Args:
+            digits: Non-spaced sequence of digits (from 2 to 9).
+        '''
+        
+        keys = {
+            2: 'abc',
+            3: 'def',
+            4: 'ghi',
+            5: 'jkl',
+            6: 'mno',
+            7: 'pqrs',
+            8: 'tuv',
+            9: 'wxyz',
+        }
+
+        solutions = [
+            ''.join(word) for word in word_set
+            if len(word) == len(str(digits))
+        ]
+        for i, digit in enumerate([int(c) for c in str(digits)]):
+            if digit not in keys:
+                solutions = []
+                break
+            aux = []
+            for letter in keys[digit]:
+                for word in solutions:
+                    if word[i] == letter:
+                        aux.append(word)
+            solutions = aux
+
+        text = f"Spellings from ***{digits}***:"
+        if solutions:
+            for word in solutions:
+                text += f"\n• _{word}_"
+        else:
+            text += '\nNone found...'
+
+        await interaction.response.send_message(text)
 
     @group.command()
     async def vigenere(self, interaction: Interaction, text: str, key: str):
