@@ -37,6 +37,30 @@ class Decipher(commands.Cog):
         self.bot = bot
 
     @group.command()
+    async def a1z26(self, interaction: Interaction, numbers: str):
+        '''
+        Replace a sequence of numbers by letters in the alphabet
+        (a=1, b=2, ..., z=26).
+        
+        Args
+            numbers: Sequence of space-separated numbers, each between 1 and 26.
+        '''
+
+        chars = []
+        for number in numbers.split():
+            try:
+                number = int(number)
+                if not (1 <= number <= 26):
+                    raise ValueError
+            except ValueError:
+                return
+            char = chr(ord('a') + number - 1)
+            chars.append(char)
+
+        word = ''.join(chars)
+        await interaction.response.send_message(word)
+
+    @group.command()
     async def anagram(self, interaction: Interaction, word: str):
         '''
         Find all available English language anagrams for a given word.
