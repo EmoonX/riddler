@@ -84,7 +84,7 @@ class Decipher(commands.Cog):
         if valid_anagrams:
             for perm in sorted(valid_anagrams):
                 word = ''.join(perm)
-                text += f"\n• _{word}_"
+                text += f"\n- _{word}_"
         else:
             text += '\nNone found...'
             
@@ -220,7 +220,7 @@ class Decipher(commands.Cog):
         if solutions:
             max_shown = 16
             for count, word in enumerate(sorted(solutions)):
-                text += f"\n• _{word}_"
+                text += f"\n- _{word}_"
                 if count == max_shown - 1:
                     break
             if len(solutions) > max_shown:
@@ -335,7 +335,7 @@ class Decipher(commands.Cog):
         text = f"Spellings from ***{digits}***:"
         if solutions:
             for word in solutions:
-                text += f"\n• _{word}_"
+                text += f"\n- _{word}_"
         else:
             text += '\nNone found...'
 
