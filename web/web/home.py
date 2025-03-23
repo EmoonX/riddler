@@ -57,7 +57,7 @@ async def homepage():
     '''
     recent_progress = await database.fetch_all(query)
 
-    # Recent player level completion data
+    # Recent level find/completion data
     query = '''
         SELECT u1.*, completion_time AS time
         FROM user_levels u1 INNER JOIN (
@@ -74,12 +74,40 @@ async def homepage():
         ORDER BY completion_time DESC
     '''
     result = await database.fetch_all(query)
-    recent_levels = {row['username']: row for row in result}
+    recently_completed = {row['username']: row for row in result}
+    query = '''
+        SELECT u1.*, find_time AS time
+        FROM user_levels u1 INNER JOIN (
+            SELECT username, MAX(find_time) AS max_time
+            FROM user_levels ul INNER JOIN levels lv
+                ON ul.riddle = lv.riddle AND ul.level_name = lv.name
+            WHERE lv.is_secret IS TRUE
+                AND TIMESTAMPDIFF(MONTH, find_time, NOW()) < 30
+            GROUP BY username
+        ) u2
+        ON u1.username = u2.username
+            AND u1.find_time = u2.max_time
+        WHERE u1.riddle NOT IN (
+            SELECT alias FROM riddles WHERE unlisted IS TRUE
+        )
+        ORDER BY find_time DESC
+    '''
+    result = await database.fetch_all(query)
+    secrets_recently_found = {row['username']: row for row in result}
     
-    # Swap generic progress for completion whenever it happened
+    # Swap generic progress for find/completion whenever it happened    
     for i, row in enumerate(recent_progress):
-        if row['username'] in recent_levels:
-            recent_progress[i] = dict(recent_levels[row['username']])
+        get_time = lambda table: (
+            table[row['username']]['time'].timestamp()
+            if row['username'] in table else 0
+        )
+        secret_find_time = get_time(secrets_recently_found)
+        completion_time = get_time(recently_completed)
+        if secret_find_time and secret_find_time >= completion_time:
+            recent_progress[i] = dict(secrets_recently_found[row['username']])
+            recent_progress[i]['is_secret_find'] = True
+        elif completion_time:
+            recent_progress[i] = dict(recently_completed[row['username']])
             recent_progress[i]['is_completion'] = True
 
     # Ensure final list is time-sorted
