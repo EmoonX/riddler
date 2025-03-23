@@ -1,5 +1,6 @@
 from collections.abc import Iterator
 from copy import deepcopy
+from datetime import datetime
 import json
 
 from quart import Blueprint, jsonify, render_template, request
@@ -386,7 +387,6 @@ async def rate(alias: str, level_name: str, rating: int):
     total = 0
     if level['rating_avg']:
         total = count * level['rating_avg']
-
     if request.method == 'PUT':
         if not rating_prev:
             # User is adding a new vote
@@ -395,25 +395,28 @@ async def rate(alias: str, level_name: str, rating: int):
         else:
             # User is changing previous vote
             total = total - rating_prev + rating
+        rating_time = datetime.utcnow()
     elif request.method == 'DELETE':
         # User is removing vote
         total -= rating
         count -= 1
-        rating = None
+        rating = rating_time = None
     average = (total / count) if (count > 0) else 0
 
     # Update needed tables
     query = '''
-        UPDATE user_levels SET rating_given = :rating
+        UPDATE user_levels
+        SET rating_given = :rating_given, rating_time = :rating_time
         WHERE riddle = :riddle
             AND username = :username
             AND level_name = :level_name
     '''
     values = {
-        'rating': rating,
         'riddle': alias,
         'username': user.name,
         'level_name': level_name,
+        'rating_given': rating,
+        'rating_time': rating_time,
     }
     await database.execute(query, values)
     query = '''
