@@ -1,7 +1,7 @@
 from datetime import datetime
 import json
 import re
-from typing import Optional, Tuple
+from typing import Optional, Self, Tuple
 from urllib.parse import urlsplit
 
 from pymysql.err import IntegrityError
@@ -24,7 +24,7 @@ process = Blueprint('process', __name__)
 
 
 @process.post('/process')
-async def process_url(username=None, url=None):
+async def process_url(username: str | None = None, url: str | None = None):
     '''Process an URL sent by browser extension.'''
 
     # Flag function call as automated or not
@@ -50,14 +50,22 @@ async def process_url(username=None, url=None):
     if not ph:
         # Not inside root path (e.g forum or admin pages)
         return 'Not part of root path', 412
-    ok = await ph.build_player_riddle_data()
-    if not ok:
-        return 'Banned player', 403
+
+    # Create/fetch riddle account data
+    await ph.build_player_riddle_data()
     
     # Process received credentials (possibly none)
     riddle = await get_riddle(ph.riddle_alias)
     ok = await process_credentials(riddle, ph.path, ph.credentials, status_code)
     if not ok:
+        tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+        print(
+            f"\033[1m[{ph.riddle_alias}]\033[0m "
+            f"Received wrong/missing credentials "
+                f"for path \033[3m{ph.path}\033[0m "
+                f"from \033[1m{ph.username}\033[0m "
+                f"({tnow})"
+        )
         return 'Wrong or missing user credentials', 403
     
     # Process received path
@@ -70,9 +78,8 @@ async def process_url(username=None, url=None):
         if level_name:
             print(
                 f"\033[1m[{ph.riddle_alias}]\033[0m "
-                f"Received locked path \033[3m\033[9m{ph.path}\033[0m\033[0m "
-                    f"\033[1m({level_name})\033[0m from "
-                    f"\033[1m{ph.username}\033[0m "
+                f"Received locked path \033[3m{ph.path}\033[0m ({level_name}) "
+                    f"from \033[1m{ph.username}\033[0m "
                     f"({tnow})"
             )
         return 'Not a level page', 412
@@ -82,8 +89,8 @@ async def process_url(username=None, url=None):
         # Plain folder without index (403), or usual page not found (404)
         print(
             f"\033[1m[{ph.riddle_alias}]\033[0m "
-            f"Received path \033[3m\033[9m{ph.path}\033[0m\033[0m from "
-                f"\033[1m{ph.username}\033[0m "
+            f"Received path \033[3m\033[9m{ph.path}\033[0m\033[0m "
+                f"from \033[1m{ph.username}\033[0m "
                 f"({tnow})"
         )
         return 'Page not found', 404
@@ -92,8 +99,8 @@ async def process_url(username=None, url=None):
     print(
         f"\033[1m[{ph.riddle_alias}]\033[0m "
         f"Received path \033[3m\033[1m{ph.path}\033[0m\033[0m "
-            f"\033[1m({ph.path_level})\033[0m from "
-            f"\033[1m{ph.username}\033[0m "
+            f"\033[1m({ph.path_level})\033[0m "
+            f"from \033[1m{ph.username}\033[0m "
             f"({tnow})"
     )
     data = {
@@ -144,7 +151,7 @@ class _PathHandler:
     @classmethod
     async def build(
         cls, user: User, url: str, status_code: str
-    ) -> Optional[object]:
+    ) -> Self:
         '''Build handler from DB's user info and URL info.'''
 
         # Parse and save basic data + status code
@@ -217,39 +224,23 @@ class _PathHandler:
                 )
                 return riddle
 
-    async def build_player_riddle_data(self) -> bool:
+    async def build_player_riddle_data(self):
         '''Build player riddle data from DB, creating it if nonexistent.'''
-
-        # Ignore progress for banned players :)
+            
+        # Possibly create brand new riddle account
         query = '''
-            SELECT banned FROM accounts
-            WHERE username = :username
+            INSERT IGNORE INTO riddle_accounts (riddle, username)
+            VALUES (:riddle, :username)
         '''
-        values = {'username': self.username}
-        banned = await database.fetch_val(query, values)
-        if banned:
-            return False
+        values = {'riddle': self.riddle_alias, 'username': self.username}
+        await database.execute(query, values)
 
-        async def _get_data():
-            '''Get player riddle data.'''
-            query = '''
-                SELECT * FROM riddle_accounts
-                WHERE riddle = :riddle AND username = :username
-            '''
-            result = await database.fetch_one(query, values)
-            return result
-
-        # Check if player's riddle acount already exists
-        values['riddle'] = self.riddle_alias
-        riddle_account = await _get_data()
-        if not riddle_account:
-            # If negative, create a brand new one
-            query = '''
-                INSERT IGNORE INTO riddle_accounts (riddle, username)
-                VALUES (:riddle, :username)
-            '''
-            await database.execute(query, values)
-            riddle_account = await _get_data()
+        # Fetch player riddle data
+        query = '''
+            SELECT * FROM riddle_accounts
+            WHERE riddle = :riddle AND username = :username
+        '''
+        self.riddle_account = dict(await database.fetch_one(query, values))
 
         # Update current riddle being played
         query = '''
@@ -257,10 +248,6 @@ class _PathHandler:
             WHERE username = :username
         '''
         await database.execute(query, values)
-
-        # Build dict from query result
-        self.riddle_account = dict(riddle_account)
-        return True
 
     async def process(self) -> bool:
         '''Process level path.'''
