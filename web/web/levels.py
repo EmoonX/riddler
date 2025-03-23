@@ -2,7 +2,7 @@ from collections.abc import Iterator
 from copy import deepcopy
 import json
 
-from quart import Blueprint, jsonify, render_template
+from quart import Blueprint, jsonify, render_template, request
 from quartcord import requires_authorization
 
 from admin.admin_auth import is_admin_of
@@ -341,7 +341,10 @@ async def get_root_path(alias: str):
     return root_path
 
 
-@levels.get('/<alias>/levels/rate/<level_name>/<int:rating>')
+@levels.route(
+    '/<alias>/levels/rate/<level_name>/<int:rating>',
+    methods=['DELETE', 'PUT'],
+)
 @requires_authorization
 async def rate(alias: str, level_name: str, rating: int):
     '''Update level rating upon user giving new one.'''
@@ -379,19 +382,20 @@ async def rate(alias: str, level_name: str, rating: int):
     rating_prev = user_level['rating_given']
 
     # Calculate new average and count
+    count = level['rating_count']
     total = 0
     if level['rating_avg']:
-        total = level['rating_avg'] * level['rating_count']
-    count = level['rating_count']
-    rating = int(rating)
-    if not rating_prev:
-        # User is adding a new vote
-        total += rating
-        count += 1
-    elif rating != rating_prev:
-        # User is changing previous vote
-        total = total - rating_prev + rating
-    else:
+        total = count * level['rating_avg']
+
+    if request.method == 'PUT':
+        if not rating_prev:
+            # User is adding a new vote
+            total += rating
+            count += 1
+        else:
+            # User is changing previous vote
+            total = total - rating_prev + rating
+    elif request.method == 'DELETE':
         # User is removing vote
         total -= rating
         count -= 1

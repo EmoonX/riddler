@@ -35,12 +35,17 @@ async function updateRating() {
   // Update ratings on database and reflect it immediatelly on page
 
   // Get level name and rating info
-  const levelName = $(this).parents('.row').find('.level-name').text().trim();
-  var rating = $(this).index() + 1;
+  const row = $(this).parents('.row');
+  const levelName = row.find('.level-name').text().trim();
+  const ratingOld = Number(row.find('figure.rating > figcaption var').text());
+  var ratingNew = $(this).index() + 1;
 
   // Send an HTTP GET request
-  const url = `levels/rate/${levelName}/${rating}`;
-  await fetch(url)
+  await fetch(
+    `levels/rate/${levelName}/${ratingNew}`,
+    {'method': (ratingNew !== ratingOld) ? 'PUT' : 'DELETE'},
+  )
+
     .then(response => {
       if (response.status === 401) {
         // Go back to login page if trying to rate while not logged in
@@ -61,8 +66,8 @@ async function updateRating() {
       $(this).parents('.rating').find('.count').text('(' + count + ')');
 
       // Show or hide ratings depending if player rated or not
-      rating = values[2]
-      if (rating != 'None') {
+      ratingNew = values[2];
+      if (ratingNew != 'None') {
         $(this).parents('.hearts').removeClass('unrated');
       } else {
         $(this).parents('.hearts').addClass('unrated');
@@ -73,8 +78,8 @@ async function updateRating() {
       ratings[levelName] = 0;
 
       // Updated filled-up hearts, if rated
-      if (rating != 'None') {
-        const dir = '/static/icons/'
+      if (ratingNew != 'None') {
+        const dir = '/static/icons/';
         for (var i = 0; i < 5; i++) {
           var filename = dir;
           if ((i+1) <= average) {
@@ -92,14 +97,15 @@ async function updateRating() {
       }
       // Update current user's rating
       var html = '(rate me!)';
-      if (rating != 'None') {
-        html = `(yours: <var>${rating}</var>)`;
+      if (ratingNew != 'None') {
+        html = `(yours: <var>${ratingNew}</var>)`;
       }
       const span = $(this).parents('.rating').find('figcaption > span');
       span.html(html);
 
-      console.log(`[Rating] Level ${levelName} `
-            + `has been given ${rating} hearts!`);
+      console.log(
+        `[Rating] Level ${levelName} has been given ${ratingNew} heart(s)!`
+      );
     });
 };
 
