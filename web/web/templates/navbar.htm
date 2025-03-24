@@ -7,7 +7,7 @@
           <button class="nav-button riddles">⋮</button>
           {% set riddles = get_riddles(unlisted=True) %}
           <div class="menu riddles">
-          {% for riddle in riddles %}
+          {% for riddle in riddles if not riddle['unlisted'] %}
             {% set riddle = get_riddle(riddle['alias']) %}
             {% set url = '/' + riddle['alias'] %}
             {% set current_url = url_for(request.endpoint, **request.view_args) %}
@@ -17,8 +17,8 @@
               {% endif %}
             {% endif %}
             <a href="{{ url }}" class="riddle">
-              <figure {% if riddle['unlisted'] %} style="opacity: .3;" {% endif %}>
-                <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
+              <figure>
+                {% include 'util/riddle-icon.htm' %}
                 <figcaption>{{ riddle['short_name'] }}</figcaption>
               </figure>
             </a>
@@ -31,7 +31,7 @@
       {% if riddle %}
         <nav class="dropdown">
           <button class="nav-button riddle-banner">
-            <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
+            {% include 'util/riddle-icon.htm' %}
             <div class="name">{{ riddle['full_name'] }}</div>
             <div class="arrow">▼</div>
           </button>

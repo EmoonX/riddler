@@ -146,7 +146,7 @@ header > nav {
           transition: filter 1s;
 
           &:hover {
-            filter: drop-shadow(0 0 0.5em crimson);
+            filter: drop-shadow(0 0 .5em crimson);
             transition: filter 0.2s;
           }
         }
@@ -186,7 +186,8 @@ header > nav {
       font-size: 0.9em;
       text-transform: none;
 
-      > img.riddle-icon {
+      > .riddle-icon {
+        display: flex;
         margin-left: 1em;
       }
       > .name {
@@ -249,11 +250,6 @@ header > nav {
   .blank {
     width: 400px;
   }
-}
-
-img.riddle-icon {
-  width: 60px;
-  border-radius: 25%;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -441,6 +437,28 @@ hr {
         font-size: 0.8em;
       }
     }
+  }
+}
+
+.riddle-icon {
+  position: relative;
+  border-radius: 25%;
+
+  img {
+    width: 60px;
+    border-radius: 25%;
+  }
+  .demo {
+    position: absolute;
+    top: 0;
+    right: 0;
+    padding: .2em .3em;
+    border-radius: .5em;
+    background-color: crimson;
+    color: #ffd; 
+    font-size: .7em;
+    line-height: initial;
+    opacity: .9;
   }
 }
 
@@ -1131,7 +1149,7 @@ section.list.players > .row {
       &.completed > .badge {
         text-shadow: 0 0 0.4em crimson, 0 0 0.8em crimson;
       }
-      figure > img.riddle-icon {
+      figure > .riddle-icon {
         position: absolute;
         top: 0;
         right: 0;
@@ -1145,7 +1163,7 @@ section.list.players > .row {
       figcaption {
         top: -1em;
       }
-      &.other figure > img.riddle-icon {
+      &.other figure > .riddle-icon {
         opacity: 0.3;
         transition: width 0.5s, max-height 0.5s, opacity 1s;
       }
@@ -1154,13 +1172,13 @@ section.list.players > .row {
           font-size: 1em;
           transition: font-size 0.15s;
         }
-        figure > img.riddle-icon {
+        figure > .riddle-icon {
           width: 45px;
           max-height: 45px;
           opacity: 1;
           transition: width 0.15s, max-height 0.15s;
         }
-        &.other figure > img.riddle-icon {
+        &.other figure > .riddle-icon {
           transition: width 0.15s, max-height 0.15s, opacity 0.15s;
         }
       }
@@ -1716,7 +1734,7 @@ section.list.levels.admin + button {
       color: inherit;
       text-decoration: none;
 
-      img.riddle-icon {
+      .riddle-icon {
         width: 1.5em;
       }
       &:hover {

@@ -18,31 +18,32 @@ async def homepage():
 
     # Big number counters
     query = '''
-        SELECT COUNT(*) count FROM riddles
+        SELECT COUNT(*) AS count, COUNT(demo) AS demo_count FROM riddles
         WHERE unlisted IS NOT TRUE
     '''
-    riddle_count = await database.fetch_val(query, column='count')
+    result = await database.fetch_one(query)
+    riddle_count, riddle_demo_count = result.values()
     query = '''
-        SELECT COUNT(*) count FROM levels
+        SELECT COUNT(*) AS count FROM levels
         WHERE riddle NOT IN (
             SELECT alias FROM riddles WHERE unlisted IS TRUE
         )
     '''
-    level_count = await database.fetch_val(query, column='count')
+    level_count = await database.fetch_val(query)
     query = '''
-        SELECT COUNT(*) count FROM level_pages
+        SELECT COUNT(*) AS count FROM level_pages
         WHERE
             riddle NOT IN (
                 SELECT alias FROM riddles WHERE unlisted IS TRUE
             )
             AND level_name IS NOT NULL
     '''
-    page_count = await database.fetch_val(query, column='count')
+    page_count = await database.fetch_val(query,)
     query = '''
-        SELECT COUNT(*) count FROM accounts
+        SELECT COUNT(*) AS count FROM accounts
         WHERE global_score > 0
     '''
-    player_count = await database.fetch_val(query, column='count')
+    player_count = await database.fetch_val(query)
 
     # Recent player progress (newly found pages)
     query = '''
