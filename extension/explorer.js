@@ -96,6 +96,10 @@ async function buildRiddle(riddle, pages) {
 /** Updates current dict with possibly new riddle, level and/or page. */
 export async function updateRiddleData(alias, setName, levelName) {
   currentRiddle = alias;
+  if (!setName || !levelName) {
+    // Not a valid level page; nothing more to be done
+    return;
+  }
   const riddle = riddles[alias];
   const levelSet = riddle.levels[setName];
   if (!levelSet || !levelSet[levelName]) {

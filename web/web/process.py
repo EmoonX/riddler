@@ -66,7 +66,10 @@ async def process_url(username: str | None = None, url: str | None = None):
                 f"from \033[1m{ph.username}\033[0m "
                 f"({tnow})"
         )
-        return 'Wrong or missing user credentials', 403
+        return jsonify({
+            'message': 'Wrong or missing user credentials',
+            'riddle': ph.riddle_alias
+        }), 403
     
     # Process received path
     ok = await ph.process()
@@ -82,7 +85,10 @@ async def process_url(username: str | None = None, url: str | None = None):
                     f"from \033[1m{ph.username}\033[0m "
                     f"({tnow})"
             )
-        return 'Not a level page', 412
+        return jsonify({
+            'message': 'Not a level page',
+            'riddle': ph.riddle_alias
+        }), 412
 
     # Log received path with timestamp
     if status_code in [403, 404]:
@@ -93,7 +99,10 @@ async def process_url(username: str | None = None, url: str | None = None):
                 f"from \033[1m{ph.username}\033[0m "
                 f"({tnow})"
         )
-        return 'Page not found', 404
+        return jsonify({
+            'message': 'Page not found',
+            'riddle': ph.riddle_alias
+        }), 404
 
     # Valid level page
     print(
@@ -362,6 +371,8 @@ class _PathHandler:
         Check if all required levels are already beaten
         (or, if `finding_is_enough` flag is on, at least found).
         '''
+
+        return True
         
         query = '''
             SELECT * FROM level_requirements
@@ -503,7 +514,8 @@ class _PathHandler:
         result = await database.fetch_one(query, values)
         has_all_requirements = result is None
         if not has_all_requirements:
-            return
+            pass
+            # return
 
         # Try to insert new page in `user_pages`
         tnow = datetime.utcnow()

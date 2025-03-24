@@ -47,13 +47,15 @@ async function sendToProcess(visitedUrl, statusCode) {
 
         // Logged out, so possibly clear riddle data
         clearRiddleData();
-      } else if (response.ok) {
-        data = await response.json();
+        return;
+      }
+      data = await response.json();
+      if (response.ok) {
         console.log(
           `[${data.riddle}] Page "${data.path}" (${data.levelName}) found`
         );
-        await updateRiddleData(data.riddle, data.setName, data.levelName);
       }
+      await updateRiddleData(data.riddle, data.setName, data.levelName);
     });
   return data;
 }
