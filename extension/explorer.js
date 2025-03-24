@@ -52,7 +52,17 @@ export async function initExplorer(callback) {
 
 /** Builds riddle dict from riddle and levels JSON data. */
 async function buildRiddle(riddle, pages) {
-  riddle.iconUrl = `${SERVER_URL}/static/riddles/${riddle.alias}.png`;
+  const iconUrlExternal = `${SERVER_URL}/static/riddles/${riddle.alias}.png`;
+  fetch(iconUrlExternal, {cache : 'force-cache'})
+    .then(response => response.blob({type: 'image/png'}))
+    .then(async blob => {
+      // Store/retrieve cached image blob to avoid annoying icon load times
+      riddle.iconUrl = await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+    });
   riddle.shownSet = riddle.lastVisitedSet;
   riddle.shownLevel = riddle.lastVisitedLevel;
   riddle.pagesByPath = {};
@@ -78,7 +88,7 @@ async function buildRiddle(riddle, pages) {
       previousSetName = setName;
       previousLevelName = levelName;
       updatePathsIndex(riddle, level.pages['/']);
-    }        
+    }
   }
   riddles[riddle.alias] = riddle;
 }
