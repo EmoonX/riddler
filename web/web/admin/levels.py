@@ -51,6 +51,8 @@ async def manage_levels(alias: str):
         if i == -1 or name[:i] == 'removed':
             continue
         index, attr = name[:i], name[(i+1):]
+        if value == '':
+            value = None
         if 's' not in index:
             index = int(index)
             if index not in levels_after:
@@ -82,7 +84,7 @@ async def manage_levels(alias: str):
     )
 
 
-async def _fetch_levels(alias: str, is_secret=False):
+async def _fetch_levels(alias: str, is_secret: bool = False):
     '''Fetch level info from database as an indexed dict.'''
 
     # Get level data from DB
@@ -110,21 +112,59 @@ async def _fetch_levels(alias: str, is_secret=False):
         '''
         values = {'riddle': alias, 'level_name': level['name']}
         result = await database.fetch_all(query, values)
-        if result:
-            level['requirements'] = \
-                ', '.join(row['requires'] for row in result)
+        level['requirements'] = (
+            ', '.join(row['requires'] for row in result) if result
+            else None
+        )
 
     return levels
 
 
 async def _update_levels(
-    levels_before: dict, levels_after: dict,
-    data: dict, is_secret=False
+    levels_before: dict[int, dict],
+    levels_after: dict[int, dict],
+    data: dict,
+    is_secret: bool = False
 ):
     '''Update new/changed levels both on DB and guild.'''
 
     # Some variables for easy access
     alias, form, guild_id = data['alias'], data['form'], data['guild_id']
+
+    async def _update_requirements(level_before: dict, level: dict):
+        '''Update procedures for table `level_requirements`'''
+        values = {
+            'riddle': alias,
+            'level_name': level.get('name') or level_before['name'],
+        }
+        if level['requirements'] is None:
+            # Requirement removed, so delete it
+            query = '''
+                DELETE FROM level_requirements
+                WHERE riddle = :riddle
+                    AND level_name = :level_name
+                    AND requires = :old_requirement
+            '''
+            values |= {'old_requirement': level_before['requirements']}
+            await database.execute(query, values)
+            return
+
+        # Update requirement for level (if present)
+        query = '''
+            UPDATE level_requirements
+            SET requires = :requirement
+            WHERE riddle = :riddle AND level_name = :level_name
+        '''
+        values |= {'requirement': level['requirements']}
+        success = await database.execute(query, values)
+        if not success:
+            # No requirements for level yet, insert a new one
+            query = '''
+                INSERT INTO level_requirements
+                    (riddle, level_name, requires)
+                VALUES (:riddle, :level_name, :requirement)
+            '''
+            await database.execute(query, values)
 
     # Check and update existing levels
     for index, level in levels_before.items():
@@ -159,8 +199,8 @@ async def _update_levels(
             '''
             await database.execute(query, values)
 
-        # Swap image file if image was changed
-        if 'imgdata' in level and level['imgdata']:
+        # Swap image file on image change
+        if level.get('imgdata'):
             if 'image' not in level:
                 level['image'] = level_before['image']
             await save_image(
@@ -168,7 +208,10 @@ async def _update_levels(
                 level['image'], level['imgdata'], level_before['image']
             )
 
-        # Update Discord channels and roles names if discord_name changed
+        if 'requirements' in level:
+            await _update_requirements(level_before, level)
+
+        # Update Discord channels and roles names on discord_name change
         if 'discord_name' in level:
             await bot_request(
                 'update', guild_id=guild_id,
