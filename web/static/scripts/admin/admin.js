@@ -51,7 +51,7 @@ function changeCheevoRank() {
   // Update cheevo thumb outline color on rank change
   const rank = this.value.toLowerCase();
   const index = this.name.substr(0, this.name.search('-'));
-  const thumb = $(`#${index}-thumb`);
+  const thumb = $(`#${index}-thumb`);  
   thumb.removeClass();
   thumb.addClass([rank + '-rank', 'thumb', 'cheevo']);
 }
@@ -235,12 +235,12 @@ $(_ => {
   $('.row .name input').on('change', updateDiscordName);
 
   // Listen to thumb changes
-  $('.thumb-input').each(_ => {
-    $(this).on('change', changeThumb);
+  $('.thumb-input').each((_, input) => {
+    $(input).on('change', changeThumb);
   });
   // Listen to rank radio changes
-  $('.rank-radio').each(_ => {
-    $(this).on('click', changeCheevoRank);
+  $('.rank-radio').each((_, radio) => {
+    $(radio).on('click', changeCheevoRank);
   });
   // Listen to page explorer clicks
   $('.levels').on('click', '.page-explorer figure', clickIcon);
