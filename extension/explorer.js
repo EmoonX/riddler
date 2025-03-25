@@ -226,24 +226,27 @@ export function insertFiles(parent, object, offset, prefix) {
   }
 }
 
-/** Generates `<figure>`jQuery element from given file object. */
-function getFileFigure(object, token, offset) {
-  let type = 'folder';
-  if (! object.folder) {
-    const i = token.lastIndexOf('.');
-    type = token.substr(i+1);
+/** Generates `<figure>`jQuery element from given page tree node. */
+function getFileFigure(node, token, offset) {
+  let type;
+  if (node.folder) {
+    type = 'folder';
+  } else if (node.unknownExtension) {
+    type = 'unknown';
+  } else {
+    type = token.split('.').at(-1).toLowerCase();
   }
-  const url = `images/icons/extensions/${type.toLowerCase()}.png`;
+  const url = `images/icons/extensions/${type}.png`;
   const state = (type == 'folder') ? ' open' : '';
   const margin = `${0.4 * offset}em`;
   const img = `<img src="${url}">`;
   const fc = `<figcaption>${token}</figcaption>`;
   let fileCount = '';
-  if (object.folder) {
+  if (node.folder) {
     const riddle = riddles[currentRiddle];
     const level = riddle.levels[riddle.shownSet][riddle.shownLevel];
-    const filesFound = object.filesFound;
-    const filesTotal = level.beaten ? object.filesTotal : '??';
+    const filesFound = node.filesFound;
+    const filesTotal = level.beaten ? node.filesTotal : '??';
     fileCount =
       `<div class="file-count">(${filesFound} / ${filesTotal})</div>`;
   }
@@ -251,7 +254,7 @@ function getFileFigure(object, token, offset) {
   // data-password="${object.password}"
   return $(`
     <figure class="file${state}"
-      title="${object.path}"
+      title="${node.path}"
       style="margin-left: ${margin}"
     >
       ${img}${fc}${fileCount}

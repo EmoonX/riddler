@@ -2,6 +2,7 @@ from collections.abc import Iterator
 from copy import deepcopy
 from datetime import datetime
 import json
+import os
 
 from quart import Blueprint, jsonify, render_template, request
 from quartcord import requires_authorization
@@ -244,14 +245,23 @@ async def get_pages(
         if row['completion_time']:
             unlocked_levels[level_name] |= {'answer': row['answer']}
 
-     # Build dict of (level -> paths)
+    # Scan extensions dir for available extension icon names
+    available_extensions = set()
+    extensions_dir = '../static/icons/extensions'
+    for icon in os.scandir(extensions_dir):
+        name = icon.name.rpartition('.')[0]
+        available_extensions.add(name)
+
+    # Build dict of (level -> paths)
     ordered_levels = await get_ordered_levels(alias)
     paths = {level_name: [] for level_name in ordered_levels}
     if include_unlisted:
         paths |= {'Unlisted': []}
     for data in page_data.values():
-        data['page'] = data['path'].rsplit('/', 1)[-1]
+        extension = data['path'].rpartition('.')[-1].lower()
+        data['page'] = data['path'].rpartition('/')[-1]
         data['folder'] = 0
+        data['unknownExtension'] = extension not in available_extensions
         data['access_time'] = \
             data['access_time'].strftime('%Y/%b/%d at %H:%M (UTC)')
         paths[data['level_name']].append(data)

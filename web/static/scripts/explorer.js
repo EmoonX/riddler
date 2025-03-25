@@ -108,39 +108,41 @@ export function changeDir(explorer, folderPath, admin) {
     )
   ;
   // And now add the current dir files
-  $.each(pages, (page, row) => {
-    var name = 'folder';
-    const j = page.lastIndexOf('.');
-    if (j != -1 && j != page.length - 1) {
-      name = page.substr(j + 1);
+  $.each(pages, (filename, node) => {
+    let type;
+    if (node.folder) {
+      type = 'folder';
+    } else if (node.unknownExtension) {
+      type = 'unknown';
+    } else {
+      type = filename.split('.').at(-1).toLowerCase();
     }
-    var current = '';
+    let current = '';
     if (admin) {
-      if (name == 'folder') {
-        if (row['levels'][levelName]) {
+      if (type === 'folder') {
+        if (node['levels'][levelName]) {
           current = 'class="current"';
         }
       } else {
-        if (row['level_name'] == levelName) {
+        if (node['level_name'] == levelName) {
           current = 'class="current"';
         }
       }
     }
-    const path = row['path'];
-    var accessTimeMessage = '';
-    if (name != 'folder') {
-      const accessTime = row['access_time'];
+    let accessTimeMessage = '';
+    if (type !== 'folder') {
+      const accessTime = node['access_time'];
       accessTimeMessage = `&#10;↳ found on ${accessTime}`;
     }
     const figure = `
       <figure
         ${current}
-        title="${path}${accessTimeMessage}"
-        data-username=${row['username']}
-        data-password=${row['password']}
+        title="${node['path']}${accessTimeMessage}"
+        data-username=${node['username']}
+        data-password=${node['password']}
       >
-        <img src="/static/icons/extensions/${name}.png">
-        <figcaption>${page}</figcaption>
+        <img src="/static/icons/extensions/${type}.png">
+        <figcaption>${filename}</figcaption>
       </figure>
     `;
 
@@ -148,13 +150,13 @@ export function changeDir(explorer, folderPath, admin) {
     // (current folders -> other folders -> current files -> other files)
     if (name == 'folder') {
       const folderNode = files.children('.folder');
-      if (admin && row['levels'][levelName]) {
+      if (admin && node['levels'][levelName]) {
         folderNode.children('.first').append(figure);
       } else {
         folderNode.append(figure);
       }
     } else {
-      if (admin && row['level_name'] == levelName) {
+      if (admin && node['level_name'] == levelName) {
         files.children('.first').append(figure);
       } else {
         files.append(figure);

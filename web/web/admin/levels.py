@@ -359,7 +359,7 @@ async def update_pages(alias: str):
             # Add page as part of the level
             await database.execute(query, values)
             s = f"\033[3m{path}\033[0m ({level})"
-            _log(f"Added page {s} to database!")
+            _log(f"Added page {s} to the database!")
 
         except IntegrityError:
             # Page already present, update level if doable
@@ -379,7 +379,7 @@ async def update_pages(alias: str):
     def _is_image(path: str) -> bool:
         '''Check if path points to an image file.'''
         _, ext = os.path.splitext(path)
-        return ext in ('.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp')
+        return ext.lower() in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
     
     def _log(msg: str):
         '''Log message.'''
@@ -456,7 +456,7 @@ async def update_pages(alias: str):
                     'discord_name': level.lower().replace(' ', '-')
                 }
                 await database.execute(query, values)
-                _log(f"Added level \033[1m{level}\033[0m to database!")
+                _log(f"Added level \033[1m{level}\033[0m to the database!")
             except IntegrityError:
                 _log(f"Level \033[1m{level}\033[0m already in database…")
         
