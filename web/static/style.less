@@ -458,7 +458,6 @@ hr {
     color: #ffd; 
     font-size: .7em;
     line-height: initial;
-    opacity: .9;
   }
 }
 
@@ -1665,7 +1664,11 @@ section.list.levels.admin > .row {
   font-size: 1.2rem;
 
   > .thumb {
-    width: 150px;
+    all: unset;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1em;
 
     img.level {
       max-width: 130px;
