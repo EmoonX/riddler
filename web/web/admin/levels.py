@@ -1,4 +1,5 @@
 from copy import deepcopy
+import json
 import os
 from pathlib import Path
 import shutil
@@ -266,9 +267,8 @@ async def _update_levels(
             values['is_secret'] = is_secret
             levels.append(values)
 
-            if not is_secret and int(index) > 1:
+            if not is_secret and (index := int(index)) > 1:
                 # Automatically insert level req to previous one (if linear riddle)
-                index = int(index)
                 query = '''
                     INSERT IGNORE INTO level_requirements
                     VALUES (:riddle, :level, :requirement, NULL)
@@ -346,20 +346,117 @@ async def update_pages(alias: str):
     # Check for right permissions
     await admin_auth(alias)
 
-    async def _insert(path: str, level: str | None = None):
-        '''Insert path into DB, possibly attached to a level.'''
+    previous_level = None
+
+    async def _process_level(level_set: str, level: str, pages: list[str]):
+        '''Process individual level data.'''
+
+        image_filename = None
+        if _is_image(pages[1]):
+            image_filename = await _process_image(level, pages[1])
+
+        # Insert new level (if indeed new)
+        try:
+            query = '''
+                INSERT INTO levels (
+                    riddle, level_set, `index`, name,
+                    `path`, image, discord_name
+                ) VALUES (
+                    :riddle, :level_set, :index, :name,
+                    :path, :image, :discord_name
+                )
+            '''
+            values = {
+                'riddle': alias,
+                'level_set': level_set,
+                'index': int(level),
+                'name': level,
+                'path': pages[0],
+                'image': image_filename,
+                'discord_name': level.lower().replace(' ', '-')
+            }
+            await database.execute(query, values)
+            _log(f"Added level \033[1m{level}\033[0m to the database!")
+        except IntegrityError:
+            _log(f"Level \033[1m{level}\033[0m already in database…")
+        
+        nonlocal previous_level
+        if previous_level:
+            # Set previous level's answer as current one's front path
+            query = '''
+                UPDATE levels
+                SET answer = :answer
+                WHERE riddle = :riddle AND name = :name
+            '''
+            values = {
+                'riddle': alias,
+                'name': previous_level,
+                'answer': pages[0]
+            }
+            await database.execute(query, values)
+
+        previous_level = level
+    
+    def _is_image(path: str) -> bool:
+        '''Check if path points to an image file.'''
+        _, ext = os.path.splitext(path)
+        return ext.lower() in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
+    
+    async def _process_image(level: str, image_path: str) -> str | None:
+        '''Fetch image content from riddle website and update related info.'''
+
+        # Retrieve image through HTTP request and save it
+        image_url = f"{riddle['root_path']}{image_path}"
+        print(
+            f"> \033[1m[{alias}]\033[0m "
+            f"Fetching level image from \033[3m{image_url}\033[0m… ",
+            end=''
+        )
+        res = requests.get(image_url, stream=True)
+        print(f"\033[1m{'OK' if res.ok else res.status_code}\033[0m")
+        if res.ok:
+            image_filename = os.path.basename(image_path)
+            image_dir = f"../static/thumbs/{alias}"
+            save_path = f"{image_dir}/{image_filename}"
+            Path(image_dir).mkdir(parents=True, exist_ok=True)
+            with open(save_path, 'wb') as image:
+                shutil.copyfileobj(res.raw, image)
+
+            # Possibly update image's filename
+            query = '''
+                UPDATE levels
+                SET image = :image
+                WHERE riddle = :riddle AND name = :name
+            '''
+            values = {
+                'riddle': alias,
+                'name': level,
+                'image': image_filename
+            }
+            await database.execute(query, values)
+        
+            return image_filename
+        
+        return None
+
+    async def _process_page(path: str, level: str | None = None):
+        '''Insert page into DB, possibly attached to a level.'''
 
         query = '''
-            INSERT INTO level_pages (`riddle`, `path`, `level_name`)
-                VALUES (:riddle, :path, :level_name);
+            INSERT INTO level_pages
+                (`riddle`, `path`, `level_name`)
+            VALUES (:riddle, :path, :level_name);
         '''
         values = {'riddle': alias, 'path': path, 'level_name': level}
 
         try:
             # Add page as part of the level
             await database.execute(query, values)
-            s = f"\033[3m{path}\033[0m ({level})"
-            _log(f"Added page {s} to the database!")
+            _log(
+                f"Added page \033[3m{path}\033[0m "
+                    f"({level}) " if level else ''
+                f"to the database!"
+            )
 
         except IntegrityError:
             # Page already present, update level if doable
@@ -371,19 +468,17 @@ async def update_pages(alias: str):
                 '''
                 success = await database.execute(query, values)
                 if success:
-                    _log(f"Updated level for page \033[3m{path}\033[0m ({level})…")
+                    _log(
+                        f"Updated level"
+                        f"for page \033[3m{path}\033[0m ({level})…"
+                    )
                     return
 
             _log(f"Skipping page \033[3m{path}\033[0m ({level})…")
     
-    def _is_image(path: str) -> bool:
-        '''Check if path points to an image file.'''
-        _, ext = os.path.splitext(path)
-        return ext.lower() in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
-    
     def _log(msg: str):
         '''Log message.'''
-        print(f"> \033[1m[{alias}]\033[0m {msg}")
+        print(f"> \033[1m[{alias}]\033[0m {msg}", flush=True)
 
     # Receive text data and split it between levels (if any)
     data = (await request.data).decode('utf-8').split('#')
@@ -391,88 +486,22 @@ async def update_pages(alias: str):
     has_levels = bool(len(data) > 1)
     if has_levels:
         del data[0]  # remove initial ''
-        previous_level = None
-    
-    idx = 0
-    for i, text in enumerate(data):
+
+    for text in data:
         # Build list of pages' paths in suitable format
         lines = text.replace('\r', '').replace('\\', '/').split('\n')
-        pages = lines[1:]
+        pages = list(filter(None, lines[1:]))
 
         if has_levels:
             # Get level info (given '#' is present)
             if '--' in lines[0]:
-                level, level_set = map(
-                    lambda s: s.strip(), lines[0].split('--')
-                )
+                level, level_set = map(lambda s: s.strip(), lines[0].split('--'))
             else:
                 level = lines[0].strip()
 
-            # Update index based on level name
-            if level and not level.isspace():
-                idx = int(level)
-            else:
-                idx += 1
-                level = str(idx)
-
-        image_filename: str | None = None
-        if has_levels and _is_image(pages[1]):
-            # Fetch image from riddle website and save it to `thumbs/{alias}`
-            image_url = f"{riddle['root_path']}{pages[1]}"
-            print(
-                f"> \033[1m[{alias}]\033[0m "
-                f"Fetching level image from \033[3m{image_url}\033[0m… ",
-                end=''
-            )
-            res = requests.get(image_url, stream=True)
-            print(f"\033[1m{'OK' if res.ok else res.status_code}\033[0m")
-            if res.ok:
-                image_filename = os.path.basename(pages[1])
-                image_dir = f"../static/thumbs/{alias}"
-                image_path = f"{image_dir}/{image_filename}"
-                Path(image_dir).mkdir(parents=True, exist_ok=True)
-                with open(image_path, 'wb') as image_file:
-                    shutil.copyfileobj(res.raw, image_file)
+            await _process_level(level_set, level, pages)
         
-        if has_levels:
-            # Insert new level (if indeed new)
-            try:
-                query = '''
-                    INSERT INTO levels (
-                        riddle, level_set, `index`, name,
-                        `path`, image, discord_name
-                    ) VALUES (
-                        :riddle, :level_set, :index, :name,
-                        :path, :image, :discord_name
-                    )
-                '''
-                values = {
-                    'riddle': alias,
-                    'level_set': level_set,
-                    'index': idx,
-                    'name': level,
-                    'path': pages[0],
-                    'image': image_filename,
-                    'discord_name': level.lower().replace(' ', '-')
-                }
-                await database.execute(query, values)
-                _log(f"Added level \033[1m{level}\033[0m to the database!")
-            except IntegrityError:
-                _log(f"Level \033[1m{level}\033[0m already in database…")
-        
-            if previous_level:
-                # Set previous level's answer as current one's front path
-                query = '''
-                    UPDATE levels
-                    SET answer = :answer
-                    WHERE riddle = :riddle AND name = :name
-                '''
-                values = {'riddle': alias, 'name': previous_level, 'answer': pages[0]}
-                await database.execute(query, values)
-            
-            previous_level = level
-        
-        # Insert individual pages
+        # Insert/update individual pages
         for path in pages:
             path = path.strip()
             if not path:
@@ -480,6 +509,6 @@ async def update_pages(alias: str):
             if '/' not in path or '.' not in path[-5:]:
                 _log(f"Skipping wrong format page: \033[3m{path}\033[0m")
                 continue
-            await _insert(path, level)
+            await _process_page(path, level)
 
     return 'OK', 200
