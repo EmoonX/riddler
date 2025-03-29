@@ -53,6 +53,11 @@ async def process_url(username: str | None = None, url: str | None = None):
 
     # Create/fetch riddle account data
     await ph.build_player_riddle_data()
+
+    # Disclose path alias (if any) for logging purposes
+    path_to_log = ph.path
+    if ph.path_alias_from:
+        path_to_log = f"{ph.path_alias_from} -> {ph.path}"
     
     # Process received credentials (possibly none)
     riddle = await get_riddle(ph.riddle_alias)
@@ -62,7 +67,7 @@ async def process_url(username: str | None = None, url: str | None = None):
         print(
             f"\033[1m[{ph.riddle_alias}]\033[0m "
             f"Received wrong/missing credentials "
-                f"for path \033[3m{ph.path}\033[0m "
+                f"for path \033[3m{path_to_log}\033[0m "
                 f"from \033[1m{ph.username}\033[0m "
                 f"({tnow})"
         )
@@ -81,7 +86,8 @@ async def process_url(username: str | None = None, url: str | None = None):
         if level_name:
             print(
                 f"\033[1m[{ph.riddle_alias}]\033[0m "
-                f"Received locked path \033[3m{ph.path}\033[0m ({level_name}) "
+                f"Received locked path \033[3m{path_to_log}\033[0m "
+                    f"({level_name}) "
                     f"from \033[1m{ph.username}\033[0m "
                     f"({tnow})"
             )
@@ -95,7 +101,7 @@ async def process_url(username: str | None = None, url: str | None = None):
         # Plain folder without index (403), or usual page not found (404)
         print(
             f"\033[1m[{ph.riddle_alias}]\033[0m "
-            f"Received path \033[3m\033[9m{ph.path}\033[0m\033[0m "
+            f"Received path \033[3m\033[9m{path_to_log}\033[0m\033[0m "
                 f"from \033[1m{ph.username}\033[0m "
                 f"({tnow})"
         )
@@ -107,7 +113,7 @@ async def process_url(username: str | None = None, url: str | None = None):
     # Valid level page
     print(
         f"\033[1m[{ph.riddle_alias}]\033[0m "
-        f"Received path \033[3m\033[1m{ph.path}\033[0m\033[0m "
+        f"Received path \033[3m\033[1m{path_to_log}\033[0m\033[0m "
             f"\033[1m({ph.path_level})\033[0m "
             f"from \033[1m{ph.username}\033[0m "
             f"({tnow})"
@@ -151,6 +157,9 @@ class _PathHandler:
     path_level_set: str
     '''Level set the path's level is part of, or `None` if N/A.'''
 
+    path_alias_from: str | None
+    '''Actual browsed path, if just an alias for the canonical one.'''
+
     credentials: tuple[str, str]
     '''HTTP basic auth URL-embedded credentials.'''
 
@@ -183,6 +192,17 @@ class _PathHandler:
             # If no extension, append explicit ".htm[l]" to the end
             if not '.' in self.path:
                 self.path += f".{riddle['html_extension']}"
+
+        self.path_alias_from = None
+        query = '''
+            SELECT alias_for FROM level_pages
+            WHERE riddle = :riddle AND path = :path
+        '''
+        values = {'riddle': self.riddle_alias, 'path': self.path}
+        if alias_for := await database.fetch_val(query, values):
+            # Use canonical path when given path is just an alias to it
+            self.path_alias_from = self.path
+            self.path = alias_for
 
         return self
 
@@ -261,34 +281,6 @@ class _PathHandler:
     async def process(self) -> bool:
         '''Process level path.'''
 
-        # Search for found but unbeaten levels
-        query = '''
-            SELECT is_secret, `index`, name, latin_name,
-                answer, `rank`, discord_name
-            FROM user_levels INNER JOIN levels
-            ON levels.riddle = user_levels.riddle
-                AND levels.name = user_levels.level_name
-            WHERE user_levels.riddle = :riddle
-                AND username = :username
-                AND completion_time IS NULL
-        '''
-        values = {
-            'riddle': self.riddle_alias,
-            'username': self.username
-        }
-        current_levels = await database.fetch_all(query, values)
-
-        # Register completion if path is answer to any of the found levels
-        for level in current_levels:
-            if (
-                # Single + multi-answer support
-                self.path == level['answer'] or
-                f'"{self.path}"' in level['answer']
-            ):
-                lh = _LevelHandler(level, self)
-                await lh.register_completion()
-                break
-
         # Check if page is a normal one (i.e not txt/image/video/etc)
         dot_index = self.path.rfind('.')
         extension = self.path[(dot_index + 1):]
@@ -314,6 +306,34 @@ class _PathHandler:
         if not await self._are_level_requirements_satisfied(self.path_level):
             # Can't access yet level given page is in
             return False
+
+        # Search for found but unbeaten levels
+        query = '''
+            SELECT is_secret, `index`, name, latin_name,
+                answer, `rank`, discord_name
+            FROM user_levels INNER JOIN levels
+            ON levels.riddle = user_levels.riddle
+                AND levels.name = user_levels.level_name
+            WHERE user_levels.riddle = :riddle
+                AND username = :username
+                AND completion_time IS NULL
+        '''
+        values = {
+            'riddle': self.riddle_alias,
+            'username': self.username
+        }
+        current_levels = await database.fetch_all(query, values)
+
+        # Register completion if path is answer to any of the found levels
+        for level in current_levels:
+            try:
+                is_answer = self.path in json.loads(level['answer'])
+            except json.decoder.JSONDecodeError:
+                is_answer = self.path == level['answer']
+            if is_answer:
+                lh = _LevelHandler(level, self)
+                await lh.register_completion()
+                break
 
         # Get requested page's level info from DB
         query = '''
