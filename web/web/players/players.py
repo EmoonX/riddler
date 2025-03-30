@@ -130,7 +130,7 @@ async def global_list(country: Optional[str] = None):
 
 @players.get('/<alias>/players')
 @players.get('/<alias>/players/<country>')
-async def riddle_list(alias: str, country: Optional[str] = None):
+async def riddle_list(alias: str, country: str | None = None):
     '''Riddle (and country-wise) player lists.'''
 
     # Get riddle data from database
@@ -146,14 +146,13 @@ async def riddle_list(alias: str, country: Optional[str] = None):
         url = f"/static/riddles/{alias}.png"
     riddle['icon_url'] = url
 
-    # Get riddle level count & achievement info
+    # Get riddle page count & achievement info
     query = '''
-        SELECT COUNT(*) AS count FROM levels
-        WHERE riddle = :riddle
+        SELECT COUNT(*) AS page_count FROM level_pages
+        WHERE riddle = :riddle AND level_name IS NOT NULL
     '''
     values = {'riddle': alias}
-    result = await database.fetch_one(query, values)
-    level_count = result['count']
+    page_count = await database.fetch_val(query, values)
     query = '''
         SELECT `title`, description, image, `rank` FROM achievements
         WHERE riddle = :riddle
@@ -323,7 +322,10 @@ async def riddle_list(alias: str, country: Optional[str] = None):
     # Render page with account info
     return await render_template(
         'players/riddle/list.htm',
-        alias=alias, creator_account=creator_account,
-        accounts=accounts, country=country,
+        alias=alias,
+        accounts=accounts,
+        country=country,
+        creator_account=creator_account,       
+        page_count=page_count,
         sets_by_final_level=sets_by_final_level,
     )

@@ -1253,6 +1253,21 @@ section.list.players > .row {
       opacity: 1;
     }
   }
+  > .page-count {
+    justify-content: center;
+    gap: .25em;
+
+    div {
+      position: relative;
+      
+      > .all-pages {
+        position: absolute;
+        top: -.5em;
+        right: -1.1em;
+        font-size: .8em;
+      }
+    }
+  }
   &:hover {
     z-index: -500;  // Make row above others on hover
   }

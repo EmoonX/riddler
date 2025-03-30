@@ -129,8 +129,12 @@
               </div>
             </div>
             <figure class="page-count">
-              {% set count = player['page_count'] %}
-              <var class="count">{{ count }}</var>
+              <div>
+                <var class="count">{{ player['page_count'] }}</var>
+              {% if player['page_count'] == page_count %}
+                <div class="all-pages" title="Found every single page">💮</div>
+              {% endif %}
+              </div>
               <figcaption>pages found</figcaption>
             </figure>
           </div>
