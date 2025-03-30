@@ -281,6 +281,35 @@ class _PathHandler:
     async def process(self) -> bool:
         '''Process level path.'''
 
+        # Search for found but unbeaten levels
+        query = '''
+            SELECT is_secret, `index`, name, latin_name,
+                answer, `rank`, discord_name
+            FROM user_levels INNER JOIN levels
+            ON levels.riddle = user_levels.riddle
+                AND levels.name = user_levels.level_name
+            WHERE user_levels.riddle = :riddle
+                AND username = :username
+                AND completion_time IS NULL
+        '''
+        values = {
+            'riddle': self.riddle_alias,
+            'username': self.username
+        }
+        current_levels = await database.fetch_all(query, values)
+
+        # Register completion if path is answer to any of the found levels
+        # (must hold even when answer points to a 404 or non-level page)
+        for level in current_levels:
+            try:
+                is_answer = self.path in json.loads(level['answer'])
+            except json.decoder.JSONDecodeError:
+                is_answer = self.path == level['answer']
+            if is_answer:
+                lh = _LevelHandler(level, self)
+                await lh.register_completion()
+                break
+
         # Check if page is a normal one (i.e not txt/image/video/etc)
         dot_index = self.path.rfind('.')
         extension = self.path[(dot_index + 1):]
