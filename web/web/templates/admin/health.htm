@@ -14,13 +14,18 @@
       {% for path, page_data in level.items() %}
         {% set status_code = page_data['status_code'] %}
         {% if status_code == 200 %}
-          {% set status = 'OK' %}
+          {% set status = (
+            '<em>✨ new</em> | content hash: ' + page_data['content_hash']
+            if page_data['content_hash'] else 'OK'
+          ) %}
         {% else %}
           {% set symbol = page_data['status_symbol'] %}
           {% set status = '[{} {}]'.format(status_code, symbol) %}
           {% set status = '<strong>{}</strong>'.format(status) %}
         {% endif %}
-        <li><a href="{{ page_data['url'] }}">{{ path }}</a>... {{ status|safe }}</li>
+        <li>
+          <a href="{{ page_data['url'] }}">{{ path }}</a>… {{ status|safe }}
+        </li>
       {% endfor %}
       </ul>
     {% endfor %}

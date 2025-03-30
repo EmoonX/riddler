@@ -49,13 +49,13 @@ async def health_diagnostics(alias: str | None = None):
         if level_name:
             print(
                 f"> \033[1m[{alias}]\033[0m "
-                f"Fetching page data for {level_name}...",
+                f"Fetching page data for {level_name}…",
                 flush=True
             )
         else:
             print(
                 f"> \033[1m[{alias}]\033[0m "
-                f"Fetching unlisted page data...",
+                f"Fetching unlisted page data…",
                 flush=True
             )
         for path, page_data in absolute_paths(pages[level_name]['/']):
@@ -96,6 +96,8 @@ async def health_diagnostics(alias: str | None = None):
                 archive_page = ArchivePage(alias, path, res.content)
                 if await archive_page.record_hash():
                     archive_page.save()
+                    levels[level_name][path]['content_hash'] = \
+                        archive_page.content_hash
             
         # Stop when reaching user-informed level (if any)
         if level_name == end_level:
