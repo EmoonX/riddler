@@ -7,7 +7,7 @@ from PIL import Image
 
 async def save_image(
     folder: str, alias: str,
-    filename: str, imgdata: str, prev_filename=''
+    filename: str, imgdata: str, prev_filename: str | None = None,
 ):
     '''Create a image from a base64 string and 
     save it on riddle's thumbs or cheevos folder.'''

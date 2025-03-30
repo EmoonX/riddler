@@ -234,9 +234,8 @@ async def _update_levels(
 
         levels = []
         for i in range(len(levels_before) + 1, len(levels_after) + 1):
-            index = str(i) if not is_secret else f"s{i}"
-
             # Insert new level data on database
+            index = str(i) if not is_secret else f"s{i}"
             query = '''
                 INSERT INTO levels
                 (riddle, is_secret, level_set, `index`, `name`,
@@ -250,7 +249,7 @@ async def _update_levels(
                 'riddle': alias, 'is_secret': is_secret,
                 'set': form[f"{index}-discord_category"], 'index': i,
                 'name': form[f"{index}-name"], 'path': form[f"{index}-path"],
-                'image': form[f"{index}-image"],
+                'image': form[f"{index}-image"] or '../locked.png',
                 'answer': form[f"{index}-answer"],
                 'rank': form[f"{index}-rank"],
                 'discord_category': form[f"{index}-discord_category"],
@@ -258,10 +257,10 @@ async def _update_levels(
             }
             await database.execute(query, values)
 
-            # Get image data and save image on thumbs folder
-            filename = form[f"{index}-image"]
-            imgdata = form[f"{index}-imgdata"]
-            await save_image('thumbs', alias, filename, imgdata)
+            if filename := form[f"{index}-image"]:
+                # Save image (from image data blob) in the thumbs folder
+                imgdata = form[f"{index}-imgdata"]
+                await save_image('thumbs', alias, filename, imgdata)
 
             # Append values to new levels list for bot request
             values['is_secret'] = is_secret
