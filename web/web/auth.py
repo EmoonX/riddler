@@ -98,7 +98,7 @@ async def register():
     await _post_callback()
 
     # Redirect to post-registration page
-    return redirect(url_for('home.homepage'))
+    return redirect('/about')
 
 
 @auth.get('/login')
