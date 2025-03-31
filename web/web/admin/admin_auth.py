@@ -26,10 +26,10 @@ async def root_auth():
 async def admin_auth(alias: str):
     '''Check if alias is valid and user an admin of guild.'''
 
-    # Get riddle/guild full name from database
+    # Get riddle data from DB
     query = 'SELECT * FROM riddles WHERE alias = :alias'
-    result = await database.fetch_one(query, {'alias': alias})
-    if not result:
+    riddle = await database.fetch_one(query, {'alias': alias})
+    if not riddle:
         abort(404)
 
     # Root can access everything
@@ -40,27 +40,12 @@ async def admin_auth(alias: str):
     else:
         return
 
-    # Check if user is riddle's admin and has rights for it
+    # Check if user is given riddle's creator AND has admin rights for it
     user = await discord.get_user()
-    query = '''
-        SELECT * FROM riddles
-        WHERE alias = :alias
-            AND creator_username = :username
-            AND has_admin_rights IS TRUE
-    '''
-    values = {'alias': alias, 'username': user.name}    
-    is_riddle_admin = bool(await database.fetch_one(query, values))
-    if is_riddle_admin:
+    if riddle['creator_username'] == user.name and riddle['has_admin_rights']:
         return
 
-    # Otherwise, check if user has enough permissions in given guild
-    ok = await bot_request(
-        'is-member-and-has-permissions',
-        guild_id=result['guild_id'],
-        username=user.name
-    )
-    if ok != "True":
-        abort(403)
+    abort(403)
 
 
 async def is_admin_of(alias: str) -> bool:
