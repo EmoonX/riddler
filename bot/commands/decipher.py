@@ -111,7 +111,7 @@ class Decipher(commands.Cog):
     @group.command()
     async def atbash(self, interaction: Interaction, text: str):
         '''
-        A-Z cipher. Swaps each letter for its reverse in the latin alphabet.
+        A-Z cipher. Swap each letter for its reverse in the latin alphabet.
         
         Args:
             text: Text to be decoded/encoded.
@@ -124,6 +124,35 @@ class Decipher(commands.Cog):
             decoded_text[i] = char
         decoded_text = ''.join(decoded_text)
         await interaction.response.send_message(decoded_text)
+
+    @group.command()
+    async def bacon(self, interaction: Interaction, code: str):
+        '''
+        Bacon's/Baconian cipher. Decode a sequence of `a`/`b` letters.
+        
+        Args:
+            code: Sequence of (optionally 5-grouped) 'a'/'b' characters.
+        '''
+
+        code = ''.join(filter(
+            lambda char: char in string.ascii_lowercase,
+            code.lower(),
+        ))
+        if not set(code).issubset({'a', 'b'}):
+            # Code has stray letters besides 'a' and 'b'
+            return
+
+        letters = []
+        for i in range(0, len(code), 5):
+            token = code[i:(i+5)].replace('a', '0').replace('b', '1')
+            char = chr(ord('a') + int(token, 2))
+            if len(token) != 5 or not char.isalpha():
+                # Truncated token or above "bbaab" (z)
+                char = '�'
+            letters.append(char)
+
+        text = ''.join(letters)
+        await interaction.response.send_message(text)
 
     @group.command()
     async def base64(self, interaction: Interaction, code: str):
