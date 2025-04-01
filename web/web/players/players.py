@@ -138,13 +138,8 @@ async def riddle_list(alias: str, country: str | None = None):
     result = await database.fetch_one(query, {'alias': alias})
     riddle = dict(result)
 
-    # Get riddles' icon URL
-    url = await bot_request(
-        'get-riddle-icon-url', guild_id=riddle['guild_id']
-    )
-    if not url:
-        url = f"/static/riddles/{alias}.png"
-    riddle['icon_url'] = url
+    # Get riddle icon URL
+    riddle['icon_url'] = f"/static/riddles/{alias}.png"
 
     # Get riddle page count & achievement info
     query = '''

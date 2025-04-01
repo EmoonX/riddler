@@ -27,13 +27,8 @@ async def get_riddle(alias: str) -> dict:
     if riddle['root_path'][0] == '[':
         riddle['root_path'] = riddle['root_path'].split('"')[1]
 
-    # Get icon URL by bot request
-    url = await bot_request(
-        'get-riddle-icon-url', guild_id=riddle['guild_id']
-    )
-    if not url:
-        url = f"/static/riddles/{alias}.png"
-    riddle['icon_url'] = url
+    # Get icon URL
+    riddle['icon_url'] = f"/static/riddles/{alias}.png"
 
     return riddle
 

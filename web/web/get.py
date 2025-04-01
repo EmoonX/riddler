@@ -160,12 +160,8 @@ async def get_current_riddle_data():
         return 'No riddle being played...', 404
     alias = riddle['alias']
 
-    # Get guild icon URL by bot request (or static one)
-    icon_url = await bot_request(
-        'get-riddle-icon-url', guild_id=riddle['guild_id']
-    )
-    if not icon_url:
-        icon_url = f"/static/riddles/{alias}.png"
+    # Get riddle icon URL
+    icon_url = f"/static/riddles/{alias}.png"
 
     # Create and return JSON dict with data
     data = {
