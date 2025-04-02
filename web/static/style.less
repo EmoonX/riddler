@@ -235,10 +235,15 @@ header > nav {
       }
     }
     > img.icon {
-      width: 36px;
-      height: 36px;
+      width: 26px;
+      height: 26px;
       margin: auto 10px;
       padding-bottom: 0.2em;
+
+      &[src='/static/icons/external-link.png'] {
+        width: 18px;
+        height: 18px;
+      }
     }
     &::first-letter {
       font-size: 1.5em;
@@ -559,7 +564,7 @@ label.icon:before {
   left: -35px;
   width: 30px;
   height: 30px;
-  background-image: url("/cipher/discord-icon.png");
+  background-image: url("/static/icons/discord.png");
   background-size: 30px 30px;
 }
 
