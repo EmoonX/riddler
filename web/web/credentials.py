@@ -21,11 +21,12 @@ async def process_credentials(
     user = await discord.get_user()
 
     def _log_received_credentials(folder_path: str, success: bool):
+        '''Log received credentials based on their correctness.'''
 
         if success and not username:
+            # No credentials needed nor received
             return
 
-        tnow = datetime.utcnow()
         print(
             f"\033[1m[{alias}]\033[0m "
             + ((
@@ -36,7 +37,7 @@ async def process_credentials(
             )) +
             f"for \033[3m\033[1m{folder_path}\033[0m "
             f"from \033[1m{user.name}\033[0m "
-            f"({tnow})"
+            f"({datetime.utcnow()})"
         )
 
     if status_code == 401:
@@ -89,13 +90,14 @@ async def process_credentials(
     # Create new user record
     query = '''
         INSERT IGNORE INTO user_credentials
-            (riddle, username, folder_path)
-        VALUES (:riddle, :username, :folder_path)
+            (riddle, username, folder_path, unlock_time)
+        VALUES (:riddle, :username, :folder_path, :unlock_time)
     '''
     values = {
         'riddle': alias,
         'username': user.name,
         'folder_path': folder_path,
+        'unlock_time': datetime.utcnow(),
     }
     await database.execute(query, values)
     _log_received_credentials(folder_path, success=True)
@@ -130,13 +132,12 @@ async def _record_credentials(
     except IntegrityError:
         return
     else:
-        tnow = datetime.utcnow()
         print(
             f"> \033[1m[{alias}]\033[0m "
             f"Found new credentials \033[1m{username}:{password}\033[0m "
             f"for \033[1;3m{folder_path}\033[0m "
             f"by \033[1m{user.name}\033[0m "
-            f"({tnow})"
+            f"({datetime.utcnow()})"
         )
 
     # Register credentials as new ones
