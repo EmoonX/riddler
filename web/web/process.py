@@ -46,9 +46,12 @@ async def process_url(username: str | None = None, url: str | None = None):
     else:
         user = lambda: None
         setattr(user, 'name', username)
-    ph = await _PathHandler.build(user, url, status_code)
-    if not ph:
+    try:
+        ph = await _PathHandler.build(user, url, status_code)
+    except AttributeError:
+        # TODO
         # Not inside root path (e.g forum or admin pages)
+        print(f"??? {url} ???")
         return 'Not part of root path', 412
 
     # Create/fetch riddle account data
@@ -179,11 +182,7 @@ class _PathHandler:
         self.status_code = status_code
 
         # Ignore occurrences of consecutive slashes
-        try:
-            self.path = re.sub('/{2,}', '/', self.path)
-        except AttributeError:
-            print(f"??? {url} ???")
-            raise
+        self.path = re.sub('/{2,}', '/', self.path)
 
         if self.path[-1] == '/':
             # If a folder itself, add "index.htm[l]" to path's end
@@ -335,34 +334,6 @@ class _PathHandler:
         if not await self._are_level_requirements_satisfied(self.path_level):
             # Can't access yet level given page is in
             return False
-
-        # Search for found but unbeaten levels
-        query = '''
-            SELECT is_secret, `index`, name, latin_name,
-                answer, `rank`, discord_name
-            FROM user_levels INNER JOIN levels
-            ON levels.riddle = user_levels.riddle
-                AND levels.name = user_levels.level_name
-            WHERE user_levels.riddle = :riddle
-                AND username = :username
-                AND completion_time IS NULL
-        '''
-        values = {
-            'riddle': self.riddle_alias,
-            'username': self.username
-        }
-        current_levels = await database.fetch_all(query, values)
-
-        # Register completion if path is answer to any of the found levels
-        for level in current_levels:
-            try:
-                is_answer = self.path in json.loads(level['answer'])
-            except json.decoder.JSONDecodeError:
-                is_answer = self.path == level['answer']
-            if is_answer:
-                lh = _LevelHandler(level, self)
-                await lh.register_completion()
-                break
 
         # Get requested page's level info from DB
         query = '''
@@ -546,22 +517,23 @@ class _PathHandler:
             await database.execute(query, values)
 
     async def _process_page(self):
+        '''Process a valid level page.'''
+
         # Check if all required levels have been found
+        base_values = {
+            'riddle': self.riddle_alias,
+            'username': self.username
+        }
         query = '''
-            SELECT * FROM level_requirements req
+            SELECT 1 FROM level_requirements req
             WHERE riddle = :riddle AND level_name = :level_name
                 AND requires NOT IN (
                     SELECT level_name FROM user_levels ul
                     WHERE req.riddle = ul.riddle AND username = :username
                 )
         '''
-        base_values = {
-            'riddle': self.riddle_alias,
-            'username': self.username,
-        }
         values = base_values | {'level_name': self.path_level}
-        result = await database.fetch_one(query, values)
-        has_all_requirements = result is None
+        has_all_requirements = await database.fetch_val(query, values)
         if not has_all_requirements:
             pass
             # return
@@ -573,11 +545,20 @@ class _PathHandler:
                 (riddle, username, level_name, `path`, access_time)
             VALUES (:riddle, :username, :level_name, :path, :time)
         '''
-        values = values | {'path': self.path, 'time': tnow}
+        values |= {'path': self.path, 'time': tnow}
         try:
             await database.execute(query, values)
-
-            # Increment player's riddle page count and find time
+        except IntegrityError:
+            # Page's already there, so just update its last access
+            query = '''
+                UPDATE user_pages
+                SET last_access_time = :time
+                WHERE riddle = :riddle AND username = :username AND path = :path
+            '''
+            values = base_values | {'path': self.path, 'time': tnow}
+            await database.execute(query, values)
+        else:
+            # New page, update player's riddle page count and access time
             query = '''
                 UPDATE riddle_accounts
                 SET page_count = page_count + 1, last_page_time = :time
@@ -585,10 +566,6 @@ class _PathHandler:
             '''
             values = base_values | {'time': tnow}
             await database.execute(query, values)
-
-        except IntegrityError:
-            # Page's already there, so no increments
-            pass
 
         # Check and possibly grant an achievement
         await self._process_cheevo()
