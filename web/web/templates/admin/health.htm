@@ -24,7 +24,7 @@
           {% set status = '<strong>{}</strong>'.format(status) %}
         {% endif %}
         <li>
-          <a href="{{ page_data['url'] }}">{{ path }}</a>… {{ status|safe }}
+          <a href="{{ page_data['url'] }}" rel="noreferrer">{{ path }}</a>… {{ status|safe }}
         </li>
       {% endfor %}
       </ul>
