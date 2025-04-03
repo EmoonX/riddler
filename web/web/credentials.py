@@ -58,6 +58,26 @@ async def process_credentials(
     if credentials in [correct_credentials, ('', '')]:
         # Grant access if user has unlocked protected folder before
         if await has_unlocked_folder_credentials(alias, user, folder_path):
+            # Record unlock time if not present yet
+            # (i.e credentials were retroactively given to player before)
+            query = '''
+                UPDATE user_credentials
+                SET unlock_time = :unlock_time
+                WHERE riddle = :riddle
+                    AND username = :username
+                    AND folder_path = :folder_path
+                    AND unlock_time IS NULL
+            '''
+            values = {
+                'riddle': alias,
+                'username': user.name,
+                'folder_path': folder_path,
+                'unlock_time': datetime.utcnow(),
+            }
+            success = await database.execute(query, values)
+            if success:
+                _log_received_credentials(folder_path, success=True)
+
             return True
 
     if correct_credentials == ('???', '???'):
@@ -191,7 +211,7 @@ async def get_path_credentials(alias: str, path: str) -> dict[str, str]:
 async def has_unlocked_folder_credentials(
     alias: str, user: User, folder_path: str
 ) -> bool:
-
+    '''Check if player has unlocked credentials for path.'''
     query = '''
         SELECT 1 FROM user_credentials
         WHERE riddle = :riddle
@@ -203,8 +223,8 @@ async def has_unlocked_folder_credentials(
         'username': user.name,
         'folder_path': folder_path,
     }
-    has_user_unlocked = await database.fetch_val(query, values)
-    return has_user_unlocked
+    has_player_unlocked = await database.fetch_val(query, values)
+    return has_player_unlocked
 
 
 async def get_all_unlocked_credentials(
