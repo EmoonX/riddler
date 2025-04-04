@@ -21,8 +21,9 @@ class Bot(commands.Bot):
         await self.tree.sync()
 
 
-# Global bot object to be used on other modules
+# Global bot object
 bot: commands.Bot = Bot()
+
 
 @bot.command()
 async def sync(ctx):
@@ -33,16 +34,18 @@ async def sync(ctx):
     else:
         await ctx.send('You must be an admin to use this command!')
 
+
 async def check(interaction: discord.Interaction) -> bool:
     '''Log user and command name before each slash command run.'''
     username = interaction.user.name
     command = interaction.command.qualified_name
     logging.info(
         f"> \033[1m{username}\033[0m "
-        f"used command \033[3;36m/{command}\033[0m "
+        f"used command \ue0b6\033[30;107m/{command}\033[0m\ue0b4 "
         f"({datetime.utcnow()})"
     )
     return True  # command should be run
+
 
 # Override global slash commands checker
 bot.tree.interaction_check = check
