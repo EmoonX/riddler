@@ -17,6 +17,7 @@ from credentials import (
 from inject import get_riddle, get_riddles
 from riddles import level_ranks, cheevo_ranks
 from util.db import database
+from util.riddle import has_player_mastered_riddle
 from webclient import bot_request
 
 # Create app blueprint
@@ -26,6 +27,9 @@ process = Blueprint('process', __name__)
 @process.post('/process')
 async def process_url(username: str | None = None, url: str | None = None):
     '''Process an URL sent by browser extension.'''
+
+    # Time 
+    tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
 
     # Flag function call as automated or not
     auto = url is not None
@@ -66,13 +70,12 @@ async def process_url(username: str | None = None, url: str | None = None):
     riddle = await get_riddle(ph.riddle_alias)
     ok = await process_credentials(riddle, ph.path, ph.credentials, status_code)
     if not ok:
-        tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
         print(
             f"\033[1m[{ph.riddle_alias}]\033[0m "
             f"Received wrong/missing credentials "
-                f"for path \033[3m{path_to_log}\033[0m "
-                f"from \033[1m{ph.username}\033[0m "
-                f"({tnow})"
+            f"for path \033[3m{path_to_log}\033[0m "
+            f"from \033[1m{ph.user.name}\033[0m "
+            f"({tnow})"
         )
         return jsonify({
             'message': 'Wrong or missing user credentials',
@@ -90,9 +93,9 @@ async def process_url(username: str | None = None, url: str | None = None):
             print(
                 f"\033[1m[{ph.riddle_alias}]\033[0m "
                 f"Received locked path \033[3m{path_to_log}\033[0m "
-                    f"({level_name}) "
-                    f"from \033[1m{ph.username}\033[0m "
-                    f"({tnow})"
+                f"({level_name}) "
+                f"from \033[1m{ph.user.name}\033[0m "
+                f"({tnow})"
             )
         return jsonify({
             'message': 'Not a level page',
@@ -105,8 +108,8 @@ async def process_url(username: str | None = None, url: str | None = None):
         print(
             f"\033[1m[{ph.riddle_alias}]\033[0m "
             f"Received path \033[3m\033[9m{path_to_log}\033[0m\033[0m "
-                f"from \033[1m{ph.username}\033[0m "
-                f"({tnow})"
+            f"from \033[1m{ph.user.name}\033[0m "
+            f"({tnow})"
         )
         return jsonify({
             'message': 'Page not found',
@@ -117,9 +120,9 @@ async def process_url(username: str | None = None, url: str | None = None):
     print(
         f"\033[1m[{ph.riddle_alias}]\033[0m "
         f"Received path \033[3m\033[1m{path_to_log}\033[0m\033[0m "
-            f"\033[1m({ph.path_level})\033[0m "
-            f"from \033[1m{ph.username}\033[0m "
-            f"({tnow})"
+        f"\033[1m({ph.path_level})\033[0m "
+        f"from \033[1m{ph.user.name}\033[0m "
+        f"({tnow})"
     )
     data = {
         'riddle': ph.riddle_alias,
@@ -145,8 +148,8 @@ class _PathHandler:
     unlisted: bool
     '''Whether riddle is currently unlisted or not.'''
 
-    username: str
-    '''Username of logged in player.'''
+    user: User
+    '''Discord `User` object of logged in player.'''
 
     riddle_account: dict
     '''Dict containing player's riddle account info from DB.'''
@@ -178,7 +181,7 @@ class _PathHandler:
         # Parse and save basic data + status code
         self = cls()
         riddle = await self._parse_riddle_data_from_url(url)
-        self.username = user.name
+        self.user = user
         self.status_code = status_code
 
         # Ignore occurrences of consecutive slashes
@@ -260,7 +263,7 @@ class _PathHandler:
             INSERT IGNORE INTO riddle_accounts (riddle, username)
             VALUES (:riddle, :username)
         '''
-        values = {'riddle': self.riddle_alias, 'username': self.username}
+        values = {'riddle': self.riddle_alias, 'username': self.user.name}
         await database.execute(query, values)
 
         # Fetch player riddle data
@@ -293,7 +296,7 @@ class _PathHandler:
         '''
         values = {
             'riddle': self.riddle_alias,
-            'username': self.username
+            'username': self.user.name
         }
         current_levels = await database.fetch_all(query, values)
 
@@ -366,7 +369,7 @@ class _PathHandler:
         values = {
             'riddle': self.riddle_alias,
             'level_name': self.path_level,
-            'username': self.username,
+            'username': self.user.name,
         }
         is_unlocked = await database.fetch_one(query, values)
         if is_unlocked:
@@ -415,7 +418,7 @@ class _PathHandler:
             values = {
                 'riddle': self.riddle_alias,
                 'level_name': req['requires'],
-                'username': self.username
+                'username': self.user.name,
             }
             req_satisfied = await database.fetch_val(query, values)
             if not req_satisfied:
@@ -435,8 +438,9 @@ class _PathHandler:
                 AND username = :username
         '''
         values = {
-            'riddle': self.riddle_alias, 'level_name': level['name'],
-            'username': self.username,
+            'riddle': self.riddle_alias,
+            'level_name': level['name'],
+            'username': self.user.name,
         }
         already_unlocked = await database.fetch_one(query, values)
         if already_unlocked:
@@ -456,7 +460,7 @@ class _PathHandler:
         '''
         values = {
             'riddle': self.riddle_alias,
-            'username': self.username
+            'username': self.user.name,
         }
         await database.execute(query, values)
         query = '''
@@ -500,8 +504,9 @@ class _PathHandler:
             WHERE riddle = :riddle AND username = :username
         '''
         values = {
-            'points': points, 'riddle': self.riddle_alias,
-            'username': self.username
+            'points': points,
+            'riddle': self.riddle_alias,
+            'username': self.user.name,
         }
         await database.execute(query, values)
 
@@ -522,7 +527,7 @@ class _PathHandler:
         # Check if all required levels have been found
         base_values = {
             'riddle': self.riddle_alias,
-            'username': self.username
+            'username': self.user.name,
         }
         query = '''
             SELECT 1 FROM level_requirements req
@@ -597,8 +602,8 @@ class _PathHandler:
                 '''
                 values = {
                     'riddle': self.riddle_alias,
-                    'username': self.username,
-                    'path': path
+                    'username': self.user.name,
+                    'path': path,
                 }
                 page_found = await database.fetch_one(query, values)
                 if not page_found:
@@ -608,7 +613,6 @@ class _PathHandler:
                 return
 
         # If positive, add it to user's collection
-        time = datetime.utcnow()
         query = '''
             INSERT INTO user_achievements
                 (riddle, username, title, unlock_time)
@@ -616,17 +620,12 @@ class _PathHandler:
         '''
         values = {
             'riddle': self.riddle_alias,
-            'username': self.username,
+            'username': self.user.name,
             'title': cheevo['title'],
-            'time': time
+            'time': datetime.utcnow(),
         }
         try:
             await database.execute(query, values)
-            print(
-                f"> \033[1m[{self.riddle_alias}]\033[0m "
-                f"\033[1m{self.username}\033[0m "
-                    f"got cheevo \033[1m{cheevo['title']}\033[0m!"
-            )
         except IntegrityError:
             return
 
@@ -634,11 +633,31 @@ class _PathHandler:
         points = cheevo_ranks[cheevo['rank']]['points']
         await self.update_score(points)
 
-        # Request bot to congratulate member
+        # Call bot achievement unlock procedures
         await bot_request(
-            'unlock', method='cheevo_found',
-            alias=self.riddle_alias, username=self.username,
-            cheevo=dict(cheevo), points=points, page=self.path
+            'unlock',
+            method='cheevo_found',
+            alias=self.riddle_alias,
+            username=self.user.name,
+            cheevo=dict(cheevo),
+            points=points,
+            page=self.path,
+        )
+
+        # Log achievement unlock
+        print(
+            f"> \033[1m[{self.riddle_alias}]\033[0m "
+            f"\033[1m{self.user.name}\033[0m has unlocked achievement "
+            f"\033[1m\033[3m{cheevo['title']}\033[0m\033[0m"
+        )
+        if await has_player_mastered_riddle(self.riddle_alias, self.user.name):
+            self.log_mastery()
+
+    def log_mastery(self):
+        '''Log player mastering the riddle (i.e 100% score).'''
+        print(
+            f"> \033[1m[{self.riddle_alias}]\033[0m "
+            f"\033[1m{self.user.name}\033[0m has mastered the game 💎"
         )
 
     async def check_and_register_missing_page(self) -> str | None:
@@ -676,14 +695,16 @@ class _PathHandler:
             )
         '''
         values = {
-            'riddle': self.riddle_alias, 'path': self.path,
-            'username': self.username, 'time': tnow,
+            'riddle': self.riddle_alias,
+            'path': self.path,
+            'username': self.user.name,
+            'time': tnow,
         }
         await database.execute(query, values)
         print(
             f"> \033[1m[{self.riddle_alias}]\033[0m "
             f"Found new page \033[1m{self.path}\033[0m "
-                f"by \033[1m{self.username}\033[0m "
+                f"by \033[1m{self.user.name}\033[0m "
                 f"({tnow})"
         )
 
@@ -714,7 +735,6 @@ class _LevelHandler:
         '''Increment player level upon reaching level's front page.'''
 
         # Record it on user table with current time
-        tnow = datetime.utcnow()
         query = '''
             INSERT INTO user_levels
                 (riddle, username, level_name, find_time)
@@ -722,9 +742,9 @@ class _LevelHandler:
         '''
         values = {
             'riddle': self.ph.riddle_alias,
-            'username': self.ph.username,
+            'username': self.ph.user.name,
             'level_name': self.level['name'],
-            'time': tnow
+            'time': datetime.utcnow(),
         }
         await database.execute(query, values)
 
@@ -733,21 +753,26 @@ class _LevelHandler:
             'unlock', method='advance',
             alias=self.ph.riddle_alias,
             level=self.level,
-            username=self.ph.username,
+            username=self.ph.user.name,
         )
-        if (
-            not self.level['is_secret']
-            and self.ph.riddle_account['current_level'] != '🏅'
-        ):
-            # Update player's current_level
-            # (only if riddle hasn't been finished yet)
+
+        if self.level['is_secret']:
+            # Log secret level finding
+            print(
+                f"> \033[1m[{self.ph.riddle_alias}]\033[0m "
+                f"\033[1m{self.ph.user.name}\033[0m has found "
+                f"secret level \033[1m{self.level['name']}\033[0m",
+            )
+        elif self.ph.riddle_account['current_level'] != '🏅':
+            # Update player's `current_level``
+            # (given that riddle hasn't been finished yet)
             query = '''
                 UPDATE riddle_accounts SET current_level = :name_next
                 WHERE riddle = :riddle AND username = :username
             '''
             values = {
                 'riddle': self.ph.riddle_alias,
-                'username': self.ph.username,
+                'username': self.ph.user.name,
                 'name_next': self.level['name'],
             }
             await database.execute(query, values)
@@ -762,8 +787,8 @@ class _LevelHandler:
         if not row or row['completion_time']:
             return False
 
-        # Register level completion in designated table
-        tnow = datetime.utcnow()
+        # Register level completion on designated table
+        alias, username = self.ph.riddle_alias, self.ph.user.name
         query = '''
             UPDATE user_levels SET completion_time = :time
             WHERE riddle = :riddle
@@ -771,41 +796,62 @@ class _LevelHandler:
                 AND level_name = :level
         '''
         values = {
-            'riddle': self.ph.riddle_alias,
-            'username': self.ph.username,
+            'riddle': alias,
+            'username': username,
             'level': self.level['name'],
-            'time': tnow,
+            'time': datetime.utcnow(),
         }
         await database.execute(query, values)
 
-        # Bot level beat procedures
+        # Call bot level beat procedures
         await bot_request(
             'unlock',
             method='beat',
-            alias=self.ph.riddle_alias,
+            alias=alias,
             level=self.level,
-            username=self.ph.username,
+            username=username,
             points=self.points,
             first_to_solve=False
         )
+
+        # Log level completion
+        level_type = 'secret level' if self.level['is_secret'] else 'level'
+        print(
+            f"> \033[1m[{alias}]\033[0m "
+            f"\033[1m{username}\033[0m "
+            f"has solved {level_type} \033[1m{self.level['name']}\033[0m "
+        )
+
         # Check if level just completed is the _final_ one
         query = 'SELECT * FROM riddles WHERE alias = :riddle'
         values = {'riddle': self.ph.riddle_alias}
         final_name = await database.fetch_val(query, values, 'final_level')
         if self.level['name'] == final_name:
-            # Player has just completed the game :)
+            # Player has just completed the riddle :)
             query = '''
                 UPDATE riddle_accounts SET current_level = "🏅"
                 WHERE riddle = :riddle AND username = :username
             '''
-            values |= {'username': self.ph.username}
+            values |= {'username': username}
             await database.execute(query, values)
+
+            # Call bot completion procedures
             await bot_request(
                 'unlock',
                 method='game_completed',
-                alias=self.ph.riddle_alias,
-                username=self.ph.username,
+                alias=alias,
+                username=username,
             )
+
+            # Log completion
+            print(
+                f"> \033[1m[{alias}]\033[0m "
+                f"\033[1m{username}\033[0m has finished the game 🏅"
+            )
+
+        if await has_player_mastered_riddle(alias, username):
+            self.ph.log_mastery()
+
         # Update level-related tables
         await self._update_info()
 
@@ -823,7 +869,7 @@ class _LevelHandler:
         values = {
             'riddle': self.ph.riddle_alias,
             'level_name': self.level['name'],
-            'username': self.ph.username,
+            'username': self.ph.user.name,
         }
         row = await database.fetch_one(query, values)
         return row

@@ -14,7 +14,7 @@ from util.levels import get_ancestor_levels
 
 class UnlockHandler:
     '''Handler for processing guild unlocking procedures
-    (granting roles, congratulating player, finishing the game, etc).'''
+    (granting roles, congratulating player, finishing the riddle, etc).'''
 
     alias: str
     '''Unique identifier for riddle.'''
@@ -104,15 +104,10 @@ class UnlockHandler:
         '''
 
         if level['is_secret']:
-            # Log reaching secret and send message to member
+            # Send message to player upon finding secret level
             name = level['name']
             if level['latin_name']:
                 name += f" ({level['latin_name']})"
-            logging.info(
-                ('\033[1m[%s]\033[0m \033[1m%s\033[0m '
-                    'has found secret level \033[1m%s\033[0m'),
-                self.full_name, self.member.name, name
-            )
             text = (
                 f"**[{self.full_name}]** "
                 f"You have found secret level **{name}**. Congratulations!"
@@ -149,17 +144,15 @@ class UnlockHandler:
         if level['latin_name']:
             name += f" ({level['latin_name']})"
         level_type = 'level' if not level['is_secret'] else 'secret level'
-        logging.info(
-            ('\033[1m[%s]\033[0m \033[1m%s\033[0m '
-                'has completed %s \033[1m%s\033[0m'),
-            self.full_name, self.member.name, level_type, name
-        )
         text = (
             f"**[{self.full_name}]** "
             f"You have solved {level_type} **{name}** [{stars}] "
-                f"and won **{points}** points!\n"
+                f"and won **{points}** points.\n"
         )
         await self._send(text)
+
+        if not self.in_riddle_guild:
+            return
 
         # Check for set completion
         query = '''
@@ -177,8 +170,6 @@ class UnlockHandler:
                 f"You have unlocked special title **@{role_name}**!"
             )
             await self._send(text)
-            if not self.in_riddle_guild:
-                return
 
             # Add special set completion role and remove
             # player's final level's 'reached-' role
@@ -217,15 +208,11 @@ class UnlockHandler:
     async def cheevo_found(self, cheevo: dict, points: int, path: str):
         '''Congratulations upon achievement being found.'''
 
-        # Log and send congratulatory message
-        logging.info(
-            '\033[1m[%s]\033[0m \033[1m%s\033[0m got cheevo \033[1m%s\033[0m!',
-            self.full_name, self.member.name, cheevo['title']
-        )
+        # Send congratulatory message
         text = (
             f"**[{self.full_name}]** "
-            f"You unlocked achievement **_{cheevo['title']}_** "
-                f"in page `{path}` and won **{points}** points!\n"
+            f"You have unlocked achievement **_{cheevo['title']}_** "
+            f"on page `{path}` and won **{points}** points.\n"
         )
         await self._send(text)
 
@@ -244,14 +231,10 @@ class UnlockHandler:
     async def game_completed(self):
         '''Do the honors upon player completing game.'''
 
-        # Player has completed the game (for now?)
-        logging.info(
-            '\033[1m[%s]\033[0m \033[1m%s\033[0m has finished the game!',
-            self.full_name, self.member.name
-        )
+        # Player has finished the riddle (for now?)
         text = (
-            f"**[{self.full_name}] 🏅 GAME COMPLETED 🏅**\n"
-            'You just completed the game! **Congratulations!**'
+            f"**[{self.full_name}] 🏅 COMPLETED**\n"
+            f"You have just finished _{self.full_name}_. Congratulations!"
         )
         await self._send(text)
         if not self.in_riddle_guild:
@@ -287,16 +270,12 @@ class UnlockHandler:
         '''Do the honors upon player mastering game,
         i.e beating all levels and finding all achievements.'''
 
-        # Player has mastered the game (for now?)
-        logging.info(
-            '\033[1m[%s]\033[0m \033[1m%s\033[0m has mastered the game!',
-            self.full_name, self.member.name
-        )
+        # Player has mastered the riddle (for now?)
         text = (
-            f"**[{self.full_name}] 💎 GAME MASTERED 💎**\n"
-            'You have beaten all levels, found all achievements '
-                'and scored every single possible point in the game! '
-            '**Outstanding!**'
+            f"**[{self.full_name}] 💎 MASTERED**\n"
+            'You have beaten all the levels, found all the achievements '
+            f"and scored every single possible point in _{self.full_name}_. "
+            'Outstanding!'
         )
         await self._send(text)
         if not self.in_riddle_guild:
