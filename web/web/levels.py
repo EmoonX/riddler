@@ -270,6 +270,7 @@ async def get_pages(
     base = {
         'children': {}, 'folder': 1, 'path': '/',
         'filesFound': 0, 'filesTotal': 0,
+        'pagesFound': 0, 'pagesTotal': 0,
     }
     if not index_by_levels:
         base |= {'levels': {}}
@@ -294,6 +295,7 @@ async def get_pages(
                     else:
                         children[seg] = data
                 parent['filesFound'] += 1
+                parent['pagesFound'] += 1
                 parent = children[seg]
     
     # Recursively calculate total file count for each folder
@@ -317,6 +319,7 @@ async def get_pages(
         segments = data['path'].split('/')[1:]
         for seg in segments:
             parent['filesTotal'] += 1
+            parent['pagesTotal'] += 1
             if not seg in parent['children']:
                 # Avoid registering locked folders/pages
                 break

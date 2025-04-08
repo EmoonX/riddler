@@ -3,7 +3,6 @@ import csv
 from datetime import datetime
 import json
 from types import SimpleNamespace
-from typing import Self
 
 from quart import Blueprint, Response, request, send_file
 
@@ -16,7 +15,21 @@ from util.levels import get_ordered_levels
 export = Blueprint('players_export', __name__)
 
 
-class Export:
+@export.route('/account/export-data')
+async def export_account_data():
+    '''
+    Retrieve player's account/riddle data and export it
+    as a downloadable file in the given (suitable) format.
+    '''
+    format = request.args.get('format', '')
+    user = await discord.get_user()
+    export = _Export(user)
+    await export.build_data()
+    await export.record()
+    return await export.download(format)
+
+
+class _Export:
     '''Userdata export procedures.'''
 
     def __init__(self, user: User):
@@ -44,7 +57,7 @@ class Export:
                 self.data[alias][level_name] = level_data
                 if level_data.get('answer'):
                    self.counters.levels += 1 
-                self.counters.pages += len(level_data)
+                self.counters.pages += level_data['pagesFound']
     
     def _build_level_data(self, alias: str, level_node: dict) -> dict:
         '''Build level-specific userdata.'''
@@ -59,14 +72,15 @@ class Export:
             level_data |= {'frontPage': front_page}
             if answer := level_node.get('answer'):
                 level_data |= {'answer': answer}
-        level_data |= {'filesFound': level_node['/']['filesFound']}
+        level_data |= {'pagesFound': level_node['/']['pagesFound']}
         if {'frontPage', 'answer'}.issubset(level_data.keys()):
-            level_data |= {'filesTotal': level_node['/']['filesTotal']}
+            # Show total amount iff user has solved the level
+            level_data |= {'pagesTotal': level_node['/']['pagesTotal']}
 
         return level_data
 
     async def record(self):
-        '''Record user's export time and riddle progress counters.'''
+        '''Record player's export time and riddle progress counters.'''
         values = {
             'username': self.user.name,
             'export_time': self.export_time,
@@ -94,6 +108,8 @@ class Export:
                 message = f"Invalid export format ({format})."
                 return Response(message, status=422)
 
+        # Mark file as attachment in header,
+        # so response starts a client-sided file download
         response = Response(text)
         response.headers['Content-Disposition'] = \
             f"attachment; filename={self.filename}"
@@ -103,17 +119,3 @@ class Export:
     async def _to_json(self) -> str:
         '''Simple JSON pretty-printed dump.'''
         return json.dumps(self.data, indent=2)
-    
-
-@export.route('/account/export-userdata')
-async def export_userdata():
-    '''
-    Retrieve user's current riddle data and export it
-    as a downloadable file in the given (suitable) format.
-    '''
-    format = request.args.get('format', '')
-    user = await discord.get_user()
-    export = Export(user)
-    await export.build_data()
-    await export.record()
-    return await export.download(format)
