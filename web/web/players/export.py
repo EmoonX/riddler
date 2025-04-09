@@ -62,20 +62,27 @@ class _Export:
     def _build_level_data(self, alias: str, level_node: dict) -> dict:
         '''Build level-specific userdata.'''
 
+        def _add_items_when_available(*keys: str):
+            '''Copy given available items from level node to data dict.'''
+            for key in keys:
+                if value := (level_node.get(key) or level_node['/'].get(key)):
+                    nonlocal level_data
+                    level_data |= {key: value}
+
+        # Build list of pages from paths
         paths = absolute_paths(level_node['/'])
         pages = [
-            {'path': path, 'access_time': page_node['access_time']}
+            {'path': path, 'accessTime': page_node['access_time']}
             for path, page_node in sorted(paths)
         ]
-        level_data = {'pages': pages}
-        if front_page := level_node.get('frontPage'):
-            level_data |= {'frontPage': front_page}
-            if answer := level_node.get('answer'):
-                level_data |= {'answer': answer}
-        level_data |= {'pagesFound': level_node['/']['pagesFound']}
-        if {'frontPage', 'answer'}.issubset(level_data.keys()):
-            # Show total amount iff user has solved the level
-            level_data |= {'pagesTotal': level_node['/']['pagesTotal']}
+
+        # Populate dict with pages & other relevant level data
+        level_data = {}
+        _add_items_when_available('frontPage', 'answer')
+        level_data |= {'pages': pages}
+        _add_items_when_available(
+            'pagesFound', 'pagesTotal', 'unlockTime', 'solveTime'
+        )
 
         return level_data
 

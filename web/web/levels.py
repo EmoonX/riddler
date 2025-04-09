@@ -187,6 +187,9 @@ async def get_pages(
     '''Return a recursive JSON of all user level folders and pages.
     If a level is specified, return only pages from that level instead.'''
 
+    def _stringify_datetime(time: datetime) -> str:
+        return time.strftime('%Y/%b/%d at %H:%M (UTC)')
+
     admin &= await is_admin_of(alias)
 
     # Fetch user page data
@@ -224,12 +227,16 @@ async def get_pages(
     unlocked_levels = {}
     if admin:
         query = '''
-            SELECT *, current_timestamp() AS completion_time FROM levels
+            SELECT 
+                *,
+                current_timestamp() AS find_time,
+                current_timestamp() AS completion_time
+            FROM levels
             WHERE riddle = :riddle AND name LIKE :level_name
         '''
     else:
         query = '''
-            SELECT lv.name, lv.path, lv.image, lv.answer, ul.completion_time
+            SELECT lv.*, ul.*
             FROM levels lv INNER JOIN user_levels ul
                 ON lv.riddle = ul.riddle AND lv.name = ul.level_name
             WHERE lv.riddle = :riddle
@@ -239,11 +246,18 @@ async def get_pages(
     result = await database.fetch_all(query, values)
     for row in result:
         level_name = row['name']
-        unlocked_levels[level_name] = {'image': row['image']}
-        if row['path'] in page_data:
+        unlocked_levels[level_name] = {
+            'image': row['image'],
+            'unlockTime': _stringify_datetime(row['find_time']),
+        }
+        if page_data.get(row['path']):
             unlocked_levels[level_name] |= {'frontPage': row['path']}
         if row['completion_time']:
-            unlocked_levels[level_name] |= {'answer': row['answer']}
+            if page_data.get(row['answer']):
+                unlocked_levels[level_name] |= {'answer': row['answer']}
+            unlocked_levels[level_name] |= {
+                'solveTime': _stringify_datetime(row['completion_time']),
+            }
 
     # Scan extensions dir for available extension icon names
     available_extensions = set()
@@ -262,15 +276,14 @@ async def get_pages(
         data['page'] = data['path'].rpartition('/')[-1]
         data['folder'] = 0
         data['unknownExtension'] = extension not in available_extensions
-        data['access_time'] = \
-            data['access_time'].strftime('%Y/%b/%d at %H:%M (UTC)')
+        data['access_time'] = data['accessTime'] = \
+            _stringify_datetime(data['access_time'])
         paths[data['level_name']].append(data)
 
     # Build recursive dict of folders and files
     base = {
         'children': {}, 'folder': 1, 'path': '/',
-        'filesFound': 0, 'filesTotal': 0,
-        'pagesFound': 0, 'pagesTotal': 0,
+        'filesFound': 0, 'pagesFound': 0,
     }
     if not index_by_levels:
         base |= {'levels': {}}
@@ -310,16 +323,19 @@ async def get_pages(
     for data in pages_data:
         level_name = data['level_name']
         if (
-            (not include_unlisted and not level_name)
-            or (index_by_levels and (level_name not in pages))
+            (not include_unlisted and not level_name) or
+            (index_by_levels and (level_name not in pages))
         ):
             continue
         path = ''
         parent = pages[level_name]['/'] if index_by_levels else pages['/']
         segments = data['path'].split('/')[1:]
         for seg in segments:
-            parent['filesTotal'] += 1
-            parent['pagesTotal'] += 1
+            if unlocked_levels.get(level_name, {}).get('solveTime'):
+                if not parent.get('pagesTotal'):
+                    parent |= {'filesTotal': 0, 'pagesTotal': 0}
+                parent['filesTotal'] += 1
+                parent['pagesTotal'] += 1
             if not seg in parent['children']:
                 # Avoid registering locked folders/pages
                 break
