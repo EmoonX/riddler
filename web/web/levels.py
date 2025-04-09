@@ -289,7 +289,7 @@ async def get_pages(
         base |= {'levels': {}}
     pages = {} if index_by_levels else {'/': deepcopy(base)}
     for level_name, level_paths in paths.items():
-        if not level_paths:
+        if not unlocked_levels.get(level_name):
             continue
         if index_by_levels:
             level_pages = pages[level_name] = {'/': deepcopy(base)}

@@ -33,11 +33,11 @@ async def get_riddle(alias: str) -> dict:
     return riddle
 
 
-async def get_riddles(unlisted: bool = False):
-    '''Return list of all riddles from DB.
-
-    :param unlisted: if True, returns also unlisted riddles'''
-
+async def get_riddles(unlisted: bool = False) -> list[dict]:
+    '''
+    Return a list of all riddles.
+    :param unlisted: Whether to also return unlisted riddles.
+    '''
     query = f"""
         SELECT * FROM riddles
         {'WHERE unlisted IS NOT TRUE' if not unlisted else ''}

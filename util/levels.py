@@ -4,36 +4,22 @@ from util.db import database
 
 
 async def get_ordered_levels(alias: str) -> dict[list]:
-
+    '''Retrieve ordered level data (set_index -> index) for a riddle.'''
     ordered_sets = defaultdict(list)
     query = '''
-        SELECT ls.riddle,
-            ls.name AS set_name, lv.name AS level_name,
-            ls.`index` AS set_index, lv.`index` AS level_index
-        FROM level_sets ls INNER JOIN levels lv
-            ON ls.name = lv.level_set
-        WHERE ls.riddle = :riddle
-        ORDER BY ls.riddle, set_index, level_index
+        SELECT * FROM levels
+        WHERE riddle = :riddle
+        ORDER BY set_index, `index`
     '''
-    values = {'riddle': alias}
-    result = await database.fetch_all(query, values)
-    for row in result:
-        set_name, level_name = row['set_name'], row['level_name']
-        ordered_sets[set_name].append(level_name)
-
-    ordered_levels = []
-    for set_levels in ordered_sets.values():
-        ordered_levels += set_levels
-
+    result = await database.fetch_all(query, {'riddle': alias})
+    ordered_levels = {row['name']: row for row in result}
     return ordered_levels
 
 
-async def get_ancestor_levels(riddle: str, root_level: dict) -> dict:
-    '''
-    Build set of ancestor levels
-    by applying a reverse BFS in requirements DAG.
-    '''
+async def get_ancestor_levels(alias: str, root_level: dict) -> dict:
+    '''Build set of ancestor levels from a given root one.'''
 
+    # Run a BFS through the requirements DAG
     ancestor_levels = {}
     root_level = {
         'name': root_level['name'],
@@ -50,7 +36,7 @@ async def get_ancestor_levels(riddle: str, root_level: dict) -> dict:
             SELECT name FROM level_sets
             WHERE riddle = :riddle AND final_level = :level_name
         '''
-        values = {'riddle': riddle, 'level_name': level['name']}
+        values = {'riddle': alias, 'level_name': level['name']}
         is_final_in_set = bool(await database.fetch_one(query, values))
         if is_final_in_set and len(ancestor_levels) > 1:
             continue

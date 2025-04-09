@@ -61,8 +61,8 @@ class _Export:
             for level_name, level_node in page_tree.items():
                 level_data = self._build_level_data(alias, level_node)
                 self.data[alias]['levels'][level_name] = level_data
-                if level_data.get('answer'):
-                   self.counters.levels += 1 
+                if level_data.get('unlockTime'):
+                   self.counters.levels += 1
                 self.counters.pages += level_data['pagesFound']
 
             # Populate riddle's credential data (if applicable)
@@ -78,7 +78,11 @@ class _Export:
         def _add_items_when_available(*keys: str):
             '''Copy given available items from level node to data dict.'''
             for key in keys:
-                if value := (level_node.get(key) or level_node['/'].get(key)):
+                if key in level_node:
+                    value = level_node[key]
+                else:
+                    value = level_node['/'].get(key)
+                if value not in (None, ''):
                     nonlocal level_data
                     level_data |= {key: value}
 
