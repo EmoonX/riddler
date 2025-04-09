@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from quart import Blueprint, Response, request, send_file
 
 from auth import discord, User
+from credentials import get_all_unlocked_credentials
 from inject import get_riddles
 from levels import get_pages, absolute_paths
 from util.db import database
@@ -40,24 +41,36 @@ class _Export:
             f"userdata-{self.user.name}-" +
             self.export_time.strftime("%Y%m%d%H%M%S")
         )
-        self.data = defaultdict(dict)
-        self.counters = SimpleNamespace(riddles=0, levels=0, pages=0)
+        self.data = defaultdict(lambda: defaultdict(dict))
+        self.counters = SimpleNamespace(
+            riddles=0, levels=0, pages=0, credentials=0
+        )
 
     async def build_data(self):
         '''Build userdata dict from user-unlocked levels and pages.'''
+
         riddles = await get_riddles(unlisted=True)
-        for riddle in riddles:
-            alias = riddle['alias']
+        for alias in [riddle['alias'] for riddle in riddles]:
+            # Build tree of page nodes
             page_tree = await get_pages(alias, as_json=False)
             if not page_tree:
                 continue
             self.counters.riddles += 1
+
+            # Populate riddle's level data
             for level_name, level_node in page_tree.items():
                 level_data = self._build_level_data(alias, level_node)
-                self.data[alias][level_name] = level_data
+                self.data[alias]['levels'][level_name] = level_data
                 if level_data.get('answer'):
                    self.counters.levels += 1 
                 self.counters.pages += level_data['pagesFound']
+
+            # Populate riddle's credential data (if applicable)
+            credentials = await get_all_unlocked_credentials(alias, self.user)
+            if credentials:
+                self.data[alias]['credentials'] = credentials
+                self.counters.credentials += len(credentials)
+               
     
     def _build_level_data(self, alias: str, level_node: dict) -> dict:
         '''Build level-specific userdata.'''
