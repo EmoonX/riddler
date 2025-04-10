@@ -453,21 +453,23 @@ class _PathHandler:
     async def _update_hit_counters(self):
         '''Update player, riddle and level hit counters.'''
 
-        # Update player/riddle hit counters
-        query = '''
-            UPDATE riddle_accounts SET hit_counter = hit_counter + 1
-            WHERE riddle = :riddle AND username = :username
-        '''
-        values = {
-            'riddle': self.riddle_alias,
-            'username': self.user.name,
-        }
-        await database.execute(query, values)
+        # Update riddle/account hit counters
         query = '''
             UPDATE riddles SET hit_counter = hit_counter + 1
             WHERE alias = :alias
         '''
         await database.execute(query, {'alias': self.riddle_alias})
+        query = '''
+            UPDATE accounts SET global_hit_counter = global_hit_counter + 1
+            WHERE username = :username
+        '''
+        await database.execute(query, {'username': self.user.name})
+        query = '''
+            UPDATE riddle_accounts SET hit_counter = hit_counter + 1
+            WHERE riddle = :riddle AND username = :username
+        '''
+        values = {'riddle': self.riddle_alias, 'username': self.user.name}        
+        await database.execute(query, values)
 
         # Check last level visited by player (which can be the current).
         # All subsequent 404 pages are counted as part of given level,
@@ -647,7 +649,7 @@ class _PathHandler:
         # Log achievement unlock
         print(
             f"> \033[1m[{self.riddle_alias}]\033[0m "
-            f"\033[1m{self.user.name}\033[0m has unlocked achievement "
+            f"\033[1m{self.user.name}\033[0m unlocked achievement "
             f"\033[1m\033[3m{cheevo['title']}\033[0m\033[0m"
         )
         if await has_player_mastered_riddle(self.riddle_alias, self.user.name):
@@ -760,7 +762,7 @@ class _LevelHandler:
             # Log secret level finding
             print(
                 f"> \033[1m[{self.ph.riddle_alias}]\033[0m "
-                f"\033[1m{self.ph.user.name}\033[0m has found "
+                f"\033[1m{self.ph.user.name}\033[0m found "
                 f"secret level \033[1m{self.level['name']}\033[0m",
             )
         elif self.ph.riddle_account['current_level'] != '🏅':
@@ -819,7 +821,7 @@ class _LevelHandler:
         print(
             f"> \033[1m[{alias}]\033[0m "
             f"\033[1m{username}\033[0m "
-            f"has solved {level_type} \033[1m{self.level['name']}\033[0m "
+            f"solved {level_type} \033[1m{self.level['name']}\033[0m "
         )
 
         # Check if level just completed is the _final_ one
