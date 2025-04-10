@@ -87,7 +87,9 @@ async function buildRiddle(riddle, pages) {
       }
       previousSetName = setName;
       previousLevelName = levelName;
-      updatePathsIndex(riddle, level.pages['/']);
+      if (level.pages) {
+        updatePathsIndex(riddle, level.pages['/']);
+      }
     }
   }
   riddles[riddle.alias] = riddle;
