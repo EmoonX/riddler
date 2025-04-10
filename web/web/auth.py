@@ -172,15 +172,10 @@ async def _post_callback():
 
 @auth.get('/logout')
 async def logout():
-    '''Revoke credentials and logs user out of application.'''
+    '''Revoke credentials and log user out of application.'''
 
     # Discord credentials are gone
     discord.revoke()
 
-    # Get rid of session data
-    if 'user' in session:
-        session.pop('user')
-
-    # Redirect to last page user was in (if any)
-    url = request.args.get('redirect_url', '/')
-    return redirect(url)
+    # Always redirect to homepage (for consistency and avoiding 401s)
+    return redirect('/')
