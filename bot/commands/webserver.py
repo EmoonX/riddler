@@ -15,6 +15,7 @@ from commands.get import (
 from commands.unlock import UnlockHandler
 from commands.update import insert, update
 from commands.wonderland import update_score_role
+from riddle import create_and_add_riddle, riddles
 from util.db import database
 from util.riddle import has_player_mastered_riddle
 
@@ -59,9 +60,19 @@ class WebServer(commands.Cog):
 async def unlock(request):
     '''Ŕeceive data from web request and issue unlocking method.'''
 
-    # Build unlock handler for guild member
     data = request.rel_url.query
     alias = data['alias']
+    if alias not in riddles:
+        # Recently DB-inserted riddle not found,
+        # so hot add it to avoid restarting bot altogether
+        query = '''
+            SELECT * FROM riddles
+            WHERE alias = :alias
+        '''
+        row = await database.fetch_one(query, {'alias': alias})
+        await create_and_add_riddle(row)        
+
+    # Build unlock handler for guild member
     unlock_handler = UnlockHandler(alias, data['username'])
 
     # Parse JSON params into dicts

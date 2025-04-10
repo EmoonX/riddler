@@ -1,7 +1,7 @@
 import logging
 from typing import Optional
 
-from discord import Guild, Member, File
+import discord
 from discord.abc import Messageable
 from discord.errors import Forbidden
 from discord.utils import get
@@ -22,13 +22,13 @@ class UnlockHandler:
     full_name: str
     '''Riddle's full name.'''
 
-    guild: Guild
+    guild: discord.Guild
     '''Guild where things will be unlocked.'''
 
     levels: dict
     '''Dict of normal riddle levels.'''
 
-    member: Member
+    member: discord.Member
     '''Discord guild member, the one to unlock things for.'''
 
     in_riddle_guild: bool
@@ -222,7 +222,7 @@ class UnlockHandler:
         )
         with open(image_path, 'rb') as fp:
             # Create image object
-            image = File(fp, cheevo['image'])
+            image = discord.File(fp, cheevo['image'])
 
             # send flavor message with description and image
             description = f"_\"{cheevo['description']}\"_"
@@ -298,7 +298,7 @@ class UnlockHandler:
         await update_nickname(self.member, '💎')
 
 
-async def update_nickname(member: Member, s: str):
+async def update_nickname(member: discord.Member, s: str):
     '''Update user's nickname to reflect current level.
     In case it exceeds 32 characters, shorten the member's name to fit.'''
 
@@ -314,7 +314,7 @@ async def update_nickname(member: Member, s: str):
         pass
 
 
-async def multi_update_nickname(riddle: str, member: Member):
+async def multi_update_nickname(riddle: str, member: discord.Member):
     '''Update complete nickname.'''
 
     # Get level sets from DB

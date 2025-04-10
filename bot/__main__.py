@@ -17,7 +17,8 @@ load_dotenv(verbose=True)
 logging.basicConfig(level=logging.INFO)
 
 from bot import bot
-from riddle import build_riddles
+from riddle import create_and_add_riddle
+from util.db import database
 
 
 @bot.event
@@ -37,14 +38,18 @@ async def on_ready():
         return None
     
     await bot.change_presence(
-        status=discord.Status.invisible,
+        status=discord.Status.online,
         activity=_get_activity()
     )
 
-    # Build riddles dict
-    await build_riddles()
+    # Establish database connection and build riddles dict
+    await database.connect()
+    query = '''SELECT * FROM riddles''' 
+    result = await database.fetch_all(query)
+    for row in result:
+        await create_and_add_riddle(row)
     
-    # Iterate through command modules and automatically load extensions
+    # Iterate through command modules and autoload extensions
     commands_dir = os.getcwd() + '/commands'
     os.chdir(commands_dir)
     for path in glob.glob('**/*.py', recursive=True):
