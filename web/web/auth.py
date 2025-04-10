@@ -4,6 +4,7 @@ import discord
 from oauthlib.oauth2.rfc6749.errors import (
     InvalidGrantError, MismatchingStateError
 )
+from pymysql.err import IntegrityError
 from quart import (
     Quart, Blueprint, request, session,
     render_template, redirect, url_for,
@@ -64,18 +65,14 @@ async def register():
         '''Render page with **kwargs.'''
         return render_template('players/register.htm', user=user, msg=msg)
 
-    # Get authenticated Discord user
     user = await discord.get_user()
-
-    # If account has already been created, nothing to do here
     query = '''
-        SELECT * FROM accounts
-        WHERE discord_id = :discord_id OR username = :username
+        SELECT 1 FROM accounts
+        WHERE discord_id = :discord_id
     '''
-    values = {'discord_id': user.id, 'username': user.name}
-    already_created = await database.fetch_one(query, values)
-    if already_created:
-        return redirect(url_for('info.info_page', page='about'))
+    if await database.fetch_val(query, {'discord_id': user.id}):
+        # Account has already been created, nothing to do here
+        return redirect('/about')
 
     # Render registration page on GET
     if request.method == 'GET':
@@ -87,13 +84,24 @@ async def register():
     if not country:
         return await r('No bogus countries allowed...')
 
-    # Insert value on accounts table
+    # Insert user data into accounts table
     query = '''
-        INSERT INTO accounts (username, country)
-        VALUES (:username, :country)
+        INSERT INTO accounts (username, display_name, discord_id, country)
+        VALUES (:username, :display_name, :discord_id, :country)
     '''
-    values = {'username': user.name, 'country': form['country']}
-    await database.execute(query, values)
+    values = {
+        'username': user.name,
+        'display_name': user.display_name,
+        'discord_id': user.id,
+        'country': form['country'],
+    }
+    try:
+        await database.execute(query, values)
+    except IntegrityError:
+        return f"""
+            Username <code>{user.name}</code> already in database.
+            Please contact an admin.
+        """, 409  # Conflict
     
     await _post_callback()
 
@@ -124,45 +132,36 @@ async def callback():
         discord.revoke()
         return redirect('/login')
 
-    # Search for user's account in database
     user = await discord.get_user()
     query = '''
-        SELECT * FROM accounts
-        WHERE username = :name
+        SELECT 1 FROM accounts
+        WHERE discord_id = :discord_id
     '''
-    values= {'name': user.name}
-    account = await database.fetch_one(query, values)
-    if not account:
-        return redirect(url_for('.register'))
+    if not await database.fetch_val(query, {'discord_id': user.id}):
+        # Account not found in database, so make user sign up instead
+        return redirect('/register')
 
     await _post_callback()
 
-    # Otherwise, redirect to post-login page
+    # Redirect to post-login page
     url = data.get('redirect_url', '/')
     return redirect(url)
 
 
 async def _post_callback():
-    '''Procedures to be done post-callback.'''
-    
+    '''Post-callback procedures.'''
+
+    # Possibly update missing/outdated account info
     user = await discord.get_user()
-    
-    # This will be run only once, either on register or post-hiatus login
     query = '''
         UPDATE accounts
-        SET discord_id = :discord_id
-        WHERE username = :username
-    '''
-    values = {'discord_id': user.id, 'username': user.name}
-    await database.execute(query, values)
-    
-    # Fallback if bot failed to pick previous name changes (e.g was down)
-    query = '''
-        UPDATE accounts
-        SET display_name = :display_name, avatar_url = :avatar_url
+        SET username = :username,
+            display_name = :display_name,
+            avatar_url = :avatar_url
         WHERE discord_id = :discord_id
     '''
     values = {
+        'username': user.name,
         'display_name': user.display_name,
         'avatar_url': user.avatar_url,
         'discord_id': user.id,
