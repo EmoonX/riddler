@@ -18,10 +18,12 @@
             '<em>✨ new</em> | content hash: ' + page_data['content_hash']
             if page_data['content_hash'] else 'OK'
           ) %}
-        {% else %}
+        {% elif status_code %}
           {% set symbol = page_data['status_symbol'] %}
           {% set status = '[{} {}]'.format(status_code, symbol) %}
           {% set status = '<strong>{}</strong>'.format(status) %}
+        {% else %}
+          {% set status = '<em style="color: #bbb">skipped</em>' %}
         {% endif %}
         <li>
           <a href="{{ page_data['url'] }}" rel="noreferrer">{{ path }}</a>… {{ status|safe }}
