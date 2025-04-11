@@ -1,10 +1,5 @@
 // Dictionary of all folders and pages/files
-export var pages = {};
-
-export function setPages(json) {
-  // Set pages dict(s) from JSON data
-  pages = JSON.parse(json);
-}
+export let pages = {};
 
 export function toggleExplorer() {
   // Toggle page explorer
@@ -210,18 +205,20 @@ export function folderUp() {
   changeDir(explorer, folder, admin);
 }
 
-$(_ => {
+(async () => {
   // Get JS object data converted from Python dict
   const aux = location.href.split('/');
   aux.push('get-pages');
   const url = aux.join('/');
-  $.get(url, data => {
-    // Build dictionary of pages from JSON data
-    setPages(data);
+  await fetch(url)
+    .then(data => data.json())
+    .then(object => {
+      // Set pages content from response data
+      pages = object;
 
-    // Add click handler ONLY AFTER dictionary is built
-    $('.levels').on('click', '.row .menu-button', toggleExplorer);
-  });
+      // Add click handler _only after_ dictionary is built
+      $('.levels').on('click', '.row .menu-button', toggleExplorer);
+    });
 
   // Dinamically register events for (current or new) explorer actions
   $('.levels').on('click', '.page-explorer .folder-up', folderUp);
@@ -251,4 +248,4 @@ $(_ => {
     const file = $(this).get(0).files[0];
     reader.readAsText(file);
   });
-});
+})();

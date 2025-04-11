@@ -352,7 +352,7 @@ async def get_pages(
                 parent['username'] = greatparent['username']
                 parent['password'] = greatparent['password']
 
-    return json.dumps(pages) if as_json else pages
+    return jsonify(pages) if as_json else pages
 
 
 @levels.get('/<alias>/levels/get-root-path')
@@ -379,7 +379,7 @@ async def get_root_path(alias: str):
 async def rate(alias: str, level_name: str, rating: int):
     '''Update level rating upon user giving new one.'''
 
-    # Disallow phony ratings :)
+    # Disallow phony ratings
     if not 1 <= rating <= 5:
         return 'Funny guy, eh? :)', 400
 
