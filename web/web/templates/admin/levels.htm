@@ -9,14 +9,15 @@
     <main>
       <h1>Levels</h1>
       <form method="post">
-        <h2>Normal Levels</h2>
+      {% for set_index, level_set in levels_by_set.items() %}
+        {% set set_name = level_set[1]['level_set'] %}
+        <h2>{{ set_name }}</h2>
         <section class="list levels admin">
-        {% for level in levels %}
-          {% set index = loop.index %}
+        {% for index, level in level_set.items() %}
           {% if level['image'] %}
             {% set image = '/static/thumbs/' + alias + '/' + level['image'] %}
           {% else %}
-            {% set image = '/static/locked.png' %}
+            {% set image = '/static/images/locked.png' %}
           {% endif %}
           {% include 'admin/level-row.htm' %}
         {% endfor %}
@@ -25,19 +26,8 @@
           <!-- New level rows go here -->
         </section>
         <button type="button" class="add" name="add-level">➕ Add level</button>
-        <hr>
-        <h2>Secret Levels</h2>
-        <section class="list levels secret admin">
-        {% for level in secret_levels %}
-          {% set index = 's' + loop.index|string %}
-          {% set image = '/static/thumbs/' + alias + '/' + level['image'] %}
-          {% include 'admin/level-row.htm' %}
-        {% endfor %}
-        </section>
-        <section class="list levels secret admin new">
-          <!-- New secret level rows go here -->
-        </section>
-        <button type="button" class="add" name="add-secret-level">➕ Add secret level</button>
+        {% if not loop.last %}<hr>{% endif %}
+      {% endfor %}
         <input type="hidden" name="removed-pages">
         <div class='buttons'>
           <input type="file" name="pages" accept="text/plain" style="display:none">

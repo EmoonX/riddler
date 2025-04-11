@@ -1,3 +1,4 @@
+from collections import defaultdict
 from copy import deepcopy
 import json
 import os
@@ -28,25 +29,28 @@ async def manage_levels(alias: str):
     # Check for admin permissions
     await admin_auth(alias)
 
-    async def r(levels: list, secret_levels: list, msg: str):
+    async def r(levels_by_set: dict[int, dict], msg: str):
         '''Render page with correct data.'''
         return await render_template(
-            'admin/levels.htm', alias=alias,
-            levels=levels, secret_levels=secret_levels, msg=msg
+            'admin/levels.htm',
+            alias=alias, levels_by_set=levels_by_set, msg=msg,
         )
 
     # Get initial level data from database
-    levels_before = await _fetch_levels(alias)
-    secrets_before = await _fetch_levels(alias, is_secret=True)
+    levels_by_set = await _fetch_levels(alias)
 
     # Render page normally on GET
     if request.method == 'GET':
-        return await r(levels_before.values(), secrets_before.values(), '')
+        return await r(levels_by_set, '')
 
-    # Build dicts of levels after POST
+    # Build set-less dict of current levels
+    levels_before = {}
+    for set_levels in levels_by_set.values():
+        levels_before &= set_levels
+
+    # Build dict of post-POST levels
     form = await request.form
     levels_after = {}
-    secrets_after = {}
     for name, value in form.items():
         i = name.find('-')
         if i == -1 or name[:i] == 'removed':
@@ -54,83 +58,63 @@ async def manage_levels(alias: str):
         index, attr = name[:i], name[(i+1):]
         if value == '':
             value = None
-        if 's' not in index:
-            index = int(index)
-            if index not in levels_after:
-                levels_after[index] = {}
-            levels_after[index][attr] = value
-        else:
-            index = int(index[1:])
-            if index not in secrets_after:
-                secrets_after[index] = {}
-            secrets_after[index][attr] = value
+        index = int(index)
+        if index not in levels_after:
+            levels_after[index] = {}
+        levels_after[index][attr] = value
 
-    # Get full guild name
-    query = 'SELECT * FROM riddles WHERE alias = :alias'
-    guild_id = await database.fetch_val(
-        query, {'alias': alias}, 'guild_id'
-    )
-    # Update both normal and secret levels
-    await _update_levels(levels_before, levels_after, locals())
-    await _update_levels(
-        secrets_before, secrets_after, locals(), is_secret=True
-    )
-    # Fetch levels again to display page correctly on POST
+    # Update levels
+    await _update_levels(alias, form)
+    
+    # Fetch levels again (to correctly display page on POST)
     levels = await _fetch_levels(alias)
-    secret_levels = await _fetch_levels(alias, is_secret=True)
 
-    return await r(
-        levels.values(), secret_levels.values(),
-        'Guild info updated successfully!'
-    )
+    return await r(levels, 'Level data updated successfully!')
 
 
-async def _fetch_levels(alias: str, is_secret: bool = False):
-    '''Fetch level info from database as an indexed dict.'''
+async def _fetch_levels(alias: str) -> dict[int, dict]:
+    '''Fetch level data as a nested {level sets -> levels} dict.'''
 
-    # Get level data from DB
+    # Retrieve level data from DB
     query = '''
         SELECT * FROM levels
-        WHERE riddle = :riddle AND is_secret = :is_secret
-        ORDER BY `index`
+        WHERE riddle = :riddle
+        ORDER BY set_index, `index`
     '''
-    values = {'riddle': alias, 'is_secret': is_secret}
-    result = await database.fetch_all(query, values)
-    level_list = [dict(row) for row in result]
+    result = await database.fetch_all(query, {'riddle': alias})
+    levels = [dict(level) for level in result]
 
-    # Build dict of levels
-    levels = {}
-    for i, level in enumerate(level_list):
-        if level['path'][0] == '[':
-            # Multi-path support
-            level['path'] = level['path'].split('"')[1]
-        levels[level['index']] = level
+    # Build dict of {level sets -> levels}
+    levels_by_set = defaultdict(dict[str, dict])
+    for level in levels:
+        # Multi-path support
+        try:
+            paths = json.loads(level['path'])
+        except json.decoder.JSONDecodeError:
+            pass
+        else:
+            level['path'] = paths[0]
 
-        # Get requirements as a comma-separated list
+        # Fetch requirements as a comma-separated list
         query = '''
             SELECT * FROM level_requirements
             WHERE riddle = :riddle AND level_name = :level_name
         '''
         values = {'riddle': alias, 'level_name': level['name']}
-        result = await database.fetch_all(query, values)
-        level['requirements'] = (
-            ', '.join(row['requires'] for row in result) if result
-            else None
-        )
+        requirements = await database.fetch_all(query, values)
+        level['requirements'] = \
+            ', '.join(row['requires'] for row in requirements)
 
-    return levels
+        levels_by_set[level['set_index']][level['index']] = level
+
+    return levels_by_set
 
 
-async def _update_levels(
-    levels_before: dict[int, dict],
-    levels_after: dict[int, dict],
-    data: dict,
-    is_secret: bool = False
-):
+async def _update_levels(alias: str, data: dict):
     '''Update new/changed levels both on DB and guild.'''
 
     # Some variables for easy access
-    alias, form, guild_id = data['alias'], data['form'], data['guild_id']
+    form, guild_id = data['form'], data['guild_id']
 
     async def _update_requirements(level_before: dict, level: dict):
         '''Update procedures for table `level_requirements`'''
@@ -167,58 +151,51 @@ async def _update_levels(
             '''
             await database.execute(query, values)
 
+    # Retrieve current level data
+    query = '''
+        SELECT * FROM levels
+        WHERE riddle = :riddle
+    '''
+    levels = await database.fetch_all(query, {'riddle': alias})
+
+    if imgdata := data.pop('imgdata', None):
+        # Replace image file (and possibly rename it) on image change
+        await save_image(
+            'thumbs', alias, data['image'], imgdata, level['image']
+        )
+
+    await _update_requirements(data, level)
+    del data['requirements']
+
+    # Update Discord channels and roles names on discord_name change
+    if discord_name := level.pop('discord_name', None):
+        await bot_request(
+            'update', guild_id=guild_id,
+            old_name=levels_before[index]['discord_name'],
+            new_name=discord_name
+        )
+
     # Check and update existing levels
-    for index, level in levels_before.items():
-        # Remove fields that were not modified by admin
+    for id, level in levels.items():
+        set_index, index = map(int, id.split('-'))
         for attr, value in level.items():
-            if attr in levels_after[index] \
-                    and value == levels_after[index][attr]:
-                levels_after[index].pop(attr)
-
-        level_before = levels_before[index]
-        level = levels_after[index]
-        attrs_to_be_ignored = {'added-pages', 'imgdata', 'requirements'}
-        if not set(level.keys()).issubset(attrs_to_be_ignored):
-            # Update level(s) database data
-            query = 'UPDATE levels SET '
-            values = {'riddle': alias, 'is_secret': is_secret, 'index': index}
-            aux = []
-            for attr, value in level.items():
-                if attr in attrs_to_be_ignored:
-                    continue
-                s = f"`{attr}` = :{attr}"
-                aux.append(s)
-                if attr == 'discord_category':
-                    other = 'level_set'
-                    t = f"`{other}` = :{attr}"
-                    aux.append(t)
-                values[attr] = value
-            query += ', '.join(aux)
-            query += '''
+            if attr in ['added-pages', 'imgdata', 'requirements']:
+                continue
+            query = f"""
+                UPDATE levels
+                SET {attr} = :attr
                 WHERE riddle = :riddle
-                    AND is_secret = :is_secret AND `index` = :index
-            '''
+                    AND set_index = :set_index
+                    AND `index` = :index
+                    AND {attr} != :attr
+            """
+            values = {
+                'riddle': alias,
+                'set_index': set_index,
+                'index': index,
+                'attr': attr
+            }
             await database.execute(query, values)
-
-        # Swap image file on image change
-        if level.get('imgdata'):
-            if 'image' not in level:
-                level['image'] = level_before['image']
-            await save_image(
-                'thumbs', alias,
-                level['image'], level['imgdata'], level_before['image']
-            )
-
-        if 'requirements' in level:
-            await _update_requirements(level_before, level)
-
-        # Update Discord channels and roles names on discord_name change
-        if 'discord_name' in level:
-            await bot_request(
-                'update', guild_id=guild_id,
-                old_name=levels_before[index]['discord_name'],
-                new_name=level['discord_name']
-            )
 
     # Add new levels, if any
     if len(levels_after) > len(levels_before):
@@ -246,10 +223,10 @@ async def _update_levels(
                     :discord_category, :discord_name)
             '''
             values = {
-                'riddle': alias, 'is_secret': is_secret,
+                'riddle': alias, 'is_secret': is_secret or None,
                 'set': form[f"{index}-discord_category"], 'index': i,
                 'name': form[f"{index}-name"], 'path': form[f"{index}-path"],
-                'image': form[f"{index}-image"] or '../locked.png',
+                'image': form[f"{index}-image"] or '/static/images/locked.png',
                 'answer': form[f"{index}-answer"],
                 'rank': form[f"{index}-rank"],
                 'discord_category': form[f"{index}-discord_category"],
@@ -347,38 +324,9 @@ async def update_pages(alias: str):
 
     previous_level = None
 
-    async def _process_level(level_set: str, level: str, pages: list[str]):
+    async def _process_level(level_set: str | None, level: str, pages: list[str]):
         '''Process individual level data.'''
-
-        image_filename = None
-        if _is_image(pages[1]):
-            image_filename = await _process_image(level, pages[1])
-
-        # Insert new level (if indeed new)
-        try:
-            query = '''
-                INSERT INTO levels (
-                    riddle, level_set, `index`, name,
-                    `path`, image, discord_name
-                ) VALUES (
-                    :riddle, :level_set, :index, :name,
-                    :path, :image, :discord_name
-                )
-            '''
-            values = {
-                'riddle': alias,
-                'level_set': level_set,
-                'index': int(level),
-                'name': level,
-                'path': pages[0],
-                'image': image_filename,
-                'discord_name': level.lower().replace(' ', '-')
-            }
-            await database.execute(query, values)
-            _log(f"Added level \033[1m{level}\033[0m to the database!")
-        except IntegrityError:
-            _log(f"Level \033[1m{level}\033[0m already in database…")
-        
+       
         nonlocal previous_level
         if previous_level:
             # Set previous level's answer as current one's front path
@@ -393,8 +341,38 @@ async def update_pages(alias: str):
                 'answer': pages[0]
             }
             await database.execute(query, values)
-
-        previous_level = level
+        
+        image_filename = None
+        if pages[1:] and _is_image(pages[1]):
+            image_filename = await _process_image(level, pages[1])
+        
+        # Insert new level (if indeed new)
+        query = '''
+            INSERT INTO levels (
+                riddle, level_set, `index`, name,
+                `path`, image, discord_name
+            ) VALUES (
+                :riddle, :level_set, :index, :name,
+                :path, :image, :discord_name
+            )
+        '''
+        values = {
+            'riddle': alias,
+            'level_set': level_set,
+            'index': abs(int(level)) if level.isnumeric() else 99,
+            'name': level,
+            'path': pages[0],
+            'image': image_filename,
+            'discord_name': level.lower().replace(' ', '-')
+        }
+        try:
+            await database.execute(query, values)
+        except IntegrityError:
+            _log(f"Level \033[1m{level}\033[0m already in database…")
+            previous_level = None
+        else:
+            _log(f"Added level \033[1m{level}\033[0m to the database!")
+            previous_level = level
     
     def _is_image(path: str) -> bool:
         '''Check if path points to an image file.'''
@@ -468,7 +446,7 @@ async def update_pages(alias: str):
                 success = await database.execute(query, values)
                 if success:
                     _log(
-                        f"Updated level"
+                        f"Updated level "
                         f"for page \033[3m{path}\033[0m ({level})…"
                     )
                     return
@@ -480,13 +458,16 @@ async def update_pages(alias: str):
         print(f"> \033[1m[{alias}]\033[0m {msg}", flush=True)
 
     # Receive text data and split it between levels (if any)
-    data = (await request.data).decode('utf-8').split('#')
-    riddle = await get_riddle(alias)
-    has_levels = bool(len(data) > 1)
-    if has_levels:
-        del data[0]  # remove initial ''
+    data = (await request.data).decode('utf-8')
+    has_levels = '#' in data
+    parts = filter(
+        lambda text: text and not text.isspace(),
+        data.split('#')
+    )
 
-    for text in data:
+    riddle = await get_riddle(alias)
+    level_set = None
+    for text in parts:
         # Build list of pages' paths in suitable format
         lines = text.replace('\r', '').replace('\\', '/').split('\n')
         pages = list(filter(None, lines[1:]))
