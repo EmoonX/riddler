@@ -1,5 +1,4 @@
 from copy import copy
-from itertools import permutations
 import re
 import string
 from typing import Optional
@@ -13,7 +12,7 @@ from bot import bot
 
 # Set of lowercase English words (as char tuples)
 
-word_set = set(tuple(word.lower()) for word in words.words())
+word_set = set(word.lower() for word in words.words())
 
 
 # def _required_str_option(name: str, description: str) -> dict:
@@ -67,27 +66,22 @@ class Decipher(commands.Cog):
         Find all available English language anagrams for a given word.
         
         Args
-            word: Word to be anagrammed (max length: 10).
+            word: Word to be anagrammed.
         '''
-        
-        if len(word) > 10:
-            # await _error_message(ctx, 'Too big of a word.')
-            return
 
-        word = word.lower()
-        valid_anagrams = set()
-        for perm in permutations(word):
-            if perm in word_set and perm not in valid_anagrams:
-                valid_anagrams.add(perm)
-        
+        # Find valid anagrams by matching letter counts against given word
+        valid_anagrams = [
+            _word for _word in word_set
+            if sorted(_word) == sorted(word.lower())
+        ]
+
         text = f"Anagrams of ***{word}***:"
         if valid_anagrams:
-            for perm in sorted(valid_anagrams):
-                word = ''.join(perm)
-                text += f"\n- _{word}_"
+            for anagram in valid_anagrams:
+                text += f"\n- _{anagram}_"
         else:
             text += '\nNone found...'
-            
+
         await interaction.response.send_message(text)
 
     @group.command()
@@ -297,7 +291,7 @@ class Decipher(commands.Cog):
             word = []
             codes = segment.split()
             for code in codes:
-                char = morse_to_char.get(code, '?')
+                char = morse_to_char.get(code, '�')
                 word.append(char)
             decoded_text.append(''.join(word))
 
