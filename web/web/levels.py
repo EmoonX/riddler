@@ -123,10 +123,10 @@ async def level_list(alias: str):
     
     # async def _add_credentials(level: dict):
     #     '''Add credentials (if any) for level's front path.'''
-    #     for folder_path in reversed(credentials):
+    #     for path in reversed(credentials):
     #         # Iterate in reverse to pick the innermost dir
-    #         if level['path'].startswith(folder_path):
-    #             level |= credentials[folder_path]
+    #         if level['path'].startswith(path):
+    #             level |= credentials[path]
     #             return
     
     # Get riddle level data

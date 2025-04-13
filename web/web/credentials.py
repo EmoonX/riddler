@@ -20,7 +20,7 @@ async def process_credentials(
     username, password = credentials
     user = await discord.get_user()
 
-    def _log_received_credentials(folder_path: str, success: bool):
+    def _log_received_credentials(path: str, success: bool):
         '''Log received credentials based on their correctness.'''
 
         if success and not username:
@@ -35,7 +35,7 @@ async def process_credentials(
             ) if success else (
                 'Received wrong credentials '
             )) +
-            f"for \033[3m\033[1m{folder_path}\033[0m "
+            f"for \033[3m\033[1m{path}\033[0m "
             f"from \033[1m{user.name}\033[0m "
             f"({datetime.utcnow()})"
         )
@@ -45,19 +45,19 @@ async def process_credentials(
         # _log_received_credentials(os.path.dirname(path), success=False)
         return False
 
-    path_credentials = await get_path_credentials(alias, path)
-    if not path_credentials['username'] and credentials == ('', ''):
+    correct_credentials = await get_path_credentials(alias, path)
+    if not correct_credentials['username'] and credentials == ('', ''):
         # No credentials found, no credentials given and no 401 received,
         # so we assume unprotected folder to avoid frequent HTTP checks
         return True
 
-    correct_credentials = (
-        path_credentials['username'], path_credentials['password']
-    )
-    folder_path = path_credentials['folder_path']
-    if credentials in [correct_credentials, ('', '')]:
+    credentials_path = correct_credentials['path']
+    if credentials in [
+        (correct_credentials['username'], correct_credentials['password']),
+        ('', ''),
+    ]:
         # Grant access if user has unlocked protected folder before
-        if await has_unlocked_folder_credentials(alias, user, folder_path):
+        if await has_unlocked_folder_credentials(alias, user, credentials_path):
             # Record unlock time if not present yet
             # (i.e credentials were retroactively given to player before)
             query = '''
@@ -65,18 +65,18 @@ async def process_credentials(
                 SET unlock_time = :unlock_time
                 WHERE riddle = :riddle
                     AND username = :username
-                    AND folder_path = :folder_path
+                    AND path = :path
                     AND unlock_time IS NULL
             '''
             values = {
                 'riddle': alias,
                 'username': user.name,
-                'folder_path': folder_path,
+                'path': credentials_path,
                 'unlock_time': datetime.utcnow(),
             }
             success = await database.execute(query, values)
             if success:
-                _log_received_credentials(folder_path, success=True)
+                _log_received_credentials(credentials_path, success=True)
 
             return True
 
@@ -84,64 +84,66 @@ async def process_credentials(
         username, password = ('???', '???')
     else:
         # Possibly new/different credentials, so HTTP-double-check them
-        folder_path = path
-        while folder_path:
-            url = f"{riddle['root_path']}{os.path.dirname(folder_path)}"
+        _path = path
+        credentials_path = None
+        while _path != '/':
+            url = f"{riddle['root_path']}{_path}"
 
             res = requests.get(url)
             if res.status_code != 401:
-                if folder_path == path:
+                if _path == path:
                     # Path isn't protected at all
                     return True
                 break
 
             res = requests.get(url, auth=HTTPBasicAuth(username, password))
             if res.status_code == 401:
-                if folder_path == path:
+                if _path == path:
                     # Wrong user credentials
                     return False
                 break
 
-            folder_path = os.path.dirname(folder_path)
-    
+            credentials_path = _path
+            _path = os.path.dirname(_path)
+
         # Correct credentials; possibly record them
-        await _record_credentials(alias, folder_path, username, password)
+        await _record_credentials(alias, credentials_path, username, password)
 
     # Create new user record
     query = '''
         INSERT IGNORE INTO user_credentials
-            (riddle, username, folder_path, unlock_time)
-        VALUES (:riddle, :username, :folder_path, :unlock_time)
+            (riddle, username, path, unlock_time)
+        VALUES (:riddle, :username, :path, :unlock_time)
     '''
     values = {
         'riddle': alias,
         'username': user.name,
-        'folder_path': folder_path,
+        'path': credentials_path,
         'unlock_time': datetime.utcnow(),
     }
     await database.execute(query, values)
-    _log_received_credentials(folder_path, success=True)
+    _log_received_credentials(credentials_path, success=True)
 
     return True
 
 
 async def _record_credentials(
-    alias: str, folder_path: str, username: str, password: str
+    alias: str, path: str, username: str, password: str
 ):
 
     user = await discord.get_user()
     query = '''
         INSERT INTO _found_credentials (
-            riddle, folder_path, cred_username, cred_password,
+            riddle, path, cred_username, cred_password,
             acc_username, unlock_time
         ) VALUES (
-            :riddle, :folder_path, :cred_username, :cred_password,
+            :riddle, :path, :cred_username, :cred_password,
             :acc_username, :unlock_time
         )
     '''
     values = {
         'riddle': alias,
-        'folder_path': folder_path,
+        'path': path,
         'cred_username': username,
         'cred_password': password,
         'acc_username': user.name,
@@ -155,7 +157,7 @@ async def _record_credentials(
         print(
             f"> \033[1m[{alias}]\033[0m "
             f"Found new credentials \033[1m{username}:{password}\033[0m "
-            f"for \033[1;3m{folder_path}\033[0m "
+            f"for \033[1;3m{path}\033[0m "
             f"by \033[1m{user.name}\033[0m "
             f"({datetime.utcnow()})"
         )
@@ -163,14 +165,14 @@ async def _record_credentials(
     # Register credentials as new ones
     query = '''
         INSERT IGNORE INTO riddle_credentials (
-            riddle, folder_path, username, password
+            riddle, path, username, password
         ) VALUES (
-            :riddle, :folder_path, :username, :password
+            :riddle, :path, :username, :password
         )
     '''
     values = {
         'riddle': alias,
-        'folder_path': folder_path,
+        'path': path,
         'username': username,
         'password': password,
     }
@@ -185,7 +187,7 @@ async def get_path_credentials(alias: str, path: str) -> dict[str, str]:
     '''
     values = {'riddle': alias}
     result = await database.fetch_all(query, values)
-    all_credentials = {row['folder_path']: row for row in result}
+    all_credentials = {row['path']: row for row in result}
 
     parsed_path = path.split('/')
     while parsed_path:
@@ -194,7 +196,7 @@ async def get_path_credentials(alias: str, path: str) -> dict[str, str]:
         if credentials:
             # Credentials and innermost protect folder found
             return {
-                'folder_path': path,
+                'path': path,
                 'username': credentials['username'],
                 'password': credentials['password'],
             }
@@ -202,26 +204,26 @@ async def get_path_credentials(alias: str, path: str) -> dict[str, str]:
 
     # No credentials found at all
     return {
-        'folder_path': '/',
+        'path': '/',
         'username': '',
         'password': '',
     }
 
 
 async def has_unlocked_folder_credentials(
-    alias: str, user: User, folder_path: str
+    alias: str, user: User, path: str
 ) -> bool:
     '''Check if player has unlocked credentials for path.'''
     query = '''
         SELECT 1 FROM user_credentials
         WHERE riddle = :riddle
             AND username = :username
-            AND folder_path = :folder_path
+            AND path = :path
     '''
     values = {
         'riddle': alias,
         'username': user.name,
-        'folder_path': folder_path,
+        'path': path,
     }
     has_player_unlocked = await database.fetch_val(query, values)
     return has_player_unlocked
@@ -232,9 +234,9 @@ async def get_all_unlocked_credentials(
 ) -> dict[str, dict]:
 
     query = '''
-        SELECT rc.folder_path, rc.username, rc.password
+        SELECT rc.path, rc.username, rc.password
         FROM riddle_credentials rc INNER JOIN user_credentials uc
-            ON rc.riddle = uc.riddle AND rc.folder_path = uc.folder_path
+            ON rc.riddle = uc.riddle AND rc.path = uc.path
         WHERE rc.riddle = :riddle AND uc.username LIKE :username
     '''
     values = {
@@ -243,7 +245,7 @@ async def get_all_unlocked_credentials(
     }
     result = await database.fetch_all(query, values)
     credentials = {
-        row['folder_path']: {
+        row['path']: {
             'username': row['username'],
             'password': row['password'],
         }

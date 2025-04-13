@@ -132,7 +132,7 @@ async def process_url(username: str | None = None, url: str | None = None):
     }
     path_credentials = await get_path_credentials(ph.riddle_alias, ph.path)
     if await has_unlocked_folder_credentials(
-        ph.riddle_alias, user, path_credentials['folder_path']
+        ph.riddle_alias, user, path_credentials['path']
     ):
         data |= {'unlockedCredentials': path_credentials}            
         
