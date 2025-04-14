@@ -84,17 +84,22 @@ async def process_credentials(
         username, password = ('???', '???')
     else:
         # Possibly new/different credentials, so HTTP-double-check them
-        _path = path
         credentials_path = None
+        realm_message = None
+        _path = path
         while _path != '/':
             url = f"{riddle['root_path']}{_path}"
-
             res = requests.get(url)
             if res.status_code != 401:
                 if _path == path:
-                    # Path isn't protected at all
+                    # Visited path isn't protected at all
                     return True
                 break
+            else:
+                # Get realm message from unauthenticated (401) response header
+                realm_message = eval(
+                    res.headers['WWW-Authenticate'].partition('realm=')[-1]
+                )                
 
             res = requests.get(url, auth=HTTPBasicAuth(username, password))
             if res.status_code == 401:
@@ -107,7 +112,9 @@ async def process_credentials(
             _path = os.path.dirname(_path)
 
         # Correct credentials; possibly record them
-        await _record_credentials(alias, credentials_path, username, password)
+        await _record_credentials(
+            alias, credentials_path, realm_message, username, password
+        )
 
     # Create new user record
     query = '''
@@ -128,22 +135,23 @@ async def process_credentials(
 
 
 async def _record_credentials(
-    alias: str, path: str, username: str, password: str
+    alias: str, path: str, realm_message: str, username: str, password: str
 ):
 
     user = await discord.get_user()
     query = '''
         INSERT INTO _found_credentials (
-            riddle, path, cred_username, cred_password,
+            riddle, path, realm_message, cred_username, cred_password,
             acc_username, unlock_time
         ) VALUES (
-            :riddle, :path, :cred_username, :cred_password,
+            :riddle, :path, :realm_message, :cred_username, :cred_password,
             :acc_username, :unlock_time
         )
     '''
     values = {
         'riddle': alias,
         'path': path,
+        'realm_message': realm_message,
         'cred_username': username,
         'cred_password': password,
         'acc_username': user.name,
@@ -165,14 +173,15 @@ async def _record_credentials(
     # Register credentials as new ones
     query = '''
         INSERT IGNORE INTO riddle_credentials (
-            riddle, path, username, password
+            riddle, path, realm_message, username, password
         ) VALUES (
-            :riddle, :path, :username, :password
+            :riddle, :path, :realm_message, :username, :password
         )
     '''
     values = {
         'riddle': alias,
         'path': path,
+        'realm_message': realm_message,
         'username': username,
         'password': password,
     }
