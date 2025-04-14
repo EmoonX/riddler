@@ -12,6 +12,7 @@ import requests
 
 from admin.admin_auth import admin_auth
 from admin.util import save_image
+from credentials import get_path_credentials
 from inject import get_riddle
 from levels import get_pages
 from util.db import database
@@ -382,8 +383,12 @@ async def update_pages(alias: str):
     async def _process_image(level: str, image_path: str) -> str | None:
         '''Fetch image content from riddle website and update related info.'''
 
-        # Retrieve image through HTTP request and save it
+        # Send HTTP request to retrieve image file
         image_url = f"{riddle['root_path']}{image_path}"
+        credentials = await get_path_credentials(alias, image_path)
+        if username := credentials['username']:
+            password = credentials['password']
+            image_url = image_url.replace('://', f"://{username}:{password}@")
         print(
             f"> \033[1m[{alias}]\033[0m "
             f"Fetching level image from \033[3m{image_url}\033[0m… ",
@@ -391,7 +396,9 @@ async def update_pages(alias: str):
         )
         res = requests.get(image_url, stream=True)
         print(f"\033[1m{'OK' if res.ok else res.status_code}\033[0m")
+
         if res.ok:
+            # Image found and retrieved, so save it
             image_filename = os.path.basename(image_path)
             image_dir = f"../static/thumbs/{alias}"
             save_path = f"{image_dir}/{image_filename}"
@@ -399,7 +406,7 @@ async def update_pages(alias: str):
             with open(save_path, 'wb') as image:
                 shutil.copyfileobj(res.raw, image)
 
-            # Possibly update image's filename
+            # Add or update image's filename
             query = '''
                 UPDATE levels
                 SET image = :image
