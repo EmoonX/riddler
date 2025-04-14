@@ -41,8 +41,8 @@ async def manage_levels(alias: str):
     levels_by_set = await _fetch_levels(alias)
 
     # Render page normally on GET
-    if request.method == 'GET':
-        return await r(levels_by_set, '')
+    # if request.method == 'GET':
+    return await r(levels_by_set, '')
 
     # Build set-less dict of current levels
     levels_before = {}
@@ -339,7 +339,7 @@ async def update_pages(alias: str):
             values = {
                 'riddle': alias,
                 'name': previous_level,
-                'answer': pages[0]
+                'answer': pages[0],
             }
             await database.execute(query, values)
         
@@ -350,31 +350,45 @@ async def update_pages(alias: str):
         # Insert new level (if indeed new)
         query = '''
             INSERT INTO levels (
-                riddle, level_set, `index`, name,
-                `path`, image, discord_name
+                riddle, level_set, set_index, `index`, name,
+                `path`, image, discord_category, discord_name
             ) VALUES (
-                :riddle, :level_set, :index, :name,
-                :path, :image, :discord_name
+                :riddle, :level_set, :set_index, :index, :name,
+                :path, :image, :discord_category, :discord_name
             )
         '''
         values = {
             'riddle': alias,
+            'set_index': 1,
             'level_set': level_set,
             'index': abs(int(level)) if level.isnumeric() else 99,
             'name': level,
             'path': pages[0],
             'image': image_filename,
+            'discord_category': level_set,
             'discord_name': level.lower().replace(' ', '-')
         }
         try:
             await database.execute(query, values)
         except IntegrityError:
             _log(f"Level \033[1m{level}\033[0m already in database…")
-            previous_level = None
         else:
-            _log(f"Added level \033[1m{level}\033[0m to the database!")
-            previous_level = level
-    
+            _log(f"Added level \033[1m{level}\033[0m to the database.")
+
+        if previous_level:
+            await _add_requirement(level, previous_level)
+
+        previous_level = level
+
+    async def _add_requirement(level: str, requires: str):
+        query = '''
+            INSERT IGNORE INTO level_requirements
+                (riddle, level_name, requires)
+            VALUES (:riddle, :level_name, :requires)
+        '''
+        values = {'riddle': alias, 'level_name': level, 'requires': requires}
+        await database.execute(query, values)
+
     def _is_image(path: str) -> bool:
         '''Check if path points to an image file.'''
         _, ext = os.path.splitext(path)
@@ -432,15 +446,9 @@ async def update_pages(alias: str):
             VALUES (:riddle, :path, :level_name);
         '''
         values = {'riddle': alias, 'path': path, 'level_name': level}
-
         try:
             # Add page as part of the level
             await database.execute(query, values)
-            _log(
-                f"Added page \033[3m{path}\033[0m "
-                    f"({level}) " if level else ''
-                f"to the database!"
-            )
 
         except IntegrityError:
             # Page already present, update level if doable
@@ -448,17 +456,22 @@ async def update_pages(alias: str):
                 query = '''
                     UPDATE level_pages
                     SET level_name = :level_name
-                    WHERE riddle = :riddle AND `path` = :path
+                    WHERE riddle = :riddle AND path = :path
                 '''
-                success = await database.execute(query, values)
-                if success:
+                if await database.execute(query, values):
                     _log(
                         f"Updated level "
                         f"for page \033[3m{path}\033[0m ({level})…"
                     )
                     return
-
             _log(f"Skipping page \033[3m{path}\033[0m ({level})…")
+
+        else:
+            _log(
+                f"Added page \033[3m{path}\033[0m "
+                f"({level}) " if level else ''
+                f"to the database!"
+            )
     
     def _log(msg: str):
         '''Log message.'''
