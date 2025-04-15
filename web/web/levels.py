@@ -381,7 +381,7 @@ async def rate(alias: str, level_name: str, rating: int):
 
     # Disallow phony ratings
     if not 1 <= rating <= 5:
-        return 'Funny guy, eh? :)', 400
+        return 'Funny guy, eh? :)', 422
 
     # Get level's overall rating info
     query = '''
@@ -402,9 +402,7 @@ async def rate(alias: str, level_name: str, rating: int):
             AND level_name = :level_name
     '''
     values = {
-        'riddle': alias,
-        'username': user.name,
-        'level_name': level_name,
+        'riddle': alias, 'username': user.name, 'level_name': level_name
     }
     user_level = await database.fetch_one(query, values)
     if not user_level or not user_level['completion_time']:
@@ -421,16 +419,24 @@ async def rate(alias: str, level_name: str, rating: int):
             # User is adding a new vote
             total += rating
             count += 1
+            status_code = 201
         else:
             # User is changing previous vote
             total = total - rating_prev + rating
+            status_code = 200
         rating_time = datetime.utcnow()
     elif request.method == 'DELETE':
-        # User is removing vote
-        total -= rating
-        count -= 1
+        if not rating_prev:
+            # User is trying to remove nonexistent vote
+            # (shouldn't happen under normal circumstances)
+            status_code = 404
+        else:
+            # User is removing vote
+            total -= rating
+            count -= 1
+            status_code = 200
         rating = rating_time = None
-    average = (total / count) if (count > 0) else 0
+    average = total/count if count > 0 else 0
 
     # Update needed tables
     query = '''
@@ -454,14 +460,15 @@ async def rate(alias: str, level_name: str, rating: int):
         WHERE riddle = :riddle AND name = :level_name
     '''
     values = {
-        'average': average, 'count': count,
-        'riddle': alias, 'level_name': level_name
+        'riddle': alias,
+        'level_name': level_name,
+        'average': average,
+        'count': count,       
     }
     await database.execute(query, values)
 
     # Return new rating data
-    text = ' '.join(map(str, (average, count, rating)))
-    return text, 200
+    return f"{average} {count} {rating}", status_code
 
 
 def absolute_paths(page_node: dict) -> Iterator[tuple[str, dict]]:
