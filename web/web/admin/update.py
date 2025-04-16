@@ -62,11 +62,10 @@ async def update_discord_account_info():
 
         if not account['display_name']:
             # Old untracked account, needs update ASAP
-            data = await bot_request(
+            data = json.loads(await bot_request(
                 'fetch-account-info',
                 discord_id=account['discord_id']
-            )
-            info = json.loads(data)
+            ))
             query = '''
                 UPDATE accounts
                 SET username = :username,
@@ -75,9 +74,9 @@ async def update_discord_account_info():
                 WHERE discord_id = :discord_id
             '''
             values = {
-                'username': info['username'],
-                'display_name': info['display_name'],
-                'avatar_url': avatar_url,
+                'username': data['username'],
+                'display_name': data['display_name'],
+                'avatar_url': data['avatar_url'],
                 'discord_id': account['discord_id'],
             }
             print(values, flush=True)
@@ -113,7 +112,8 @@ async def update_all(alias: str):
     '''Wildcard route for running all update routines below.'''
 
     update_methods = (
-        update_scores, update_page_count, update_completion_count,
+        update_scores,
+        update_completion_counts, update_page_counts,
         update_user_credentials, update_ratings,
     )
     for update in update_methods:
@@ -182,10 +182,41 @@ async def update_scores(alias: str):
     return 'SUCCESS :)', 200
 
 
-@admin_update.get('/admin/<alias>/update-page-count')
+@admin_update.get('/admin/<alias>/update-completion-counts')
 @requires_authorization
-async def update_page_count(alias: str):
-    '''Úpdate riddle players' page count.'''
+async def update_completion_counts(alias: str):
+    '''Úpdate riddle levelś' completion count.'''
+
+    # Check for admin permissions
+    await admin_auth(alias)
+
+    # Get list of levels and completion counts
+    query = '''
+        SELECT level_name, COUNT(*) AS count FROM user_levels
+        WHERE riddle = :riddle AND completion_time IS NOT NULL
+        GROUP BY level_name
+    '''
+    levels = await database.fetch_all(query, {'riddle': alias})
+
+    # Update completion count for all riddle levels
+    for level in levels:
+        query = '''
+            UPDATE levels SET completion_count = :count
+            WHERE riddle = :riddle AND name = :level
+        '''
+        values = {
+            'count': level['count'],
+            'riddle': alias, 'level': level['level_name']
+        }
+        await database.execute(query, values)
+
+    return 'SUCCESS :)', 200
+
+
+@admin_update.get('/admin/<alias>/update-page-counts')
+@requires_authorization
+async def update_page_counts(alias: str):
+    '''Úpdate riddle players' page counts.'''
 
     # Check for admin permissions
     await admin_auth(alias)
@@ -217,89 +248,62 @@ async def update_page_count(alias: str):
     return 'SUCCESS :)', 200
 
 
-@admin_update.get('/admin/<alias>/update-completion')
-@requires_authorization
-async def update_completion_count(alias: str):
-    '''Úpdate riddle levelś' completion count.'''
-
-    # Check for admin permissions
-    await admin_auth(alias)
-
-    # Get list of levels and completion counts
-    query = '''
-        SELECT level_name, COUNT(*) AS count FROM user_levels
-        WHERE riddle = :riddle AND completion_time IS NOT NULL
-        GROUP BY level_name
-    '''
-    levels = await database.fetch_all(query, {'riddle': alias})
-
-    # Update completion count for all riddle levels
-    for level in levels:
-        query = '''
-            UPDATE levels SET completion_count = :count
-            WHERE riddle = :riddle AND name = :level
-        '''
-        values = {
-            'count': level['count'],
-            'riddle': alias, 'level': level['level_name']
-        }
-        await database.execute(query, values)
-
-    return 'SUCCESS :)', 200
-
-
 @admin_update.get('/admin/<alias>/update-user-credentials')
 @requires_authorization
 async def update_user_credentials(alias: str):
     '''
     Update `user_credentials` with missing records,
-    i.e folder paths present in `user_pages` but not recorded yet.
+    i.e paths present in `user_pages` but not in the former.
     '''
 
     # Check for admin permissions
     await admin_auth(alias)
 
+    # Get list of riddle credentials, with innermost paths ordered first
     query = '''
-        SELECT DISTINCT rc.*, up.username AS acc_username
-        FROM riddle_credentials rc INNER JOIN user_pages up
-            ON rc.riddle = up.riddle
-                AND up.path LIKE CONCAT(rc.folder_path, "/%")
-        WHERE rc.riddle = :riddle
-            AND folder_path NOT IN (
-                SELECT folder_path FROM user_credentials uc
-                WHERE up.username = uc.username
-            )
-        ORDER BY acc_username
+        SELECT * FROM riddle_credentials
+        WHERE riddle = :riddle
+        ORDER BY riddle, path DESC
     '''
-    values = {'riddle': alias}
-    missing_credentials = await database.fetch_all(query, values)
-    if not missing_credentials:
-        return 'No missing user credentials to add.', 200
+    credentials = await database.fetch_all(query, {'riddle': alias})
 
-    success = False
-    for credential in missing_credentials:
-        query = '''
-            INSERT INTO user_credentials
-                (riddle, username, folder_path)
-            VALUES (:riddle, :username, :folder_path)
-        '''
-        values |= {
-            'username': credential['acc_username'],
-            'folder_path': credential['folder_path']
+    path_previous = None
+    for path in [cred['path'] for cred in credentials]:
+        # Retrieve user-visited pages pointing to or within the credentials
+        # path, bar the ones belonging to nested (already iterated) realms
+        query = f"""
+            SELECT username FROM user_pages
+            WHERE riddle = :riddle
+                AND path LIKE :path AND path NOT LIKE :path_previous
+            GROUP BY username
+        """
+        values = {
+            'riddle': alias,
+            'path': f"{path}%",
+            'path_previous': f"{path_previous}%",
         }
-        try:
-            await database.execute(query, values)
-        except IntegrityError:
-            pass
-        else:
-            s = f"{credential['username']}:{credential['password']}"
-            tnow = datetime.utcnow()
-            print(
-                f"> \033[1m[{alias}]\033[0m "
-                f"Added credential \033[3m\033[1m{s}\033[0m "
-                f"for user \033[1m{credential['acc_username']}\033[0m "
-                f"({tnow})"
-            )
+        user_pages = await database.fetch_all(query, values)
+        for username in [page['username'] for page in user_pages]:
+            # Add nondated credentials to user (if indeed missing)
+            query = '''
+                INSERT INTO user_credentials
+                    (riddle, username, path)
+                VALUES (:riddle, :username, :path)
+            '''
+            values = {'riddle': alias, 'username': username, 'path': path}
+            try:
+                await database.execute(query, values)
+            except IntegrityError:
+                continue
+            else:
+                print(
+                    f"> \033[1m[{alias}]\033[0m "
+                    f"Added credentials for "
+                    f"path \033[3m\033[1m{path}\033[0m "
+                    f"and user \033[1m{username}\033[0m"
+                )
+
+        path_previous = path if '.' in path else f"{path}/"
     
     return 'SUCCESS :)', 200
 
