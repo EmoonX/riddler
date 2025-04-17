@@ -32,8 +32,9 @@
   </div>
   <div>
     <label title="ℹ️ [TODO] Path(s) and conditional operator for unlocking achievement, in JSON format.">
+      {% set paths_json = cheevo['paths_json'] or '{"paths": [""]}' %}
       Paths JSON
-      <textarea name="{{ index }}-paths_json" rows="3" cols="25" required>{{ cheevo['paths_json'] }}</textarea>
+      <textarea name="{{ index }}-paths_json" rows="3" cols="25" required>{{ paths_json }}</textarea>
     </label>
   </div>
 </div>
