@@ -50,7 +50,7 @@
           <div class="thumb" style="background-image: url('{{ image }}');"></div>
           <div class="info">
             <figure class="rank">
-            {% if level['beaten'] %}
+            {% if level['beaten'] or level['rank'] == 'F' %}
               {% set number = 'DCBAS'.find(level['rank']) + 1 %}
               {% set info = level_ranks[level['rank']] %}
               <div style="color: {{ info['color'] }}; text-shadow: 0 0 0.5em {{ info['color'] }}">
@@ -59,7 +59,11 @@
                 <span style="transition: transform 1s {{ delay }}s">★</span>
               {% endfor %}
               </div>
-              <figcaption style="color: {{ info['color'] }}"><span class="rank-letter">{{ level['rank'] }}</span>-rank ({{ info['points'] }} points)</figcaption>
+              {% set rank = 
+                ('<span class="rank-letter">' + level["rank"] + '</span>-rank')|safe
+                if level['rank'] != 'F' else 'Unranked'
+              %}
+              <figcaption style="color: {{ info['color'] }}">{{ rank }} ({{ info['points'] }} points)</figcaption>
             {% else %}
               <div style="color: gray; text-shadow: 0 0 0.5em gray">
                 ?

@@ -138,16 +138,16 @@ class UnlockHandler:
         '''Procedures to be done when level is beaten.'''
 
         # Log solving procedure and send message to member
-        n = 'DCBAS'.find(level['rank']) + 1
-        stars = '★' * n
+        n = 'FDCBAS'.find(level['rank'])
+        stars = f"[{'★' * n}]" if n > 0 else ''
         name = level['name']
         if level['latin_name']:
             name += f" ({level['latin_name']})"
         level_type = 'level' if not level['is_secret'] else 'secret level'
         text = (
             f"**[{self.full_name}]** "
-            f"You have solved {level_type} **{name}** [{stars}] "
-                f"and won **{points}** points.\n"
+            f"You have solved {level_type} **{name}** {stars}"
+            f"and won **{points}** points."
         )
         await self._send(text)
 

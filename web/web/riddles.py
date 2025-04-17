@@ -3,10 +3,11 @@
 # Dict of pairs rank -> (points, color)
 f = lambda p, c : {'points': p, 'color': c}
 level_ranks = {
-    'D': f(50, 'cornflowerblue'),
-    'C': f(100, 'lawngreen'),
-    'B': f(200, 'gold'),
-    'A': f(400, 'crimson'),
+    'F': f(   0, 'gray'),
+    'D': f(  50, 'cornflowerblue'),
+    'C': f( 100, 'lawngreen'),
+    'B': f( 200, 'gold'),
+    'A': f( 400, 'crimson'),
     'S': f(1000, 'lightcyan')
 }
 
