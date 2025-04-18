@@ -90,27 +90,30 @@ async def remove_ancestor_levels(riddle: str, players_by_level: dict) -> dict:
             players_ahead.remove(username)
 
     query = '''
-        SELECT lv.name FROM levels lv
-        INNER JOIN level_sets ls
+        SELECT lv.*, ls.always_display AS always_display_set
+        FROM levels lv INNER JOIN level_sets ls
             ON lv.riddle = ls.riddle AND lv.level_set = ls.name
         WHERE lv.riddle = :riddle
         ORDER BY ls.`index`, lv.`index`
     '''
-    values = {'riddle': riddle}
-    result = await database.fetch_all(query, values)
-    ordered_levels = [row['name'] for row in result]
+    result = await database.fetch_all(query, {'riddle': riddle})
+    ordered_levels = {row['name']: row for row in result}
 
     query = '''
         SELECT level_name, requires FROM level_requirements
         WHERE riddle = :riddle
     '''
-    result = await database.fetch_all(query, values)
-    requirement_graph = {}
+    result = await database.fetch_all(query, {'riddle': riddle})
+    requirement_graph = defaultdict(list)
     for row in result:
-        name = row['level_name']
-        if not name in requirement_graph:
-            requirement_graph[name] = []
-        requirement_graph[name].append(row['requires'])
+        level = ordered_levels[row['level_name']]
+        requirement = ordered_levels[row['requires']]
+        if (
+            level['level_set'] != requirement['level_set']
+            and requirement['always_display_set']
+        ):
+            continue
+        requirement_graph[row['level_name']].append(row['requires'])
 
     visited = set()
     for level in reversed(ordered_levels):
