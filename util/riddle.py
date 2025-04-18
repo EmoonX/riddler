@@ -18,11 +18,13 @@ async def has_player_mastered_riddle(alias: str, username: str) -> bool:
     async def _has_player_beaten_all_levels() -> bool:
         query = '''
             SELECT 1 FROM levels
-            WHERE riddle = :riddle AND name NOT IN (
-                SELECT level_name FROM user_levels
-                WHERE riddle = :riddle AND username = :username
-                    AND completion_time IS NOT NULL
-            )
+            WHERE riddle = :riddle
+                AND rank != 'F'
+                AND name NOT IN (
+                    SELECT level_name FROM user_levels
+                    WHERE riddle = :riddle AND username = :username
+                        AND completion_time IS NOT NULL
+                )
         '''
         values = {'riddle': alias, 'username': username}
         return await database.fetch_val(query, values) is None

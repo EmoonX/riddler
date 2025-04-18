@@ -89,7 +89,6 @@ async def remove_ancestor_levels(riddle: str, players_by_level: dict) -> dict:
         for username in to_be_deleted:
             players_ahead.remove(username)
 
-
     query = '''
         SELECT lv.name FROM levels lv
         INNER JOIN level_sets ls
