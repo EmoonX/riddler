@@ -63,8 +63,8 @@ async def process_url(username: str | None = None, url: str | None = None):
 
     # Disclose path alias (if any) for logging purposes
     path_to_log = ph.path
-    if ph.path_alias_from:
-        path_to_log = f"{ph.path_alias_from} -> {ph.path}"
+    if ph.path_alias_for:
+        path_to_log = f"{ph.path} -> {ph.path_alias_for}"
     
     # Process received credentials (possibly none)
     riddle = await get_riddle(ph.riddle_alias)
@@ -83,6 +83,10 @@ async def process_url(username: str | None = None, url: str | None = None):
         }), 403
     
     # Process received path
+    if ph.path_alias_for:
+        # When path is just an alias, process canonical one up next
+        await ph.process()
+        ph.path = ph.path_alias_for
     ok = await ph.process()
 
     tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -157,14 +161,14 @@ class _PathHandler:
     path: str
     '''Path to be processed by handler.'''
 
-    path_level: str
-    '''Level to which path corresponds to, or `None` if N/A.'''
+    path_level: str | None
+    '''Level containing the visited path, or `None` if N/A.'''
 
-    path_level_set: str
-    '''Level set the path's level is part of, or `None` if N/A.'''
+    path_level_set: str | None
+    '''Level set containing the path's level, or `None` if N/A.'''
 
-    path_alias_from: str | None
-    '''Actual browsed path, if just an alias for the canonical one.'''
+    path_alias_for: str | None
+    '''Canonical path for the visited one, when the latter is just an alias.'''
 
     credentials: tuple[str, str]
     '''HTTP basic auth URL-embedded credentials.'''
@@ -195,16 +199,13 @@ class _PathHandler:
             if not '.' in self.path:
                 self.path += f".{riddle['html_extension']}"
 
-        self.path_alias_from = None
+        # If applicable, retrieve path alias info
         query = '''
             SELECT alias_for FROM level_pages
             WHERE riddle = :riddle AND path = :path
         '''
         values = {'riddle': self.riddle_alias, 'path': self.path}
-        if alias_for := await database.fetch_val(query, values):
-            # Use canonical path when given path is just an alias to it
-            self.path_alias_from = self.path
-            self.path = alias_for
+        self.path_alias_for = await database.fetch_val(query, values)
 
         return self
 
