@@ -330,7 +330,9 @@ class _PathHandler:
                 # then it should still increment all hit counters.
                 await self._update_hit_counters()
 
-            # Nothing more to do if not part of a level
+            # Look for "special" achievements that aren't part of any level
+            await self._process_achievement()
+
             return False
         
         self.path_level = page['level_name']
@@ -575,9 +577,9 @@ class _PathHandler:
             await database.execute(query, values)
 
         # Check and possibly grant an achievement
-        await self._process_cheevo()
+        await self._process_achievement()
 
-    async def _process_cheevo(self):
+    async def _process_achievement(self):
         '''Grant cheevo and awards if page is an achievement one.'''
 
         # Check if it's an achievement page
@@ -587,17 +589,16 @@ class _PathHandler:
                 AND JSON_CONTAINS(paths_json, :path, "$.paths")
         '''
         values = {'riddle': self.riddle_alias, 'path': (f"\"{self.path}\"")}
-        cheevo = await database.fetch_one(query, values)
-        if not cheevo:
+        achievement = await database.fetch_one(query, values)
+        if not achievement:
             return
 
-        paths_json = json.loads(cheevo['paths_json'])
+        paths_json = json.loads(achievement['paths_json'])
         if 'operator' in paths_json and paths_json['operator'] == 'AND':
             # If an 'AND' operator, all cheevo pages must have been found
-            ok = True
             for path in paths_json['paths']:
                 query = '''
-                    SELECT * FROM user_pages
+                    SELECT 1 FROM user_pages
                     WHERE riddle = :riddle
                         AND username = :username
                         AND path = :path
@@ -607,14 +608,10 @@ class _PathHandler:
                     'username': self.user.name,
                     'path': path,
                 }
-                page_found = await database.fetch_one(query, values)
-                if not page_found:
-                    ok = False
-                    break
-            if not ok:
-                return
+                if not (page_found := await database.fetch_val(query, values)):
+                    return
 
-        # If positive, add it to user's collection
+        # If positive, add it to the player's collection
         query = '''
             INSERT INTO user_achievements
                 (riddle, username, title, unlock_time)
@@ -623,7 +620,7 @@ class _PathHandler:
         values = {
             'riddle': self.riddle_alias,
             'username': self.user.name,
-            'title': cheevo['title'],
+            'title': achievement['title'],
             'time': datetime.utcnow(),
         }
         try:
@@ -632,7 +629,7 @@ class _PathHandler:
             return
 
         # Also update user and global scores
-        points = cheevo_ranks[cheevo['rank']]['points']
+        points = cheevo_ranks[achievement['rank']]['points']
         await self.update_score(points)
 
         # Call bot achievement unlock procedures
@@ -641,7 +638,7 @@ class _PathHandler:
             method='cheevo_found',
             alias=self.riddle_alias,
             username=self.user.name,
-            cheevo=dict(cheevo),
+            cheevo=dict(achievement),
             points=points,
             page=self.path,
         )
@@ -650,7 +647,7 @@ class _PathHandler:
         print(
             f"> \033[1m[{self.riddle_alias}]\033[0m "
             f"\033[1m{self.user.name}\033[0m unlocked achievement "
-            f"\033[1m\033[3m{cheevo['title']}\033[0m\033[0m"
+            f"\033[1m\033[3m{achievement['title']}\033[0m\033[0m"
         )
         if await has_player_mastered_riddle(self.riddle_alias, self.user.name):
             self.log_mastery()
