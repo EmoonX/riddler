@@ -318,7 +318,7 @@ class _PathHandler:
         extension = self.path[(dot_index + 1):]
         is_normal_page = extension in ('htm', 'html', 'php')
 
-        # Check if path corresponds to a valid level page (non 404)
+        # Check if path corresponds to a valid level page
         query = '''
             SELECT * FROM level_pages
             WHERE riddle = :riddle AND path = :path
@@ -335,34 +335,21 @@ class _PathHandler:
             await self._process_achievement()
 
             return False
-        
-        self.path_level = page['level_name']
-        if not await self._are_level_requirements_satisfied(self.path_level):
-            # Can't access yet level given page is in
-            return False
 
         # Get requested page's level info from DB
         query = '''
             SELECT * FROM levels
             WHERE riddle = :riddle AND name = :level_name
         '''
-        values = {'riddle': self.riddle_alias, 'level_name': self.path_level}
+        values = {'riddle': self.riddle_alias, 'level_name': page['level_name']}
         level = await database.fetch_one(query, values)
+        self.path_level = level['name']
         self.path_level_set = level['level_set']
-
-        # Search for a level which has the current path as front
-        query = '''
-            SELECT 1 FROM levels
-            WHERE riddle = :riddle
-                AND (`path` = :path OR `path` LIKE "%\":path\"%")
-        '''
-        values = {'riddle': self.riddle_alias, 'path': self.path}
-        is_level_front = await database.fetch_val(query, values)
-        if is_level_front:
+        if self.path == level['path']:
+            # Path points to its level's front page, possibly unlock it
             await self._check_and_unlock(level)
 
-        # If the level currently being visited has not
-        # been unlocked yet, ignore it for access counting purposes
+        # Check if level has been unlocked (right now or before)
         query = '''
             SELECT * FROM user_levels
             WHERE riddle = :riddle
@@ -374,14 +361,16 @@ class _PathHandler:
             'level_name': self.path_level,
             'username': self.user.name,
         }
-        is_unlocked = await database.fetch_one(query, values)
-        if is_unlocked:
+        if is_unlocked := await database.fetch_one(query, values):
             # Mark level currently being visited in `last_visited_level` field
             query = '''
                 UPDATE riddle_accounts SET last_visited_level = :level_name
                 WHERE riddle = :riddle AND username = :username
             '''
             await database.execute(query, values)
+        elif not await self._are_level_requirements_satisfied(self.path_level):
+            # Level not unlocked and can't access yet pages from it
+            return False      
 
         # If a normal page, update all hit counters
         if is_normal_page:
@@ -398,8 +387,6 @@ class _PathHandler:
         (or, if `finding_is_enough` flag is on, at least found).
         '''
 
-        return True
-        
         query = '''
             SELECT * FROM level_requirements
             WHERE riddle = :riddle AND level_name = :level_name
