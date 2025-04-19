@@ -9,11 +9,11 @@
   <div>
     <label class="key" title="ℹ️ Short and unique achievement title.">
       Title
-      <input type="text" name="{{ index }}-title" size="10" value="{{ cheevo['title'] }}" required>
+      <input type="text" name="{{ index }}-title" size="18" value="{{ cheevo['title'] }}" required>
     </label>
     <label title="ℹ️ Flavored achievement description.&#10;May or may not contain hints about how to reach it.">
       Description
-      <textarea name="{{ index }}-description" rows="3" cols="25" required>{{ cheevo['description'] }}</textarea>
+      <textarea name="{{ index }}-description" rows="3" cols="28" required>{{ cheevo['description'] }}</textarea>
     </label>
   </div>
   <div>
@@ -34,7 +34,7 @@
     <label title="ℹ️ [TODO] Path(s) and conditional operator for unlocking achievement, in JSON format.">
       {% set paths_json = cheevo['paths_json'] or '{"paths": [""]}' %}
       Paths JSON
-      <textarea name="{{ index }}-paths_json" rows="3" cols="25" required>{{ paths_json }}</textarea>
+      <textarea name="{{ index }}-paths_json" rows="5" cols="30" required>{{ paths_json }}</textarea>
     </label>
   </div>
 </div>
