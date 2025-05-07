@@ -34,6 +34,7 @@ discord_session_init(app)
 from admin.cheevos import admin_cheevos
 from admin.health import admin_health
 from admin.levels import admin_levels
+from admin.page_changes import admin_page_changes
 from admin.recent import admin_recent
 from admin.update import admin_update
 from auth import auth, session_cookie
@@ -51,7 +52,8 @@ from process import process
 from util.db import database
 
 for blueprint in (
-    admin_cheevos, admin_health, admin_levels, admin_recent, admin_update,
+    admin_cheevos, admin_health, admin_levels,
+    admin_page_changes, admin_recent, admin_update,
     account, auth, countries, export, get, home, info, levels,
     players, process, profile,
 ):
