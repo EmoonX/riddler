@@ -28,6 +28,8 @@ async def apply_page_changes(alias: str):
 
     def _log(msg: str):
         '''Log message with riddle alias.'''
+        if level_name:
+            msg += f" ({level_name})"
         print(f"> \033[1m[{alias}]\033[0m {msg}")
 
     query = '''
@@ -49,22 +51,26 @@ async def apply_page_changes(alias: str):
                 WHERE riddle = :riddle AND path = :path
             '''
             values = {'riddle': alias,'path': path, 'new_path': new_path}
-            _log(f"Applying trivial rename \033[3m{path} -> {new_path}\033[0m")
+            _log(
+                f"Moving page "
+                f"\033[3m{path}\033[0m -> \033[1;3m{new_path}\033[0m "
+                f"(trivial)"
+            )
         else:
             if path:
                 # Erase level from the old page
                 await _update_page_level(path, None)
                 if not new_path:
-                    _log(f"Removing page \033[3m{path}\033[0m ({level_name})")
+                    _log(f"Removing page \033[3m{path}\033[0m")
             if new_path:
                 # Write level to the new page
                 await _update_page_level(new_path, level_name)
                 if not path:
-                    _log(f"Adding page \033[3m{path}\033[0m ({level_name})")
+                    _log(f"Adding page \033[1;3m{new_path}\033[0m")
             if path and new_path:
                 _log(
-                    f"Moving page \033[3m{path} -> {new_path}\033[0m "
-                    f"({level_name})"
+                    f"Moving page "
+                    f"\033[3m{path}\033[0m -> \033[1;3m{new_path}\033[0m"
                 )
 
         if path and new_path:
