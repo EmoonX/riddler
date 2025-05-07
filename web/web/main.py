@@ -2,6 +2,7 @@ import asyncio
 from asyncio.events import AbstractEventLoop
 from datetime import datetime, timedelta
 import logging
+import os
 import sys
 from ssl import SSLError
 
@@ -10,6 +11,7 @@ sys.path.append('..')
 sys.path.append('../..')
 
 from dotenv import load_dotenv
+import pymysql
 from quart import redirect, request, session, Quart, url_for
 from quartcord import Unauthorized
 
@@ -83,10 +85,6 @@ async def before():
         
         # Connect to MySQL database
         await database.connect()
-
-        # Define exception handler for async loop
-        loop = asyncio.get_event_loop()
-        loop.set_exception_handler(_exception_handler)
     
     if not hasattr(before, 'first_request_done'):
         # First request for app process
@@ -103,7 +101,6 @@ async def before():
 async def cookies(response):
     '''Set session cookie to be valid accross sites (SameSite=None)
     and to expire only after some (or a long) time of inactivity.'''
-
     value = session_cookie.dumps(dict(session))
     expire_time = datetime.utcnow() + timedelta(days=365)
     if 'Set-Cookie' in response.headers:
@@ -116,16 +113,15 @@ async def cookies(response):
 
 
 @app.errorhandler(Unauthorized)
-async def redirect_unauthorized(_e):
+async def redirect_unauthorized(_):
     '''Redirect user back to login if not logged on restricted pages.'''
     return redirect(
         url_for("players_auth.login", redirect_url=request.url)
     )
 
 
-def _exception_handler(loop: AbstractEventLoop, context: dict):
-    '''Ígnore annoying ssl.SSLError useless exceptions due to HTTPS.'''
-    exception = context.get('exception')
-    if isinstance(exception, SSLError):
-        return
-    loop.default_exception_handler(context)
+@app.errorhandler(pymysql.err.OperationalError)
+async def restart_mariadb(_):
+    print('>>> RESTARTING MARIADB <<<')
+    os.system('systemctl restart mariadb')
+    return 'MariaDB server successfully restarted.', 205
