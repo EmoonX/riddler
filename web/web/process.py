@@ -191,13 +191,14 @@ class _PathHandler:
         # Ignore occurrences of consecutive slashes
         self.path = re.sub('/{2,}', '/', self.path)
 
-        if self.path[-1] == '/':
-            # If a folder itself, add "index.htm[l]" to path's end
-            self.path += 'index.' + riddle['html_extension']
-        elif status_code != 401:
-            # If no extension, append explicit ".htm[l]" to the end
-            if not '.' in self.path:
-                self.path += f".{riddle['html_extension']}"
+        if riddle['html_extension']:
+            if self.path[-1] == '/':
+                # If a folder itself, add trailing "index.htm[l]" etc
+                self.path += f"index.{riddle['html_extension']}"
+            elif status_code != 401:
+                # If no extension, append explicit ".htm[l]" etc
+                if not '.' in self.path:
+                    self.path += f".{riddle['html_extension']}"
 
         # If applicable, retrieve path alias info
         query = '''
