@@ -79,34 +79,44 @@ async def _apply_change(page_change: dict, dry_run: bool = False):
     path, new_path = page_change['path'], page_change['new_path']
     level_name = page_change['level']
 
-    async def _update_page_level(path: str, level_name: str | None):
+    async def _update_page_level(path: str, level_name: str | None) -> bool:
         '''Update level for page with given path.'''
         if dry_run:
-            return
+            return False
         query = '''
             UPDATE level_pages
             SET level_name = :level_name
             WHERE riddle = :riddle AND path = :path
         '''
         values = {'riddle': alias, 'path': path, 'level_name': level_name}
-        await database.execute(query, values)
+        return await database.execute(query, values)
 
     def _log(msg: str):
         '''Log message with riddle alias.'''
         if level_name:
             msg += f" ({level_name})"
-        print(f"> \033[1m[{alias}]\033[0m {msg}")
+        nonlocal success
+        print(
+            f"> \033[1m[{alias}]\033[0m {msg}... " +
+            (
+                '\033[1mOK\033[0m' if not dry_run and success else
+                '\033[3mskipped\033[0m'
+            ),
+            flush=True
+        )
 
     if page_change['trivial_move']:
         # "Trivial move" means the path change was essentially
         # due to logistics and not actually new/different content;
         # therefore, just rename the old page and let players keep it
         query = '''
-            UPDATE level_pages (
+            UPDATE IGNORE level_pages
             SET path = :new_path
             WHERE riddle = :riddle AND path = :path
         '''
         values = {'riddle': alias,'path': path, 'new_path': new_path}
+        if not dry_run:
+            success = await database.execute(query, values)
         _log(
             f"Moving page "
             f"\033[3m{path}\033[0m -> \033[1;3m{new_path}\033[0m "
@@ -115,12 +125,12 @@ async def _apply_change(page_change: dict, dry_run: bool = False):
     else:
         if path:
             # Erase level from the old page
-            await _update_page_level(path, None)
+            success = await _update_page_level(path, None)
             if not new_path:
                 _log(f"Removing page \033[3m{path}\033[0m")
         if new_path:
             # Write level to the new page
-            await _update_page_level(new_path, level_name)
+            success = await _update_page_level(new_path, level_name)
             if not path:
                 _log(f"Adding page \033[1;3m{new_path}\033[0m")
         if path and new_path:
