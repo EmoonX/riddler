@@ -26,16 +26,24 @@ async def apply_page_changes(alias: str):
     page_changes = await database.fetch_all(query, {'riddle': alias})
     for page_change in map(dict, page_changes):
 
-        if {'*', '?'} & set(wildcard_path := page_change['path']):
+        if {'*', '?'} & set(page_change['path']):
             query = '''
                 SELECT * FROM level_pages
-                WHERE riddle = :riddle AND path LIKE :wildcard_path
+                WHERE riddle = :riddle
+                    AND path LIKE :wildcard_path
+                    AND path NOT LIKE :wildcard_new_path
             '''
             values = {
                 'riddle': alias,
                 'wildcard_path':
-                    wildcard_path.replace('*', '%').replace('?', '_'),
+                    page_change['path'].replace('*', '%').replace('?', '_'),
+                'wildcard_new_path':
+                    page_change['new_path'].replace('*', '%').replace('?', '_'),
             }
+            if page_change['level_name']:
+                # Restrict changes just to the specified level's pages
+                query += 'AND level_name = :level_name'
+                values |= {'level_name': page_change['level_name']}
             pages = await database.fetch_all(query, values)
             for path in [page['path'] for page in pages]:
                 single_change = copy(page_change)
@@ -46,6 +54,7 @@ async def apply_page_changes(alias: str):
                 t2 = list(map(lambda k: f"\{k}", range(1, len(t1))))
                 repl = ''.join(chain(*zip(t1, t2), t1[-1]))
                 single_change['new_path'] = re.sub(pattern, repl, path)
+
                 await _apply_change(single_change)
 
         elif '{' in page_change['path']:
@@ -65,6 +74,7 @@ async def apply_page_changes(alias: str):
                     f"{base_path.replace(new_tokens_str, new_tokens[i])}"
                     if new_tokens[i:] else ''
                 )
+
                 await _apply_change(single_change)
 
         else:
@@ -77,7 +87,7 @@ async def _apply_change(page_change: dict, dry_run: bool = False):
 
     alias = page_change['riddle']
     path, new_path = page_change['path'], page_change['new_path']
-    level_name = page_change['level']
+    level_name = page_change['level_name']
 
     async def _update_page_level(path: str, level_name: str | None) -> bool:
         '''Update level for page with given path.'''
