@@ -23,8 +23,9 @@ async def apply_page_changes(alias: str):
         SELECT * FROM _page_changes
         WHERE riddle = :riddle
     '''
-    page_changes = await database.fetch_all(query, {'riddle': alias})
-    for page_change in map(dict, page_changes):
+    result = await database.fetch_all(query, {'riddle': alias})
+    page_changes = list(map(dict, result))
+    for page_change in page_changes:
 
         if {'*', '?'} & set(page_change['path']):
             query = '''
@@ -55,27 +56,30 @@ async def apply_page_changes(alias: str):
                 repl = ''.join(chain(*zip(t1, t2), t1[-1]))
                 single_change['new_path'] = re.sub(pattern, repl, path)
 
-                await _apply_change(single_change)
+                page_changes.append(single_change)
 
         elif '{' in page_change['path']:
             base_path, new_base_path = \
                 page_change['path'], page_change['new_path']
-            tokens_str = re.search('{(.+)}', base_path).group(1)
-            new_tokens_str = re.search('{(.+)}', new_base_path).group(1)
-            tokens = list(filter(None, tokens_str.split(',')))
-            new_tokens = list(filter(None, new_tokens_str.split(',')))
+            tokens, new_tokens = [], []
+            if base_path:
+                tokens_str = re.search('{(.+)}', base_path).group(1)
+                tokens = list(filter(None, tokens_str.split(',')))
+            if new_base_path:
+                new_tokens_str = re.search('{(.+)}', new_base_path).group(1)
+                new_tokens = list(filter(None, new_tokens_str.split(',')))
             for i in range(max(len(tokens), len(new_tokens))):
                 single_change = copy(page_change)
                 single_change['path'] = (
-                    f"{base_path.replace(tokens_str, tokens[i])}"
+                    base_path.replace(f"{{{tokens_str}}}", tokens[i])
                     if tokens[i:] else ''
                 )
                 single_change['new_path'] = (
-                    f"{base_path.replace(new_tokens_str, new_tokens[i])}"
+                    new_base_path.replace(f"{{{new_tokens_str}}}", new_tokens[i])
                     if new_tokens[i:] else ''
                 )
 
-                await _apply_change(single_change)
+                page_changes.append(single_change)
 
         else:
             await _apply_change(page_change)
