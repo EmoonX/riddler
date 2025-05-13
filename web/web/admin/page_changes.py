@@ -19,7 +19,7 @@ async def apply_page_changes(alias: str):
     # Check for admin permissions
     await admin_auth(alias)
 
-    async def _handle_wildcards(page_change: dict) -> list[dict]:
+    async def _handle_wildcards(glob_change: dict):
         '''Handle paths with wildcards (`*` and/or `?`).'''
 
         query = '''
@@ -31,35 +31,33 @@ async def apply_page_changes(alias: str):
         values = {
             'riddle': alias,
             'wildcard_path':
-                page_change['path'].replace('*', '%').replace('?', '_'),
+                glob_change['path'].replace('*', '%').replace('?', '_'),
             'wildcard_new_path':
-                page_change['new_path'].replace('*', '%').replace('?', '_'),
+                glob_change['new_path'].replace('*', '%').replace('?', '_'),
         }
-        if page_change['level_name']:
+        if glob_change['level_name']:
             # Restrict changes just to the specified level's pages
             query += 'AND (level_name = :level_name OR level_name IS NULL)'
-            values |= {'level_name': page_change['level_name']}
+            values |= {'level_name': glob_change['level_name']}
         pages = await database.fetch_all(query, values)
 
-        expanded_changes = []
         for path in [page['path'] for page in pages]:
-            single_change = copy(page_change)
+            single_change = copy(glob_change)
             single_change['path'] = path
-            pattern = page_change['path'] \
+            pattern = glob_change['path'] \
                 .replace('?', '(.)').replace('*', '(.*)')
-            t1 = re.split('[*]|[?]', page_change['new_path'])
+            t1 = re.split('[*|?]', glob_change['new_path'])
             t2 = list(map(lambda k: f"\{k}", range(1, len(t1))))
             repl = ''.join(chain(*zip(t1, t2), t1[-1]))
             single_change['new_path'] = re.sub(pattern, repl, path)
-            expanded_changes.append(single_change)
 
-        return expanded_changes
+            await _apply_change(single_change, expanded=True)
 
-    def _handle_tokens(page_change: dict) -> list[dict]:
+    async def _handle_tokens(glob_change: dict):
         '''Handle paths with tokens (`{a,b,c,...}`).'''
 
         base_path, new_base_path = \
-            page_change['path'], page_change['new_path']
+            glob_change['path'], glob_change['new_path']
         tokens, new_tokens = [], []
         if base_path:
             tokens_str = re.search('{(.+)}', base_path).group(1)
@@ -68,9 +66,8 @@ async def apply_page_changes(alias: str):
             new_tokens_str = re.search('{(.+)}', new_base_path).group(1)
             new_tokens = list(filter(None, new_tokens_str.split(',')))
 
-        expanded_changes = []
         for i in range(max(len(tokens), len(new_tokens))):
-            single_change = copy(page_change)
+            single_change = copy(glob_change)
             single_change['path'] = (
                 base_path.replace(f"{{{tokens_str}}}", tokens[i])
                 if tokens[i:] else ''
@@ -79,28 +76,55 @@ async def apply_page_changes(alias: str):
                 new_base_path.replace(f"{{{new_tokens_str}}}", new_tokens[i])
                 if new_tokens[i:] else ''
             )
-            expanded_changes.append(single_change)
 
-        return expanded_changes
+            await _apply_change(single_change, expanded=True)
 
+    def _log_glob_change(glob_type: str, glob_change: str):
+        '''Log glob change, highlighting pattern(s).'''
+        path, new_path = glob_change['path'], glob_change['new_path']
+        pattern = {'wildcard': '([*|?])', 'tokenized': '({.+})'}[glob_type]
+        repl = r'\033[1m\1\033[0m\033[4m'
+        formatted_path = f"\033[4m{re.sub(pattern, repl, path)}\033[0m"
+        formatted_new_path = f"\033[4m{re.sub(pattern, repl, new_path)}\033[0m"
+        print(
+            f"> \033[1m[{alias}]\033[0m "
+            f"Expanding {glob_type} "
+            + (
+                f"paths {formatted_path} ➜ {formatted_new_path}"
+                    if path and new_path else
+                f"path {formatted_path if path else formatted_new_path}"
+            ),
+            flush=True
+        )
+
+    # Fetch page changes; partition those between single and glob ones
     query = '''
         SELECT * FROM _page_changes
         WHERE riddle = :riddle
     '''
-    result = await database.fetch_all(query, {'riddle': alias})
-    page_changes = list(map(dict, result))
-    for page_change in page_changes:
-        if {'*', '?'} & set(page_change['path']):
-            page_changes += await _handle_wildcards(page_change)
-        elif '{' in page_change['path']:
-            page_changes += _handle_tokens(page_change)
-        else:
-            await _apply_change(page_change)
+    all_changes = await database.fetch_all(query, {'riddle': alias})
+    single_changes, glob_changes = [], []
+    for page_change in map(dict, all_changes):
+        is_glob = bool(set('*?{}') & set(page_change['path']))
+        (single_changes, glob_changes)[is_glob].append(page_change)
+
+    # Apply single changes
+    for single_change in single_changes:
+        await _apply_change(single_change)
+
+    # Apply glob changes, iterating in `most specific -> most general` order
+    for glob_change in reversed(glob_changes):
+        if {'*', '?'} & set(glob_change['path']):
+            _log_glob_change('wildcard', glob_change)
+            await _handle_wildcards(glob_change)
+        elif {'{', '}'} & set(glob_change['path'] or glob_change['new_path']):
+            _log_glob_change('tokenized', glob_change)
+            await _handle_tokens(glob_change)
 
     return 'SUCCESS :)', 200
 
 
-async def _apply_change(page_change: dict):
+async def _apply_change(page_change: dict, expanded: bool = False):
     '''Apply individual page change.'''
 
     alias = page_change['riddle']
@@ -109,11 +133,12 @@ async def _apply_change(page_change: dict):
 
     async def _update_page_level(path: str, level_name: str | None) -> bool:
         '''Update level for page with specified path.'''
-        query = '''
+        query = f"""
             UPDATE level_pages
-            SET level_name = :level_name
+            SET level_name = :level_name,
+                removed = {'TRUE' if not level_name else 'NULL'}
             WHERE riddle = :riddle AND path = :path
-        '''
+        """
         values = {'riddle': alias, 'path': path, 'level_name': level_name}
         return await database.execute(query, values)
 
@@ -125,7 +150,7 @@ async def _apply_change(page_change: dict):
 
         # Mark old path as (removed) alias
         query = '''
-            UPDATE level_pages
+            UPDATE IGNORE level_pages
             SET alias_for = :new_path
             WHERE riddle = :riddle AND path = :path
         '''
@@ -149,7 +174,8 @@ async def _apply_change(page_change: dict):
             msg += f" ({level_name})"
         nonlocal success
         print(
-            f"> \033[1m[{alias}]\033[0m {msg}... "
+            f"> \033[1m[{alias}]\033[0m"
+            f"{' ·· ' if expanded else ' '}{msg}… "
             f"\033{'[1mOK' if success else '[3mskipped'}\033[0m",
             flush=True
         )
@@ -171,7 +197,7 @@ async def _apply_change(page_change: dict):
     # Both `path`` and `new_path`` given, so handle page move
     _log(
         f"Moving page "
-        f"\033[3m{path}\033[0m -> \033[1;3m{new_path}\033[0m"
+        f"\033[3m{path}\033[0m ➜ \033[1;3m{new_path}\033[0m"
         f"{' (trivial)' if page_change['trivial_move'] else ''}"
     )
     if page_change['trivial_move']:
