@@ -34,6 +34,7 @@ async def health_diagnostics(alias: str):
     pages = await get_pages(
         alias,
         include_unlisted=request.args.get('includeUnlisted'),
+        include_removed=request.args.get('includeRemoved'),
         as_json=False,
         admin=True,
     )

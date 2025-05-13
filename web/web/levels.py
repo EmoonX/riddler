@@ -180,6 +180,7 @@ async def get_pages(
     alias: str,
     requested_level: str = '%',
     include_unlisted: bool = False,
+    include_removed: bool = False,
     index_by_levels: bool = True,
     as_json: bool = True,
     admin: bool = False,
@@ -204,7 +205,9 @@ async def get_pages(
         user = None
         query = f"""
             SELECT *, current_timestamp() AS access_time FROM level_pages
-            WHERE riddle = :riddle AND {level_condition}
+            WHERE riddle = :riddle
+                AND {level_condition}
+                AND removed {'IS' if include_removed else 'IS NOT'} TRUE
         """
     else:
         user = await discord.get_user()
