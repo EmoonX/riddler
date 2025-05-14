@@ -1,5 +1,6 @@
 aiohttp==3.10.11
 aiomysql>=0.0.21
+beautifulsoup4>=4.13.4
 bitarray>=2.5.1
 country-converter>=0.7.3
 databases>=0.4.1

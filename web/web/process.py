@@ -25,8 +25,12 @@ process = Blueprint('process', __name__)
 
 
 @process.post('/process')
-async def process_url(username: str | None = None, url: str | None = None):
-    '''Process an URL sent by browser extension.'''
+async def process_url(
+    username: str | None = None,
+    url: str | None = None,
+    admin: bool = False,
+):
+    '''Process URL (usually) sent by the browser extension.'''
 
     # Time 
     tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
@@ -52,10 +56,14 @@ async def process_url(username: str | None = None, url: str | None = None):
         setattr(user, 'name', username)
     try:
         ph = await _PathHandler.build(user, url, status_code)
+        if admin:
+            return ph.path
     except AttributeError:
         # TODO
         # Not inside root path (e.g forum or admin pages)
         print(f"??? {url} ???")
+        if admin:
+            return url
         return 'Not part of root path', 412
 
     # Create/fetch riddle account data
