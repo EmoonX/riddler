@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8">
-    <title>Health Diagnostics ⬩ {{ riddle['full_name'] }}</title>
+    <title>🔒 Health Diagnostics ⬩ {{ riddle['full_name'] }}</title>
     <link rel="icon" href="/static/icons/letter-r-icon.png">
     <link rel="fluid-icon" href="/static/icons/letter-r-icon.png" title="Riddler">
 
@@ -42,7 +42,22 @@
           {% set icon_title = page_data['flag'].capitalize().replace('_', ' ') %}
         {% endif %}
         <li{% if page_data['flag'] %} class="{{ icon_class }}" title="{{ icon_title }}"{% endif %}>
-          <a href="{{ page_data['url'] }}" target="_blank" rel="noreferrer">{{ path }}</a>… {{ status|safe }}
+          <a {% if page_data['hidden'] %}class="translucent" title="(hidden page)"{% endif %} href="{{ page_data['url'] }}" target="_blank" rel="noreferrer">{{ path }}</a>
+          {% if page_data['redirects_to'] %}
+            {% set url = page_data['redirects_to'] %}
+            {% if '://' not in url %}
+              {% set url = riddle['root_path'] + url %}
+            {% endif %}
+            <span class="smaller">
+              ➜ <a title="(redirects to)" href="{{ url }}">{{ page_data['redirects_to'] }}</a>
+            </span>
+          {% elif page_data['alias_for'] %}
+            {% set url = riddle['root_path'] + page_data['alias_for'] %}
+            <span class="smaller">
+              (alias for <a href="{{ url }}">{{ page_data['alias_for'] }}</a>)
+            </span>
+          {% endif %}
+          … {{ status|safe }}
         </li>
       {% endfor %}
       </ul>
