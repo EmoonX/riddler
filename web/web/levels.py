@@ -21,7 +21,7 @@ levels = Blueprint('levels', __name__)
 @requires_authorization
 async def level_list(alias: str):
     '''Fetch list of levels, showing only applicable public info.'''
-    
+
     async def _populate_level_data(level: dict):
         '''Retrieve level data and add to dict.'''
 
@@ -65,7 +65,7 @@ async def level_list(alias: str):
                         break
                 if level['path'][0] == '[':
                     level['path'] = ''  # safeguard
-        
+
         if level['beaten']:
             # Get level rating
             user_level = user_level_data[level['name']]
@@ -120,7 +120,7 @@ async def level_list(alias: str):
         values = {'riddle': alias, 'name': level['name']}
         result = await database.fetch_all(query, values)
         level['users'] = [dict(level) for level in result]
-    
+
     # async def _add_credentials(level: dict):
     #     '''Add credentials (if any) for level's front path.'''
     #     for path in reversed(credentials):
@@ -128,7 +128,7 @@ async def level_list(alias: str):
     #         if level['path'].startswith(path):
     #             level |= credentials[path]
     #             return
-    
+
     # Get riddle level data
     query = '''
         SELECT *, EXISTS(
@@ -137,7 +137,7 @@ async def level_list(alias: str):
         ) AS has_requirements
         FROM levels lv
         WHERE riddle = :riddle
-        ORDER BY is_secret, `index`
+        ORDER BY `index`
     '''
     values = {'riddle': alias}
     result = await database.fetch_all(query, values)
@@ -253,10 +253,10 @@ async def get_pages(
             'image': row['image'],
             'unlockTime': _stringify_datetime(row['find_time']),
         }
-        if page_data.get(row['path']):
+        if page_data.get(row['path']) or admin:
             unlocked_levels[level_name] |= {'frontPage': row['path']}
         if row['completion_time']:
-            if page_data.get(row['answer']):
+            if page_data.get(row['answer']) or admin:
                 unlocked_levels[level_name] |= {'answer': row['answer']}
             unlocked_levels[level_name] |= {
                 'solveTime': _stringify_datetime(row['completion_time']),
@@ -313,7 +313,7 @@ async def get_pages(
                 parent['filesFound'] += 1
                 parent['pagesFound'] += 1
                 parent = children[seg]
-    
+
     # Recursively calculate total file count for each folder
     # and record credentials based on innermost protected directory
     query = f"""

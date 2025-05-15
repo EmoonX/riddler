@@ -5,13 +5,20 @@
     <title>Health Diagnostics ⬩ {{ riddle['full_name'] }}</title>
     <link rel="icon" href="/static/icons/letter-r-icon.png">
     <link rel="fluid-icon" href="/static/icons/letter-r-icon.png" title="Riddler">
+
+    <!-- Less CSS -->
+    <link rel="stylesheet/less" type="text/css" href="/static/health.less">
+    <script src="//cdn.jsdelivr.net/npm/less@3.13" ></script>
   </head>
   <body>
-    <h1>Health Diagnostics ⬩ {{ riddle['full_name'] }}</h1>
+    <header>
+      <h1>Health Diagnostics ⬩ {{ riddle['full_name'] }}</h1>
+    </header>
+    <main>
     {% for level_name, level in levels.items() %}
       <h2>{{ level_name }}</h2>
       <ul>
-      {% for path, page_data in level.items() %}
+      {% for path, page_data in level['pages'].items() %}
         {% set status_code = page_data['status_code'] %}
         {% if status_code == 200 %}
           {% set status = (
@@ -25,11 +32,16 @@
         {% else %}
           {% set status = '<em style="color: #bbb">skipped</em>' %}
         {% endif %}
-        <li>
-          <a href="{{ page_data['url'] }}" rel="noreferrer">{{ path }}</a>… {{ status|safe }}
+        {% if page_data['flag'] %}
+          {% set icon_class = page_data['flag'].replace('_', '-') %}
+          {% set icon_title = page_data['flag'].capitalize().replace('_', ' ') %}
+        {% endif %}
+        <li{% if page_data['flag'] %} class="{{ icon_class }}" title="{{ icon_title }}"{% endif %}>
+          <a href="{{ page_data['url'] }}" target="_blank" rel="noreferrer">{{ path }}</a>… {{ status|safe }}
         </li>
       {% endfor %}
       </ul>
     {% endfor %}
+    </main>
   </body>
 </html>

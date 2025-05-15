@@ -1,0 +1,26 @@
+/* -- [ADMIN] Health Diagnostics -- */
+
+ul {
+  position: relative;
+  list-style: none;
+
+    > li {
+      &::before {
+        position: absolute;
+        left: 1.5em;
+        margin: .25em 0;
+        border-radius: 25%;
+        padding: .1em;
+        background-color: linen;
+        font-size: .7em;
+        cursor: help;
+      }
+      &.front-page::before {
+        content: "📌";
+        
+      }
+      &.front-image::before {
+        content: "🖌️";
+      }
+    }
+}

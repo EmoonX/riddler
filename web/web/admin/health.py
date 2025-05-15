@@ -39,10 +39,11 @@ async def health_diagnostics(alias: str):
     await admin_auth(alias)
 
     riddle = await get_riddle(alias)
-    pages = await get_pages(
+    levels = await get_pages(
         alias,
         include_unlisted=request.args.get('includeUnlisted'),
         include_removed=request.args.get('includeRemoved'),
+        index_by_levels=True,
         as_json=False,
         admin=True,
     )
@@ -50,7 +51,7 @@ async def health_diagnostics(alias: str):
     skip_existing = bool(request.args.get('skipExisting'))
     show_skipped = bool(request.args.get('showSkipped'))
     skip_hidden = bool(request.args.get('skipHidden'))
-    start_level = request.args.get('start', list(pages.keys())[0])
+    start_level = request.args.get('start', list(levels.keys())[0])
     end_level = request.args.get('end')
 
     async def _retrieve_page(path: str, page_data: dict) -> dict | None:
@@ -144,10 +145,11 @@ async def health_diagnostics(alias: str):
                 flush=True
             )
 
-    levels = defaultdict(dict)
-    for level_name in dropwhile(lambda k: k != start_level, pages):
-        # Start iterating at user-informed level (if any)
-        if level_name:
+    # Start iterating at user-informed level (if any)
+    for level_name in dropwhile(lambda k: k != start_level, levels):
+        level = levels[level_name]
+        level |= {'pages': {}}
+        if level_name != 'Unlisted':
             print(
                 f"> \033[1m[{alias}]\033[0m "
                 f"Fetching page data for {level_name}…",
@@ -159,9 +161,23 @@ async def health_diagnostics(alias: str):
                 f"Fetching unlisted page data…",
                 flush=True
             )
-        for path, page_data in absolute_paths(pages[level_name]['/']):
+        pages = {}
+        for path, page_data in absolute_paths(level['/']):
             if page_data := await _retrieve_page(path, page_data):
-                levels[level_name][path] = page_data
+                pages[path] = page_data
+
+        if level_name != 'Unlisted':
+            # Show front page/image paths at the top
+            if front_page := pages.get(level['frontPage']):
+                level['pages'][level['frontPage']] = \
+                    front_page | {'flag': 'front_page'}
+                del pages[level['frontPage']]
+                image_path = urljoin(level['frontPage'], level['image'])
+                if image_page := pages.get(image_path):
+                    level['pages'][image_path] = \
+                        image_page | {'flag': 'front_image'}
+                    del pages[image_path]
+        level['pages'] |= pages
 
         # Stop when reaching user-informed level (if any)
         if level_name == end_level:
@@ -169,5 +185,5 @@ async def health_diagnostics(alias: str):
 
     return await render_template(
         'admin/health.htm',
-        riddle=riddle, levels=levels
+        riddle=riddle, levels=levels,
     )
