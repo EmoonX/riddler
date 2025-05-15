@@ -250,6 +250,7 @@ async def get_pages(
     for row in result:
         level_name = row['name']
         unlocked_levels[level_name] = {
+            'latinName': row['latin_name'],
             'image': row['image'],
             'unlockTime': _stringify_datetime(row['find_time']),
         }

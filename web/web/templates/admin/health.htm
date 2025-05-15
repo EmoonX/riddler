@@ -16,7 +16,12 @@
     </header>
     <main>
     {% for level_name, level in levels.items() %}
-      <h2>{{ level_name }}</h2>
+      <h2>
+        {{ level_name }}<!--
+     -->{% if level['latinName'] %}
+          <span class="smaller">({{ level['latinName'] }})</span>
+        {% endif %}
+      </h2>
       <ul>
       {% for path, page_data in level['pages'].items() %}
         {% set status_code = page_data['status_code'] %}
