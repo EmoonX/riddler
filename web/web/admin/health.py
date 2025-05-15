@@ -39,7 +39,7 @@ async def health_diagnostics(alias: str):
     await admin_auth(alias)
 
     riddle = await get_riddle(alias)
-    levels = await get_pages(
+    all_levels = await get_pages(
         alias,
         include_unlisted=request.args.get('includeUnlisted'),
         include_removed=request.args.get('includeRemoved'),
@@ -51,7 +51,7 @@ async def health_diagnostics(alias: str):
     skip_existing = bool(request.args.get('skipExisting'))
     show_skipped = bool(request.args.get('showSkipped'))
     skip_hidden = bool(request.args.get('skipHidden'))
-    start_level = request.args.get('start', list(levels.keys())[0])
+    start_level = request.args.get('start', list(all_levels.keys())[0])
     end_level = request.args.get('end')
 
     async def _retrieve_page(path: str, page_data: dict) -> dict | None:
@@ -146,9 +146,9 @@ async def health_diagnostics(alias: str):
             )
 
     # Start iterating at user-informed level (if any)
-    for level_name in dropwhile(lambda k: k != start_level, levels):
-        level = levels[level_name]
-        level |= {'pages': {}}
+    levels = {}
+    for level_name in dropwhile(lambda k: k != start_level, all_levels):
+        level = levels[level_name] = all_levels[level_name] | {'pages': {}}
         if level_name != 'Unlisted':
             print(
                 f"> \033[1m[{alias}]\033[0m "
@@ -172,11 +172,11 @@ async def health_diagnostics(alias: str):
                 level['pages'][level['frontPage']] = \
                     front_page | {'flag': 'front_page'}
                 del pages[level['frontPage']]
-                image_path = urljoin(level['frontPage'], level['image'])
-                if image_page := pages.get(image_path):
-                    level['pages'][image_path] = \
-                        image_page | {'flag': 'front_image'}
-                    del pages[image_path]
+            image_path = urljoin(level['frontPage'], level['image'])
+            if image_page := pages.get(image_path):
+                level['pages'][image_path] = \
+                    image_page | {'flag': 'front_image'}
+                del pages[image_path]
         level['pages'] |= pages
 
         # Stop when reaching user-informed level (if any)
