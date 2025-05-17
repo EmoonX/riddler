@@ -33,7 +33,8 @@ discord_session_init(app)
 
 from admin.cheevos import admin_cheevos
 from admin.health import admin_health
-from admin.levels import admin_levels
+from admin.levels.levels import admin_levels
+from admin.levels.upload_pages import admin_upload_pages
 from admin.page_changes import admin_page_changes
 from admin.recent import admin_recent
 from admin.update import admin_update
@@ -123,7 +124,8 @@ async def redirect_unauthorized(_):
 
 
 @app.errorhandler(pymysql.err.OperationalError)
-async def restart_mariadb(_):
+async def restart_mariadb(e):
+    print(e)
     print('>>> RESTARTING MARIADB <<<')
     os.system('systemctl restart mariadb')
     return 'MariaDB server successfully restarted.', 205
