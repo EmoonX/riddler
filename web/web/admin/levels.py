@@ -374,9 +374,8 @@ async def update_pages(alias: str):
             _log(f"Level \033[1m{level}\033[0m already in database…")
         else:
             _log(f"Added level \033[1m{level}\033[0m to the database.")
-
-        if previous_level:
-            await _add_requirement(level, previous_level)
+            if previous_level:
+                await _add_requirement(level, previous_level)
 
         previous_level = level
 
