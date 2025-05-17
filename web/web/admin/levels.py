@@ -327,7 +327,7 @@ async def update_pages(alias: str):
 
     async def _process_level(level_set: str | None, level: str, pages: list[str]):
         '''Process individual level data.'''
-       
+
         nonlocal previous_level
         if previous_level:
             # Set previous level's answer as current one's front path
@@ -342,11 +342,11 @@ async def update_pages(alias: str):
                 'answer': pages[0],
             }
             await database.execute(query, values)
-        
+
         image_filename = None
         if pages[1:] and _is_image(pages[1]):
             image_filename = await _process_image(level, pages[1])
-        
+
         # Insert new level (if indeed new)
         query = '''
             INSERT INTO levels (
@@ -361,7 +361,7 @@ async def update_pages(alias: str):
             'riddle': alias,
             'set_index': 1,
             'level_set': level_set,
-            'index': abs(int(level)) if level.isnumeric() else 99,
+            'index': abs(int(level)) if level.isdigit() else 0,
             'name': level,
             'path': pages[0],
             'image': image_filename,
@@ -392,7 +392,7 @@ async def update_pages(alias: str):
         '''Check if path points to an image file.'''
         _, ext = os.path.splitext(path)
         return ext.lower() in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
-    
+
     async def _process_image(level: str, image_path: str) -> str | None:
         '''Fetch image content from riddle website and update related info.'''
 
@@ -431,13 +431,13 @@ async def update_pages(alias: str):
                 'image': image_filename
             }
             await database.execute(query, values)
-        
+
             return image_filename
-        
+
         return None
 
     async def _process_page(path: str, level: str | None = None):
-        '''Insert page into DB, possibly attached to a level.'''
+        '''Insert/update page in DB, possibly attached to a level.'''
 
         query = '''
             INSERT INTO level_pages
@@ -448,9 +448,8 @@ async def update_pages(alias: str):
         try:
             # Add page as part of the level
             await database.execute(query, values)
-
         except IntegrityError:
-            # Page already present, update level if doable
+            # Page already present, update level if suitable
             if level:
                 query = '''
                     UPDATE level_pages
@@ -464,14 +463,13 @@ async def update_pages(alias: str):
                     )
                     return
             _log(f"Skipping page \033[3m{path}\033[0m ({level})…")
-
         else:
             _log(
                 f"Added page \033[3m{path}\033[0m "
                 f"({level}) " if level else ''
-                f"to the database!"
+                'to the database!'
             )
-    
+
     def _log(msg: str):
         '''Log message.'''
         print(f"> \033[1m[{alias}]\033[0m {msg}", flush=True)
@@ -488,7 +486,10 @@ async def update_pages(alias: str):
     level_set = None
     for text in parts:
         # Build list of pages' paths in suitable format
-        lines = text.replace('\r', '').replace('\\', '/').split('\n')
+        lines = [
+            line.strip()
+            for line in text.replace('\r', '').replace('\\', '/').split('\n')
+        ]
         pages = list(filter(None, lines[1:]))
 
         if has_levels:
@@ -499,10 +500,9 @@ async def update_pages(alias: str):
                 level = lines[0].strip()
 
             await _process_level(level_set, level, pages)
-        
+
         # Insert/update individual pages
         for path in pages:
-            path = path.strip()
             if not path:
                 continue
             if '/' not in path or '.' not in path[-5:]:
