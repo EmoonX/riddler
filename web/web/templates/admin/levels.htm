@@ -25,14 +25,14 @@
         <section class="list levels admin new">
           <!-- New level rows go here -->
         </section>
-        <button type="button" class="add" name="add-level">➕ Add level</button>
+        <button type="button" class="add" name="add-level" disabled>➕ Add level</button>
         {% if not loop.last %}<hr>{% endif %}
       {% endfor %}
         <input type="hidden" name="removed-pages">
         <div class='buttons'>
           <input type="file" name="pages" accept="text/plain" style="display:none">
           <button type="button" name="upload-pages">📁 Upload pages</button>
-          <button type="submit">📝 Submit changes</button>
+          <button type="submit" disabled>📝 Submit changes</button>
         </div>
         <div class="msg">{{ msg }}</div>
       </form>

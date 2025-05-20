@@ -15,11 +15,11 @@
   <div>
     <label title="ℹ️ Path corresponding to the level's front page; generally the first non-redirecting one and that also contains level's front image.&#10;&#10;(double click a page in level's file explorer to change it)">
       Front page path
-      <input type="text" class="front-path" name="{{ index }}-path" size="15" value="{{ level['path'] }}" required>
+      <input type="text" class="front-path" name="{{ index }}-path" size="15" value="{{ level['path'] or '' }}" required>
     </label>
     <label title="ℹ️ Path corresponding to the first non-redirecting page after entering current level's answer (which can be answer's page itself).">
       Answer path
-      <input type="text" class="answer-path" name="{{ index }}-answer" size="15" value="{{ level['answer'] }}" required>
+      <input type="text" class="answer-path" name="{{ index }}-answer" size="15" value="{{ level['answer'] or '' }}" required>
     </label>
   </div> 
   <div>
@@ -54,7 +54,7 @@
 <div class="page-explorer" id="{{ index }}">
   <nav>
     {% if level %}
-      {% set aux = level['path'].split('/') %}
+      {% set aux = (level['path'] or '').split('/') %}
       {% set folder = '/'.join(aux[:-1]) + '/' %}
     {% else %}
       {% set folder = '/' %}
