@@ -46,7 +46,17 @@ async def get_riddles(unlisted: bool = False) -> list[dict]:
     return riddles
 
 
-async def get_achievements(alias: str, user: dict = None) -> dict:
+async def get_levels(alias: str) -> dict[str, dict]:
+    query = '''
+        SELECT * FROM levels
+        WHERE riddle = :riddle
+        ORDER BY set_index, `index`
+    '''
+    ordered_levels = await database.fetch_all(query, {'riddle': alias})
+    return {level['name']: dict(level) for level in ordered_levels}
+
+
+async def get_achievements(alias: str, user: dict = None) -> dict[str, dict]:
     '''Get riddle achievements grouped by points.
     If user is specified, then only return cheevos user has gotten.'''
 

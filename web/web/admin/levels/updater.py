@@ -2,12 +2,13 @@ from collections import defaultdict
 import os
 from pathlib import Path
 import shutil
+from typing import Any
 
 from pymysql.err import IntegrityError
 import requests
 
 from credentials import get_path_credentials
-from inject import get_riddle
+from inject import get_levels, get_riddle
 from util.db import database
 
 class LevelUpdater:
@@ -15,47 +16,48 @@ class LevelUpdater:
 
     alias: str
     riddle: dict
-    all_levels_by_name: dict[str, dict]
     all_levels_by_set: defaultdict[int, dict[int, dict]]
 
     @classmethod
     async def create(cls, alias: str) -> type:
-        query = '''
-            SELECT * FROM levels
-            WHERE riddle = :riddle
-            ORDER BY set_index, `index`
-        '''
-        values = {'riddle': alias}
-        result = await database.fetch_all(query, values)
-        riddle = await get_riddle(alias)
-        all_levels_by_name = {level['name']: level for level in result}
-        all_levels_by_set = defaultdict(dict) | {
-            level['set_index']: {
-                'index': level['set_index'],
-                'name': level['level_set'],
-                'levels': {level['index']: level},
-            }
-            for level in result
-        }
 
         class _LevelUpdater(cls):
-            alias: str = alias
-            riddle: dict = riddle
-            all_levels_by_name: dict[str, dict] = all_levels_by_name
-            all_levels_by_set: defaultdict[int, dict[int, dict]] = all_levels_by_set
+            pass
+
+        _LevelUpdater.alias = alias
+        _LevelUpdater.riddle = await get_riddle(alias)
+        _LevelUpdater.all_levels_by_set = {}
+        for level in (await get_levels(alias)).values():
+            set_index = level['set_index']
+            if not (level_set := _LevelUpdater.all_levels_by_set.get(set_index)):
+                level_set = _LevelUpdater.all_levels_by_set[set_index] = {
+                    'index': set_index,
+                    'name': level['level_set'],
+                    'levels': {},
+                }
+            level_set['levels'] |= {level['index']: level}
 
         return _LevelUpdater
 
-    def __init__(self, level_name: str, set_name: str, pages: list[str]):
-        self.level_name = level_name
-        self.level = self.all_levels_by_name.get(level_name)
+    @classmethod
+    def _log(cls, msg: str, end: str = '\n'):
+        '''Log message.'''
+        print(f"> \033[1m[{cls.alias}]\033[0m {msg}", end=end, flush=True)
+
+    def __init__(self, level_name: str, set_name: str | None, pages: list[str]):
+
+        def _find(data: dict[Any, dict], name: str) -> dict | None:
+            for entry in data.values():
+                if entry['name'] == name:
+                    return entry
+            return None
+
         self.set_name = set_name
-        self.level_set = next(
-            (
-                idx for idx in self.all_levels_by_set
-                if self.all_levels_by_set[idx]['name'] == set_name
-            ),
-            None,
+        self.level_set = _find(self.all_levels_by_set, set_name)
+        self.level_name = level_name
+        self.level = (
+            _find(self.level_set['levels'], level_name)
+            if self.level_set else None
         )
         self.pages = pages
 
@@ -65,12 +67,12 @@ class LevelUpdater:
         if not self.level:
             # New level (and possibly new level set)
             if not self.level_set:
-                self._add_new_level_set()
+                await self._add_new_level_set()
                 self._log(
                     'Created new level set '
                     f"\033[1m{self.level_set['name']}\033[0m."
                 )
-            self._add_new_level()
+            await self._add_new_level()
             self._log(
                 f"Added level \033[1m{self.level['name']}\033[0m "
                 'to the database.'
@@ -119,10 +121,10 @@ class LevelUpdater:
         query = '''
             INSERT INTO levels (
                 riddle, level_set, set_index, `index`, name,
-                `path`, image, discord_category, discord_name
+                path, discord_category, discord_name
             ) VALUES (
                 :riddle, :level_set, :set_index, :index, :name,
-                :path, :image, :discord_category, :discord_name
+                :path, :discord_category, :discord_name
             )
         '''
         values = {
@@ -199,7 +201,7 @@ class LevelUpdater:
         '''Insert/update page in DB, possibly attached to a level.'''
 
         query = '''
-            INSERT INTO level_pages
+            INSERT IGNORE INTO level_pages
                 (`riddle`, `path`, `level_name`)
             VALUES (:riddle, :path, :level_name)
         '''
@@ -232,11 +234,6 @@ class LevelUpdater:
             self._log(
                 f"Skipping page \033[3m{path}\033[0m ({self.level['name']})…"
             )
-
-    @classmethod
-    def _log(cls, msg: str, end: str = '\n'):
-        '''Log message.'''
-        print(f"> \033[1m[{cls.alias}]\033[0m {msg}", end=end, flush=True)
 
 
 def _is_image(path: str) -> bool:

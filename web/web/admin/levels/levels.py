@@ -81,7 +81,7 @@ async def _fetch_levels(alias: str) -> dict[int, dict]:
     for level in levels:
         # Multi-path support
         try:
-            paths = json.loads(level['path'])
+            paths = json.loads(level['path'] or '')
         except json.decoder.JSONDecodeError:
             pass
         else:

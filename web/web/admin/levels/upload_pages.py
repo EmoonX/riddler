@@ -33,7 +33,7 @@ async def upload_pages(alias: str):
     )
 
     _LevelUpdater = await LevelUpdater.create(alias)
-    level_set = None
+    set_name = None
     for text in parts:
         # Build list of pages' paths in suitable format
         lines = [
@@ -45,13 +45,13 @@ async def upload_pages(alias: str):
         if has_levels:
             # Get level info (given '#' is present)
             if '--' in lines[0]:
-                level_name, level_set = map(
+                level_name, set_name = map(
                     lambda s: s.strip(),
                     lines[0].split('--'),
                 )
             else:
                 level_name = lines[0].strip()
-            lu = _LevelUpdater(level_name, pages)
+            lu = _LevelUpdater(level_name, set_name, pages)
             await lu.process_level()
 
         # Insert/update individual pages
