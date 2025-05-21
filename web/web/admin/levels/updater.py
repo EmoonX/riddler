@@ -40,12 +40,13 @@ class LevelUpdater:
         return _LevelUpdater
 
     @classmethod
-    def _log(cls, msg: str, end: str = '\n'):
+    def log(cls, msg: str, end: str = '\n'):
         '''Log message.'''
         print(f"> \033[1m[{cls.alias}]\033[0m {msg}", end=end, flush=True)
 
-    def __init__(self, level_name: str, set_name: str | None, pages: list[str]):
-
+    def __init__(self,
+        level_name: str | None, set_name: str | None, paths: list[str]
+    ):
         def _find(data: dict[Any, dict], name: str) -> dict | None:
             for entry in data.values():
                 if entry['name'] == name:
@@ -59,7 +60,7 @@ class LevelUpdater:
             _find(self.level_set['levels'], level_name)
             if self.level_set else None
         )
-        self.pages = pages
+        self.paths = paths
 
     async def process_level(self):
         '''Process level data.'''
@@ -68,17 +69,17 @@ class LevelUpdater:
             # New level (and possibly new level set)
             if not self.level_set:
                 await self._add_new_level_set()
-                self._log(
+                self.log(
                     'Created new level set '
                     f"\033[1m{self.level_set['name']}\033[0m."
                 )
             await self._add_new_level()
-            self._log(
+            self.log(
                 f"Added level \033[1m{self.level['name']}\033[0m "
                 'to the database.'
             )
         else:
-            self._log(
+            self.log(
                 f"Level \033[1m{self.level['name']}\033[0m "
                 'already in the database…'
             )
@@ -86,7 +87,7 @@ class LevelUpdater:
         set_index, index = self.level_set['index'], self.level['index']
         self.all_levels_by_set[set_index][index] = self.level
         if previous_level := self.all_levels_by_set[set_index].get(index - 1):
-            if self.pages:
+            if self.paths:
                 # If absent, automatically set previous level's answer
                 # as the current one's front path
                 query = '''
@@ -97,7 +98,7 @@ class LevelUpdater:
                 values = {
                     'riddle': self.alias,
                     'name': previous_level['name'],
-                    'answer': self.pages[0],
+                    'answer': self.paths[0],
                 }
                 await database.execute(query, values)
 
@@ -106,7 +107,7 @@ class LevelUpdater:
     async def _add_new_level_set(self):
         query = '''
             INSERT INTO level_sets
-                (riddle, index, name)
+                (riddle, `index`, name)
             VALUES (:riddle, :index, :name)
         '''
         values = {
@@ -133,7 +134,7 @@ class LevelUpdater:
             'level_set': self.set_name,
             'index': len(self.level_set['levels']) + 1,
             'name': self.level_name,
-            'path': self.pages[0] if self.pages else None,
+            'path': self.paths[0] if self.paths else None,
             'discord_category': self.set_name,
             'discord_name': self.level_name.lower().replace(' ', '-'),
         }
@@ -165,7 +166,7 @@ class LevelUpdater:
             image_url = image_url.replace('://', f"://{username}:{password}@")
         print(
             f"> \033[1m[{self.alias}]\033[0m "
-            f"Fetching level image from \033[3m{image_url}\033[0m… ",
+            f"Fetching level image from \033[3;4m{image_url}\033[0m… ",
             end=''
         )
         res = requests.get(image_url, stream=True, timeout=10)
@@ -212,7 +213,7 @@ class LevelUpdater:
         }
         if await database.execute(query, values):
             # Page added as part of the level
-            self._log(
+            self.log(
                 f"Added page \033[3m{path}\033[0m "
                 f"({self.level['name']}) " if self.level else ''
                 'to the database!'
@@ -226,17 +227,11 @@ class LevelUpdater:
                     WHERE riddle = :riddle AND path = :path
                 '''
                 if await database.execute(query, values):
-                    self._log(
+                    self.log(
                         f"Updated level "
                         f"for page \033[3m{path}\033[0m ({self.level['name']})…"
                     )
                     return
-            self._log(
+            self.log(\
                 f"Skipping page \033[3m{path}\033[0m ({self.level['name']})…"
             )
-
-
-def _is_image(path: str) -> bool:
-    '''Check if path points to an image file.'''
-    _, ext = os.path.splitext(path)
-    return ext.lower() in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']

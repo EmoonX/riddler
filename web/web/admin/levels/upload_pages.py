@@ -21,44 +21,47 @@ admin_upload_pages = Blueprint('admin_upload_pages', __name__)
 async def upload_pages(alias: str):
     '''Update page/level data through upload in text format.'''
 
-    # Check for right permissions
     await admin_auth(alias)
 
     # Receive text data and split it between levels (if any)
     data = (await request.data).decode('utf-8')
-    has_levels = '#' in data
-    parts = filter(
-        lambda text: text and not text.isspace(),
-        data.split('#')
-    )
+    blocks = filter(lambda text: text.strip(), data.split('#'))
 
     _LevelUpdater = await LevelUpdater.create(alias)
-    set_name = None
-    for text in parts:
-        # Build list of pages' paths in suitable format
+    level_name = set_name = None
+    for block in blocks:
+        # Build list of sanitized pages' paths
         lines = [
-            line.strip()
-            for line in text.replace('\r', '').replace('\\', '/').split('\n')
+            line.strip().replace('\\', '/').replace('\r', '')
+            for line in block.split('\n')
         ]
-        pages = list(filter(None, lines[1:]))
+        paths = list(filter(None, lines[1:]))
 
-        if has_levels:
-            # Get level info (given '#' is present)
-            if '--' in lines[0]:
-                level_name, set_name = map(
-                    lambda s: s.strip(),
-                    lines[0].split('--'),
-                )
-            else:
-                level_name = lines[0].strip()
-            lu = _LevelUpdater(level_name, set_name, pages)
-            await lu.process_level()
+        # Extract level/set names (if present)
+        tokens = lines[0].split('--')
+        level_name = tokens[0].strip() or None
+        if tokens[1:]:
+            set_name = tokens[1].strip() or None
 
-        # Insert/update individual pages
-        for path in pages:
-            if '/' not in path or '.' not in path[-5:]:
-                _log(f"Skipping wrong format page: \033[3m{path}\033[0m")
+        # Init updater object and process level
+        lu = _LevelUpdater(level_name, set_name, paths)
+        await lu.process_level()
+
+        # Process level's image when suitable
+        if paths[1:] and _is_image(path := paths[1]):
+            await lu.process_image(path)
+
+        # Process individual pages
+        for path in paths:
+            if not path.startswith('/'):
+                lu.log(f"Skipping wrong format path: \033[3;9m{path}\033[0m")
                 continue
             await lu.process_page(path)
 
     return 'OK', 200
+
+
+def _is_image(path: str) -> bool:
+    '''Check if path points to an image file.'''
+    _, ext = os.path.splitext(path)
+    return ext.lower() in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
