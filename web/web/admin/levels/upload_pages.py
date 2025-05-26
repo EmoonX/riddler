@@ -27,8 +27,7 @@ async def upload_pages(alias: str):
     data = (await request.data).decode('utf-8')
     blocks = filter(lambda text: text.strip(), data.split('#'))
 
-    _LevelUpdater = await LevelUpdater.create(alias)
-    level_name = set_name = None
+    RiddleLevelUpdater = await LevelUpdater.create(alias)
     for block in blocks:
         # Build list of sanitized pages' paths
         lines = [
@@ -38,13 +37,12 @@ async def upload_pages(alias: str):
         paths = list(filter(None, lines[1:]))
 
         # Extract level/set names (if present)
-        tokens = lines[0].split('--')
-        level_name = tokens[0].strip() or None
-        if tokens[1:]:
-            set_name = tokens[1].strip() or None
+        tokens = map(lambda s: s.strip() or None, lines[0].split('--'))
+        level_name = next(tokens, None)
+        set_name = next(tokens, None)
 
         # Init updater object and process level
-        lu = _LevelUpdater(level_name, set_name, paths)
+        lu = RiddleLevelUpdater(level_name, set_name, paths)
         await lu.process_level()
 
         # Process level's image when suitable

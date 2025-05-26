@@ -1,10 +1,7 @@
-from collections import defaultdict
 import os
 from pathlib import Path
 import shutil
-from typing import Any
 
-from pymysql.err import IntegrityError
 import requests
 
 from credentials import get_path_credentials
@@ -16,95 +13,119 @@ class LevelUpdater:
 
     alias: str
     riddle: dict
-    all_levels_by_set: defaultdict[int, dict[int, dict]]
+    all_levels_by_set: dict[int, dict[int, dict]]
+    current_set: dict | None
 
     @classmethod
     async def create(cls, alias: str) -> type:
+        '''Factory method for creating a riddle-aware updater.'''
 
-        class _LevelUpdater(cls):
-            pass
+        class RiddleLevelUpdater(cls):
+            '''Runtime riddle-wise level update handler.'''
 
-        _LevelUpdater.alias = alias
-        _LevelUpdater.riddle = await get_riddle(alias)
-        _LevelUpdater.all_levels_by_set = {}
-        for level in (await get_levels(alias)).values():
+        all_levels = await get_levels(alias)
+        all_levels_by_set = {}
+        for level in all_levels.values():
             set_index = level['set_index']
-            if not (level_set := _LevelUpdater.all_levels_by_set.get(set_index)):
-                level_set = _LevelUpdater.all_levels_by_set[set_index] = {
+            if not (level_set := all_levels_by_set.get(set_index)):
+                level_set = all_levels_by_set[set_index] = {
                     'index': set_index,
                     'name': level['level_set'],
                     'levels': {},
                 }
             level_set['levels'] |= {level['index']: level}
 
-        return _LevelUpdater
+        attrs = {
+            'alias': alias,
+            'riddle': await get_riddle(alias),
+            'all_levels_by_set': all_levels_by_set,
+            'current_set': None,
+        }
+        for name, value in attrs.items():
+            setattr(RiddleLevelUpdater, name, value)
+
+        return RiddleLevelUpdater
 
     @classmethod
     def log(cls, msg: str, end: str = '\n'):
         '''Log message.'''
         print(f"> \033[1m[{cls.alias}]\033[0m {msg}", end=end, flush=True)
 
-    def __init__(self,
-        level_name: str | None, set_name: str | None, paths: list[str]
+    def __init__(
+        self, level_name: str | None, set_name: str | None, paths: list[str],
     ):
-        def _find(data: dict[Any, dict], name: str) -> dict | None:
-            for entry in data.values():
-                if entry['name'] == name:
-                    return entry
-            return None
+        if (cls := self.__class__) == LevelUpdater:
+            # Do not allow base class initialization
+            raise NotImplementedError
 
-        self.set_name = set_name
-        self.level_set = _find(self.all_levels_by_set, set_name)
         self.level_name = level_name
-        self.level = (
-            _find(self.level_set['levels'], level_name)
-            if self.level_set else None
-        )
+        self.set_name = set_name
+        if not level_name:
+            # Levelless update
+            self.level = self.level_set = None
+            return
+
+        self._find_level_and_set()
+        if self.level_set:
+            self.set_name = self.level_set['name']
+
+        if not self.level and not cls.current_set and not set_name:
+            # Missing set name for _new AND topmost_ level entry
+            raise TypeError(
+                f"[{cls.alias}] missing set for new level '{level_name}'"
+            )
+        if self.level and set_name and self.level['level_set'] != set_name:
+            # Wrong (and superfluously supplied) set name for an existing level
+            raise ValueError(
+                f"[{cls.alias}] "
+                f"mismatching sets for existing level '{level_name}': "
+                f"'{self.level['level_set']}' (current) and '{set_name}' (given)"
+            )
+
         self.paths = paths
+
+    def _find_level_and_set(self):
+        '''Search for (possibly existing) level and/or level set.'''
+        self.level = None
+        self.level_set = self.__class__.current_set
+        for level_set in self.all_levels_by_set.values():
+            for level in level_set['levels'].values():
+                if level['name'] == self.level_name:
+                    self.level = level
+                    self.level_set = level_set
+                    return
+            if level_set['name'] == self.set_name:
+                self.level_set = level_set
 
     async def process_level(self):
         '''Process level data.'''
 
         if not self.level:
-            # New level (and possibly new level set)
             if not self.level_set:
-                await self._add_new_level_set()
                 self.log(
-                    'Created new level set '
-                    f"\033[1m{self.level_set['name']}\033[0m."
+                    f"Creating new level set \033[1m{self.set_name}\033[0m…"
                 )
-            await self._add_new_level()
+                await self._add_new_level_set()
             self.log(
-                f"Added level \033[1m{self.level['name']}\033[0m "
-                'to the database.'
+                f"Adding level \033[1m{self.level_name}\033[0m to the database…"
             )
+            await self._add_new_level()
         else:
             self.log(
-                f"Level \033[1m{self.level['name']}\033[0m "
-                'already in the database…'
+                f"Level \033[1m{self.level_name}\033[0m found in the database."
             )
 
-        set_index, index = self.level_set['index'], self.level['index']
-        self.all_levels_by_set[set_index][index] = self.level
-        if previous_level := self.all_levels_by_set[set_index].get(index - 1):
-            if self.paths:
-                # If absent, automatically set previous level's answer
-                # as the current one's front path
-                query = '''
-                    UPDATE levels
-                    SET answer = :answer
-                    WHERE riddle = :riddle AND name = :name AND answer is NULL
-                '''
-                values = {
-                    'riddle': self.alias,
-                    'name': previous_level['name'],
-                    'answer': self.paths[0],
-                }
-                await database.execute(query, values)
+        if previous_level := self._get_previous_level():
+            await self._add_requirement(previous_level)
+            if not previous_level['answer'] and self.paths:
+                await self._update_previous_answer(previous_level)
 
-            await self._add_requirement(previous_level['name'])
+        # Update riddle-wise set tracker
+        self.__class__.current_set = self.level_set
 
     async def _add_new_level_set(self):
+        '''Add new entry to level set entry.'''
+        set_index = max(idx for idx in self.all_levels_by_set if idx < 99) + 1
         query = '''
             INSERT INTO level_sets
                 (riddle, `index`, name)
@@ -112,13 +133,16 @@ class LevelUpdater:
         '''
         values = {
             'riddle': self.alias,
-            'index': max(idx for idx in self.all_levels_by_set if idx < 99),
+            'index': set_index,
             'name': self.set_name,
         }
-        await database.execute(query, values)
+        await database.execute(query, values)        
         self.level_set = values | {'levels': {}}
+        self.__class__.all_levels_by_set[set_index] = self.level_set
 
     async def _add_new_level(self):
+        '''Add new level entry.'''
+        index = max(self.level_set['levels'].keys(), default=0) + 1
         query = '''
             INSERT INTO levels (
                 riddle, level_set, set_index, `index`, name,
@@ -132,28 +156,64 @@ class LevelUpdater:
             'riddle': self.alias,
             'set_index': self.level_set['index'],
             'level_set': self.set_name,
-            'index': len(self.level_set['levels']) + 1,
+            'index': index,
             'name': self.level_name,
             'path': self.paths[0] if self.paths else None,
             'discord_category': self.set_name,
             'discord_name': self.level_name.lower().replace(' ', '-'),
         }
         await database.execute(query, values)
-        self.level = values
+        self.level_set['levels'][index] = self.level = values
 
-    async def _add_requirement(self, requires: str):
-        '''Add requirement DB entry for level.'''
+    async def _add_requirement(self, required_level: dict):
+        '''Add single requirement entry for level.'''
+
         query = '''
-            INSERT IGNORE INTO level_requirements
+            SELECT 1 FROM level_requirements
+            WHERE riddle = :riddle AND level_name = :level_name
+        '''
+        values = {'riddle': self.alias, 'level_name': self.level['name']}
+        if await database.fetch_val(query, values):
+            # Do not add further requirements if one is already present
+            return
+
+        query = '''
+            INSERT INTO level_requirements
                 (riddle, level_name, requires)
             VALUES (:riddle, :level_name, :requires)
         '''
+        values |= {'requires': required_level['name']}
+        await database.execute(query, values)
+
+    def _get_previous_level(self) -> dict | None:
+        '''Get level before the current one in the set_index/index ordering,'''
+
+        previous_index = self.level['index'] - 1
+        if previous_in_set := self.level_set.get(previous_index):
+            return previous_in_set
+
+        previous_set_index = self.level['set_index'] - 1
+        if previous_set := self.all_levels_by_set.get(previous_set_index):
+            levels = previous_set['levels']
+            last_in_previous_set = levels[max(levels.keys())]
+            return last_in_previous_set
+
+        return None
+
+    async def _update_previous_answer(self, previous_level: dict):
+        '''Set previous level's answer as the current one's front path.'''
+        query = '''
+            UPDATE levels
+            SET answer = :answer
+            WHERE riddle = :riddle AND name = :name
+        '''
         values = {
             'riddle': self.alias,
-            'level_name': self.level['name'],
-            'requires': requires,
+            'name': previous_level['name'],
+            'answer': self.paths[0],
         }
         await database.execute(query, values)
+        previous_level['answer'] = self.paths[0]
 
     async def process_image(self, image_path: str) -> str | None:
         '''Fetch image content from riddle website and update related info.'''
@@ -164,39 +224,38 @@ class LevelUpdater:
         if username := credentials['username']:
             password = credentials['password']
             image_url = image_url.replace('://', f"://{username}:{password}@")
-        print(
-            f"> \033[1m[{self.alias}]\033[0m "
-            f"Fetching level image from \033[3;4m{image_url}\033[0m… ",
-            end=''
+        self.log(
+            f"Fetching level image from \033[3;4m{image_url}\033[0m… ", end=''
         )
         res = requests.get(image_url, stream=True, timeout=10)
-        print(f"\033[1m{'OK' if res.ok else res.status_code}\033[0m")
+        print(f"\033[1m{'OK' if res.ok else res.status_code}\033[0m", flush=True)
 
-        if res.ok:
-            # Image found and retrieved, so save it
-            image_filename = os.path.basename(image_path)
-            image_dir = f"../static/thumbs/{self.alias}"
-            save_path = f"{image_dir}/{image_filename}"
-            Path(image_dir).mkdir(parents=True, exist_ok=True)
-            with open(save_path, 'wb') as image:
-                shutil.copyfileobj(res.raw, image)
+        if not res.ok:
+            # Couldn't retrieve image from external host
+            return None
 
-            # Add or update image's filename
-            query = '''
-                UPDATE levels
-                SET image = :image
-                WHERE riddle = :riddle AND name = :name
-            '''
-            values = {
-                'riddle': self.alias,
-                'name': self.level['name'],
-                'image': image_filename,
-            }
-            await database.execute(query, values)
+        # Image found and retrieved, so save it
+        image_filename = os.path.basename(image_path)
+        image_dir = f"../static/thumbs/{self.alias}"
+        save_path = f"{image_dir}/{image_filename}"
+        Path(image_dir).mkdir(parents=True, exist_ok=True)
+        with open(save_path, 'wb') as image:
+            shutil.copyfileobj(res.raw, image)
 
-            return image_filename
+        # Add or update image's filename
+        query = '''
+            UPDATE levels
+            SET image = :image
+            WHERE riddle = :riddle AND name = :name
+        '''
+        values = {
+            'riddle': self.alias,
+            'name': self.level['name'],
+            'image': image_filename,
+        }
+        await database.execute(query, values)
 
-        return None
+        return image_filename
 
     async def process_page(self, path: str):
         '''Insert/update page in DB, possibly attached to a level.'''
@@ -216,22 +275,22 @@ class LevelUpdater:
             self.log(
                 f"Added page \033[3m{path}\033[0m "
                 f"({self.level['name']}) " if self.level else ''
-                'to the database!'
+                'to the database'
             )
-        else:
-            # Page already present, update level if suitable
-            if self.level:
-                query = '''
-                    UPDATE level_pages
-                    SET level_name = :level_name
-                    WHERE riddle = :riddle AND path = :path
-                '''
-                if await database.execute(query, values):
-                    self.log(
-                        f"Updated level "
-                        f"for page \033[3m{path}\033[0m ({self.level['name']})…"
-                    )
-                    return
-            self.log(\
-                f"Skipping page \033[3m{path}\033[0m ({self.level['name']})…"
-            )
+            return
+
+        # Page already present, update level if suitable
+        if self.level:
+            query = '''
+                UPDATE level_pages
+                SET level_name = :level_name
+                WHERE riddle = :riddle AND path = :path
+            '''
+            if await database.execute(query, values):
+                self.log(
+                    f"Updated level "
+                    f"for page \033[3m{path}\033[0m ({self.level['name']})"
+                )
+                return
+
+        self.log(f"Skipping page \033[3m{path}\033[0m ({self.level['name']})")

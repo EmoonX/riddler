@@ -53,14 +53,14 @@ from process import process
 from util.db import database
 
 for blueprint in (
-    admin_cheevos, admin_health, admin_levels,
+    admin_cheevos, admin_health, admin_levels, admin_upload_pages,
     admin_page_changes, admin_recent, admin_update,
     account, auth, countries, export, get, home, info, levels,
     players, process, profile,
 ):
     # Context processor for blueprint
     blueprint.context_processor(context_processor)
-    
+
     # Register app blueprint to allow other modules
     app.register_blueprint(blueprint)
 
