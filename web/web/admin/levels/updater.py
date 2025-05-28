@@ -20,9 +20,7 @@ class LevelUpdater:
     async def create(cls, alias: str) -> type:
         '''Factory method for creating a riddle-aware updater.'''
 
-        class RiddleLevelUpdater(cls):
-            '''Runtime riddle-wise level update handler.'''
-
+        # Build multi-level dict of indexed sets and levels
         all_levels = await get_levels(alias)
         all_levels_by_set = {}
         for level in all_levels.values():
@@ -35,21 +33,21 @@ class LevelUpdater:
                 }
             level_set['levels'] |= {level['index']: level}
 
-        attrs = {
-            'alias': alias,
-            'riddle': await get_riddle(alias),
-            'all_levels_by_set': all_levels_by_set,
-            'current_set': None,
-        }
-        for name, value in attrs.items():
-            setattr(RiddleLevelUpdater, name, value)
+        class RiddleLevelUpdater(
+            cls,
+            alias=alias,
+            riddle=(await get_riddle(alias)),
+            all_levels_by_set=all_levels_by_set,
+            current_set=None,
+        ):
+            '''Riddle-wise level update handler.'''
 
         return RiddleLevelUpdater
 
-    @classmethod
-    def log(cls, msg: str, end: str = '\n'):
-        '''Log message.'''
-        print(f"> \033[1m[{cls.alias}]\033[0m {msg}", end=end, flush=True)
+    def __init_subclass__(cls, **attrs):
+        '''Set keyword arguments as subclass attributes.'''
+        for name, value in attrs.items():
+            setattr(cls, name, value)
 
     def __init__(
         self, level_name: str | None, set_name: str | None, paths: list[str],
@@ -294,3 +292,8 @@ class LevelUpdater:
                 return
 
         self.log(f"Skipping page \033[3m{path}\033[0m ({self.level['name']})")
+
+    @classmethod
+    def log(cls, msg: str, end: str = '\n'):
+        '''Log message.'''
+        print(f"> \033[1m[{cls.alias}]\033[0m {msg}", end=end, flush=True)
