@@ -97,12 +97,13 @@ async def health_diagnostics(alias: str):
 
             page_extension = path.partition('.')[-1].lower()
             if page_extension in ['htm', 'html', 'php', '']:
-                # Check for redirects in HTML pages
-                await _check_and_record_redirect(path, res.text)
+                # Check for redirects inside HTML pages
+                page_data['redirects_to'] = \
+                    await _check_and_record_redirect(path, res.text)
 
         return page_data
 
-    async def _check_and_record_redirect(path: str, html: str):
+    async def _check_and_record_redirect(path: str, html: str) -> str | None:
         '''
         Search for and record redirect path when page contains the meta
         refresh tag (i.e `<meta http-equiv="refresh" "content=...; URL=...">).
@@ -114,7 +115,7 @@ async def health_diagnostics(alias: str):
             'meta', {'http-equiv': re.compile('refresh', re.I)}
         )
         if not meta_refresh_tag:
-            return
+            return None
 
         # Build absolute URL from tag's content and extract
         # processed path from it (either an actual path or external link)
@@ -138,6 +139,8 @@ async def health_diagnostics(alias: str):
                 f"Added redirect \033[3m{path} ➜ \033[1m{redirect_path}\033[0m",
                 flush=True
             )
+
+        return redirect_path
 
     # Start iterating at user-informed level (if any)
     levels = {}
