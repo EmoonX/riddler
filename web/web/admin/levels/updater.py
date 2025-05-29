@@ -254,8 +254,9 @@ class LevelUpdater:
         return image_filename
 
     async def process_page(self, path: str):
-        '''Insert/update page in DB, possibly attached to a level.'''
+        '''Insert/update page in(to) DB, possibly attached to a level.'''
 
+        # Insert page entry if indeed new
         query = '''
             INSERT IGNORE INTO level_pages
                 (`riddle`, `path`, `level_name`)
@@ -264,32 +265,36 @@ class LevelUpdater:
         values = {
             'riddle': self.alias,
             'path': path,
-            'level_name': self.level['name'],
+            'level_name': self.level['name'] if self.level else None,
         }
         if await database.execute(query, values):
-            # Page added as part of the level
             self.log(
-                f"Added page \033[3m{path}\033[0m "
-                f"({self.level['name']}) " if self.level else ''
-                'to the database'
+                f"Added new page \033[3m{path}\033[0m "
+                + (f"({self.level['name']}) " if self.level else '')
+                + 'to the database'
             )
             return
 
-        # Page already present, update level if suitable
-        if self.level:
-            query = '''
-                UPDATE level_pages
-                SET level_name = :level_name
-                WHERE riddle = :riddle AND path = :path
-            '''
-            if await database.execute(query, values):
+        # Page entry already present, update level if suitable
+        query = '''
+            UPDATE level_pages
+            SET level_name = :level_name
+            WHERE riddle = :riddle AND path = :path
+        '''
+        if await database.execute(query, values):
+            if self.level:
                 self.log(
                     f"Updated level "
                     f"for page \033[3m{path}\033[0m ({self.level['name']})"
                 )
-                return
+            else:
+                self.log(f"Delisted page \033[3m{path}\033[0m")
+            return
 
-        self.log(f"Skipping page \033[3m{path}\033[0m ({self.level['name']})")
+        self.log(
+            f"Skipping page \033[3m{path}\033[0m"
+            + (f" ({self.level['name']})" if self.level else '')
+        )
 
     @classmethod
     def log(cls, msg: str, end: str = '\n'):

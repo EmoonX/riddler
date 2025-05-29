@@ -41,13 +41,12 @@ async def upload_pages(alias: str):
         level_name = next(tokens, None)
         set_name = next(tokens, None)
 
-        # Init updater object and process level
+        # Init updater object and process level (save for levelless blocks)
         lu = RiddleLevelUpdater(level_name, set_name, paths)
-        await lu.process_level()
-
-        # Process level's image when suitable
-        if paths[1:] and _is_image(path := paths[1]):
-            await lu.process_image(path)
+        if level_name:
+            await lu.process_level()
+            if paths[1:] and _is_image(image_path := paths[1]):
+                await lu.process_image(image_path)
 
         # Process individual pages
         for path in paths:
