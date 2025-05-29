@@ -46,13 +46,16 @@
           {% if page_data['hidden'] %}
             <span class="smaller">(hidden)</span>
           {% endif %}
-          {% if page_data['redirects_to'] %}
-            {% set url = page_data['redirects_to'] %}
+          {% set redirect_path = page_data.get('redirects_to') %}
+          {% if redirect_path %}
+            {% set url = redirect_path %}
             {% if '://' not in url %}
               {% set url = riddle['root_path'] + url %}
             {% endif %}
+            {% set redirect_level = all_pages_by_path.get(redirect_path, {}).get('level_name') %}
             <span class="smaller">
-              ➜ <a title="(redirects to)" href="{{ url }}">{{ page_data['redirects_to'] }}</a>
+              ➜ <a title="(redirects to)" href="{{ url }}">{{ redirect_path }}</a>
+              {% if redirect_level and redirect_level != page_data['level_name'] %}({{ redirect_level }}){% endif %}
             </span>
           {% elif page_data['alias_for'] %}
             {% set url = riddle['root_path'] + page_data['alias_for'] %}

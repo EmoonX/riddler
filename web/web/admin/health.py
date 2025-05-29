@@ -38,18 +38,19 @@ async def health_diagnostics(alias: str):
 
     await admin_auth(alias)
 
+    args = request.args
     riddle = await get_riddle(alias)
     all_pages_by_level = await get_pages(
         alias,
         include_unlisted=True,
-        include_removed=request.args.get('includeRemoved'),
+        include_removed=args.get('includeRemoved'),
         index_by_levels=True,
         as_json=False,
         admin=True,
     )
-    redo_existing = bool(request.args.get('redoExisting'))
-    start_level = request.args.get('start', next(iter(all_pages_by_level.keys())))
-    end_level = request.args.get('end')
+    redo_existing = bool(args.get('redoExisting'))
+    start_level = args.get('start', next(iter(all_pages_by_level.keys())))
+    end_level = args.get('end')
 
     async def _retrieve_page(path: str, page_data: dict) -> dict | None:
         '''
@@ -144,6 +145,7 @@ async def health_diagnostics(alias: str):
 
     # Start iterating at user-informed level (if any)
     levels = {}
+    all_pages_by_path = {}
     for name in dropwhile(lambda k: k != start_level, all_pages_by_level):
         level = levels[name] = all_pages_by_level[name] | {'pages': {}}
         if name != 'Unlisted':
@@ -172,7 +174,9 @@ async def health_diagnostics(alias: str):
                 level['pages'][image_path] = \
                     image_page | {'flag': 'front_image'}
                 del pages[image_path]
+
         level['pages'] |= pages
+        all_pages_by_path |= level['pages']
 
         # Stop when reaching user-informed level (if any)
         if name == end_level:
@@ -180,5 +184,5 @@ async def health_diagnostics(alias: str):
 
     return await render_template(
         'admin/health.htm',
-        riddle=riddle, levels=levels,
+        riddle=riddle, levels=levels, all_pages_by_path=all_pages_by_path,
     )
