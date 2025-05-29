@@ -34,24 +34,21 @@ warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 @admin_health.get('/admin/<alias>/health-diagnostics')
 @requires_authorization
 async def health_diagnostics(alias: str):
-    '''Run page-health diagnostics for a given riddle.'''
+    '''Run level/page health diagnostics for a given riddle.'''
 
     await admin_auth(alias)
 
     riddle = await get_riddle(alias)
-    all_levels = await get_pages(
+    all_pages_by_level = await get_pages(
         alias,
-        include_unlisted=request.args.get('includeUnlisted'),
+        include_unlisted=True,
         include_removed=request.args.get('includeRemoved'),
         index_by_levels=True,
         as_json=False,
         admin=True,
     )
-    archive_requested = bool(request.args.get('archive'))
-    skip_existing = bool(request.args.get('skipExisting'))
-    show_skipped = bool(request.args.get('showSkipped'))
-    skip_hidden = bool(request.args.get('skipHidden'))
-    start_level = request.args.get('start', list(all_levels.keys())[0])
+    redo_existing = bool(request.args.get('redoExisting'))
+    start_level = request.args.get('start', next(iter(all_pages_by_level.keys())))
     end_level = request.args.get('end')
 
     async def _retrieve_page(path: str, page_data: dict) -> dict | None:
@@ -69,7 +66,7 @@ async def health_diagnostics(alias: str):
             url = url.replace('://', f"://{username}:{password}@")
         page_data |= {'url': url}
 
-        if skip_existing:
+        if not redo_existing:
             query = '''
                 SELECT 1 FROM _page_hashes
                 WHERE riddle = :riddle AND path = :path
@@ -77,9 +74,7 @@ async def health_diagnostics(alias: str):
             values = {'riddle': alias, 'path': path}
             if await database.fetch_val(query, values):
                 # Path has already been recorded, so skip it as instructed
-                if show_skipped:
-                    return page_data
-                return None
+                return page_data
 
         headers = {
             # Impersonate real browser so certain hosts don't throw 412
@@ -88,18 +83,17 @@ async def health_diagnostics(alias: str):
                 'Gecko/20100101 Firefox/128.0'
             )
         }
-        res = requests.get(url, headers=headers)
+        res = requests.get(url, headers=headers, timeout=10)
         page_data |= {
             'status_code': res.status_code,
             'status_symbol': status_symbols.get(res.status_code),
         }
         if res.ok:
-            if archive_requested:
-                # Valid page, so archive it if new/changed
-                archive_page = ArchivePage(alias, path, res.content)
-                if await archive_page.record_hash():
-                    archive_page.save()
-                    page_data['content_hash'] = archive_page.content_hash
+            # Valid page, so archive it if new/changed
+            archive_page = ArchivePage(alias, path, res.content)
+            if await archive_page.record_hash():
+                archive_page.save()
+                page_data['content_hash'] = archive_page.content_hash
 
             page_extension = path.partition('.')[-1].lower()
             if page_extension in ['htm', 'html', 'php', '']:
@@ -147,18 +141,16 @@ async def health_diagnostics(alias: str):
 
     # Start iterating at user-informed level (if any)
     levels = {}
-    for level_name in dropwhile(lambda k: k != start_level, all_levels):
-        level = levels[level_name] = all_levels[level_name] | {'pages': {}}
-        if level_name != 'Unlisted':
+    for name in dropwhile(lambda k: k != start_level, all_pages_by_level):
+        level = levels[name] = all_pages_by_level[name] | {'pages': {}}
+        if name != 'Unlisted':
             print(
-                f"> \033[1m[{alias}]\033[0m "
-                f"Fetching page data for {level_name}…",
+                f"> \033[1m[{alias}]\033[0m Fetching page data for {name}…",
                 flush=True
             )
         else:
             print(
-                f"> \033[1m[{alias}]\033[0m "
-                f"Fetching unlisted page data…",
+                f"> \033[1m[{alias}]\033[0m Fetching unlisted page data…",
                 flush=True
             )
         pages = {}
@@ -166,7 +158,7 @@ async def health_diagnostics(alias: str):
             if page_data := await _retrieve_page(path, page_data):
                 pages[path] = page_data
 
-        if level_name != 'Unlisted':
+        if name != 'Unlisted':
             # Show front page/image paths at the top
             if front_page := pages.get(level['frontPage']):
                 level['pages'][level['frontPage']] = \
@@ -180,7 +172,7 @@ async def health_diagnostics(alias: str):
         level['pages'] |= pages
 
         # Stop when reaching user-informed level (if any)
-        if level_name == end_level:
+        if name == end_level:
             break
 
     return await render_template(
