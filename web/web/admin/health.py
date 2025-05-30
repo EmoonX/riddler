@@ -147,7 +147,6 @@ async def health_diagnostics(alias: str):
     levels = {}
     all_pages_by_path = {}
     for name in dropwhile(lambda k: k != start_level, all_pages_by_level):
-        level = levels[name] = all_pages_by_level[name] | {'pages': {}}
         if name != 'Unlisted':
             print(
                 f"> \033[1m[{alias}]\033[0m Fetching page data for {name}…",
@@ -158,25 +157,27 @@ async def health_diagnostics(alias: str):
                 f"> \033[1m[{alias}]\033[0m Fetching unlisted page data…",
                 flush=True
             )
+
         pages = {}
+        level = levels[name] = all_pages_by_level[name] | {'pages': {}}
         for path, page_data in absolute_paths(level['/']):
             if page_data := await _retrieve_page(path, page_data):
-                pages[path] = page_data
+                pages[path] = all_pages_by_path[path] = page_data
 
-        if name != 'Unlisted':
-            # Show front page/image paths at the top
-            if front_page := pages.get(level['frontPage']):
-                level['pages'][level['frontPage']] = \
-                    front_page | {'flag': 'front_page'}
-                del pages[level['frontPage']]
-            image_path = urljoin(level['frontPage'], level['image'])
-            if image_page := pages.get(image_path):
-                level['pages'][image_path] = \
-                    image_page | {'flag': 'front_image'}
-                del pages[image_path]
+        # Show front page/image paths at the top
+        if front_page := pages.get(level.get('frontPage')):
+            level['pages'] |= {
+                level['frontPage']: front_page | {'flag': 'front_page'}
+            }
+            del pages[level['frontPage']]
+        image_path = urljoin(level.get('frontPage'), level.get('image'))
+        if image_page := pages.get(image_path):
+            level['pages'] |= {
+                image_path: image_page | {'flag': 'front_image'}
+            }
+            del pages[image_path]
 
         level['pages'] |= pages
-        all_pages_by_path |= level['pages']
 
         # Stop when reaching user-informed level (if any)
         if name == end_level:

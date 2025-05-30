@@ -43,9 +43,6 @@
         {% endif %}
         <li{% if page_data['flag'] %} class="{{ icon_class }}" title="{{ icon_title }}"{% endif %}>
           <a {% if page_data['hidden'] %}class="translucent" title="(hidden page)"{% endif %} href="{{ page_data['url'] }}" target="_blank" rel="noreferrer">{{ path }}</a>
-          {% if page_data['hidden'] %}
-            <span class="smaller">(hidden)</span>
-          {% endif %}
           {% set redirect_path = page_data.get('redirects_to') %}
           {% if redirect_path %}
             {% set url = redirect_path %}
@@ -66,6 +63,11 @@
           … {{ status|safe }}
         </li>
       {% endfor %}
+      {% if level['answer'] %}
+        <li class="smaller">
+          answer: <a href="{{ riddle['root_path'] + level['answer'] }}">{{ level['answer'] }}</a>
+        </li>
+      {% endif %}
       </ul>
     {% endfor %}
     </main>
