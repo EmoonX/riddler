@@ -49,13 +49,15 @@ async def health_diagnostics(alias: str):
         admin=True,
     )
     redo_existing = bool(args.get('redoExisting'))
-    start_level = args.get('start', next(iter(all_pages_by_level.keys())))
+    start_level = args.get('start')
     end_level = args.get('end')
 
-    async def _retrieve_page(path: str, page_data: dict) -> dict | None:
+    async def _retrieve_page(
+        path: str, page_data: dict, include_level: bool,
+    ) -> dict | None:
         '''
-        Retrieve page directly from riddle's host through web request
-        (unless `skipExisting` is passed), optionally archiving its content.
+        Retrieve page directly from riddle's host through web request,
+        unless `include_level` or `redo_existing` conditions are(n't) met.
         '''
 
         # Build URL (with possibly embedded credentials)
@@ -67,6 +69,8 @@ async def health_diagnostics(alias: str):
             url = url.replace('://', f"://{username}:{password}@")
         page_data |= {'url': url}
 
+        if not include_level:
+            return page_data
         if not redo_existing:
             query = '''
                 SELECT 1 FROM _page_hashes
@@ -146,25 +150,28 @@ async def health_diagnostics(alias: str):
     # Start iterating at user-informed level (if any)
     levels = {}
     all_pages_by_path = {}
-    for name in dropwhile(lambda k: k != start_level, all_pages_by_level):
-        if name != 'Unlisted':
-            print(
-                f"> \033[1m[{alias}]\033[0m Fetching page data for {name}…",
-                flush=True
-            )
-        else:
-            print(
-                f"> \033[1m[{alias}]\033[0m Fetching unlisted page data…",
-                flush=True
-            )
+    include_level = not bool(start_level)
+    for name, level in all_pages_by_level.items():
+        include_level |= name == start_level
+        if include_level:
+            if name != 'Unlisted':
+                print(
+                    f"> \033[1m[{alias}]\033[0m Fetching page data for {name}…",
+                    flush=True
+                )
+            else:
+                print(
+                    f"> \033[1m[{alias}]\033[0m Fetching unlisted page data…",
+                    flush=True
+                )
 
         pages = {}
-        level = levels[name] = all_pages_by_level[name] | {'pages': {}}
         for path, page_data in absolute_paths(level['/']):
-            if page_data := await _retrieve_page(path, page_data):
+            if page_data := await _retrieve_page(path, page_data, include_level):
                 pages[path] = all_pages_by_path[path] = page_data
 
         # Show front page/image paths at the top
+        level |= {'pages': {}}
         if front_page := pages.get(level.get('frontPage')):
             level['pages'] |= {
                 level['frontPage']: front_page | {'flag': 'front-page'}
@@ -185,9 +192,11 @@ async def health_diagnostics(alias: str):
                 level['answer']: answer_page | {'flag': 'answer'}
             }
 
-        # Stop when reaching user-informed level (if any)
-        if name == end_level:
-            break
+        if include_level:
+            # Include levels only within the [start, end] range (when given)
+            levels[name] = level
+
+        include_level &= not name == end_level
 
     return await render_template(
         'admin/health.htm',

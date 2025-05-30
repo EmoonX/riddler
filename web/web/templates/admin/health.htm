@@ -23,6 +23,19 @@
         {% endif %}
       </h2>
       <ul>
+      {% macro referenced_path(path, title) %}
+        {% set page = all_pages_by_path.get(path) %}
+        <a
+          href="{{ (riddle['root_path'] ~ path) if path.startswith('/') else path }}"
+          {%- if title %} title="{{ title }}" {% endif -%}
+          {%- if path.startswith('/') and (not page or page['removed']) %} style="text-decoration: line-through;" {% endif -%}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {{- path -}}
+        </a>
+        {%- if page and page['level_name'] != level_name %} ({{ page['level_name'] }}){% endif %}
+      {% endmacro %}
       {% for path, page_data in level['pages'].items() %}
         {% set status_code = page_data['status_code'] %}
         {% if status_code == 200 %}
@@ -39,7 +52,7 @@
         {% endif %}
         {% if page_data.get('flag', '').startswith('front-') %}
           {% set icon_class = page_data['flag'] %}
-          {% set icon_title = page_data['flag'].capitalize().replace('_', ' ') %}
+          {% set icon_title = page_data['flag'].capitalize().replace('-', ' ') %}
         {% endif %}
         <li{% if icon_class and icon_title %} class="{{ icon_class }}" title="{{ icon_title }}"{% endif %}>
         {% if page_data.get('flag') == 'answer' %}
@@ -48,30 +61,17 @@
           <a{% if page_data['hidden'] %} class="translucent" title="(hidden page)"{% endif %} href="{{ page_data['url'] }}" target="_blank" rel="noreferrer">{{ path }}</a>
           {% set redirect_path = page_data['redirects_to'] %}
           {% if redirect_path %}
-            {% set url = redirect_path %}
-            {% if '://' not in url %}
-              {% set url = riddle['root_path'] + url %}
-            {% endif %}
-            {% set redirect_level = all_pages_by_path.get(redirect_path)['level_name'] %}
-            <span class="smaller">
-              ➜ <a title="(redirects to)" href="{{ url }}">{{ redirect_path }}</a>
-              {% if redirect_level and redirect_level != page_data['level_name'] %}({{ redirect_level }}){% endif %}
-            </span>
+            <span class="smaller">➜ {{ referenced_path(redirect_path, '(redirects to)') }}</span>
           {% elif page_data['alias_for'] %}
-            {% set url = riddle['root_path'] + page_data['alias_for'] %}
-            <span class="smaller">
-              (alias for <a href="{{ url }}">{{ page_data['alias_for'] }}</a>)
-            </span>
+            <span class="smaller">(alias for {{ referenced_path(page_data['alias_for']) }})</span>
           {% endif %}
           … {{ status|safe }}
         </li>
-      {% endfor %}
+      {% endfor %}  
       {% set answer_page = all_pages_by_path.get(level['answer']) %}
-      {% if answer_page and answer_page['level_name'] != level_name %}
+      {% if level['answer'] and answer_page['level_name'] != level_name %}
         <li class="smaller">
-          answer:
-          <a href="{{ answer_page['url'] }}" target="_blank" rel="noreferrer">{{ level['answer'] }}</a>
-          ({{ answer_page['level_name'] }})
+          answer: {{ referenced_path(level['answer']) }}
         </li>
       {% endif %}
       </ul>
