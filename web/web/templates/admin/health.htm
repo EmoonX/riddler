@@ -37,19 +37,22 @@
         {% else %}
           {% set status = '<em style="color: #bbb">skipped</em>' %}
         {% endif %}
-        {% if page_data['flag'] %}
-          {% set icon_class = page_data['flag'].replace('_', '-') %}
+        {% if page_data.get('flag', '').startswith('front-') %}
+          {% set icon_class = page_data['flag'] %}
           {% set icon_title = page_data['flag'].capitalize().replace('_', ' ') %}
         {% endif %}
-        <li{% if page_data['flag'] %} class="{{ icon_class }}" title="{{ icon_title }}"{% endif %}>
-          <a {% if page_data['hidden'] %}class="translucent" title="(hidden page)"{% endif %} href="{{ page_data['url'] }}" target="_blank" rel="noreferrer">{{ path }}</a>
-          {% set redirect_path = page_data.get('redirects_to') %}
+        <li{% if icon_class and icon_title %} class="{{ icon_class }}" title="{{ icon_title }}"{% endif %}>
+        {% if page_data.get('flag') == 'answer' %}
+          <span class="smaller">answer:</span>
+        {% endif %}
+          <a{% if page_data['hidden'] %} class="translucent" title="(hidden page)"{% endif %} href="{{ page_data['url'] }}" target="_blank" rel="noreferrer">{{ path }}</a>
+          {% set redirect_path = page_data['redirects_to'] %}
           {% if redirect_path %}
             {% set url = redirect_path %}
             {% if '://' not in url %}
               {% set url = riddle['root_path'] + url %}
             {% endif %}
-            {% set redirect_level = all_pages_by_path.get(redirect_path, {}).get('level_name') %}
+            {% set redirect_level = all_pages_by_path.get(redirect_path)['level_name'] %}
             <span class="smaller">
               ➜ <a title="(redirects to)" href="{{ url }}">{{ redirect_path }}</a>
               {% if redirect_level and redirect_level != page_data['level_name'] %}({{ redirect_level }}){% endif %}
@@ -63,9 +66,12 @@
           … {{ status|safe }}
         </li>
       {% endfor %}
-      {% if level['answer'] %}
+      {% set answer_page = all_pages_by_path.get(level['answer']) %}
+      {% if answer_page and answer_page['level_name'] != level_name %}
         <li class="smaller">
-          answer: <a href="{{ riddle['root_path'] + level['answer'] }}">{{ level['answer'] }}</a>
+          answer:
+          <a href="{{ answer_page['url'] }}" target="_blank" rel="noreferrer">{{ level['answer'] }}</a>
+          ({{ answer_page['level_name'] }})
         </li>
       {% endif %}
       </ul>

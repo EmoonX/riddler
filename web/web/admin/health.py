@@ -167,17 +167,23 @@ async def health_diagnostics(alias: str):
         # Show front page/image paths at the top
         if front_page := pages.get(level.get('frontPage')):
             level['pages'] |= {
-                level['frontPage']: front_page | {'flag': 'front_page'}
+                level['frontPage']: front_page | {'flag': 'front-page'}
             }
             del pages[level['frontPage']]
         image_path = urljoin(level.get('frontPage'), level.get('image'))
         if image_page := pages.get(image_path):
             level['pages'] |= {
-                image_path: image_page | {'flag': 'front_image'}
+                image_path: image_page | {'flag': 'front-image'}
             }
             del pages[image_path]
 
+        # Show remaining paths, with answer path at the bottom
+        answer_page = pages.pop(level.get('answer'), None)
         level['pages'] |= pages
+        if answer_page:
+            level['pages'] |= {
+                level['answer']: answer_page | {'flag': 'answer'}
+            }
 
         # Stop when reaching user-informed level (if any)
         if name == end_level:
