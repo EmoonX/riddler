@@ -31,6 +31,7 @@ status_symbols = {
 warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 
+@admin_health.get('/admin/<alias>/health')
 @admin_health.get('/admin/<alias>/health-diagnostics')
 @requires_authorization
 async def health_diagnostics(alias: str):
