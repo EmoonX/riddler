@@ -100,7 +100,10 @@ async def process_url(
     tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     if not ok and status_code not in [403, 404]:
         # Page exists, but either locked for user or not a level one (yet?)
-        level_name = await ph.check_and_register_missing_page()
+        try:
+            level_name = await ph.check_and_register_missing_page()
+        except IntegrityError:
+            level_name = None
         if level_name:
             print(
                 f"\033[1m[{ph.riddle_alias}]\033[0m "
@@ -657,8 +660,10 @@ class _PathHandler:
         )
 
     async def check_and_register_missing_page(self) -> str | None:
-        '''Check and possibly register non-level-associated
-        page (which necessarily came from a valid request).'''
+        '''
+        Check and possibly register non-level-associated
+        page (which necessarily came from a valid request).
+        '''
 
         # Check and retrieve (possibly NULL) level name if page already in DB
         query = '''
@@ -666,43 +671,44 @@ class _PathHandler:
             WHERE riddle = :riddle AND path = :path
         '''
         values = {'riddle': self.riddle_alias, 'path': self.path}
-        page = await database.fetch_one(query, values)
-        if page:
+        if page := await database.fetch_one(query, values):
             return page['level_name']
 
         # Record page as a new one (w/ respective level being NULL)
         query = '''
-            INSERT INTO level_pages (riddle, path)
-            VALUES (:riddle, :path)
+            INSERT INTO level_pages (riddle, path, level_name)
+            VALUES (:riddle, :path, NULL)
         '''
-        try:
-            await database.execute(query, values)
-        except IntegrityError:
-            # Avoid annoying errors due to concurrent requests
-            return None
+        await database.execute(query, values)
 
         # Record found page and the user who did it
         tnow = datetime.utcnow()
         query = '''
-            INSERT IGNORE INTO _found_pages (
+            INSERT INTO _found_pages (
                 riddle, path, username, access_time
             ) VALUES (
-                :riddle, :path, :username, :time
+                :riddle, :path, :username, :access_time
             )
         '''
-        values = {
-            'riddle': self.riddle_alias,
-            'path': self.path,
-            'username': self.user.name,
-            'time': tnow,
-        }
+        values |= {'username': self.user.name, 'access_time': tnow}
         await database.execute(query, values)
         print(
             f"> \033[1m[{self.riddle_alias}]\033[0m "
             f"Found new page \033[1m{self.path}\033[0m "
-                f"by \033[1m{self.user.name}\033[0m "
-                f"({tnow})"
+            f"by \033[1m{self.user.name}\033[0m "
+            f"({tnow})"
         )
+
+        # Grant individual page record to user
+        # (as a personal "reward" if eventually a listed level page)
+        query = '''
+            INSERT INTO user_pages (
+                riddle, username, level_name, path, access_time
+            ) VALUES (
+                :riddle, :username, NULL, :path, :access_time
+            )
+        '''
+        await database.execute(query, values)
 
         return None
 
