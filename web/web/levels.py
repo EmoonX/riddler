@@ -74,7 +74,9 @@ async def level_list(alias: str):
             # Get total file count for level
             query = '''
                 SELECT COUNT(*) FROM level_pages
-                WHERE riddle = :riddle AND level_name = :level
+                WHERE riddle = :riddle
+                    AND level_name = :level
+                    AND hidden IS NOT TRUE
                 GROUP BY riddle, level_name
             '''
             values = {'riddle': alias, 'level': level['name']}
@@ -179,6 +181,7 @@ async def level_list(alias: str):
 async def get_pages(
     alias: str,
     requested_level: str = '%',
+    include_hidden: bool = False,
     include_unlisted: bool = False,
     include_removed: bool = False,
     index_by_levels: bool = True,
@@ -207,16 +210,25 @@ async def get_pages(
             SELECT *, current_timestamp() AS access_time FROM level_pages
             WHERE riddle = :riddle
                 AND {level_condition}
+                AND hidden IS NOT TRUE
                 AND removed {'IS' if include_removed else 'IS NOT'} TRUE
         """
     else:
         user = await discord.get_user()
+        # TODO
         query = f"""
-            SELECT level_name, path, access_time FROM user_pages
-            WHERE riddle = :riddle
+            SELECT up.level_name, up.path, access_time
+            FROM user_pages up INNER JOIN level_pages lp
+                ON up.riddle = lp.riddle AND up.path = lp.path
+            WHERE up.riddle = :riddle
                 AND username = :username
-                AND {level_condition}
-            ORDER BY SUBSTRING_INDEX(path, ".", -1)
+                AND {
+                    level_condition
+                        .replace('level_name LIKE', 'up.level_name LIKE')
+                        .replace('level_name IS', 'up.level_name IS')
+                }
+                AND hidden IS NOT TRUE
+            ORDER BY SUBSTRING_INDEX(up.path, ".", -1)
         """
         values |= {'username': user.name}
     result = await database.fetch_all(query, values)
@@ -319,7 +331,9 @@ async def get_pages(
     # and record credentials based on innermost protected directory
     query = f"""
         SELECT level_name, `path` FROM level_pages
-        WHERE riddle = :riddle AND {level_condition}
+        WHERE riddle = :riddle
+            AND {level_condition}
+            AND hidden IS NOT TRUE
     """
     values = {'riddle': alias, 'level_name': requested_level}
     pages_data = await database.fetch_all(query, values)

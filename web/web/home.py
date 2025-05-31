@@ -21,8 +21,7 @@ async def homepage():
         SELECT COUNT(*) AS count, COUNT(demo) AS demo_count FROM riddles
         WHERE unlisted IS NOT TRUE
     '''
-    result = await database.fetch_one(query)
-    riddle_count, riddle_demo_count = result.values()
+    riddle_count, riddle_demo_count = (await database.fetch_one(query)).values()
     query = '''
         SELECT COUNT(*) AS count FROM levels
         WHERE riddle NOT IN (
@@ -37,6 +36,7 @@ async def homepage():
                 SELECT alias FROM riddles WHERE unlisted IS TRUE
             )
             AND level_name IS NOT NULL
+            AND hidden IS NOT TRUE
     '''
     page_count = await database.fetch_val(query,)
     query = '''
@@ -49,7 +49,7 @@ async def homepage():
     query = '''
         SELECT *, MAX(access_time) AS time FROM user_pages
         WHERE
-            TIMESTAMPDIFF(MONTH, access_time, NOW()) < 30
+            TIMESTAMPDIFF(DAY, access_time, NOW()) < 30
             AND riddle NOT IN (
                 SELECT alias FROM riddles WHERE unlisted IS TRUE
             )
@@ -64,7 +64,7 @@ async def homepage():
         FROM user_levels u1 INNER JOIN (
             SELECT username, MAX(completion_time) AS max_time
             FROM user_levels
-            WHERE TIMESTAMPDIFF(MONTH, completion_time, NOW()) < 30
+            WHERE TIMESTAMPDIFF(DAY, completion_time, NOW()) < 30
             GROUP BY username
         ) u2
         ON u1.username = u2.username
@@ -83,7 +83,7 @@ async def homepage():
             FROM user_levels ul INNER JOIN levels lv
                 ON ul.riddle = lv.riddle AND ul.level_name = lv.name
             WHERE lv.is_secret IS TRUE
-                AND TIMESTAMPDIFF(MONTH, find_time, NOW()) < 30
+                AND TIMESTAMPDIFF(DAY, find_time, NOW()) < 30
             GROUP BY username
         ) u2
         ON u1.username = u2.username

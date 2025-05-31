@@ -144,7 +144,9 @@ async def riddle_list(alias: str, country: str | None = None):
     # Get riddle page count & achievement info
     query = '''
         SELECT COUNT(*) AS page_count FROM level_pages
-        WHERE riddle = :riddle AND level_name IS NOT NULL
+        WHERE riddle = :riddle
+            AND level_name IS NOT NULL
+            AND hidden IS NOT TRUE
     '''
     values = {'riddle': alias}
     page_count = await database.fetch_val(query, values)
