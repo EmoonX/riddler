@@ -27,8 +27,8 @@
         {% set page = all_pages_by_path.get(path) %}
         <a
           href="{{ (riddle['root_path'] ~ path) if path.startswith('/') else path }}"
-          {%- if title %} title="{{ title }}" {% endif -%}
-          {%- if path.startswith('/') and (not page or page['removed']) %} style="text-decoration: line-through;" {% endif -%}
+          {% if title %}title="{{ title }}"{% endif %}
+          {% if path.startswith('/') and (not page or page['removed']) %}style="text-decoration: line-through;"{% endif %}
           target="_blank"
           rel="noreferrer"
         >
