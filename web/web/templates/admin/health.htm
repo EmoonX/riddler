@@ -38,11 +38,10 @@
       {% endmacro %}
       {% for path, page_data in level['pages'].items() %}
         {% set status_code = page_data['status_code'] %}
-        {% if status_code == 200 %}
-          {% set status = (
-            '<em>✨ new</em> | content hash: ' + page_data['content_hash']
-            if page_data['content_hash'] else 'OK'
-          ) %}
+        {% if page_data['new'] %}
+          {% set status = '<em>✨ new</em> | content hash: ' ~ page_data['content_hash'] %}
+        {% elif status_code == 200 %}
+          {% set status = 'OK' %}
         {% elif status_code %}
           {% set symbol = page_data['status_symbol'] %}
           {% set status = '[{} {}]'.format(status_code, symbol) %}
