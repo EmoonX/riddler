@@ -42,17 +42,17 @@
               Front page
               <img class="icon" src="/static/icons/external-link.png" height="32">
             </a>
+          {% if riddle['invite_code'] %}
+            <a href="https://discord.gg/{{ riddle['invite_code'] }}" class="nav-button">
+              <img class="icon" src="/static/icons/discord.png">
+              Discord guild
+            </a>
+          {% endif %}
           {% if riddle['nordinho_link'] %}
             <a href="{{ riddle['nordinho_link'] }}" class="nav-button">
               <img class="icon" src="/static/icons/nordinho.png">
               Nordinho thread
               <img class="icon" src="/static/icons/external-link.png" height="32">
-            </a>
-          {% endif %}
-          {% if riddle['invite_code'] %}
-            <a href="https://discord.gg/{{ riddle['invite_code'] }}" class="nav-button">
-              <img class="icon" src="/static/icons/discord.png">
-              Discord guild
             </a>
           {% endif %}
           {% if is_admin_of(alias) %}

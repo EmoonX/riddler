@@ -122,5 +122,5 @@ async def cheevo_row(_alias: str):
     '''Cheevo row HTML code to be fetched by JS script.'''
     return await render_template(
         'admin/cheevo-row.htm', cheevo=None,
-        index=request.args['index'], image='/static/thumbs/locked.png'
+        index=request.args['index'], image='/static/images/locked.png'
     )

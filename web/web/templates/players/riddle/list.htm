@@ -41,7 +41,7 @@
                 {% set color = get_score_ranked_color(player) %}
                 {% set country_name = country_names[player['country']] %}
                 <a class="username" href="#" style="color: {{ color }}; text-shadow: 0 0 1em {{ color }}">{{ name }}</a><!--
-             --><a class="country" href="/{{ alias }}/players/{{ player['country'] }}" title="{{ country_name }}"><img class="flag" src="/static/flags/{{ player['country'] }}.png"></a>
+             --><a class="country" href="/players/{{ player['country'] }}" title="{{ country_name }}"><img class="flag" src="/static/flags/{{ player['country'] }}.png"></a>
               </div>
             </div>
             <div class="current-levels">
