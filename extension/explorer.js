@@ -155,8 +155,8 @@ function updatePathsIndex(riddle, pageNode) {
 /** Parses riddle and path from URL, based on root path match. */
 export function parseRiddleAndPath(url) {
   const parsedUrl = new URL(url);
-  for (const riddle of Object.values(riddles)) {
-    const parsedRoot = new URL(riddle.rootPath);
+  for (const [rootPath, alias] of Object.entries(riddleHosts)) {
+    const parsedRoot = new URL(rootPath);
     if (parsedRoot.hostname === parsedUrl.hostname) {
       let urlTokens = parsedUrl.pathname.split('/');
       let rootTokens = parsedRoot.pathname.split('/');
@@ -175,7 +175,7 @@ export function parseRiddleAndPath(url) {
         // Remove trailing slash from folder paths
         path = path.slice(0, -1);
       }
-      return [riddle, path];
+      return [riddles[alias], path];
     }
   }
   return [null, null];
@@ -353,7 +353,15 @@ export async function doubleClickFile() {
     // Open desired page in new tab
     const riddle = riddles[currentRiddle];
     const path = $(this).attr('title');
-    let url = `${riddle.rootPath}${path}`;
+    const rootPath = (() => {
+      try {
+        const hosts = JSON.parse(riddle.rootPath);
+        return hosts[0];
+      } catch {
+        return riddle.rootPath;
+      }
+    })();
+    let url = `${rootPath}${path}`;
     if ($(this).attr('data-username')) {
       let username = $(this).attr('data-username');
       let password = $(this).attr('data-password');
