@@ -47,10 +47,9 @@ async function updateRating() {
   let ratingNew = $(this).index() + 1;
 
   // Send an HTTP GET request
-  await fetch(
-    `levels/rate/${levelName}/${ratingNew}`,
-    {'method': (ratingNew !== ratingOld) ? 'PUT' : 'DELETE'},
-  )
+  const url = `levels/rate/${levelName}/${ratingNew}`;
+  const method = (ratingNew !== ratingOld) ? 'PUT' : 'DELETE';
+  await fetch(url, {'method': method})
     .then(response => {
       if (response.status === 401) {
         // Go back to login page if trying to rate while not logged in
@@ -70,7 +69,7 @@ async function updateRating() {
       $(this).parents('.rating').find('.average').text(average);
       $(this).parents('.rating').find('.count').text('(' + count + ')');
 
-      // Show or hide ratings depending if player rated or not
+      // Show or hide ratings whether player added or removed rating
       ratingNew = values[2];
       if (ratingNew !== 'None') {
         $(this).parents('.hearts').removeClass('unrated');

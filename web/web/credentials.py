@@ -99,7 +99,7 @@ async def process_credentials(
                 # Get realm message from unauthenticated (401) response header
                 realm_message = eval(
                     res.headers['WWW-Authenticate'].partition('realm=')[-1]
-                )                
+                )
 
             res = requests.get(url, auth=HTTPBasicAuth(username, password))
             if res.status_code == 401:

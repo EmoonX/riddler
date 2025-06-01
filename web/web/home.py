@@ -95,8 +95,8 @@ async def homepage():
     '''
     result = await database.fetch_all(query)
     secrets_recently_found = {row['username']: row for row in result}
-    
-    # Swap generic progress for find/completion whenever it happened    
+
+    # Swap generic progress for find/completion whenever it happened
     for i, row in enumerate(recent_progress):
         get_time = lambda table: (
             table[row['username']]['time'].timestamp()

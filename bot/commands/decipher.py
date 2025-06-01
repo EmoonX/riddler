@@ -10,8 +10,7 @@ from nltk.corpus import words
 
 from bot import bot
 
-# Set of lowercase English words (as char tuples)
-
+# Set of lowercase English words
 word_set = set(word.lower() for word in words.words())
 
 

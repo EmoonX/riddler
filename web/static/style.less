@@ -135,8 +135,8 @@ header > nav {
       backdrop-filter: blur(1em) saturate(0%);
 
       &.riddles {
-        grid-template-columns: 1fr 1fr 1fr 1fr;
-        width: 400px;
+        grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+        width: 500px;
         padding: 1.5em 1em;
 
         > a.riddle {
@@ -1357,11 +1357,6 @@ section.list.levels > .row {
       position: relative;
       text-decoration: none;
 
-      > div {
-        display: flex;
-        flex-direction: column;
-        gap: .5em;
-      }
       .icon {
         position: absolute;
         top: -.2em;
@@ -1370,6 +1365,11 @@ section.list.levels > .row {
         filter: drop-shadow(0 0 .4em deeppink);
         transition: transform .2s;
       }
+    }
+    > div, a > div {
+      display: flex;
+      flex-direction: column;
+      gap: .5em;
     }
   }
   .menu-button {

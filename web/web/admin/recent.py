@@ -17,7 +17,7 @@ async def update_recent():
 
     await root_auth()
 
-    await _update_recent_scores(days=120)
+    await _update_recent_scores(days=30)
     await _update_last_placements()
 
     return 'SUCCESS :)', 200

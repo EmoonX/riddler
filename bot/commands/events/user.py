@@ -56,7 +56,7 @@ class User(commands.Cog):
                 ON ul.riddle = lv.riddle AND ul.level_name = lv.name
             WHERE ul.riddle = :riddle
                 AND ul.username = :username
-                AND lv.is_Secret IS FALSE
+                AND lv.is_secret IS NOT TRUE
                 AND ul.completion_time IS NULL
         '''
         current_levels = await database.fetch_all(query, values)
