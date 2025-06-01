@@ -89,7 +89,7 @@
             <div class="completion">
               {% set count = level['completion_count'] %}
               {% set ratio = '%.1f%%' % (count / total * 100) %}
-              <var>{{ count }}</var> player(s) completed <!--(<var>{{ ratio }}</var>)-->
+              Solved by <var>{{ count }}</var> player(s) <!--(<var>{{ ratio }}</var>)-->
             </div>
           {% if level['beaten'] %}
             <figure class="rating">

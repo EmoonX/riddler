@@ -18,9 +18,9 @@
           <div class="time">
             {{ player['time'] }}
           </div>
-          {% if not 'is_completion' in player and not 'is_secret_find' in player %}
-            {% set class = 'just-playing' %}
-          {% endif %}
+        {% if not 'is_solve' in player and not 'is_secret_find' in player %}
+          {% set class = 'just-playing' %}
+        {% endif %}
           <div class="status {{ class }}">
             <a class="player">
               {% set url = (
@@ -33,16 +33,15 @@
             <div>
               <!-- {% set country_name = country_names[player['country']] %} -->
               {% set riddle = riddles[player['riddle']] %}
-              {% set icon_url = riddle['icon_url'] %}
-            {% if 'is_completion' in player %}
-              completed level <var>{{ player['level_name'] }}</var> in
+            {% if 'is_solve' in player %}
+              solved level <var>{{ player['level_name'] }}</var> in
             {% elif 'is_secret_find' in player %}
               found secret level <var>{{ player['level_name'] }}</var> in
             {% else %}
               is playing
             {% endif %}
               {% set url = url_for('players.riddle_list', alias=riddle['alias']) %}
-              <a class="riddle" href="{{ url }}" target="_blank">
+              <a class="riddle" href="{{ url }}">
                 <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
                 {{ riddle['full_name'] }}
               </a>

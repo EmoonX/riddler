@@ -109,7 +109,7 @@ async def homepage():
             recent_progress[i]['is_secret_find'] = True
         elif completion_time:
             recent_progress[i] = dict(recently_completed[row['username']])
-            recent_progress[i]['is_completion'] = True
+            recent_progress[i]['is_solve'] = True
 
     # Ensure final list is time-sorted
     recent_progress.sort(key=(lambda x: x['time']), reverse=True)
