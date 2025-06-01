@@ -49,11 +49,14 @@ async def admin_auth(alias: str):
 
 
 async def is_admin_of(alias: str) -> bool:
-    '''Check for admin rights on given riddle.'''
+    '''Check for admin rights on given riddle or root.'''
     if not await discord.authorized:
         return False
     try:
-        await admin_auth(alias)
+        if alias == '*':
+            await root_auth()
+        else:
+            await admin_auth(alias)
     except werkzeug.exceptions.Forbidden:
         return False
     return True
