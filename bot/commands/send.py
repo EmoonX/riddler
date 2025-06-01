@@ -12,12 +12,14 @@ class Send(commands.Cog):
     async def send(self, ctx):
         '''Send messages to member or channel.'''
 
-        guild = get(self.bot.guilds, name='Emoon\'s server')
+        wonderland = get(self.bot.guilds, id=859797827554770955)
+        guild = get(self.bot.guilds, id=987832530826833920)
         member = get(guild.members, name=ctx.author.name)
         if not member or not member.guild_permissions.manage_guild:
             # You are not an admin of given guild
-            text = '> `!send` - Access denied'
-            await member.send(text)
+            if member:
+                text = '> `!send` - Access denied'
+                await member.send(text)
             return
 
         aux = ctx.message.content.split(maxsplit=3)
@@ -34,7 +36,10 @@ class Send(commands.Cog):
         type, name, text = aux[1:4]
         if type == 'member':
             # Send bot message to member
-            member = get(guild.members, name=name)
+            member = (
+                get(wonderland.members, name=name) or
+                get(guild.members, name=name)
+            )
             if not member:
                 text = '> `!send` - Member not found :('
                 await ctx.author.send(text)
@@ -43,7 +48,10 @@ class Send(commands.Cog):
 
         elif type == 'channel':
             # Send bot message to channel
-            channel = get(guild.channels, name=name)
+            channel = (
+                get(wonderland.channels, name=name) or
+                get(guild.channels, name=name)
+            )
             if not channel:
                 text = '> `!send` - Channel not found :('
                 await ctx.author.send(text)
