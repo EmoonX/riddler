@@ -236,11 +236,11 @@ export function folderUp() {
       $.post(url, data, 'text')
         .fail(_ => {
           // Error, something went wrong on server side
-          console.log('[Upload pages] Error updating database...');
+          console.log('[Upload pages] Error updating page/level data...');
         })
         .done(_ => {
           // Success, so reload the current page to see changes
-          console.log('[Upload pages] Database successfully updated!');
+          console.log('[Upload pages] Page/level data successfully updated!');
           location.reload();
         });
       ;

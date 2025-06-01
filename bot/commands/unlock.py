@@ -146,7 +146,7 @@ class UnlockHandler:
         level_type = 'level' if not level['is_secret'] else 'secret level'
         text = (
             f"**[{self.full_name}]** "
-            f"You have solved {level_type} **{name}** {stars}"
+            f"You have solved {level_type} **{name}** {stars} "
             f"and won **{points}** points."
         )
         await self._send(text)

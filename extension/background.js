@@ -142,8 +142,6 @@ chrome.webRequest.onHeadersReceived.addListener(async details => {
   });
   
   const parsedUrl = new URL(details.url.replace('://www.', '://'));
-  console.log(parsedUrl);
-  console.log(riddleHosts);
   if (! matchesAnyRiddleDomain(parsedUrl)) {
     // Completely ignore pages outside riddle domains
     return;

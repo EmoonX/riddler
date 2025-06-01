@@ -72,8 +72,8 @@ async def process_url(
     # Disclose path alias (if any) for logging purposes
     path_to_log = ph.path
     if ph.path_alias_for:
-        path_to_log = f"{ph.path} -> {ph.path_alias_for}"
-    
+        path_to_log = f"{ph.path} ➜ {ph.path_alias_for}"
+
     # Process received credentials (possibly none)
     riddle = await get_riddle(ph.riddle_alias)
     ok = await process_credentials(riddle, ph.path, ph.credentials, status_code)
