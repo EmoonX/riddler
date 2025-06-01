@@ -58,7 +58,7 @@ async def get_user_riddle_data(alias: str | None = None) -> str:
     user = await discord.get_user()
     values = {'username': user.name}
     if not alias:
-        # Get currently being played riddle from DB (if any)
+        # Get riddle currently being played (if any)
         query = '''
             SELECT alias FROM riddles
             WHERE alias = (
@@ -67,8 +67,6 @@ async def get_user_riddle_data(alias: str | None = None) -> str:
             )
         '''
         current_riddle = await database.fetch_val(query, values)
-        if not current_riddle:
-            return 'No riddle being played...', 404
 
     # Build initial riddle(s) dict
     query = '''
@@ -136,7 +134,7 @@ async def get_user_riddle_data(alias: str | None = None) -> str:
 
     # Create and return JSON dict with data
     if not alias:
-        data = {'riddles': riddles, 'currentRiddle': current_riddle}
+        data = {'riddles': riddles, 'currentRiddle': current_riddle or 'arfac'}
     else:
         data = riddles.get(alias, {})
 
