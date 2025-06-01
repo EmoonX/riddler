@@ -132,18 +132,23 @@ dmypy.json
 .vscode
 .VSCodeCounter
 
-# Site static image folders
-web/static/thumbs/*
-web/static/cheevos/*
-web/static/riddles/*
+# Static riddle content
+/web/archive/
+/web/static/thumbs/
+/web/static/cheevos/
+/web/static/riddles/
+
+# Concealed webpages from days gone by
+/web/static/old/
+/web/web/templates/old/
 
 # Less CSS: Use .less files that work like CSS (but better)
 *.css
 
-# Third party things for extension (e.g jQuery script)
-extension/thirdParty
+# Third party stuff for extension (e.g jQuery script)
+/extension/thirdParty
 
-# NodeJS things for jQuery
+# NodeJS stuff for jQuery
 package*.json
 node_modules
 
