@@ -3,11 +3,13 @@ import {
   getPageNode,
   initExplorer,
   parseRiddleAndPath,
+  riddleHosts,
   riddles,
   sendMessageToPopup,
-  SERVER_URL,
   updateRiddleData,
 } from './explorer.js';
+
+import { SERVER_HOST } from './util.js';
 
 /** Wildcard URLs to be matched. */
 const filter = {
@@ -15,7 +17,7 @@ const filter = {
 };
 
 /** Time of last login request. */
-let t0;
+// let t0;
 
 /** Sends user-visited URL and its status code to `/process` endpoint. */
 async function sendToProcess(visitedUrl, statusCode) {
@@ -28,7 +30,7 @@ async function sendToProcess(visitedUrl, statusCode) {
     body: visitedUrl,
   };
   let data;
-  await fetch(`${SERVER_URL}/process`, params)
+  await fetch(`${SERVER_HOST}/process`, params)
     .then(async response => {
       // Callbacks on successful and failed responses
       if (response.status === 401) {
@@ -42,7 +44,7 @@ async function sendToProcess(visitedUrl, statusCode) {
         // t0 = tNow;
         // if (response.text() == 'Not logged in') {
         //   // Not logged in, so open Discord auth page on new tab
-        //   chrome.tabs.create({url: `${SERVER_URL}/login`});
+        //   chrome.tabs.create({url: `${SERVER_HOST}/login`});
         // }
 
         // Logged out, so possibly clear riddle data
@@ -128,8 +130,22 @@ chrome.webRequest.onBeforeSendHeaders.addListener(async details => {
 
 /** Send a process request to server whenever response is received. */
 chrome.webRequest.onHeadersReceived.addListener(async details => {
-  const parsedUrl = new URL(details.url);
-  if (parsedUrl.origin === SERVER_URL) {
+  /** Check if response URL comes from one of the catalogued riddle domains. */
+  const matchesAnyRiddleDomain = (parsedUrl => {
+    for (const rootPath of Object.keys(riddleHosts)) {
+      const parsedRoot = new URL(rootPath.replace('://www.', '://'));
+        if (parsedUrl.hostname === parsedRoot.hostname) {
+          return true;
+        }
+      }
+    return false;
+  });
+  
+  const parsedUrl = new URL(details.url.replace('://www.', '://'));
+  console.log(parsedUrl);
+  console.log(riddleHosts);
+  if (! matchesAnyRiddleDomain(parsedUrl)) {
+    // Completely ignore pages outside riddle domains
     return;
   }
   console.log(details.url, details.statusCode);

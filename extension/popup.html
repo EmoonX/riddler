@@ -23,11 +23,15 @@
           <figcaption class="full-name">...</figcaption>
         </figure>
         <div id="level">
-          <div id="previous-set" class="previous disabled" title="Previous set">⏮</div>
-          <div id="previous-level" class="previous disabled" title="Previous level">◀</div>
+          <div id="previous">
+            <div id="previous-set" class="previous disabled" title="Previous set">⏮</div>
+            <div id="previous-level" class="previous disabled" title="Previous level">◀</div>
+          </div>
           <var id="current-level"></var>
-          <div id="next-level" class="next disabled" title="Next level">▶</div>
-          <div id="next-set" class="next disabled" title="Next set">⏭</div>
+          <div id="next">
+            <div id="next-level" class="next disabled" title="Next level">▶</div>
+            <div id="next-set" class="next disabled" title="Next set">⏭</div>
+          </div>
         </div>
         <div class="page-explorer">
           <!-- JS will append files here -->
@@ -36,9 +40,6 @@
       <div id="buttons">
         <button type="button" name="login">
           <img src="images/icons/login.png" alt="Log in">Log in
-        </button>
-        <button type="button" name="update-hosts">
-          <img src="images/icons/refresh.png" alt="Refresh icon">Update hosts
         </button>
       <!--
         <form action="https://ko-fi.com/emoon" method="get" target="_blank">

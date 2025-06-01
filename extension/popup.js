@@ -4,31 +4,10 @@ import {
   clickFile,
   doubleClickFile,
   insertFiles,
-  SERVER_URL,
   updateStateInPopup,
 } from './explorer.js';
 
-/** Updates host permissions on button click. */
-async function updateHosts() {
-  console.log('Updating hosts...');
-  await fetch(`${SERVER_URL}/get-riddle-hosts`)
-    .then(response => response.json())
-    .then(hosts => {
-      console.log(`Hosts found:`);
-      console.log(Object.keys(hosts));
-      chrome.permissions.request(
-        { origins: Object.keys(hosts)},
-        granted => {
-          if (granted) {
-            console.log('Optional host permissions granted.');
-          } else {
-            console.log('Couldn\'t grant optional host permissions.');
-            console.log(chrome.runtime.lastError);
-          }
-        }
-      );
-    });
-}
+import { SERVER_HOST } from './util.js';
 
 $(() => {
   // Set explorer events
@@ -41,9 +20,8 @@ $(() => {
 
   // Set button click events
   $('[name=login]').on('click', () => {
-    window.open(`${SERVER_URL}/login`, '_blank');
+    window.open(`${SERVER_HOST}/login`, '_blank');
   });
-  $('[name=update-hosts]').on('click', updateHosts);
 
   // Get message data from background.js
   let port = chrome.runtime.connect(
@@ -57,34 +35,36 @@ $(() => {
       const riddles = data.riddles;
       updateStateInPopup(riddles, alias);
 
-      // Toggle logged in riddle data
+      // Display logged in riddle data
       $('#currently-playing').toggle(true);
-      $('[name=login]').toggle(false);
+      $('#buttons').remove();
 
       // Show current riddle info in extension's popup
       const riddle = riddles[alias];
       const setName = riddle.lastVisitedSet;
       const levelName = riddle.lastVisitedLevel;
       const level = riddle.levels[setName][levelName];
-      const explorerURL = `${SERVER_URL}/${alias}/levels`;
+      const explorerURL = `${SERVER_HOST}/${alias}/levels`;
       $('#riddle > .icons img.current').attr('src', riddle.iconUrl);
       $('#riddle > .full-name').text(riddle.fullName);
       $('#riddle a').attr('href', explorerURL);
       $('#level > var#current-level').text(levelName);
+      console.log(level);
       if (level.previousSet) {
-        $('#level > #previous-set').removeClass('disabled');
+        console.log($('#level #previous-set'));
+        $('#level #previous-set').removeClass('disabled');
       }
       if (level.previousLevel) {
-        $('#level > #previous-level').removeClass('disabled');
+        $('#level #previous-level').removeClass('disabled');
       }
       if (level.nextLevel) {
-        $('#level > #next-level').removeClass('disabled');
+        $('#level #next-level').removeClass('disabled');
       }
       if (level.nextSet) {
-        $('#level > #next-set').removeClass('disabled');
+        $('#level #next-set').removeClass('disabled');
       }
       // Build HTML for list of files of currently visited level
-      insertFiles($('.page-explorer'), level.pages['/'], -1, '');
+      insertFiles($('.page-explorer'), level.pages['/'], 0, '');
     }
   });
 });

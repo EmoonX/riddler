@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Riddler",
   "description": "Browser extension for Riddler, the online riddle enhancer.",
-  "version": "0.5.4",
+  "version": "0.6",
 
   "background": {
     "service_worker": "background.js",
@@ -13,9 +13,6 @@
     "webRequestAuthProvider"
   ],
   "host_permissions": [
-    "https://riddler.app/process"
-  ],
-  "optional_host_permissions": [
     "<all_urls>"
   ],
   "action": {
@@ -26,8 +23,7 @@
   "content_scripts" : [
     {
       "matches": ["<all_urls>"],
-      "js": ["credentials.js", "thirdParty/jquery.min.js"],
-      "type": "module"
+      "js": ["thirdParty/jquery.min.js", "credentials.js"]
     }
   ],
   "web_accessible_resources": [

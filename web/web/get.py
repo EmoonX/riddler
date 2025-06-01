@@ -4,6 +4,7 @@ from urllib.parse import urljoin, urlsplit
 from quart import abort, Blueprint, jsonify
 from quartcord import requires_authorization
 
+from admin.admin_auth import is_admin_of
 from auth import discord
 from inject import get_riddles
 from levels import get_pages
@@ -18,23 +19,25 @@ get = Blueprint('get', __name__)
 async def get_riddle_hosts():
     '''Get list of riddle hosts from database.'''
 
-    def _get_wildcard_pattern(root_path: str):
-        '''Return URL in '*://*.{root_path}/*' wildcard pattern.'''
-        parsed = urlsplit(root_path)
-        root_folder = f"{parsed.path}/"
-        return f"*://*.{parsed.hostname}{root_folder}*"
+    # def _get_wildcard_pattern(root_path: str):
+    #     '''Return URL in '*://*.{root_path}/*' wildcard pattern.'''
+    #     parsed = urlsplit(root_path)
+    #     root_folder = f"{parsed.path}/"
+    #     return f"*://*.{parsed.hostname}{root_folder}*"
 
-    # Build dict of {wildcard_pattern -> alias} hosts
-    riddles = await get_riddles(unlisted=False)
+    is_root = False
+    if discord.user_id:
+        is_root = await is_admin_of('*')
+
+    # Build dict of {root_path -> alias} hosts
+    riddles = await get_riddles(unlisted=is_root)
     hosts = {}
     for riddle in riddles:
         try:
             for root_path in json.loads(riddle['root_path']):
-                wilcard_url = _get_wildcard_pattern(root_path)
-                hosts[wilcard_url] = riddle['alias']
+                hosts[root_path] = riddle['alias']
         except json.decoder.JSONDecodeError:
-            wilcard_url = _get_wildcard_pattern(riddle['root_path'])
-            hosts[wilcard_url] = riddle['alias']
+            hosts[riddle['root_path']] = riddle['alias']
 
     # Return JSON dict as response
     return jsonify(hosts)

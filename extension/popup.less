@@ -52,7 +52,7 @@ header {
 main {
   display: flex;
   flex-direction: column;
-  margin-top: 5px;
+  margin: 10px auto;
 }
 
 main > div {
@@ -64,9 +64,6 @@ main > div {
   width: 230px;
   text-align: center;
 
-  &:not(:last-of-type) {
-    border-bottom: 1px solid #999;
-  }
   &#currently-playing {
     text-align: center;
     font-size: 20px;
@@ -84,8 +81,8 @@ main > div {
       &#riddle {
         flex-direction: column;
         justify-content: space-between;
-        gap: 0.3em;
-        margin: 0.9em auto;
+        gap: .3em;
+        margin: .9em auto;
         width: 80%;
 
         .icons {
@@ -119,89 +116,105 @@ main > div {
         }
         figcaption.full-name {
           line-height: 1.4em;
-          font-size: 0.85em;
+          font-size: .85em;
         }
       }
     }
     #level {
+      position: relative;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      width: 180px;
-      font-size: 0.9em;
+      width: 80%;
+      font-size: .9em;
 
       > var#current-level {
-        margin-bottom: 0.15em;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: -1;
+        padding-bottom: .2em;
         font-family: digital-mono;
         font-size: 1.2em;
         font-weight: bold;
         font-style: normal;
-        letter-spacing: 0.15em;
+        letter-spacing: .15em;
         text-shadow:
-          0 0 0.4em crimson, 0 0 0.8em crimson, 0 0 1.2em crimson;
+          0 0 .4em crimson, 0 0 .8em crimson, 0 0 1.2em crimson;
       }
-      > .previous, > .next {
-        width: 1em;
-        height: 1em;
-        border: thin solid rgba(255, 255, 255, 0.5);
-        border-radius: 25%;
-        line-height: 1em;
-        font-size: 1.2em;
+      #previous, #next {
+        display: flex;
+        align-items: center;
+        gap: .8em;
 
-        &:not(.disabled) {
-          cursor: pointer;
-          transition: background-color 0.2s, color 0.2s;
+        > * {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          width: 1em;
+          border: thin solid rgba(255, 255, 255, .5);
+          border-radius: 25%;
+          font-size: 1.2em;
 
-          &:hover {
-            color: black;
-            background-color: white;
+          &:not(.disabled) {
+            cursor: pointer;
+            transition: background-color .2s, color .2s;
+
+            &:hover {
+              color: black;
+              background-color: white;
+            }
           }
-        }
-        &.disabled {
-          color: #666;
+          &.disabled {
+            color: #666;
+          }
         }
       }
     }
     .page-explorer {
-      margin: 0.8em auto 0.4em;
-      width: 80%;
-      height: 180px;
-      padding: 0.2em 0.4em;
-      border-radius: 0.2em;
+      margin: .8em auto .4em;
+      width: 85%;
+      height: 220px;
+      padding: .3em;
+      border-radius: .2em;
       background-color: white;
       overflow: scroll;
       color: black;
 
       figure.file {
-        margin: 0.2em auto;
+        margin: .2em auto;
         width: fit-content;
-        padding: 0.1em 0.4em 0.1em 0.3em;
+        padding: .1em .4em .1em .3em;
         cursor: pointer;
         user-select: none;
 
         > img {
-          margin-right: 0.15em;
+          margin-right: .15em;
           max-width: 20px;
           max-height: 20px;
         }
         > figcaption {
-          font-size: 0.7em;
+          font-size: .7em;
           font-style: italic;
           color: #555;
         }
         > .file-count {
-          margin: 0 0.4em;
-          font-size: 0.8em;
+          margin: 0 .4em;
+          font-size: .8em;
           color: #999;
-          letter-spacing: -0.02em;
+          letter-spacing: -.02em;
           white-space: nowrap;
         }
         &.active {
-          background-color: rgba(128, 64, 0, 0.15);
-          border-radius: 0.4em;
+          background-color: rgba(128, 64, 0, .15);
+          border-radius: .4em;
         }
       }
     }
+  }
+  &#buttons:not(:last-of-type) {
+    border-top: 1px solid #999;
   }
 }
 
@@ -221,7 +234,7 @@ button {
   font-size: 20px;
   color: #eee;
   cursor: pointer;
-  transition: background-color 0.2s, color 0.2s;
+  transition: background-color .2s, color .2s;
 
   > img {
     margin: 0 10px;

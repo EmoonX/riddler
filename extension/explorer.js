@@ -1,8 +1,10 @@
-/** Base server URL. */
-export const SERVER_URL = 'https://riddler.app';
+import { SERVER_HOST } from "./util.js";
 
 /** All the user riddle data. */
 export let riddles = {};
+
+/** Index of hosts -> aliases. */
+export let riddleHosts = {};
 
 /** Current riddle alias. */
 let currentRiddle;
@@ -13,7 +15,12 @@ export let initNeeded = true;
 /** Inits explorer by fetching user riddle data and pages. */
 export async function initExplorer(callback) {
   initNeeded = false;
-  await fetch(`${SERVER_URL}/get-user-riddle-data`)
+  await fetch(`${SERVER_HOST}/get-riddle-hosts`)
+    .then(response => response.json())
+    .then(hosts => {
+      riddleHosts = hosts;
+    });
+  await fetch(`${SERVER_HOST}/get-user-riddle-data`)
   .then(response => {
     if (response.status === 401) {
       throw `Unable to retrieve riddle data from server (not logged in).`;
@@ -22,7 +29,7 @@ export async function initExplorer(callback) {
   })
   .then(async riddlesData => {
     currentRiddle = riddlesData.currentRiddle;
-    await fetch(`${SERVER_URL}/${currentRiddle}/levels/get-pages`)
+    await fetch(`${SERVER_HOST}/${currentRiddle}/levels/get-pages`)
       .then(response => response.json())
       .then(pagesData => {
         // Fetch current riddle before rest to ease popup wait time
@@ -33,7 +40,7 @@ export async function initExplorer(callback) {
           callback();
         }
       });
-    await fetch(`${SERVER_URL}/get-user-pages`)
+    await fetch(`${SERVER_HOST}/get-user-pages`)
       .then(response => response.json())
       .then(allPagesData => {
         for (const [alias, riddle] of Object.entries(riddlesData.riddles)) {
@@ -52,7 +59,7 @@ export async function initExplorer(callback) {
 
 /** Builds riddle dict from riddle and levels JSON data. */
 async function buildRiddle(riddle, pages) {
-  const iconUrlExternal = `${SERVER_URL}/static/riddles/${riddle.alias}.png`;
+  const iconUrlExternal = `${SERVER_HOST}/static/riddles/${riddle.alias}.png`;
   fetch(iconUrlExternal, {cache : 'force-cache'})
     .then(response => response.blob({type: 'image/png'}))
     .then(async blob => {
@@ -106,10 +113,15 @@ export async function updateRiddleData(alias, setName, levelName) {
   const levelSet = riddle.levels[setName];
   if (!levelSet || !levelSet[levelName]) {
     // Add new riddle and/or level
-    await fetch(`${SERVER_URL}/get-user-riddle-data/${alias}`)
+    await fetch(`${SERVER_HOST}/get-riddle-hosts`)
+      .then(response => response.json())
+      .then(hosts => {
+        riddleHosts = hosts;
+      });
+    await fetch(`${SERVER_HOST}/get-user-riddle-data/${alias}`)
       .then(response => response.json())
       .then(async riddleData => {
-        await fetch(`${SERVER_URL}/${alias}/levels/get-pages`)
+        await fetch(`${SERVER_HOST}/${alias}/levels/get-pages`)
           .then(response => response.json())
           .then(pagesData => {
             buildRiddle(riddleData, pagesData);
@@ -117,7 +129,7 @@ export async function updateRiddleData(alias, setName, levelName) {
       });
   } else {
     // Add (possibly) new page
-    await fetch(`${SERVER_URL}/${alias}/levels/get-pages/${levelName}`)
+    await fetch(`${SERVER_HOST}/${alias}/levels/get-pages/${levelName}`)
       .then(response => response.json())
       .then(pagesData => {
         riddle.lastVisitedSet = riddle.shownSet = setName;
@@ -315,11 +327,11 @@ export function changeLevel() {
 function updatePopupNavigation(riddle, level, setName, levelName) {
   riddle.shownSet = setName;
   riddle.shownLevel = levelName;
-  $('#level > var#current-level').text(levelName);
-  $('#level > #previous-set').toggleClass('disabled', !level.previousSet);
-  $('#level > #previous-level').toggleClass('disabled', !level.previousLevel);
-  $('#level > #next-level').toggleClass('disabled', !level.nextLevel);
-  $('#level > #next-set').toggleClass('disabled', !level.nextSet);
+  $('#level var#current-level').text(levelName);
+  $('#level #previous-set').toggleClass('disabled', !level.previousSet);
+  $('#level #previous-level').toggleClass('disabled', !level.previousLevel);
+  $('#level #next-level').toggleClass('disabled', !level.nextLevel);
+  $('#level #next-set').toggleClass('disabled', !level.nextSet);
   $('.page-explorer').empty();
   insertFiles($('.page-explorer'), level.pages['/'], 0, '');
 }
