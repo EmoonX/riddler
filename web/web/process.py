@@ -89,7 +89,7 @@ async def process_url(
             'message': 'Wrong or missing user credentials',
             'riddle': ph.riddle_alias
         }), 403
-    
+
     # Process received path
     if ph.path_alias_for:
         # When path is just an alias, process canonical one up next
@@ -149,8 +149,8 @@ async def process_url(
     if await has_unlocked_folder_credentials(
         ph.riddle_alias, user, path_credentials['path']
     ):
-        data |= {'unlockedCredentials': path_credentials}            
-        
+        data |= {'unlockedCredentials': path_credentials}
+
     return jsonify(data)
 
 
@@ -270,7 +270,7 @@ class _PathHandler:
 
     async def build_player_riddle_data(self):
         '''Build player riddle data from DB, creating it if nonexistent.'''
-            
+
         # Possibly create brand new riddle account
         query = '''
             INSERT IGNORE INTO riddle_accounts (riddle, username)
@@ -317,7 +317,7 @@ class _PathHandler:
         # (must hold even when answer points to a 404 or non-level page)
         for level in current_levels:
             try:
-                is_answer = self.path in json.loads(level['answer'])
+                is_answer = self.path in json.loads(level['answer'] or '')
             except json.decoder.JSONDecodeError:
                 is_answer = self.path == level['answer']
             if is_answer:
