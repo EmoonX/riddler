@@ -6,15 +6,36 @@
       
       <p>This is nothing more than a simple page to disclose extension/website privacy policies to everyone including Google, the biggest tracking company in the world. In other words, it's here to guarantee that neither the extension nor the website collects more data from you than what's needed.</p>
 
-      <h2>Browser extension</h2>
-      <p>Riddler collects accessed pages' URLs upon player browsing, <em>but only in riddles' websites</em>. Such whitelisting works by having the <code>webRequest</code> permission enabled for specific designated domains, which in turn is triggered by clicking <strong>Update hosts</strong> (button) in the extension's popup menu. Such action has to be done by a so-called "user gesture", since it's the portable browser way of granting optional permissions to extensions.</p>
-      
       <h2>Discord OAuth2</h2>
-      <p>The only OAuth2 system scope requested is <code>identity</code>, which grants access to the logged user's Discord basic info (e.g display name and avatar). Such info is required for identifying you, the player, and thus apply needed processing and database changes.</p>
+      <p>The only OAuth2 system scope requested is <code>identity</code>, which grants access to the logged user's basic Discord account info (e.g username, display name and avatar). Such data is required for identifying you, the player, and thus applying needed processing and database changes.</p>
+
+      <h2>Browser extension</h2>
+      <p>Riddler collects webpage data (i.e URLs, status codes and, occasionally, folder-specific credentials) by intercepting HTTP requests while players browse the catalogued external riddle websites &mdash; and only in those. Starting on version <strong>0.6</strong>, such whitelisting works by filtering every request against <a href="/get-riddle-hosts">this list of valid hosts</a>. As such, no browsing history or sensitive data from any other websites are sent to <a href="https://riddler.app">https://riddler.app</a> at all.</p>
+      <p>The extension requires two manifest permissions to properly function:</p>
+      <ol>
+        <li><code>webRequest</code>: to intercept the aforementioned page/file HTTP requests.</li>
+        <li><code>webRequestAuthProvider</code>: to implement the <code>onAuthRequired</code> listener, which allows the extension to cancel the browser's default auth box and present Riddler's custom proxy credentials box in its place.</li>
+      </ol>
+
+      <h2>Riddle credentials</h2>
+      <p>Starting on version <strong>0.5</strong>, Riddler implements <a href="/static/extra/credentials.png">its own custom auth box</a>. By itself, the interface works essentially by embedding the provided username/password as part of the URL. The box, therefore, is merely a helpful proxy, and the same result can be achieved if the user directly adds the <code>user:pass@</code> component to the address bar's URL, like so:</p>
+      <p><code>https://<strong>user:pass@</strong>riddledomain.com/folder/page.htm</code></p>
+      <p><a href="https://riddler.app">https://riddler.app</a> then receives the extension-sent URL, parses the required credentials, and applies the needed procedures.</p>
+      <p>Regarding the rationale for an in-house handling of credentials:</p>
+      <ol>
+        <li>To display the fabled flavored <strong><em>realm messages</em></strong>, long gone since all the major browsers decided to hide those, starting years ago. Several old riddles dealt with this nuisance by applying their own solutions (from <a href="/static/extra/credentials-tooltip.png">tooltips</a> to <a href="/static/extra/credentials-alert.png">alert dialogs</a> to simply ignoring them altogether); Riddler solves the issue in the definitive way.</li>
+        <li>To allow folder passwords to be shown as plain text and not merely a bunch of ●●●●● &mdash; the latter unnecessary due to their unsensitive nature and prone to common typing mistakes.</li>
+        <li>To autofill cloud-saved credentials, thus removing the need of users relying on password managers and the annoyance of losing those when moving across browsers/PCs.</li>
+        <li>To certify players have actual access to the locations they're visiting (as, previously, password-protected pages could be exploited and marked as accessed just by masking the extension-sent <code>401</code> code as a <code>200</code>, even if said player hadn't gotten credentials for that folder yet).</li>
+        <li>To harvest new <code>username:password</code> pairs for us.</li>
+        <li>Because the custom box looks prettier.</li>
+      </ol>
+      <p>Wrong credentials don't get sent to <a href="https://riddler.app">https://riddler.app</a> at all, thus nullifying the risk of users mistakenly submitting e-mail addresses, personal username/passwords, etc.</p>
+      <p>In the extraordinary cases of actual real auth involved (e.g the final Notpron levels), none of the above points hold, and the system intentionally falls back to the usual vanilla mechanisms.</p>
 
       <hr>
 
-      <p>By using Riddler, extension and website, you hereby consent to the aforementioned Privacy Policy and Riddler's (small) usage of your data.</p>
+      <p>By using Riddler &mdash; extension, website and bot &mdash; you hereby consent to our privacy policy and Riddler's (small) usage of your data.</p>
       <p style="text-align: right">― Riddler, 2025</p>
     </main>
 {% endblock %}
