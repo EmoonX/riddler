@@ -1,0 +1,174 @@
+/** Server host base URL. */
+export const SERVER_HOST = 'https://riddler.app';
+
+/** Player's riddle data. */
+export let riddles = {};
+
+/** Current riddle alias. */
+export let currentRiddle;
+
+/** Builds riddle object from riddle and levels JSON data. */
+export async function buildRiddle(riddle, pages) {
+  const iconUrlExternal = `${SERVER_HOST}/static/riddles/${riddle.alias}.png`;
+  fetch(iconUrlExternal, {cache : 'force-cache'})
+    .then(response => response.blob({type: 'image/png'}))
+    .then(async blob => {
+      // Store/retrieve cached image blob to avoid annoying icon load times
+      riddle.iconUrl = await new Promise(resolve => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result);
+        reader.readAsDataURL(blob);
+      });
+    });
+  riddle.shownSet = riddle.lastVisitedSet;
+  riddle.shownLevel = riddle.lastVisitedLevel;
+  riddle.pagesByPath = {};
+  const setsArray = Object.keys(riddle.levels);
+  let previousSetName = null;
+  let previousLevelName = null;
+  for (const [setIdx, setName] of Object.entries(setsArray)) {
+    const levelSet = riddle.levels[setName];
+    for (const [levelName, level] of Object.entries(levelSet)) {
+      level.pages = pages[levelName];
+      if (previousLevelName) {
+        const previousLevel =
+          riddle.levels[previousSetName][previousLevelName];
+        level.previousLevel = previousLevelName;
+        previousLevel.nextLevel = levelName;
+        level.previousSet = previousSetName
+      }
+      if (setName !== setsArray.at(-1)) {
+        level.nextSet = setsArray[Number(setIdx) + 1];
+      } else if (levelName !== Object.keys(levelSet).at(-1)) {
+        level.nextSet = setName;
+      }
+      previousSetName = setName;
+      previousLevelName = levelName;
+      if (level.pages) {
+        updatePathsIndex(riddle, level.pages['/']);
+      }
+    }
+  }
+  riddles[riddle.alias] = riddle;
+}
+
+/** Updates current object with possibly new riddle, level and/or page. */
+export async function updateRiddleData(alias, setName, levelName) {
+  currentRiddle = alias;
+  if (!setName || !levelName) {
+    // Not a valid level page; nothing more to be done
+    return;
+  }
+  const riddle = riddles[alias];
+  const levelSet = riddle.levels[setName];
+  if (!levelSet || !levelSet[levelName]) {
+    // Add new riddle and/or level
+    await fetch(`${SERVER_HOST}/get-user-riddle-data/${alias}`)
+      .then(response => response.json())
+      .then(async riddleData => {
+        await fetch(`${SERVER_HOST}/${alias}/levels/get-pages`)
+          .then(response => response.json())
+          .then(pagesData => {
+            buildRiddle(riddleData, pagesData);
+          });
+      });
+  } else {
+    // Add (possibly) new page
+    await fetch(`${SERVER_HOST}/${alias}/levels/get-pages/${levelName}`)
+      .then(response => response.json())
+      .then(pagesData => {
+        riddle.lastVisitedSet = riddle.shownSet = setName;
+        riddle.lastVisitedLevel = riddle.shownLevel = levelName;
+        for (const [levelName, pages] of Object.entries(pagesData)) {
+          const level = riddle.levels[setName][levelName];
+          level.pages = pages;
+          updatePathsIndex(riddle, level.pages['/']);
+        }
+      });
+  }
+}
+
+function updatePathsIndex(riddle, pageNode) {
+  riddle.pagesByPath[pageNode.path] = pageNode;
+  if (pageNode.folder) {
+    for (const child of Object.values(pageNode['children'])) {
+      updatePathsIndex(riddle, child);
+    }
+  }
+}
+
+/** Parses riddle and path from URL, based on root host match. */
+export function parseRiddleAndPath(url) {
+  const parsedUrl = new URL(url);
+  const [alias, rootPath] = parseRiddle(parsedUrl);
+  console.log(parsedUrl, rootPath);
+  if (! alias) {
+    return null;
+  }
+
+  const parsedRoot = new URL(rootPath);
+  const urlTokens = parsedUrl.pathname.split('/');
+  const rootTokens = parsedRoot.pathname.split('/');
+  let path = '';
+  for (let i = 0; i < rootTokens.length; i++) {
+    if (urlTokens[i] !== rootTokens[i]) {
+      path += '/..';
+    }
+  }
+  for (let i = 0; i < urlTokens.length; i++) {
+    if (urlTokens[i] !== rootTokens[i]) {
+      path += `/${urlTokens[i]}`;
+    }
+  }      
+  if (path.at(-1) === '/' && path !== '/') {
+    // Remove trailing slash from folder paths
+    path = path.slice(0, -1);
+  }
+  return [riddles[alias], path];
+}
+
+function parseRiddle(parsedUrl) {
+  const hostname = parsedUrl.hostname.replace(/^www\d*\./, '');
+
+  // Build flat list of hosts
+  const riddleHosts = {};
+  for (const [alias, riddle] of Object.entries(riddles)) {
+    try {
+      const rootPaths = JSON.parse(riddle.rootPath);
+      for (const rootPath of rootPaths) {
+        riddleHosts[rootPath] = alias;
+      }
+    } catch {
+      riddleHosts[riddle.rootPath] = alias;
+    }
+  }
+  
+  for (const [rootPath, alias] of Object.entries(riddleHosts)) {
+    const parsedRoot = new URL(rootPath);
+    const rootHostname = parsedRoot.hostname.replace(/^www\d*\./, '');
+    if (rootHostname === hostname) {
+      return [alias, rootPath];
+    }
+  }
+  return [null, null];
+}
+
+/** Gets page tree node from URL. */
+export function getPageNode(url) {
+  let [riddle, path] = parseRiddleAndPath(url);
+  return riddle.pagesByPath[path];
+}
+
+/** Updates module members' state. */
+export function updateState(_riddles, _currentRiddle) {
+  riddles = _riddles;
+  currentRiddle = _currentRiddle;
+}
+
+/** Clears user riddle data and puts extension in a logged out state. */
+export function clearRiddleData() {
+  for (const prop of Object.getOwnPropertyNames(riddles)) {
+    delete riddles[prop];
+  }
+  initNeeded = true;
+}

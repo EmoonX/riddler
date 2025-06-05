@@ -4,10 +4,12 @@ import {
   clickFile,
   doubleClickFile,
   insertFiles,
-  updateStateInPopup,
 } from './explorer.js';
 
-import { SERVER_HOST } from './util.js';
+import {
+  SERVER_HOST,
+  updateState,
+} from './riddle.js';
 
 $(() => {
   // Set explorer events
@@ -17,6 +19,7 @@ $(() => {
   $('#level').on('click', '#next-level:not(.disabled)', changeLevel);
   $('.page-explorer').on('click', 'figure.file', clickFile);
   $('.page-explorer').on('dblclick', 'figure.file', doubleClickFile);
+  console.log('aaaaaaaaaa')
 
   // Set button click events
   $('[name=login]').on('click', () => {
@@ -33,7 +36,7 @@ $(() => {
     if (alias) {
       // Update explorer.js members
       const riddles = data.riddles;
-      updateStateInPopup(riddles, alias);
+      updateState(riddles, alias);
 
       // Display logged in riddle data
       $('#currently-playing').toggle(true);

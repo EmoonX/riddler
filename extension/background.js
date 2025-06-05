@@ -1,15 +1,16 @@
 import {
-  clearRiddleData,
-  getPageNode,
   initExplorer,
-  parseRiddleAndPath,
-  riddleHosts,
-  riddles,
   sendMessageToPopup,
-  updateRiddleData,
 } from './explorer.js';
 
-import { SERVER_HOST } from './util.js';
+import {
+  clearRiddleData,
+  getPageNode,
+  parseRiddleAndPath,
+  riddles,
+  SERVER_HOST,
+  updateRiddleData,
+} from './riddle.js';
 
 /** Wildcard URLs to be matched. */
 const filter = {
@@ -130,32 +131,23 @@ chrome.webRequest.onBeforeSendHeaders.addListener(async details => {
 
 /** Send a process request to server whenever response is received. */
 chrome.webRequest.onHeadersReceived.addListener(async details => {
-  /** Check if response URL comes from one of the catalogued riddle domains. */
-  const matchesAnyRiddleDomain = (parsedUrl => {
-    for (const rootPath of Object.keys(riddleHosts)) {
-      const parsedRoot = new URL(rootPath.replace('://www.', '://'));
-        if (parsedUrl.hostname === parsedRoot.hostname) {
-          return true;
-        }
-      }
-    return false;
-  });
-  
-  const parsedUrl = new URL(details.url.replace('://www.', '://'));
-  if (! matchesAnyRiddleDomain(parsedUrl)) {
+  if (! parseRiddleAndPath(details.url)) {
     // Completely ignore pages outside riddle domains
     return;
   }
-  console.log(details.url, details.statusCode);
   if (details.statusCode === 301) {
     // Avoid trivial redirects (301) pollution
     return;
   }
+
+  console.log(details.url, details.statusCode);
   if (details.statusCode === 401) {
     // Pluck wrong credentials from 401s,
     // to avoid sending possibly mistakenly entered personal info
+    const parsedUrl = new URL(details.url);
     details.url = `${parsedUrl.origin}${parsedUrl.pathname}`;
   }
+  
   if (Object.keys(riddles).length === 0) {
     // Fallback for when user logs in *after* the extension is loaded
     initExplorer(() => {
