@@ -74,9 +74,10 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
     asyncCallback({cancel: false});
     return;
   }
+
   const parsedUrl = new URL(details.url);
-  let username = parsedUrl.searchParams.get('username');
-  let password = parsedUrl.searchParams.get('password');
+  const username = parsedUrl.searchParams.get('username');
+  const password = parsedUrl.searchParams.get('password');
 
   // Save this function so we can unlisten it later
   credentialsHandler = (async port => {
@@ -96,13 +97,13 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
         let pageNode = getPageNode(details.url);
         while (! pageNode) {
           details.url = details.url.split('/').slice(0, -1).join('/');
-          if (details.url.indexOf('https://') === -1) {
+          if (details.url.indexOf('://') === -1) {
             // Page not in tree
             break;
           }
           pageNode = getPageNode(details.url);
         }
-        if (pageNode && pageNode.username) {
+        if (pageNode && pageNode.username && pageNode.password) {
           message.unlockedCredentials = {
             username: pageNode.username,
             password: pageNode.password,
@@ -123,15 +124,10 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
   asyncCallback({cancel: true});
 }, filter, ['asyncBlocking']);
 
-chrome.webRequest.onBeforeSendHeaders.addListener(async details => {
-  if (details.url.indexOf('.htm') !== -1) {
-    console.log(details);
-  }
-}, filter, ['requestHeaders']);
-
 /** Send a process request to server whenever response is received. */
 chrome.webRequest.onHeadersReceived.addListener(async details => {
-  if (! parseRiddleAndPath(details.url)) {
+  const [riddle, _] = parseRiddleAndPath(details.url);
+  if (! riddle) {
     // Completely ignore pages outside riddle domains
     return;
   }
@@ -141,7 +137,9 @@ chrome.webRequest.onHeadersReceived.addListener(async details => {
     // Pluck wrong credentials from 401s,
     // to avoid sending possibly mistakenly entered personal info
     const parsedUrl = new URL(details.url);
-    details.url = `${parsedUrl.origin}${parsedUrl.pathname}`;
+    delete parsedUrl.username;
+    delete parsedUrl.password;
+    details.url = parsedUrl.toString();
   }
   
   if (Object.keys(riddles).length === 0) {

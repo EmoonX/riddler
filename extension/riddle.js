@@ -101,9 +101,8 @@ function updatePathsIndex(riddle, pageNode) {
 export function parseRiddleAndPath(url) {
   const parsedUrl = new URL(url);
   const [alias, rootPath] = parseRiddle(parsedUrl);
-  console.log(parsedUrl, rootPath);
   if (! alias) {
-    return null;
+    return [null, null];
   }
 
   const parsedRoot = new URL(rootPath);
@@ -155,7 +154,7 @@ function parseRiddle(parsedUrl) {
 
 /** Gets page tree node from URL. */
 export function getPageNode(url) {
-  let [riddle, path] = parseRiddleAndPath(url);
+  const [riddle, path] = parseRiddleAndPath(url);
   return riddle.pagesByPath[path];
 }
 

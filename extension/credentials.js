@@ -9,15 +9,12 @@ port.onMessage.addListener(async data => {
   console.log('Received data from background.js...');
   if (data.username && data.password) {
     // Embed auth box's un/pw into URL and redirect
-    const parsedUrl = new URL(data.url);
-    let href =
-      `${parsedUrl.protocol}//` +
-      `${parsedUrl.hostname}${parsedUrl.pathname}`;
-    if (href !== window.location.href) {
-      href = href.replace('://', `://${data.username}:${data.password}@`);
-      window.location.href = href;
-    }
-    return
+    const href = new URL(data.url);
+    href.username = data.username;
+    href.password = data.password;
+    href.searchParams.delete('username');
+    href.searchParams.delete('password');
+    window.location.href = href.toString();
   }
   if (! data.realm) {
     // Gambiarra

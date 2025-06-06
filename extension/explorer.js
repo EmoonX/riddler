@@ -216,13 +216,10 @@ export async function doubleClickFile() {
         return riddle.rootPath;
       }
     })();
-    let url = `${rootPath}${path}`;
-    if ($(this).attr('data-username')) {
-      let username = $(this).attr('data-username');
-      let password = $(this).attr('data-password');
-      url = url.replace('://', `://${username}:${password}@`);
-    }
-    window.open(url, '_blank');
+    const url = new URL(`${rootPath}${path}`);
+    url.username = $(this).attr('data-username') || '';
+    url.password = $(this).attr('data-password') || '';
+    window.open(url.toString(), '_blank');
   } else {
     // Open or collapse folder, showing/hiding inner files
     const files = $(this).next('.folder-files');
