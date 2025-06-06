@@ -80,9 +80,7 @@ async def process_credentials(
 
             return True
 
-    if correct_credentials == ('???', '???'):
-        username, password = ('???', '???')
-    else:
+    if correct_credentials != (None, None):
         # Possibly new/different credentials, so HTTP-double-check them
         credentials_path = None
         realm_message = None

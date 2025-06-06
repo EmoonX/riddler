@@ -67,10 +67,10 @@ export function changeDir(explorer, folderPath, admin) {
 
   // Show credentials if current folder has associated un/pw
   const credentials = explorer.find('.credentials');
-  if (folder.username) {
+  if (folder.username !== undefined || folder.password !== undefined) {
     credentials.toggle(true);
-    credentials.find('.username').text(folder.username);
-    credentials.find('.password').text(folder.password);
+    credentials.find('.username').text(folder.username || '???');
+    credentials.find('.password').text(folder.password || '???');
   } else {
     credentials.toggle(false);
   }
