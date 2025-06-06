@@ -11,7 +11,7 @@ from quartcord.models import User
 from auth import discord
 from credentials import (
     get_path_credentials,
-    has_unlocked_folder_credentials,
+    has_unlocked_path_credentials,
     process_credentials,
 )
 from inject import get_riddle, get_riddles
@@ -146,7 +146,7 @@ async def process_url(
         'path': ph.path,
     }
     path_credentials = await get_path_credentials(ph.riddle_alias, ph.path)
-    if await has_unlocked_folder_credentials(
+    if await has_unlocked_path_credentials(
         ph.riddle_alias, user, path_credentials['path']
     ):
         data |= {'unlockedCredentials': path_credentials}
@@ -238,7 +238,6 @@ class _PathHandler:
                 if root_segments[i] != url_segments[i]:
                     idx = i
                     break
-            root_suffix = '/'.join(root_segments[idx:])
             url_suffix = '/'.join(url_segments[idx:])
             parent_count = len(root_segments[idx:])
             path = f"/{'/'.join((['..'] * parent_count) + [url_suffix])}"

@@ -17,128 +17,79 @@ async def process_credentials(
 ) -> bool:
 
     alias = riddle['alias']
-    username, password = credentials
     user = await discord.get_user()
-
-    def _log_received_credentials(path: str, success: bool):
-        '''Log received credentials based on their correctness.'''
-
-        if success and not username:
-            # No credentials needed nor received
-            return
-
-        print(
-            f"\033[1m[{alias}]\033[0m "
-            + ((
-                'Received correct credentials '
-                f"\033[1m{username}:{password}\033[0m "
-            ) if success else (
-                'Received wrong credentials '
-            )) +
-            f"for \033[3m\033[1m{path}\033[0m "
-            f"from \033[1m{user.name}\033[0m "
-            f"({datetime.utcnow()})"
-        )
 
     if status_code == 401:
         # User (almost certainly) couldn't access page, so don't even bother
         # _log_received_credentials(os.path.dirname(path), success=False)
         return False
 
-    correct_credentials = await get_path_credentials(alias, path)
-    if not correct_credentials['username'] and credentials == ('', ''):
-        # No credentials found, no credentials given and no 401 received,
-        # so we assume unprotected folder to avoid frequent HTTP checks
-        return True
-
-    credentials_path = correct_credentials['path']
-    if credentials in [
-        (correct_credentials['username'], correct_credentials['password']),
-        ('', ''),
-    ]:
-        # Grant access if user has unlocked protected folder before
-        if await has_unlocked_folder_credentials(alias, user, credentials_path):
-            # Record unlock time if not present yet
-            # (i.e credentials were retroactively given to player before)
-            query = '''
-                UPDATE user_credentials
-                SET unlock_time = :unlock_time
-                WHERE riddle = :riddle
-                    AND username = :username
-                    AND path = :path
-                    AND unlock_time IS NULL
-            '''
-            values = {
-                'riddle': alias,
-                'username': user.name,
-                'path': credentials_path,
-                'unlock_time': datetime.utcnow(),
-            }
-            success = await database.execute(query, values)
-            if success:
-                _log_received_credentials(credentials_path, success=True)
-
+    credentials_path, *correct_credentials = \
+        (await get_path_credentials(alias, path)).values()
+    print(credentials_path, correct_credentials)
+    print(credentials)
+    if credentials == ('', ''):
+        if correct_credentials == ('', ''):
+            # No credentials given, no previously recorded ones, no 401 received;
+            # we assume thus unprotected folder to avoid frequent HTTP checks
+            return True
+        if await has_unlocked_path_credentials(alias, user, credentials_path):
+            # No credentials given but path already unlocked; good to go
             return True
 
-    if correct_credentials != (None, None):
-        # Possibly new/different credentials, so HTTP-double-check them
-        credentials_path = None
-        realm_message = None
-        _path = path
-        while _path != '/':
-            url = f"{riddle['root_path']}{_path}"
-            res = requests.get(url)
-            if res.status_code != 401:
-                if _path == path:
-                    # Visited path isn't protected at all
-                    return True
-                break
-            else:
-                # Get realm message from unauthenticated (401) response header
-                realm_message = eval(
-                    res.headers['WWW-Authenticate'].partition('realm=')[-1]
-                )
+    if credentials == correct_credentials or None in correct_credentials:
+        # Matching informed credentials or sensitive auth path;
+        # grant access and possibly record new user data
+        await _record_user_credentials(
+            alias, credentials_path, *correct_credentials
+        )
+        return True
 
-            res = requests.get(url, auth=HTTPBasicAuth(username, password))
-            if res.status_code == 401:
-                if _path == path:
-                    # Wrong user credentials
-                    return False
-                break
-
-            credentials_path = _path
-            _path = os.path.dirname(_path)
-
-        # Correct credentials; possibly record them
-        await _record_credentials(
-            alias, credentials_path, realm_message, username, password
+    # Possibly new/different credentials, so HTTP-investigate them
+    credentials_path = realm_message = None
+    _path = path
+    while _path != '/':
+        url = f"{riddle['root_path']}{_path}"
+        res = requests.get(url, timeout=10)
+        if res.status_code != 401:
+            if _path == path:
+                # Visited path isn't protected at all
+                return True
+            break
+        # Get realm message from unauthenticated (401) response header
+        realm_message = eval(
+            res.headers['WWW-Authenticate'].partition('realm=')[-1]
         )
 
-    # Create new user record
-    query = '''
-        INSERT IGNORE INTO user_credentials
-            (riddle, username, path, unlock_time)
-        VALUES (:riddle, :username, :path, :unlock_time)
-    '''
-    values = {
-        'riddle': alias,
-        'username': user.name,
-        'path': credentials_path,
-        'unlock_time': datetime.utcnow(),
-    }
-    await database.execute(query, values)
-    _log_received_credentials(credentials_path, success=True)
+        res = requests.get(
+            url, auth=HTTPBasicAuth(*credentials), timeout=10
+        )
+        if res.status_code == 401:
+            if _path == path:
+                # Wrong user credentials (masked 200?)
+                return False
+            break
+
+        credentials_path = _path
+        _path = os.path.dirname(_path)
+
+    # Correct unseen credentials
+    await _record_credentials(
+        alias, credentials_path, realm_message, *credentials
+    )
+    await _record_user_credentials(alias, credentials_path, *credentials)
 
     return True
 
 
 async def _record_credentials(
-    alias: str, path: str, realm_message: str, username: str, password: str
+    alias: str, path: str, realm_message: str, username: str, password: str,
 ):
 
+    # Log finding and user who did it
     user = await discord.get_user()
     query = '''
-        INSERT INTO _found_credentials (
+        INSERT IGNORE INTO _found_credentials (
             riddle, path, realm_message, cred_username, cred_password,
             acc_username, unlock_time
         ) VALUES (
@@ -155,11 +106,7 @@ async def _record_credentials(
         'acc_username': user.name,
         'unlock_time': datetime.utcnow(),
     }
-    try:
-        await database.execute(query, values)
-    except IntegrityError:
-        return
-    else:
+    if await database.execute(query, values):
         print(
             f"> \033[1m[{alias}]\033[0m "
             f"Found new credentials \033[1m{username}:{password}\033[0m "
@@ -168,7 +115,7 @@ async def _record_credentials(
             f"({datetime.utcnow()})"
         )
 
-    # Register credentials as new ones
+    # Register credentials as new ones (bar already existing record for path)
     query = '''
         INSERT IGNORE INTO riddle_credentials (
             riddle, path, realm_message, username, password
@@ -184,6 +131,52 @@ async def _record_credentials(
         'password': password,
     }
     await database.execute(query, values)
+
+
+async def _record_user_credentials(
+    alias: str, path: str, username: str, password: str,
+):
+    '''
+    Insert new user credentials,
+    or update existing ones with missing unlock time.
+    '''
+
+    user = await discord.get_user()
+
+    # Create new user record
+    query = '''
+        INSERT IGNORE INTO user_credentials
+            (riddle, username, path, unlock_time)
+        VALUES (:riddle, :username, :path, :unlock_time)
+    '''
+    values = {
+        'riddle': alias,
+        'username': user.name,
+        'path': path,
+        'unlock_time': datetime.utcnow(),
+    }
+    if not await database.execute(query, values):
+        # Record unlock time if not present yet
+        # (i.e credentials were retroactively given to player before)
+        query = '''
+            UPDATE user_credentials
+            SET unlock_time = :unlock_time
+            WHERE riddle = :riddle
+                AND username = :username
+                AND path = :path
+                AND unlock_time IS NULL
+        '''
+        if not await database.execute(query, values):
+            return
+
+    print(
+        f"\033[1m[{alias}]\033[0m "
+        'Received correct credentials '
+        f"\033[1m{username or '???'}:{password or '???'}\033[0m "
+        f"for \033[3m\033[1m{path}\033[0m "
+        f"from \033[1m{user.name}\033[0m "
+        f"({datetime.utcnow()})"
+    )
 
 
 async def get_path_credentials(alias: str, path: str) -> dict[str, str]:
@@ -217,7 +210,7 @@ async def get_path_credentials(alias: str, path: str) -> dict[str, str]:
     }
 
 
-async def has_unlocked_folder_credentials(
+async def has_unlocked_path_credentials(
     alias: str, user: User, path: str
 ) -> bool:
     '''Check if player has unlocked credentials for path.'''
