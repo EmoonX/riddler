@@ -158,6 +158,12 @@ export function getPageNode(url) {
   return riddle.pagesByPath[path];
 }
 
+/** Check whether the riddle path deals with real personal auth. */
+export function isPathSensitive(riddle, path) {
+  // (no, pr0ners, I am NOT interested in hoarding your personal user data)
+  return riddle.alias === 'notpron' && path.indexOf('/jerk2') === 0;
+}
+
 /** Updates module members' state. */
 export function updateState(_riddles, _currentRiddle) {
   riddles = _riddles;

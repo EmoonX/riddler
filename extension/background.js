@@ -6,6 +6,7 @@ import {
 import {
   clearRiddleData,
   getPageNode,
+  isPathSensitive,
   parseRiddleAndPath,
   riddles,
   SERVER_HOST,
@@ -68,9 +69,8 @@ let credentialsHandler = null;
 /** Handle riddle auth attempts, prompting user with custom auth box. */
 chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
   const [riddle, path] = parseRiddleAndPath(details.url);
-  if (riddle && riddle.alias === 'notpron' && path.indexOf('/jerk2') === 0) {
+  if (riddle && isPathSensitive(riddle, path)) {
     // Fallback to browser's auth box when real auth is involved
-    // (no, pr0ners, I am NOT interested in hoarding your personal user data)
     asyncCallback({cancel: false});
     return;
   }
@@ -126,19 +126,19 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
 
 /** Send a process request to server whenever response is received. */
 chrome.webRequest.onHeadersReceived.addListener(async details => {
-  const [riddle, _] = parseRiddleAndPath(details.url);
+  const [riddle, path] = parseRiddleAndPath(details.url);
   if (! riddle) {
     // Completely ignore pages outside riddle domains
     return;
   }
 
   console.log(details.url, details.statusCode);
-  if (details.statusCode === 401) {
-    // Pluck wrong credentials from 401s,
-    // to avoid sending possibly mistakenly entered personal info
+  if (details.statusCode === 401 || isPathSensitive(riddle, path)) {
+    // Pluck wrong credentials from 401s and special cases,
+    // to avoid possibly sending mistakenly entered personal info
     const parsedUrl = new URL(details.url);
-    delete parsedUrl.username;
-    delete parsedUrl.password;
+    parsedUrl.username = '';
+    parsedUrl.password = '';
     details.url = parsedUrl.toString();
   }
   
