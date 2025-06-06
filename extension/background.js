@@ -135,10 +135,6 @@ chrome.webRequest.onHeadersReceived.addListener(async details => {
     // Completely ignore pages outside riddle domains
     return;
   }
-  if (details.statusCode === 301) {
-    // Avoid trivial redirects (301) pollution
-    return;
-  }
 
   console.log(details.url, details.statusCode);
   if (details.statusCode === 401) {
