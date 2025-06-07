@@ -24,8 +24,10 @@ async def process_credentials(
         # _log_received_credentials(os.path.dirname(path), success=False)
         return False
 
-    credentials_path, *correct_credentials = \
-        (await get_path_credentials(alias, path)).values()
+    credentials_data = await get_path_credentials(alias, path)
+    credentials_path = credentials_data['path']
+    correct_credentials = \
+        (credentials_data['username'], credentials_data['password'])
     if credentials == ('', ''):
         if correct_credentials == ('', ''):
             # No credentials given, no previously recorded ones, no 401 received;
@@ -35,7 +37,7 @@ async def process_credentials(
             # No credentials given but path already unlocked; good to go
             return True
 
-    if credentials == correct_credentials or None in correct_credentials:
+    if credentials == correct_credentials or credentials_data.get('sensitive'):
         # Matching informed credentials or sensitive auth path;
         # grant access and possibly record new user data
         await _record_user_credentials(
@@ -59,12 +61,10 @@ async def process_credentials(
             res.headers['WWW-Authenticate'].partition('realm=')[-1]
         )
 
-        res = requests.get(
-            url, auth=HTTPBasicAuth(*credentials), timeout=10
-        )
+        res = requests.get(url, auth=HTTPBasicAuth(*credentials), timeout=10)
         if res.status_code == 401:
             if _path == path:
-                # Wrong user credentials (401 masked as 200?)
+                # Wrong user credentials (leftover, 401 masked as 200, etc)
                 return False
             break
 
@@ -177,35 +177,26 @@ async def _record_user_credentials(
     )
 
 
-async def get_path_credentials(alias: str, path: str) -> dict[str, str]:
+async def get_path_credentials(alias: str, path: str) -> dict:
+    '''Get innermost credentials from visited path.'''
 
     query = '''
         SELECT * FROM riddle_credentials
         WHERE riddle = :riddle
     '''
-    values = {'riddle': alias}
-    result = await database.fetch_all(query, values)
-    all_credentials = {row['path']: row for row in result}
-
-    parsed_path = path.split('/')
-    while parsed_path:
-        path = '/'.join(parsed_path)
-        credentials = all_credentials.get(path)
-        if credentials:
-            # Credentials and innermost protect folder found
-            return {
-                'path': path,
-                'username': credentials['username'],
-                'password': credentials['password'],
-            }
-        parsed_path.pop()
-
-    # No credentials found at all
-    return {
-        'path': '/',
-        'username': '',
-        'password': '',
+    all_credentials = {
+        credentials['path']: credentials
+        for credentials in await database.fetch_all(query, {'riddle': alias})
     }
+
+    while path:
+        if credentials := all_credentials.get(path):
+            # Innermost credentials found
+            return dict(credentials)
+        path = path.rpartition('/')[0]
+
+    # Path isn't protected at all
+    return {'path': '/', 'username': '', 'password': ''}
 
 
 async def has_unlocked_path_credentials(

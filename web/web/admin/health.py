@@ -64,10 +64,10 @@ async def health_diagnostics(alias: str):
         # Build URL (with possibly embedded credentials)
         url = f"{riddle['root_path']}{path}"
         credentials = await get_path_credentials(alias, path)
-        if credentials['username']:
-            username = credentials['username']
-            password = credentials['password']
-            url = url.replace('://', f"://{username}:{password}@")
+        username = credentials['username']
+        password = credentials['password']
+        if username or password:
+            url = url.replace('://', f"://{username or ''}:{password or ''}@")
         page_data |= {'url': url}
 
         if show_new_in_days:

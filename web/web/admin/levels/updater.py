@@ -217,11 +217,14 @@ class LevelUpdater:
         # Send HTTP request to retrieve image file
         image_url = f"{self.riddle['root_path']}{image_path}"
         credentials = await get_path_credentials(self.alias, image_path)
-        if username := credentials['username']:
-            password = credentials['password']
-            image_url = image_url.replace('://', f"://{username}:{password}@")
+        username = credentials['username']
+        password = credentials['password']
+        if username or password:
+            image_url = image_url.replace(
+                '://', f"://{username or ''}:{password or ''}@"
+            )
         self.log(
-            f"Fetching level image from \033[3;4m{image_url}\033[0m… ", end=''
+            f"Fetching level image from \033[3;4m{image_url}\033[0m... ", end=''
         )
         res = requests.get(image_url, stream=True, timeout=10)
         print(f"\033[1m{'OK' if res.ok else res.status_code}\033[0m", flush=True)
