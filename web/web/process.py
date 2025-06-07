@@ -74,7 +74,7 @@ async def process_url(
     # Disclose path alias (if any) for logging purposes
     path_to_log = ph.path
     if ph.path_alias_for:
-        path_to_log = f"{ph.path} ➜ {ph.path_alias_for}"
+        path_to_log = f"{ph.path} \033[0m(alias for \033[3m{ph.path_alias_for})"
 
     short_run = False
     if status_code in [301, 302, 307, 308]:
