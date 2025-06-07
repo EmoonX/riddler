@@ -210,8 +210,8 @@ async def get_pages(
             SELECT *, current_timestamp() AS access_time FROM level_pages
             WHERE riddle = :riddle
                 AND {level_condition}
-                AND hidden IS NOT TRUE
-                AND removed {'IS' if include_removed else 'IS NOT'} TRUE
+                {'AND hidden  IS NOT TRUE' if not include_hidden  else ''}
+                {'AND removed IS NOT TRUE' if not include_removed else ''}
         """
     else:
         user = await discord.get_user()
@@ -227,7 +227,8 @@ async def get_pages(
                         .replace('level_name LIKE', 'up.level_name LIKE')
                         .replace('level_name IS', 'up.level_name IS')
                 }
-                AND hidden IS NOT TRUE
+                {'AND hidden  IS NOT TRUE' if not include_hidden  else ''}
+                {'AND removed IS NOT TRUE' if not include_removed else ''}
             ORDER BY SUBSTRING_INDEX(up.path, ".", -1)
         """
         values |= {'username': user.name}
@@ -333,7 +334,8 @@ async def get_pages(
         SELECT level_name, `path` FROM level_pages
         WHERE riddle = :riddle
             AND {level_condition}
-            AND hidden IS NOT TRUE
+            {'AND hidden  IS NOT TRUE' if not include_hidden  else ''}
+            {'AND removed IS NOT TRUE' if not include_removed else ''}
     """
     values = {'riddle': alias, 'level_name': requested_level}
     pages_data = await database.fetch_all(query, values)

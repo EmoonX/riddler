@@ -41,6 +41,7 @@ async def health_diagnostics(alias: str):
     riddle = await get_riddle(alias)
     all_pages_by_level = await get_pages(
         alias,
+        include_hidden=True,
         include_unlisted=True,
         include_removed=args.get('includeRemoved'),
         index_by_levels=True,
