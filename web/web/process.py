@@ -47,6 +47,7 @@ async def process_url(
     if not auto:
         url = (await request.data).decode('utf-8')
     status_code = int(request.headers.get('Statuscode', 200))
+    location = request.headers.get('Location')
 
     # Create path handler object and build player data
     if not auto:

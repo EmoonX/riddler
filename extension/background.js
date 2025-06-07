@@ -21,16 +21,25 @@ const filter = {
 /** Time of last login request. */
 // let t0;
 
-/** Sends user-visited URL and its status code to `/process` endpoint. */
-async function sendToProcess(visitedUrl, statusCode) {
+/** Sends user-visited URL and request data to the `/process` endpoint. */
+async function sendToProcess(details) {
   const params = {
     method: "post",
     headers: {
-      'Statuscode': statusCode,
+      'Statuscode': details.statusCode,
     },
     contentType: 'text/uri-list',
-    body: visitedUrl,
+    body: details.url,
   };
+  const location =
+    details.responseHeaders
+    .find(h => h.name.toLowerCase() === 'location');
+  if (location) {
+    // Send redirect location response header on 301/302/307/308
+    params.headers['Location'] = location.value;
+  }
+  console.log(details.url, details.statusCode, location || '');
+
   let data;
   await fetch(`${SERVER_HOST}/process`, params)
     .then(async response => {
@@ -132,7 +141,6 @@ chrome.webRequest.onHeadersReceived.addListener(async details => {
     return;
   }
 
-  console.log(details.url, details.statusCode);
   if (details.statusCode === 401 || isPathSensitive(riddle, path)) {
     // Pluck wrong credentials from 401s and special cases,
     // to avoid possibly sending mistakenly entered personal info
@@ -145,12 +153,12 @@ chrome.webRequest.onHeadersReceived.addListener(async details => {
   if (Object.keys(riddles).length === 0) {
     // Fallback for when user logs in *after* the extension is loaded
     initExplorer(() => {
-      sendToProcess(details.url, details.statusCode)
+      sendToProcess(details)
     });
     return;
   }
-  sendToProcess(details.url, details.statusCode);
-}, filter);
+  sendToProcess(details);
+}, filter, ['responseHeaders']);
 
 /** Send regular pings to avoid service worker becoming inactive. */
 chrome.runtime.onConnect.addListener(port => {
