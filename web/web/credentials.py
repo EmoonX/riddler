@@ -34,7 +34,7 @@ async def process_credentials(
             # we assume thus unprotected folder to avoid frequent HTTP checks
             return True
         if await has_unlocked_path_credentials(alias, user, credentials_path):
-            # No credentials given but path already unlocked; good to go
+            # No credentials given and path already unlocked; good to go
             return True
 
     if credentials == correct_credentials or credentials_data.get('sensitive'):
@@ -178,7 +178,7 @@ async def _record_user_credentials(
 
 
 async def get_path_credentials(alias: str, path: str) -> dict:
-    '''Get innermost credentials from visited path.'''
+    '''Get required credentials (if any) for the visited path.'''
 
     query = '''
         SELECT * FROM riddle_credentials
@@ -188,6 +188,9 @@ async def get_path_credentials(alias: str, path: str) -> dict:
         credentials['path']: credentials
         for credentials in await database.fetch_all(query, {'riddle': alias})
     }
+    if not all_credentials:
+        # Avoid frequent iterations in credentialless riddles
+        return {'path': '/', 'username': '', 'password': ''}
 
     while path:
         if credentials := all_credentials.get(path):
