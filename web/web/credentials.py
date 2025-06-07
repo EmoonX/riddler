@@ -26,8 +26,6 @@ async def process_credentials(
 
     credentials_path, *correct_credentials = \
         (await get_path_credentials(alias, path)).values()
-    print(credentials_path, correct_credentials)
-    print(credentials)
     if credentials == ('', ''):
         if correct_credentials == ('', ''):
             # No credentials given, no previously recorded ones, no 401 received;
@@ -66,7 +64,7 @@ async def process_credentials(
         )
         if res.status_code == 401:
             if _path == path:
-                # Wrong user credentials (masked 200?)
+                # Wrong user credentials (401 masked as 200?)
                 return False
             break
 

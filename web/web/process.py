@@ -1,8 +1,9 @@
+from copy import copy
 from datetime import datetime
 import json
 import re
-from typing import Optional, Self, Tuple
-from urllib.parse import urlsplit
+from typing import Self
+from urllib.parse import urljoin, urlsplit
 
 from pymysql.err import IntegrityError
 from quart import Blueprint, request, jsonify
@@ -75,6 +76,19 @@ async def process_url(
     if ph.path_alias_for:
         path_to_log = f"{ph.path} ➜ {ph.path_alias_for}"
 
+    short_run = False
+    if status_code in [301, 302, 307, 308]:
+        full_location = urljoin(url, location)
+        if ph_loc := await _PathHandler.build(user, full_location, status_code):
+            if (
+                # Trivial folder trailing slashes
+                ph_loc.raw_path == f"{ph.raw_path}/" or
+                # Implicit [index].htm[l] (usually Neocities)
+                ph_loc.raw_path == re.sub(r'(index)?([.]\w+)?$', '', ph.raw_path)
+            ):
+                short_run = True
+                ph.path = ph_loc.raw_path
+
     # Process received credentials (possibly none)
     riddle = await get_riddle(ph.riddle_alias)
     ok = await process_credentials(riddle, ph.path, ph.credentials, status_code)
@@ -90,6 +104,12 @@ async def process_url(
             'message': 'Wrong or missing user credentials',
             'riddle': ph.riddle_alias
         }), 403
+
+    if short_run:
+        return jsonify({
+            'message': 'Trivial auto-redirect, skipping path processing',
+            'riddle': ph.riddle_alias
+        }), 202
 
     # Process received path
     if ph.path_alias_for:
@@ -191,13 +211,16 @@ class _PathHandler:
     @classmethod
     async def build(
         cls, user: User, url: str, status_code: str
-    ) -> Self:
+    ) -> Self | None:
         '''Build handler from DB's user info and URL info.'''
 
         # Parse and save basic data + status code
         self = cls()
         riddle = await self._parse_riddle_data_from_url(url)
+        if not riddle:
+            return None
         self.user = user
+        self.raw_path = copy(self.path)
         self.status_code = status_code
 
         # Ignore occurrences of consecutive slashes
