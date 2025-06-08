@@ -87,16 +87,17 @@ async def process_url(
                 ph_loc.raw_path == re.sub(r'(index)?([.]\w+)?$', '', ph.raw_path)
             ):
                 short_run = True
-                ph.path = ph_loc.raw_path
 
     # Process received credentials (possibly none)
     riddle = await get_riddle(ph.riddle_alias)
-    ok = await process_credentials(riddle, ph.path, ph.credentials, status_code)
+    ok = await process_credentials(
+        riddle, ph.raw_path, ph.credentials, status_code
+    )
     if not ok:
         print(
             f"\033[1m[{ph.riddle_alias}]\033[0m "
             f"Received wrong/missing credentials "
-            f"for path \033[3m{path_to_log}\033[0m "
+            f"for path \033[3m{ph.raw_path}\033[0m "
             f"from \033[1m{ph.user.name}\033[0m "
             f"({tnow})"
         )
@@ -209,9 +210,7 @@ class _PathHandler:
     '''Real status code of requested page (either 200 or 404).'''
 
     @classmethod
-    async def build(
-        cls, user: User, url: str, status_code: str
-    ) -> Self | None:
+    async def build(cls, user: User, url: str, status_code: str) -> Self | None:
         '''Build handler from DB's user info and URL info.'''
 
         # Parse and save basic data + status code

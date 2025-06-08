@@ -1,7 +1,7 @@
 from datetime import datetime
 import os
+import re
 
-from pymysql.err import IntegrityError
 import requests
 from requests.auth import HTTPBasicAuth
 
@@ -13,28 +13,32 @@ async def process_credentials(
     riddle: dict,
     path: str,
     credentials: tuple[str, str],
-    status_code: int
+    status_code: int,
 ) -> bool:
 
     alias = riddle['alias']
     user = await discord.get_user()
-
-    if status_code == 401:
-        # User (almost certainly) couldn't access page, so don't even bother
-        # _log_received_credentials(os.path.dirname(path), success=False)
-        return False
-
     credentials_data = await get_path_credentials(alias, path)
     credentials_path = credentials_data['path']
     correct_credentials = \
         (credentials_data['username'], credentials_data['password'])
-    if credentials == ('', ''):
+
+    if status_code == 401:
         if correct_credentials == ('', ''):
-            # No credentials given, no previously recorded ones, no 401 received;
-            # we assume thus unprotected folder to avoid frequent HTTP checks
-            return True
+            # Almost certainly new and unseen locked path
+            await _check_and_insert_empty_credentials(riddle, user, path)
+        # User (almost certainly) couldn't access page, so don't even bother
+        # _log_received_credentials(os.path.dirname(path), success=False)
+        return False
+
+    if correct_credentials == ('', ''):
+        # No previously recorded credentials and no 401 received;
+        # we assume thus unprotected folder to avoid frequent HTTP checks
+        return True
+
+    if credentials == ('', ''):
         if await has_unlocked_path_credentials(alias, user, credentials_path):
-            # No credentials given and path already unlocked; good to go
+            # No credentials given but path already unlocked; good to go
             return True
 
     if credentials == correct_credentials or credentials_data.get('sensitive'):
@@ -45,47 +49,112 @@ async def process_credentials(
         )
         return True
 
-    # Possibly new/different credentials, so HTTP-investigate them
-    credentials_path = realm_message = None
-    _path = path
-    while _path != '/':
-        url = f"{riddle['root_path']}{_path}"
-        res = requests.get(url, timeout=10)
-        if res.status_code != 401:
-            if _path == path:
-                # Visited path isn't protected at all
-                return True
-            break
-        # Get realm message from unauthenticated (401) response header
-        realm_message = eval(
-            res.headers['WWW-Authenticate'].partition('realm=')[-1]
-        )
+    # Possibly unseen credentials, so HTTP-investigate and perhaps record them
+    if credentials_path := (
+        await _check_and_record_credentials(riddle, user, path, *credentials)
+    ):
+        await _record_user_credentials(alias, credentials_path, *credentials)
+        return True
 
-        res = requests.get(url, auth=HTTPBasicAuth(*credentials), timeout=10)
-        if res.status_code == 401:
-            if _path == path:
-                # Wrong user credentials (leftover, 401 masked as 200, etc)
-                return False
-            break
-
-        credentials_path = _path
-        _path = os.path.dirname(_path)
-
-    # Correct unseen credentials
-    await _record_credentials(
-        alias, credentials_path, realm_message, *credentials
-    )
-    await _record_user_credentials(alias, credentials_path, *credentials)
-
-    return True
+    return False
 
 
-async def _record_credentials(
-    alias: str, path: str, realm_message: str, username: str, password: str,
+async def _check_and_insert_empty_credentials(
+    riddle: dict, user: User, path: str,
 ):
+    url = f"{riddle['root_path']}{path}"
+    status_code, realm_message = _send_raw_request(url)
+    if status_code != 401:
+        # 200 masked as 401?
+        return
+
+    while True:
+        credentials_path = path
+        path = os.path.dirname(path)
+
+        url = f"{riddle['root_path']}{path}"
+        status_code, _realm_message = _send_raw_request(url)
+        if status_code != 401:
+            break
+        if _realm_message != realm_message:
+            break
+
+    # Insert raw record with unknown (NULL) username/password
+    query = '''
+        INSERT INTO riddle_credentials (
+            riddle, path, realm_message, username, password
+        ) VALUES (
+            :riddle, :path, :realm_message, NULL, NULL
+        )
+    '''
+    values = {
+        'riddle': riddle['alias'],
+        'path': credentials_path,
+        'realm_message': realm_message,
+    }
+    await database.execute(query, values)
+    print(
+        f"> \033[1m[{riddle['alias']}]\033[0m "
+        f"New protected path \033[1;3m{credentials_path}\033[0m "
+        f"found by \033[1m{user.name}\033[0m "
+        f"({datetime.utcnow()})"
+    )
+
+
+async def _check_and_record_credentials(
+    riddle: dict, user: User, path: str, username: str, password: str,
+) -> str | None:
+    url = f"{riddle['root_path']}{path}"
+    if _send_authenticated_request(url, username, password) == 401:
+        # Wrong user credentials (leftover, 401 masked as 200, etc)
+        return None
+
+    status_code, realm_message = _send_raw_request(url)
+    if status_code != 401:
+        # Credentials removed altogether?
+        username = password = ''
+
+    while True:
+        credentials_path = path
+        path = os.path.dirname(path)
+
+        url = f"{riddle['root_path']}{path}"
+        if _send_authenticated_request(url, username, password) == 401:
+            break
+        status_code, _realm_message = _send_raw_request(url)
+        if status_code != 401:
+            break
+        if _realm_message != realm_message:
+            break
+
+    # Add username and password to previously recorded empty credentials
+    query = '''
+        UPDATE riddle_credentials
+        SET username = :username, password = :password
+        WHERE riddle = :riddle
+            AND path = :path
+            AND username IS NULL
+            AND password IS NULL
+    '''
+    values = {
+        'riddle': riddle['alias'],
+        'path': credentials_path,
+        'username': username,
+        'password': password,
+    }
+    if not await database.execute(query, values):
+        # Empty record not present, so just insert a full new one
+        query = '''
+            INSERT IGNORE INTO riddle_credentials (
+                riddle, path, realm_message, username, password
+            ) VALUES (
+                :riddle, :path, :realm_message, :username, :password
+            )
+        '''
+        values |= {'realm_message': realm_message}
+        await database.execute(query, values)
 
     # Log finding and user who did it
-    user = await discord.get_user()
     query = '''
         INSERT IGNORE INTO _found_credentials (
             riddle, path, realm_message, cred_username, cred_password,
@@ -96,8 +165,8 @@ async def _record_credentials(
         )
     '''
     values = {
-        'riddle': alias,
-        'path': path,
+        'riddle': riddle['alias'],
+        'path': credentials_path,
         'realm_message': realm_message,
         'cred_username': username,
         'cred_password': password,
@@ -106,33 +175,41 @@ async def _record_credentials(
     }
     if await database.execute(query, values):
         print(
-            f"> \033[1m[{alias}]\033[0m "
-            f"Found new credentials \033[1m{username}:{password}\033[0m "
-            f"for \033[1;3m{path}\033[0m "
-            f"by \033[1m{user.name}\033[0m "
+            f"> \033[1m[{riddle['alias']}]\033[0m "
+            f"New credentials \033[1m{username}:{password}\033[0m "
+            f"for path \033[1;3m{credentials_path}\033[0m "
+            f"found by \033[1m{user.name}\033[0m "
             f"({datetime.utcnow()})"
         )
 
-    # Register credentials as new ones (bar already existing record for path)
-    query = '''
-        INSERT IGNORE INTO riddle_credentials (
-            riddle, path, realm_message, username, password
-        ) VALUES (
-            :riddle, :path, :realm_message, :username, :password
-        )
-    '''
-    values = {
-        'riddle': alias,
-        'path': path,
-        'realm_message': realm_message,
-        'username': username,
-        'password': password,
-    }
-    await database.execute(query, values)
+    return credentials_path
+
+
+def _send_raw_request(url: str) -> tuple[int, str | None]:
+
+    print(f"@@ request to {url}...")
+    res = requests.get(url, timeout=10)
+    if res.status_code != 401:
+        # Path isn't protected at all
+        return res.status_code, None
+
+    # Get realm message from unauthenticated (401) response header
+    auth_header = res.headers['WWW-Authenticate']
+    try:
+        return 401, re.search(r'realm="([^"]*)"', auth_header)[1]
+    except IndexError:
+        return 401, None
+
+
+def _send_authenticated_request(url: str, username: str, password: str) -> int:
+
+    print('@@ request to ' + url.replace('://', f"://{username}:{password}@") + '...')
+    res = requests.get(url, auth=HTTPBasicAuth(username, password), timeout=10)
+    return res.status_code
 
 
 async def _record_user_credentials(
-    alias: str, path: str, username: str, password: str,
+    alias: str, credentials_path: str, username: str, password: str,
 ):
     '''
     Insert new user credentials,
@@ -171,7 +248,7 @@ async def _record_user_credentials(
         f"\033[1m[{alias}]\033[0m "
         'Received correct credentials '
         f"\033[1m{username or '???'}:{password or '???'}\033[0m "
-        f"for \033[3m\033[1m{path}\033[0m "
+        f"for path \033[3m\033[1m{credentials_path}\033[0m "
         f"from \033[1m{user.name}\033[0m "
         f"({datetime.utcnow()})"
     )
@@ -192,11 +269,13 @@ async def get_path_credentials(alias: str, path: str) -> dict:
         # Avoid frequent iterations in credentialless riddles
         return {'path': '/', 'username': '', 'password': ''}
 
-    while path:
+    while True:
         if credentials := all_credentials.get(path):
             # Innermost credentials found
             return dict(credentials)
-        path = path.rpartition('/')[0]
+        if path == '/':
+            break
+        path = os.path.dirname(path)
 
     # Path isn't protected at all
     return {'path': '/', 'username': '', 'password': ''}
@@ -244,4 +323,3 @@ async def get_all_unlocked_credentials(
         for row in result
     }
     return credentials
-
