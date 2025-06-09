@@ -77,7 +77,7 @@ async def process_url(
         path_to_log = f"{ph.path} \033[0m(alias for \033[3m{ph.path_alias_for})"
 
     short_run = False
-    if status_code in [301, 302, 307, 308]:
+    if status_code in [301, 302, 303, 307, 308]:
         full_location = urljoin(url, location)
         if ph_loc := await _PathHandler.build(user, full_location, status_code):
             if (
@@ -101,7 +101,9 @@ async def process_url(
 
     if short_run:
         return jsonify({
-            'message': 'Trivial auto-redirect, skipping path processing',
+            'message':
+                f"Trivial auto-redirect ({status_code}); "
+                'skipping path processing',
             'riddle': ph.riddle_alias
         }), 202
 
