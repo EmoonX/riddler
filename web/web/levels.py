@@ -46,7 +46,7 @@ async def level_list(alias: str):
         # else:
 
         if level['unlocked']:
-            if level['path'][0] == '[':
+            if level['path'] and level['path'].startswith('['):
                 # If a multi-front level, pick up the first found
                 # front path for player purposes (e.g image link)
                 query = '''
