@@ -120,8 +120,18 @@ class LevelUpdater:
         self.__class__.current_set = self.level_set
 
     async def _add_new_level_set(self):
-        '''Add new entry to level set entry.'''
-        set_index = max(idx for idx in self.all_levels_by_set if idx < 99) + 1
+        '''Add new level set entry.'''
+
+        def _get_new_set_index(set_name: str) -> int:
+            '''Get new set index based on max current one, bar special cases.'''
+            match set_name:
+                case 'Secret Levels':
+                    return 99
+                case 'Weeklies':
+                    return 100
+            return max(idx for idx in self.all_levels_by_set if idx < 99) + 1
+
+        set_index = _get_new_set_index(self._set_name)
         query = '''
             INSERT INTO level_sets
                 (riddle, `index`, name)
@@ -132,20 +142,20 @@ class LevelUpdater:
             'index': set_index,
             'name': self._set_name,
         }
-        await database.execute(query, values)        
+        await database.execute(query, values)  
         self.level_set = values | {'levels': {}}
-        self.__class__.all_levels_by_set[set_index] = self.level_set
+        self.all_levels_by_set[set_index] = self.level_set
 
     async def _add_new_level(self):
         '''Add new level entry.'''
         index = max(self.level_set['levels'].keys(), default=0) + 1
         query = '''
             INSERT INTO levels (
-                riddle, level_set, set_index, `index`, name,
-                path, discord_category, discord_name
+                riddle, level_set, set_index, `index`, name, path,
+                is_secret, discord_category, discord_name
             ) VALUES (
-                :riddle, :level_set, :set_index, :index, :name,
-                :path, :discord_category, :discord_name
+                :riddle, :level_set, :set_index, :index, :name, :path,
+                :is_secret, :discord_category, :discord_name
             )
         '''
         values = {
@@ -155,6 +165,7 @@ class LevelUpdater:
             'index': index,
             'name': self._level_name,
             'path': self.paths[0] if self.paths else None,
+            'is_secret': True if self.level_set['index'] == 99 else None,
             'discord_category': self._set_name,
             'discord_name': self._level_name.lower().replace(' ', '-'),
         }
@@ -163,6 +174,10 @@ class LevelUpdater:
 
     def _get_previous_level(self) -> dict | None:
         '''Get level before the current one in the set_index/index ordering,'''
+
+        if self.level_set['index'] in [99, 100]:
+            # Do not apply previous level logic to secrets and weeklies
+            return None
 
         previous_index = self.level['index'] - 1
         if previous_in_set := self.level_set['levels'].get(previous_index):
@@ -178,6 +193,9 @@ class LevelUpdater:
 
     async def _add_requirement(self, required_level: dict):
         '''Add single requirement entry for level.'''
+
+        if self.level_set['index'] in [99, 100]:
+            return
 
         query = '''
             SELECT 1 FROM level_requirements
