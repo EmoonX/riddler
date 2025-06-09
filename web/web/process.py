@@ -94,13 +94,6 @@ async def process_url(
         riddle, ph.raw_path, ph.credentials, status_code
     )
     if not ok:
-        print(
-            f"\033[1m[{ph.riddle_alias}]\033[0m "
-            f"Received wrong/missing credentials "
-            f"for path \033[3m{ph.raw_path}\033[0m "
-            f"from \033[1m{ph.user.name}\033[0m "
-            f"({tnow})"
-        )
         return jsonify({
             'message': 'Wrong or missing user credentials',
             'riddle': ph.riddle_alias

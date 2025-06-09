@@ -25,10 +25,12 @@ async def process_credentials(
 
     if status_code == 401:
         if correct_credentials == ('', ''):
-            # Almost certainly new and unseen locked path
-            await _check_and_insert_empty_credentials(riddle, user, path)
-        # User (almost certainly) couldn't access page, so don't even bother
-        # _log_received_credentials(os.path.dirname(path), success=False)
+            # Almost certainly new and unseen protected path
+            credentials_path = \
+                await _check_and_insert_empty_credentials(riddle, user, path)
+
+        # User couldn't access path, so nothing more to do
+        _log_received_credentials(alias, user, path, credentials_path)
         return False
 
     if correct_credentials == ('', ''):
@@ -45,7 +47,7 @@ async def process_credentials(
         # Matching informed credentials or sensitive auth path;
         # grant access and possibly record new user data
         await _record_user_credentials(
-            alias, credentials_path, *correct_credentials
+            alias, path, credentials_path, *correct_credentials
         )
         return True
 
@@ -53,7 +55,7 @@ async def process_credentials(
     if credentials_path := (
         await _check_and_record_credentials(riddle, user, path, *credentials)
     ):
-        await _record_user_credentials(alias, credentials_path, *credentials)
+        await _record_user_credentials(alias, path, credentials_path, *credentials)
         return True
 
     return False
@@ -61,12 +63,13 @@ async def process_credentials(
 
 async def _check_and_insert_empty_credentials(
     riddle: dict, user: User, path: str,
-):
+) -> str:
+
     url = f"{riddle['root_path']}{path}"
     status_code, realm_message = _send_raw_request(url)
     if status_code != 401:
         # 200 masked as 401?
-        return
+        return '/'
 
     while True:
         credentials_path = path
@@ -100,10 +103,13 @@ async def _check_and_insert_empty_credentials(
         f"({datetime.utcnow()})"
     )
 
+    return credentials_path
+
 
 async def _check_and_record_credentials(
     riddle: dict, user: User, path: str, username: str, password: str,
 ) -> str | None:
+
     url = f"{riddle['root_path']}{path}"
     if _send_authenticated_request(url, username, password) == 401:
         # Wrong user credentials (leftover, 401 masked as 200, etc)
@@ -187,7 +193,6 @@ async def _check_and_record_credentials(
 
 def _send_raw_request(url: str) -> tuple[int, str | None]:
 
-    print(f"@@ request to {url}...")
     res = requests.get(url, timeout=10)
     if res.status_code != 401:
         # Path isn't protected at all
@@ -203,13 +208,16 @@ def _send_raw_request(url: str) -> tuple[int, str | None]:
 
 def _send_authenticated_request(url: str, username: str, password: str) -> int:
 
-    print('@@ request to ' + url.replace('://', f"://{username}:{password}@") + '...')
     res = requests.get(url, auth=HTTPBasicAuth(username, password), timeout=10)
     return res.status_code
 
 
 async def _record_user_credentials(
-    alias: str, credentials_path: str, username: str, password: str,
+    alias: str,
+    path: str,
+    credentials_path: str,
+    username: str | None,
+    password: str | None,
 ):
     '''
     Insert new user credentials,
@@ -227,7 +235,7 @@ async def _record_user_credentials(
     values = {
         'riddle': alias,
         'username': user.name,
-        'path': path,
+        'path': credentials_path,
         'unlock_time': datetime.utcnow(),
     }
     if not await database.execute(query, values):
@@ -244,13 +252,8 @@ async def _record_user_credentials(
         if not await database.execute(query, values):
             return
 
-    print(
-        f"\033[1m[{alias}]\033[0m "
-        'Received correct credentials '
-        f"\033[1m{username or '???'}:{password or '???'}\033[0m "
-        f"for path \033[3m\033[1m{credentials_path}\033[0m "
-        f"from \033[1m{user.name}\033[0m "
-        f"({datetime.utcnow()})"
+    _log_received_credentials(
+        alias, user, path, credentials_path, username, password
     )
 
 
@@ -323,3 +326,30 @@ async def get_all_unlocked_credentials(
         for row in result
     }
     return credentials
+
+
+def _log_received_credentials(
+    alias: str,
+    user: User,
+    path: str,
+    credentials_path: str,
+    username: str = '',
+    password: str = '',
+):
+    '''Log received correct/wrong credentials, highlighting their path.'''
+    remaining_path = path.replace(credentials_path, '')
+    highlighted_path = \
+        f"\033[3m{credentials_path}\033[90;3m{remaining_path}\033[0m"
+    print(
+        f"\033[1m[{alias}]\033[0m "
+        + ((
+            'Received correct credentials '
+            f"\033[1m{username or '???'}:{password or '???'}\033[0m "
+            f"for path \033[1m{highlighted_path}\033[0m "
+        ) if (username, password) != ('', '') else (
+            'Received wrong credentials '
+            f"for path {highlighted_path} "
+        )) +
+        f"from \033[1m{user.name}\033[0m "
+        f"({datetime.utcnow()})"
+    )
