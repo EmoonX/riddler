@@ -161,6 +161,21 @@ class LevelUpdater:
         await database.execute(query, values)
         self.level_set['levels'][index] = self.level = values
 
+    def _get_previous_level(self) -> dict | None:
+        '''Get level before the current one in the set_index/index ordering,'''
+
+        previous_index = self.level['index'] - 1
+        if previous_in_set := self.level_set['levels'].get(previous_index):
+            return previous_in_set
+
+        previous_set_index = self.level['set_index'] - 1
+        if previous_set := self.all_levels_by_set.get(previous_set_index):
+            levels = previous_set['levels']
+            last_in_previous_set = levels[max(levels.keys())]
+            return last_in_previous_set
+
+        return None
+
     async def _add_requirement(self, required_level: dict):
         '''Add single requirement entry for level.'''
 
@@ -180,21 +195,6 @@ class LevelUpdater:
         '''
         values |= {'requires': required_level['name']}
         await database.execute(query, values)
-
-    def _get_previous_level(self) -> dict | None:
-        '''Get level before the current one in the set_index/index ordering,'''
-
-        previous_index = self.level['index'] - 1
-        if previous_in_set := self.level_set.get(previous_index):
-            return previous_in_set
-
-        previous_set_index = self.level['set_index'] - 1
-        if previous_set := self.all_levels_by_set.get(previous_set_index):
-            levels = previous_set['levels']
-            last_in_previous_set = levels[max(levels.keys())]
-            return last_in_previous_set
-
-        return None
 
     async def _update_previous_answer(self, previous_level: dict):
         '''Set previous level's answer as the current one's front path.'''
