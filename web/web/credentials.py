@@ -347,7 +347,7 @@ def _log_received_credentials(
             f"\033[1m{username or '???'}:{password or '???'}\033[0m "
             f"for path \033[1m{highlighted_path}\033[0m "
         ) if (username, password) != ('', '') else (
-            'Received wrong credentials '
+            'Received wrong/missing credentials '
             f"for path {highlighted_path} "
         )) +
         f"from \033[1m{user.name}\033[0m "
