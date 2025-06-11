@@ -139,15 +139,17 @@ class UnlockHandler:
 
         # Log solving procedure and send message to member
         n = 'FDCBAS'.find(level['rank'])
-        stars = f"[{'★' * n}]" if n > 0 else ''
-        name = level['name']
+        level_name = level['name']
         if level['latin_name']:
-            name += f" ({level['latin_name']})"
+            level_name += f" ({level['latin_name']})"
         level_type = 'level' if not level['is_secret'] else 'secret level'
         text = (
             f"**[{self.full_name}]** "
-            f"You have solved {level_type} **{name}** {stars} "
-            f"and won **{points}** points."
+            f"You have solved {level_type} **{level_name}** "
+            + (
+                f"[{'★' * n}] and won ***{points}*** points." if n > 0
+                else '_(unranked)_.'
+            )
         )
         await self._send(text)
 
@@ -212,7 +214,7 @@ class UnlockHandler:
         text = (
             f"**[{self.full_name}]** "
             f"You have unlocked achievement **_{cheevo['title']}_** "
-            f"on page `{path}` and won **{points}** points.\n"
+            f"on page `{path}` and won ***{points}*** points.\n"
         )
         await self._send(text)
 
