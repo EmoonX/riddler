@@ -105,12 +105,13 @@ class UnlockHandler:
 
         if level['is_secret']:
             # Send message to player upon finding secret level
-            name = level['name']
+            level_name = level['name']
             if level['latin_name']:
-                name += f" ({level['latin_name']})"
+                level_name += f" ({level['latin_name']})"
             text = (
                 f"**[{self.full_name}]** "
-                f"You have found secret level **{name}**. Congratulations!"
+                f"You have found secret level **{level_name}**. "
+                'Congratulations!'
             )
             await self._send(text)
 
@@ -147,7 +148,7 @@ class UnlockHandler:
             f"**[{self.full_name}]** "
             f"You have solved {level_type} **{level_name}** "
             + (
-                f"[{'★' * n}] and won ***{points}*** points." if n > 0
+                f"[{'★' * n}] and won **`{points}`** points." if n > 0
                 else '_(unranked)_.'
             )
         )
@@ -186,7 +187,7 @@ class UnlockHandler:
                 return
             channel = get(self.guild.channels, name=level['discord_name'])
             text = (
-                f"**<@!{self.member.id}>** has beaten level **{name}** "
+                f"**<@!{self.member.id}>** has beaten level **{level_name}** "
                     f"and is now part of **@{completion_role.name}**! "
                     'Congratulations!'
             )
@@ -214,7 +215,7 @@ class UnlockHandler:
         text = (
             f"**[{self.full_name}]** "
             f"You have unlocked achievement **_{cheevo['title']}_** "
-            f"on page `{path}` and won ***{points}*** points.\n"
+            f"on page `{path}` and won **`{points}`** points.\n"
         )
         await self._send(text)
 
