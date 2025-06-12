@@ -28,7 +28,7 @@
         <a
           href="{{ (riddle['root_path'] ~ path) if path.startswith('/') else path }}"
           {% if title %}title="{{ title }}"{% endif %}
-          {% if path.startswith('/') and (not page or page['removed']) %}style="text-decoration: line-through;"{% endif %}
+          {% if path.startswith('/') and (not page or page['removed']) %}class="strikethrough"{% endif %}
           target="_blank"
           rel="noreferrer"
         >
@@ -57,7 +57,16 @@
         {% if page_data.get('flag') == 'answer' %}
           <span class="smaller">answer:</span>
         {% endif %}
-          <a{% if page_data['hidden'] %} class="translucent" title="(hidden page)"{% endif %} href="{{ page_data['url'] }}" target="_blank" rel="noreferrer">{{ path }}</a>
+          {% set styles = [] %}
+          {% if page_data['hidden'] %} 
+            {% set styles = styles + ['translucent'] %}
+            {% set title = '(hidden page)' %}
+          {% endif %}
+          {% if page_data['removed'] %}
+            {% set styles = styles + ['strikethrough'] %}
+            {% set title = '(removed page)' %}
+          {% endif %}
+          <a class="{{ ' '.join(styles) }}" title="{{ title }}" href="{{ page_data['url'] }}" target="_blank" rel="noreferrer">{{ path }}</a>
           {% set redirect_path = page_data['redirects_to'] %}
           {% if redirect_path %}
             <span class="smaller">➜ {{ referenced_path(redirect_path, '(redirects to)') }}</span>

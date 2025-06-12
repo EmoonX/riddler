@@ -55,7 +55,7 @@ async def health_diagnostics(alias: str):
 
     async def _retrieve_page(
         path: str, page_data: dict, include_level: bool,
-    ) -> dict | None:
+    ) -> dict:
         '''
         Retrieve page directly from riddle's host through web request,
         unless `include_level` or `redo_existing` conditions are(n't) met.
@@ -180,8 +180,8 @@ async def health_diagnostics(alias: str):
 
         pages = {}
         for path, page_data in absolute_paths(level['/']):
-            if page_data := await _retrieve_page(path, page_data, include_level):
-                pages[path] = all_pages_by_path[path] = page_data
+            page_data = await _retrieve_page(path, page_data, include_level)
+            pages[path] = all_pages_by_path[path] = page_data
 
         # Show front page/image paths at the top
         level |= {'pages': {}}
