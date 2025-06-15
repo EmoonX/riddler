@@ -113,7 +113,7 @@ class LevelUpdater:
 
         if previous_level := self._get_previous_level():
             await self._add_requirement(previous_level)
-            if not previous_level['answer'] and self.paths:
+            if not previous_level.get('answer') and self.paths:
                 await self._update_previous_answer(previous_level)
 
         # Update riddle-wise set tracker
@@ -129,7 +129,10 @@ class LevelUpdater:
                     return 99
                 case 'Weeklies':
                     return 100
-            return max(idx for idx in self.all_levels_by_set if idx < 99) + 1
+            return max(
+                (idx for idx in self.all_levels_by_set if idx < 99),
+                default=0,
+            ) + 1
 
         set_index = _get_new_set_index(self._set_name)
         query = '''
