@@ -100,13 +100,15 @@ function getFileFigure(node, token, offset) {
   let type;
   if (node.folder) {
     type = 'folder';
+  } else if (token.indexOf('.') === -1) {
+    type = 'html';
   } else if (node.unknownExtension) {
     type = 'unknown';
   } else {
     type = token.split('.').at(-1).toLowerCase();
   }
   const url = `images/icons/extensions/${type}.png`;
-  const state = (type == 'folder') ? ' open' : '';
+  const state = node.folder ? ' folder open' : '';
   const margin = `${0.4 * offset}em`;
   const img = `<img src="${url}">`;
   const fc = `<figcaption>${token}</figcaption>`;
@@ -202,9 +204,11 @@ export function clickFile() {
 
 /** Handles double clicking files or folders. */
 export async function doubleClickFile() {
-  const page = $(this).find('figcaption').text();
-  const j = page.lastIndexOf('.');
-  if (j != -1 && j != page.length - 1) {
+  if ($(this).attr('class').indexOf('folder') !== -1) {
+    // Open or collapse folder, showing/hiding inner files
+    const files = $(this).next('.folder-files');
+    files.toggle();
+  } else {
     // Open desired page in new tab
     const riddle = riddles[currentRiddle];
     const path = $(this).attr('title');
@@ -220,9 +224,5 @@ export async function doubleClickFile() {
     url.username = $(this).attr('data-username') || '';
     url.password = $(this).attr('data-password') || '';
     window.open(url.toString(), '_blank');
-  } else {
-    // Open or collapse folder, showing/hiding inner files
-    const files = $(this).next('.folder-files');
-    files.toggle();
   }
 }

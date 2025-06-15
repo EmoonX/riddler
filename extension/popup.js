@@ -19,7 +19,6 @@ $(() => {
   $('#level').on('click', '#next-level:not(.disabled)', changeLevel);
   $('.page-explorer').on('click', 'figure.file', clickFile);
   $('.page-explorer').on('dblclick', 'figure.file', doubleClickFile);
-  console.log('aaaaaaaaaa')
 
   // Set button click events
   $('[name=login]').on('click', () => {
