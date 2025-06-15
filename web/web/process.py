@@ -342,10 +342,9 @@ class _PathHandler:
                 await lh.register_completion()
                 break
 
-        # Check if page is a normal one (i.e not txt/image/video/etc)
-        dot_index = self.path.rfind('.')
-        extension = self.path[(dot_index + 1):]
-        is_normal_page = extension in ('htm', 'html', 'php')
+        # Check if the page is a normal one (i.e html-like)
+        extension = self.path.rpartition('/')[-1].partition('.')[-1]
+        is_normal_page = extension in ['', 'htm', 'html', 'php']
 
         # Check if path corresponds to a valid level page
         query = '''
