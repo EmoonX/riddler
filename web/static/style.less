@@ -1252,9 +1252,11 @@ section.list.players > .row {
         margin: 20px auto;
       }
     }
+    &:has(.count:not(.disabled)) {
     &:hover > .thumbs, > .thumbs:hover {
       transform: scaleY(1);
       opacity: 1;
+      }
     }
   }
   > .page-count {
