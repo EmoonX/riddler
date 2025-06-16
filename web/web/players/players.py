@@ -141,7 +141,7 @@ async def riddle_list(alias: str, country: str | None = None):
     # Get riddle icon URL
     riddle['icon_url'] = f"/static/riddles/{alias}.png"
 
-    # Get riddle page count & achievement info
+    # Get riddle page count
     query = '''
         SELECT COUNT(*) AS page_count FROM level_pages
         WHERE riddle = :riddle
@@ -150,11 +150,6 @@ async def riddle_list(alias: str, country: str | None = None):
     '''
     values = {'riddle': alias}
     page_count = await database.fetch_val(query, values)
-    query = '''
-        SELECT `title`, description, image, `rank` FROM achievements
-        WHERE riddle = :riddle
-    '''
-    cheevos = await database.fetch_all(query, values)
 
     # Get riddle level set info
     query = '''
@@ -166,11 +161,8 @@ async def riddle_list(alias: str, country: str | None = None):
 
     # Get players data from database
     query = f"""
-        SELECT racc.*,
-            acc.display_name, acc.country,
-            acc.global_score, acc.hidden
-        FROM riddle_accounts racc
-        INNER JOIN accounts AS acc
+        SELECT *
+        FROM riddle_accounts racc INNER JOIN accounts AS acc
             ON racc.username = acc.username
         WHERE riddle = :riddle 
             {'AND country = :country' if country else ''}
@@ -181,7 +173,7 @@ async def riddle_list(alias: str, country: str | None = None):
                     WHERE alias = racc.riddle
                 )
             )
-        ORDER BY score DESC, last_page_time ASC
+        ORDER BY racc.score DESC, last_page_time ASC
         LIMIT 1000
     """
     if country:
@@ -232,7 +224,7 @@ async def riddle_list(alias: str, country: str | None = None):
             account['mastered_on'] = await database.fetch_val(query, values)
         else:
             # Retrieve player's milestones and furthest reached levels
-            query = f"""
+            query = '''
                 SELECT level_name, completion_time FROM user_levels ul
                 WHERE riddle = :riddle
                     AND username = :username
@@ -263,7 +255,7 @@ async def riddle_list(alias: str, country: str | None = None):
                             AND ul.level_name = lv.name
                             AND is_secret IS TRUE
                     )
-            """
+            '''
             levels = await database.fetch_all(query, values)
             for level in levels:
                 name = level['level_name']
@@ -322,7 +314,7 @@ async def riddle_list(alias: str, country: str | None = None):
         alias=alias,
         accounts=accounts,
         country=country,
-        creator_account=creator_account,       
+        creator_account=creator_account,
         page_count=page_count,
         sets_by_final_level=sets_by_final_level,
     )

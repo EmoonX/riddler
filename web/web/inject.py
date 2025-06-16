@@ -56,7 +56,9 @@ async def get_levels(alias: str) -> dict[str, dict]:
     return {level['name']: dict(level) for level in ordered_levels}
 
 
-async def get_achievements(alias: str, user: dict = None) -> dict[str, dict]:
+async def get_achievements(
+    alias: str, account: dict | None = None
+) -> dict[str, dict]:
     '''Get riddle achievements grouped by points.
     If user is specified, then only return cheevos user has gotten.'''
 
@@ -64,26 +66,38 @@ async def get_achievements(alias: str, user: dict = None) -> dict[str, dict]:
     query = 'SELECT * FROM achievements WHERE riddle = :riddle'
     values = {'riddle': alias}
     result = await database.fetch_all(query, values)
-    cheevos = {row['title']: dict(row) for row in result}
+    all_cheevos = {row['title']: dict(row) for row in result}
 
-    if not user:
+    if not account:
         # Get riddle's achievement list
-        query = 'SELECT * FROM achievements WHERE riddle = :riddle '
+        query = 'SELECT * FROM achievements WHERE riddle = :riddle'
     else:
         # Get user's riddle achievement list
         query = '''
             SELECT * FROM user_achievements
-            WHERE riddle = :riddle AND username = :name
+            WHERE riddle = :riddle AND username = :username
         '''
-        values |= {'name': user['username']}
-    user_cheevos = await database.fetch_all(query, values)
+        values |= {'username': account['username']}
+    cheevos = await database.fetch_all(query, values)
+
+    # Get unlocked achievements for current session user (if any)
+    unlocked_cheevos = set()
+    if discord.user_id:
+        user = await discord.get_user()
+        query = '''
+            SELECT * FROM user_achievements
+            WHERE riddle = :riddle AND username = :username
+        '''
+        values = {'riddle': alias, 'username': user.name}
+        result = await database.fetch_all(query, values)
+        unlocked_cheevos = {cheevo['title'] for cheevo in result}
 
     # Create dict of pairs (rank -> list of cheevos)
-    cheevos_by_rank = {'C': [], 'B': [], 'A': [], 'S': []}
-    for user_cheevo in user_cheevos:
-        cheevo = cheevos[user_cheevo['title']]
-        rank = cheevo['rank']
-        cheevos_by_rank[rank].append(cheevo)
+    cheevos_by_rank = {rank: [] for rank in 'CBAS'}
+    for cheevo in cheevos:
+        cheevo = all_cheevos[cheevo['title']]
+        cheevo |= {'unlocked': cheevo['title'] in unlocked_cheevos}
+        cheevos_by_rank[cheevo['rank']].append(cheevo)
 
     return cheevos_by_rank
 
