@@ -1193,6 +1193,7 @@ section.list.players > .row {
       flex-direction: column;
       justify-content: space-evenly;
       height: 100%;
+      cursor: default;
 
       > .ranks {
         display: flex;
@@ -1226,10 +1227,11 @@ section.list.players > .row {
       justify-content: center;
       align-items: center;
       width: 350px;
-      padding: 20px 0;
-      border: thin solid #ffd;
+      padding: .25em;
       border-radius: 0 0 10% 10%;
-      background-color: rgba(48, 48, 48, 0.9);
+      background-color: rgba(48, 48, 48, .8);
+      box-shadow: 0 0 10em black;
+      backdrop-filter: blur(.2em);
       transform: scaleY(0);
       transform-origin: top;
       opacity: 0;
@@ -1240,16 +1242,29 @@ section.list.players > .row {
         justify-content: center;
         align-items: center;
         flex-wrap: wrap;
+        margin: 1em;
 
         img.cheevo {
           margin: 5px;
           border: thin solid;
           border-radius: 20%; 
           cursor: help;
+
+          &.locked {
+            filter: brightness(.8) grayscale(1);
+          }
         }
       }
       hr {
-        margin: 20px auto;
+        margin: unset;
+        width: 100%;
+        border-image: linear-gradient(
+          to right,
+          transparent,
+          rgba(255, 255, 221, .2) 50%,
+          transparent
+        );
+        border-image-slice: 1;
       }
     }
     &:has(.count:not(.disabled)) {

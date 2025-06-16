@@ -119,10 +119,7 @@
                 <div class="rank">
                 {% for cheevo in cheevos[rank] | sort(attribute='unlocked', reverse=true) %}
                   {% set style = 'width: ' ~ size ~ 'px; height: ' ~ size ~ 'px; border-color: ' ~ color ~ '; box-shadow: 0 0 0.8em ' ~ color ~ ';' %}
-                  {% if not cheevo['unlocked'] %}
-                    {% set style = style ~ ' filter: brightness(.8) grayscale(1);' %}
-                  {% endif %}
-                  <img class="cheevo" src="/static/cheevos/{{ riddle['alias'] }}/{{ cheevo['image'] }}" title="[ {{ cheevo['title'] }} ] ({{ points }} points)&#10;&#10;&quot;{{ cheevo['description'] }}&quot;" style="{{ style }}" alt="{{ cheevo['title'] }}">
+                  <img class="cheevo{{ ' locked' if not cheevo['unlocked'] }}" src="/static/cheevos/{{ riddle['alias'] }}/{{ cheevo['image'] }}" title="[ {{ cheevo['title'] }} ] ({{ points }} points)&#10;&#10;&quot;{{ cheevo['description'] }}&quot;" style="{{ style }}" alt="{{ cheevo['title'] }}">
                 {% endfor %}
                 </div>
               {% if not loop.last %}
