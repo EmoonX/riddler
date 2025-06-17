@@ -78,13 +78,17 @@ async def process_url(
 
     short_run = False
     if status_code in [301, 302, 303, 307, 308]:
+        # Handle sufficiently trivial redirects (regardless of 30x semantics)
         full_location = urljoin(url, location)
         if ph_loc := await _PathHandler.build(user, full_location, status_code):
             if (
-                # Trivial folder trailing slashes
-                ph_loc.raw_path == f"{ph.raw_path}/" or
+                # Auto trailing slashes for folders
+                ph_loc.raw_path == f"{re.sub('/{2,}', '/', ph.raw_path)}/" or
                 # Implicit [index].htm[l] (usually Neocities)
-                ph_loc.raw_path == re.sub(r'(index)?([.]\w+)?$', '', ph.raw_path)
+                ph_loc.raw_path == \
+                    re.sub(r'(index)?([.]\w+)?$', '', ph.raw_path) or
+                # Case insensitive webserver w/ auto-lowercase (e.g wingheart)
+                ph_loc.raw_path == ph.raw_path.lower()
             ):
                 short_run = True
 
