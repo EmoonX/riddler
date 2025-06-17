@@ -162,8 +162,8 @@ async def riddle_list(alias: str, country: str | None = None):
     # Get players data from database
     query = f"""
         SELECT *
-        FROM riddle_accounts racc INNER JOIN accounts AS acc
-            ON racc.username = acc.username
+        FROM accounts AS acc INNER JOIN riddle_accounts racc
+            ON acc.username = racc.username
         WHERE riddle = :riddle 
             {'AND country = :country' if country else ''}
             AND (
