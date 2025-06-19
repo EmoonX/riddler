@@ -368,6 +368,8 @@ class _PathHandler:
 
             return False
 
+        self.hidden = page['hidden']
+
         # Get requested page's level info from DB
         query = '''
             SELECT * FROM levels
@@ -587,14 +589,14 @@ class _PathHandler:
             values = base_values | {'path': self.path, 'time': tnow}
             await database.execute(query, values)
         else:
-            # New page, update player's riddle page count and access time
-            query = '''
-                UPDATE riddle_accounts
-                SET page_count = page_count + 1, last_page_time = :time
-                WHERE riddle = :riddle AND username = :username
-            '''
-            values = base_values | {'time': tnow}
-            await database.execute(query, values)
+            # New page; unless hidden, update player's riddle data
+            if not self.hidden:
+                query = '''
+                    UPDATE riddle_accounts
+                    SET page_count = page_count + 1, last_page_time = :time
+                    WHERE riddle = :riddle AND username = :username
+                '''
+                await database.execute(query, values)
 
         # Check and possibly grant an achievement
         await self._process_achievement()

@@ -223,11 +223,13 @@ async def update_page_counts(alias: str):
 
     # Fetch page count for every riddle player
     query = '''
-        SELECT racc.username, COUNT(level_name) AS page_count
-        FROM riddle_accounts AS racc INNER JOIN user_pages AS up
-        ON racc.username = up.username
-        WHERE up.riddle = :riddle
-        GROUP BY racc.riddle, racc.username
+        SELECT *, COUNT(*) AS page_count
+        FROM level_pages lp INNER JOIN user_pages up
+            ON lp.riddle = up.riddle AND lp.path = up.path
+        WHERE lp.riddle = :riddle
+            AND lp.level_name IS NOT NULL
+            AND lp.hidden IS NOT TRUE
+        GROUP BY up.username
     '''
     accounts = await database.fetch_all(query, {'riddle': alias})
 
