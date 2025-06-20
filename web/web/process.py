@@ -116,43 +116,45 @@ async def process_url(
         # When path is just an alias, process canonical one up next
         await ph.process()
         ph.path = ph.path_alias_for
-    ok = await ph.process()
+    response_code = await ph.process()
 
     tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-    if not ok and status_code not in [403, 404]:
-        # Page exists, but either locked for user or not a level one (yet?)
-        try:
-            level_name = await ph.check_and_register_missing_page()
-        except IntegrityError:
-            level_name = None
-        if level_name:
+
+    match response_code:
+        case 403:
+            # Page exists, but user doesn't have the requirements for it yet
             print(
                 f"\033[1m[{ph.riddle_alias}]\033[0m "
                 f"Received locked path \033[3m{path_to_log}\033[0m "
-                f"({level_name}) "
+                f"({ph.path_level}) "
                 f"from \033[1m{ph.user.name}\033[0m "
                 f"({tnow})"
             )
-        return jsonify({
-            'message': 'Not a level page',
-            'riddle': ph.riddle_alias
-        }), 412
+            return jsonify({
+                'message': 'Locked level page',
+                'riddle': ph.riddle_alias
+            }), 403
+        case 404:
+            # Plain folder without index (403), or page not found (300/404)
+            print(
+                f"\033[1m[{ph.riddle_alias}]\033[0m "
+                f"Received path \033[3m\033[9m{path_to_log}\033[0m\033[0m "
+                f"from \033[1m{ph.user.name}\033[0m "
+                f"({tnow})"
+            )
+            return jsonify({
+                'message': 'Page not found',
+                'riddle': ph.riddle_alias
+            }), 404
+        case 412:
+            # Page exists, but not a level one (yet?)
+            return jsonify({
+                'message': 'Not a level page',
+                'riddle': ph.riddle_alias
+            }), 412
 
-    # Log received path with timestamp
-    if status_code in [403, 404]:
-        # Plain folder without index (403), or usual page not found (404)
-        print(
-            f"\033[1m[{ph.riddle_alias}]\033[0m "
-            f"Received path \033[3m\033[9m{path_to_log}\033[0m\033[0m "
-            f"from \033[1m{ph.user.name}\033[0m "
-            f"({tnow})"
-        )
-        return jsonify({
-            'message': 'Page not found',
-            'riddle': ph.riddle_alias
-        }), 404
-
-    # Valid level page
+    # Valid reachable level page
+    # (201 if first access from user, 200 otherwise)
     print(
         f"\033[1m[{ph.riddle_alias}]\033[0m "
         f"Received path \033[3m\033[1m{path_to_log}\033[0m\033[0m "
@@ -172,7 +174,7 @@ async def process_url(
     ):
         data |= {'unlockedCredentials': path_credentials}
 
-    return jsonify(data)
+    return jsonify(data), response_code
 
 
 class _PathHandler:
@@ -358,15 +360,20 @@ class _PathHandler:
         values = {'riddle': self.riddle_alias, 'path': self.path}
         page = await database.fetch_one(query, values)
         if not page or not page['level_name']:
-            if self.status_code == 404 and is_normal_page:
-                # If page comes from a real 404 (and not a non level page),
-                # then it should still increment all hit counters.
+            if self.status_code in [300, 403, 404]:
+                # 404-like (and not e.g unlisted page);
+                # should still increment all hit counters
                 await self._update_hit_counters()
+
+                return 404
+
+            # Actual new unlisted page, register it
+            await self._register_new_unlisted_page()
 
             # Look for "special" achievements that aren't part of any level
             await self._process_achievement()
 
-            return False
+            return 412
 
         self.hidden = page['hidden']
 
@@ -404,17 +411,20 @@ class _PathHandler:
             await database.execute(query, values)
         elif not await self._are_level_requirements_satisfied(self.path_level):
             # Level not unlocked and can't access yet pages from it
-            return False      
+            return 403
 
         # If a normal page, update all hit counters
         if is_normal_page:
             await self._update_hit_counters()
 
         # Register new page access in database (if applicable)
-        await self._process_page()
+        is_new_page = await self._process_page()
 
-        return True
-    
+        # Check and possibly grant an achievement
+        await self._process_achievement()
+
+        return 201 if is_new_page else 200
+
     async def _are_level_requirements_satisfied(self, level_name: str) -> bool:
         '''
         Check if all required levels are already beaten
@@ -547,59 +557,49 @@ class _PathHandler:
             values.pop('riddle')
             await database.execute(query, values)
 
-    async def _process_page(self):
-        '''Process a valid level page.'''
-
-        # Check if all required levels have been found
-        base_values = {
-            'riddle': self.riddle_alias,
-            'username': self.user.name,
-        }
-        query = '''
-            SELECT 1 FROM level_requirements req
-            WHERE riddle = :riddle AND level_name = :level_name
-                AND requires NOT IN (
-                    SELECT level_name FROM user_levels ul
-                    WHERE req.riddle = ul.riddle AND username = :username
-                )
+    async def _process_page(self) -> bool:
         '''
-        values = base_values | {'level_name': self.path_level}
-        has_all_requirements = await database.fetch_val(query, values)
-        if not has_all_requirements:
-            pass
-            # return
+        Process a valid level page.
+        Returns:
+            bool: Whether a new user page record was created.
+        '''
 
-        # Try to insert new page in `user_pages`
         tnow = datetime.utcnow()
         query = '''
-            INSERT INTO user_pages
+            INSERT IGNORE INTO user_pages
                 (riddle, username, level_name, `path`, access_time)
             VALUES (:riddle, :username, :level_name, :path, :time)
         '''
-        values |= {'path': self.path, 'time': tnow}
-        try:
-            await database.execute(query, values)
-        except IntegrityError:
+        values = {
+            'riddle': self.riddle_alias,
+            'username': self.user.name,
+            'path': self.path,
+            'time': tnow
+        }
+        if not await database.execute(
+            query, values | {'level_name': self.path_level}
+        ):
             # Page's already there, so just update its last access
             query = '''
                 UPDATE user_pages
                 SET last_access_time = :time
                 WHERE riddle = :riddle AND username = :username AND path = :path
             '''
-            values = base_values | {'path': self.path, 'time': tnow}
             await database.execute(query, values)
-        else:
-            # New page; unless hidden, update player's riddle data
-            if not self.hidden:
-                query = '''
-                    UPDATE riddle_accounts
-                    SET page_count = page_count + 1, last_page_time = :time
-                    WHERE riddle = :riddle AND username = :username
-                '''
-                await database.execute(query, values)
 
-        # Check and possibly grant an achievement
-        await self._process_achievement()
+            return False
+
+        # New page; unless hidden, update player's riddle data
+        if not self.hidden:
+            query = '''
+                UPDATE riddle_accounts
+                SET page_count = page_count + 1, last_page_time = :time
+                WHERE riddle = :riddle AND username = :username
+            '''
+            del values['path']
+            await database.execute(query, values)
+
+        return True
 
     async def _process_achievement(self):
         '''Grant cheevo and awards if page is an achievement one.'''
@@ -681,58 +681,43 @@ class _PathHandler:
             f"\033[1m{self.user.name}\033[0m has mastered the game 💎"
         )
 
-    async def check_and_register_missing_page(self) -> str | None:
-        '''
-        Check and possibly register non-level-associated
-        page (which necessarily came from a valid request).
-        '''
-
-        # Check and retrieve (possibly NULL) level name if page already in DB
-        query = '''
-            SELECT level_name FROM level_pages
-            WHERE riddle = :riddle AND path = :path
-        '''
-        values = {'riddle': self.riddle_alias, 'path': self.path}
-        if page := await database.fetch_one(query, values):
-            return page['level_name']
+    async def _register_new_unlisted_page(self):
+        '''Register new valid unlisted page.'''
 
         # Record page as a new one (w/ respective level being NULL)
         query = '''
-            INSERT INTO level_pages (riddle, path, level_name)
+            INSERT IGNORE INTO level_pages (riddle, path, level_name)
             VALUES (:riddle, :path, NULL)
         '''
+        values = {'riddle': self.riddle_alias, 'path': self.path}
         await database.execute(query, values)
-
-        # Record found page and the user who did it
-        tnow = datetime.utcnow()
-        query = '''
-            INSERT INTO _found_pages (
-                riddle, path, username, access_time
-            ) VALUES (
-                :riddle, :path, :username, :access_time
-            )
-        '''
-        values |= {'username': self.user.name, 'access_time': tnow}
-        await database.execute(query, values)
-        print(
-            f"> \033[1m[{self.riddle_alias}]\033[0m "
-            f"Found new page \033[1m{self.path}\033[0m "
-            f"by \033[1m{self.user.name}\033[0m "
-            f"({tnow})"
-        )
 
         # Grant individual page record to user
         # (as a personal "reward" if eventually a listed level page)
         query = '''
-            INSERT INTO user_pages (
-                riddle, username, level_name, path, access_time
-            ) VALUES (
-                :riddle, :username, NULL, :path, :access_time
-            )
+            INSERT IGNORE INTO user_pages 
+                (riddle, username, level_name, path, access_time)
+            VALUES (:riddle, :username, NULL, :path, :access_time)
         '''
+        values |= {
+            'username': self.user.name,
+            'access_time': datetime.utcnow(),
+        }
         await database.execute(query, values)
 
-        return None
+        # Record found page and the user who did it
+        query = '''
+            INSERT IGNORE INTO _found_pages 
+                (riddle, path, username, access_time)
+            VALUES (:riddle, :path, :username, :access_time)
+        '''
+        if await database.execute(query, values):
+            print(
+                f"> \033[1m[{self.riddle_alias}]\033[0m "
+                f"Found new page \033[1m{self.path}\033[0m "
+                f"by \033[1m{self.user.name}\033[0m "
+                f"({values['access_time']})"
+            )
 
 
 class _LevelHandler:
