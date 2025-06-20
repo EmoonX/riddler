@@ -424,14 +424,15 @@ class _PathHandler:
         extension = self.path.rpartition('/')[-1].partition('.')[-1]
         is_normal_page = extension in ['', 'htm', 'html', 'php']
 
-        # Check if path corresponds to a valid level page
+        # Fetch page data (if present)
         query = '''
             SELECT * FROM level_pages
             WHERE riddle = :riddle AND path = :path
         '''
         values = {'riddle': self.riddle_alias, 'path': self.path}
         page = await database.fetch_one(query, values)
-        if not page or not page['level_name']:
+
+        if not page:
             if self.status_code in [300, 403, 404]:
                 # 404-like (and not e.g unlisted page);
                 # should still increment all hit counters
@@ -439,9 +440,11 @@ class _PathHandler:
 
                 return 404
 
-            # Actual new unlisted page, register it
+            # Actual new unlisted page; register it
             await self._register_new_unlisted_page()
+            page = values | {'level_name': None}
 
+        if not page['level_name']:
             # Look for "special" achievements that aren't part of any level
             await self._process_achievement()
 
