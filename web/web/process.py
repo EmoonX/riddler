@@ -1,5 +1,6 @@
 from copy import copy
 from datetime import datetime
+import hashlib
 import json
 import re
 from typing import Self
@@ -8,6 +9,7 @@ from urllib.parse import urljoin, urlsplit
 from pymysql.err import IntegrityError
 from quart import Blueprint, request, jsonify
 from quartcord.models import User
+import requests
 
 from auth import discord
 from credentials import (
@@ -219,14 +221,9 @@ class _PathHandler:
             # Handle sufficiently trivial redirects (regardless of 30x semantics)
             self.short_run = await self._is_short_run(url, location)
 
-        if riddle['html_extension']:
-            if self.path[-1] == '/':
-                # If a folder itself, add trailing "index.htm[l]" etc
-                self.path += f"index.{riddle['html_extension']}"
-            elif status_code != 401:
-                # If no extension, append explicit ".htm[l]" etc
-                if not '.' in self.path:
-                    self.path += f".{riddle['html_extension']}"
+        if 200 <= status_code < 400 and not self.short_run:
+            # Valid non-trivial path; format it in accordance to the guidelines
+            await self._format_and_sanitize_path(riddle, url)
 
         # If applicable, retrieve path alias info
         query = '''
@@ -302,6 +299,69 @@ class _PathHandler:
             return True
 
         return False
+
+    async def _format_and_sanitize_path(self, riddle: dict, url: str):
+        '''Format and sanitize a valid path to its canonical form.'''
+
+        if riddle['html_extension']:
+            if self.path[-1] == '/':
+                # If a folder itself, add trailing "index.htm[l]" etc
+                self.path += f"index.{riddle['html_extension']}"
+            else:
+                # If missing the extension, append explicit ".htm[l]" etc
+                if not '.' in self.path:
+                    self.path += f".{riddle['html_extension']}"
+
+        async def _format(sub_path: str):
+            '''Format path if suitable (i.e indeed not unique).'''
+
+            query = '''
+                SELECT 1 FROM level_pages
+                WHERE riddle = :riddle AND path = :path
+            '''
+            values = {'riddle': self.riddle_alias, 'path': self.path}
+            if await database.fetch_val(query, values):
+                # Given path is unique and has been recorded before
+                return
+
+            # Retrieve given's page hash directly the from the website
+            res = requests.get(url, cookies={'s': 'eGNIqq1R'}, timeout=5)
+            if not res.ok:
+                return
+            content_hash = hashlib.md5(res.content).hexdigest()
+
+            query = '''
+                SELECT content_hash FROM _page_hashes
+                WHERE riddle = :riddle AND path = :path
+                ORDER BY retrieval_time DESC
+                LIMIT 1
+            '''
+            values = {'riddle': self.riddle_alias, 'path': sub_path}
+            current_hash = await database.fetch_val(query, values)
+            if not current_hash:
+                # Canonical path hasn't been recorded, retrieve it if available
+                sub_url = re.sub(f"{self.path}$", sub_path, url)
+                res = requests.get(sub_url, cookies={'s': 'eGNIqq1R'}, timeout=5)
+                if res.ok:
+                    current_hash = hashlib.md5(res.content).hexdigest()
+
+            # Replace path iff both pages are available and the content matches
+            if content_hash == current_hash:
+                self.path = sub_path
+
+        # Riddle-specific path formatting
+        if self.riddle_alias == 'decifra':
+            if not re.search(r'^/[.][.]/', self.path):
+                # Sanitize dynamic paths within the `/enigma` directory proper
+                await _format(re.sub(r' |(%20)|-|_', '', self.path).lower())
+            if match := re.search(r'^/[.][.]/(.*?[.]php)/', self.path):
+                await _format(f"/../{match[1]}")
+        elif self.riddle_alias == 'hakari':
+            # Treat non-static pages as case insensitive, omit trailing '/'
+            sub_path = self.path.lower()
+            if self.path.endswith('/'):
+                sub_path = sub_path[:-1]
+            await _format(sub_path)
 
     async def build_player_riddle_data(self):
         '''Build player riddle data from DB, creating it if nonexistent.'''
