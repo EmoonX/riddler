@@ -57,7 +57,7 @@ async def process_url(
         user = lambda: None
         setattr(user, 'name', username)
     try:
-        ph = await _PathHandler.build(user, url, status_code)
+        ph = await _PathHandler.build(user, url, status_code, location)
         if admin:
             return ph.path
     except AttributeError:
@@ -76,34 +76,16 @@ async def process_url(
     if ph.path_alias_for:
         path_to_log = f"{ph.path} \033[0m(alias for \033[3m{ph.path_alias_for})"
 
-    short_run = False
-    if status_code in [301, 302, 303, 307, 308]:
-        # Handle sufficiently trivial redirects (regardless of 30x semantics)
-        full_location = urljoin(url, location)
-        if ph_loc := await _PathHandler.build(user, full_location, status_code):
-            if (
-                # Auto trailing slashes for folders
-                ph_loc.raw_path == f"{re.sub('/{2,}', '/', ph.raw_path)}/" or
-                # Implicit [index].htm[l] (usually Neocities)
-                ph_loc.raw_path == \
-                    re.sub(r'(index)?([.]\w+)?$', '', ph.raw_path) or
-                # Case insensitive webserver w/ auto-lowercase (e.g wingheart)
-                ph_loc.raw_path == ph.raw_path.lower()
-            ):
-                short_run = True
-
     # Process received credentials (possibly none)
     riddle = await get_riddle(ph.riddle_alias)
-    ok = await process_credentials(
-        riddle, ph.raw_path, ph.credentials, status_code
-    )
+    ok = await process_credentials(riddle, ph.path, ph.credentials, status_code)
     if not ok:
         return jsonify({
             'message': 'Wrong or missing user credentials',
             'riddle': ph.riddle_alias
         }), 403
 
-    if short_run:
+    if ph.short_run:
         return jsonify({
             'message':
                 f"Trivial auto-redirect ({status_code}); "
@@ -211,7 +193,13 @@ class _PathHandler:
     '''Real status code of requested page (either 200 or 404).'''
 
     @classmethod
-    async def build(cls, user: User, url: str, status_code: str) -> Self | None:
+    async def build(
+        cls,
+        user: User,
+        url: str,
+        status_code: str,
+        location: str | None = None,
+    ) -> Self | None:
         '''Build handler from DB's user info and URL info.'''
 
         # Parse and save basic data + status code
@@ -223,8 +211,13 @@ class _PathHandler:
         self.raw_path = copy(self.path)
         self.status_code = status_code
 
-        # Ignore occurrences of consecutive slashes
+        # Always ignore occurrences of consecutive slashes
         self.path = re.sub('/{2,}', '/', self.path)
+
+        self.short_run = False
+        if status_code in [301, 302, 303, 307, 308]:
+            # Handle sufficiently trivial redirects (regardless of 30x semantics)
+            self.short_run = await self._is_short_run(url, location)
 
         if riddle['html_extension']:
             if self.path[-1] == '/':
@@ -290,6 +283,25 @@ class _PathHandler:
                     parsed_url.password or '',
                 )
                 return riddle
+
+    async def _is_short_run(self, url: str, location: str | None):
+
+        full_location = urljoin(url, location)
+        ph_loc = await _PathHandler.build(self.user, full_location, 418)
+        if not ph_loc:
+            return False
+
+        if ph_loc.path == f"{self.path}/":
+            # Auto trailing slashes for folders
+            return True
+        if ph_loc.path == re.sub(r'(index)?([.]\w+)?$', '', self.path):
+            # Implicit [index].htm[l] (usually Neocities)
+            return True
+        if ph_loc.path == self.path.lower():
+            # Case insensitive webserver w/ auto-lowercase (e.g wingheart)
+            return True
+
+        return False
 
     async def build_player_riddle_data(self):
         '''Build player riddle data from DB, creating it if nonexistent.'''
