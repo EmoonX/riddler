@@ -109,10 +109,15 @@ async def register():
 @auth.get('/login')
 async def login():
     '''Create Discord session and redirect to callback URL.'''
-    scope = ['identify']
+
     url = request.args.get('redirect_url', '/')
+    if discord.user_id:
+        # Already logged in
+        return redirect(url)
+
     return await discord.create_session(
-        scope=scope, data={'redirect_url': url}
+        scope=['identify'],
+        data={'redirect_url': url}
     )
 
 
