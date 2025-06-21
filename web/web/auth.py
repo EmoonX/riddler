@@ -5,10 +5,7 @@ from oauthlib.oauth2.rfc6749.errors import (
     InvalidGrantError, MismatchingStateError
 )
 from pymysql.err import IntegrityError
-from quart import (
-    Quart, Blueprint, request, session,
-    render_template, redirect, url_for,
-)
+from quart import Blueprint, Quart, redirect, render_template, request
 from quart.sessions import SecureCookieSessionInterface
 from quartcord import DiscordOAuth2Session, exceptions
 
@@ -127,7 +124,7 @@ async def callback():
     try:
         data = await discord.callback()
     except exceptions.AccessDenied:
-        return 'Unauthorized', 401
+        return redirect('/')
     except MismatchingStateError:
         discord.revoke()
         return redirect('/login')
@@ -170,7 +167,7 @@ async def _post_callback():
 
 
 @auth.get('/logout')
-async def logout():
+def logout():
     '''Revoke credentials and log user out of application.'''
 
     # Discord credentials are gone
