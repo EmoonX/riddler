@@ -96,14 +96,15 @@ async def process_url(
         }), 202
 
     # Process received path
-    if ph.path_alias_for:
-        # When path is just an alias, process canonical one up next
-        await ph.process()
-        ph.path = ph.path_alias_for
     response_code = await ph.process()
+    if ph.path_alias_for and response_code not in [403, 410]:
+        # Valid accessible alias; process canonical path up next
+        ph.path = ph.path_alias_for
+        if await ph.process() == 201:
+            # Signal 201 if either of the pages is new for user
+            response_code = 201
 
     tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
-
     match response_code:
         case 403:
             # Page exists, but user doesn't have the requirements for it yet
