@@ -73,11 +73,6 @@ async def process_url(
     # Create/fetch riddle account data
     await ph.build_player_riddle_data()
 
-    # Disclose path alias (if any) for logging purposes
-    path_to_log = ph.path
-    if ph.path_alias_for:
-        path_to_log = f"{ph.path} \033[0m(alias for \033[3m{ph.path_alias_for})"
-
     # Process received credentials (possibly none)
     riddle = await get_riddle(ph.riddle_alias)
     ok = await process_credentials(riddle, ph.path, ph.credentials, status_code)
@@ -86,7 +81,6 @@ async def process_url(
             'message': 'Wrong or missing user credentials',
             'riddle': ph.riddle_alias
         }), 403
-
     if ph.short_run:
         return jsonify({
             'message':
@@ -97,12 +91,17 @@ async def process_url(
 
     # Process received path
     response_code = await ph.process()
-    if ph.path_alias_for and response_code not in [403, 410]:
-        # Valid accessible alias; process canonical path up next
-        ph.path = ph.path_alias_for
-        if await ph.process() == 201:
-            # Signal 201 if either of the pages is new for user
-            response_code = 201
+    formatted_path = ph.path
+    if ph.removed:
+        formatted_path = f"\033[9m{formatted_path}\033[0m"
+    if ph.path_alias_for:
+        # Just an alias; if valid/accessible, process canonical path up next
+        formatted_path += f"\033[0m (alias for \033[3m{ph.path_alias_for})"
+        if response_code not in [403, 410]:
+            ph.path = ph.path_alias_for
+            if await ph.process() == 201:
+                # Signal 201 if either of the paths is new for the user
+                response_code = 201
 
     tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     match response_code:
@@ -110,7 +109,7 @@ async def process_url(
             # Page exists, but user doesn't have the requirements for it yet
             print(
                 f"\033[1m[{ph.riddle_alias}]\033[0m "
-                f"Received locked path \033[3m{path_to_log}\033[0m "
+                f"Received locked path \033[3m{formatted_path}\033[0m "
                 f"({ph.path_level}) "
                 f"from \033[1m{ph.user.name}\033[0m "
                 f"({tnow})"
@@ -123,7 +122,7 @@ async def process_url(
             # Plain folder without index (403), or page not found (300/404)
             print(
                 f"\033[1m[{ph.riddle_alias}]\033[0m "
-                f"Received path \033[3m\033[9m{path_to_log}\033[0m\033[0m "
+                f"Received path \033[3m\033[9m{formatted_path}\033[0m\033[0m "
                 f"from \033[1m{ph.user.name}\033[0m "
                 f"({tnow})"
             )
@@ -148,7 +147,8 @@ async def process_url(
     # (201 if first access from user, 200 otherwise)
     print(
         f"\033[1m[{ph.riddle_alias}]\033[0m "
-        f"Received path \033[3m\033[1m{path_to_log}\033[0m\033[0m "
+        f"Received {'removed ' if ph.removed else ''}path "
+        f"\033[3m\033[1m{formatted_path}\033[0m\033[0m "
         f"\033[1m({ph.path_level})\033[0m "
         f"from \033[1m{ph.user.name}\033[0m "
         f"({tnow})"
@@ -437,7 +437,9 @@ class _PathHandler:
             WHERE riddle = :riddle AND path = :path
         '''
         values = {'riddle': self.riddle_alias, 'path': self.path}
-        page = await database.fetch_one(query, values)
+        page = dict(await database.fetch_one(query, values) or {})
+        self.hidden = page.get('hidden')
+        self.removed = page.get('removed')
 
         if not page:
             if self.status_code in [300, 403, 404]:
@@ -449,13 +451,8 @@ class _PathHandler:
 
             # Actual new unlisted page; register it
             await self._register_new_unlisted_page()
-            page = values | {'level_name': None}
 
-        page = dict(page)
-        self.hidden = page.get('hidden')
-        self.removed = page.get('removed')
-
-        if not page['level_name']:
+        if not page.get('level_name'):
             if self.removed:
                 return 410
 
