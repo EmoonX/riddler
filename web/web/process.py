@@ -130,6 +130,12 @@ async def process_url(
                 'message': 'Page not found',
                 'riddle': ph.riddle_alias
             }), 404
+        case 410:
+            # Faulty 404s (e.g missing `/favicon.ico`); avoid polluting logs
+            return jsonify({
+                'message': 'Page intentionally discarded',
+                'riddle': ph.riddle_alias
+            }), 410
         case 412:
             # Page exists, but not a level one (yet?)
             return jsonify({
@@ -444,13 +450,18 @@ class _PathHandler:
             await self._register_new_unlisted_page()
             page = values | {'level_name': None}
 
+        page = dict(page)
+        self.hidden = page.get('hidden')
+        self.removed = page.get('removed')
+
         if not page['level_name']:
+            if self.removed:
+                return 410
+
             # Look for "special" achievements that aren't part of any level
             await self._process_achievement()
 
             return 412
-
-        self.hidden = page['hidden']
 
         # Get requested page's level info from DB
         query = '''
