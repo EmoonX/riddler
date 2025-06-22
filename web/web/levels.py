@@ -147,8 +147,10 @@ async def level_list(alias: str):
         ORDER BY `index`
     '''
     values = {'riddle': alias}
-    result = await database.fetch_all(query, values)
-    levels_list = [dict(row) for row in result]
+    levels_list = [
+        {**row, 'image': os.path.basename(row['image'] or '')}
+        for row in await database.fetch_all(query, values)
+    ]
 
     # Get riddle level sets
     query = '''
