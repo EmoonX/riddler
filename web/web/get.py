@@ -77,11 +77,11 @@ async def get_user_riddle_data(alias: str | None = None) -> str:
     values = {'riddle': alias or '%'}
     result = await database.fetch_all(query, values)
     riddles = {
-        row['alias']: dict(row) | {'levels': {}}
+        row['alias']: dict(row) | {'orderedLevels': []}
         for row in result
     }
 
-    # Fetch list of levels found/unlocked/beaten by user (with correct ordering)
+    # Build list of levels found/unlocked/solved by user (in order)
     query = '''
         SELECT
             up.riddle, ls.name AS set_name, up.level_name,
@@ -96,27 +96,24 @@ async def get_user_riddle_data(alias: str | None = None) -> str:
             INNER JOIN level_sets ls
                 ON up.riddle = ls.riddle AND lv.level_set = ls.name
         WHERE up.riddle LIKE :riddle AND up.username = :username
+        GROUP BY up.riddle, up.level_name
         ORDER BY ls.`index`, lv.`index`
     '''
     values |= {'username': user.name}
     result = await database.fetch_all(query, values)
     for row in result:
-        _alias = row['riddle']
-        set_name, level_name = row['set_name'], row['level_name']
-        levels = riddles[_alias]['levels']
-        if not set_name in levels:
-            levels[set_name] = {}
-        levels[set_name][level_name] = {
+        level = {
+            'setName': row['set_name'],
+            'name': row['level_name'],
             'unlocked': row['find_time'] is not None,
-            'beaten': row['completion_time'] is not None,
+            'solved': row['completion_time'] is not None,
         }
-        if (level := levels[set_name][level_name])['unlocked']:
-            level |= {
-                'frontPath': row['path'],
-                'image': row['image'],
-            }
-            if level['beaten']:
+        if level['unlocked']:
+            level |= {'frontPath': row['path'], 'image': row['image']}
+            if level['solved']:
                 level |= {'answer': row['answer']}
+
+        riddles[row['riddle']]['orderedLevels'].append(level)
 
     # Get last visited level/set for riddle(s)
     query = '''

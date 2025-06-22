@@ -43,28 +43,24 @@ $(() => {
 
       // Show current riddle info in extension's popup
       const riddle = riddles[alias];
-      const setName = riddle.lastVisitedSet;
-      const levelName = riddle.lastVisitedLevel;
-      const level = riddle.levels[setName][levelName];
       const explorerURL = `${SERVER_HOST}/${alias}/levels`;
       $('#riddle > .icons img.current').attr('src', riddle.iconUrl);
       $('#riddle > .full-name').text(riddle.fullName);
       $('#riddle a').attr('href', explorerURL);
+      
+      // Show current level name/navigation
+      const levelName = riddle.lastVisitedLevel;
+      const level = riddle.levels[levelName];
       $('#level > var#current-level').text(levelName);
-      console.log(level);
-      if (level.previousSet) {
-        console.log($('#level #previous-set'));
+      if (level.previous) {
         $('#level #previous-set').removeClass('disabled');
-      }
-      if (level.previousLevel) {
         $('#level #previous-level').removeClass('disabled');
       }
-      if (level.nextLevel) {
+      if (level.next) {
         $('#level #next-level').removeClass('disabled');
-      }
-      if (level.nextSet) {
         $('#level #next-set').removeClass('disabled');
-      }
+      }      
+
       // Build HTML for list of files of currently visited level
       insertFiles($('.page-explorer'), level.pages['/'], 0, '');
     }

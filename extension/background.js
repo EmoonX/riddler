@@ -1,7 +1,4 @@
-import {
-  initExplorer,
-  sendMessageToPopup,
-} from './explorer.js';
+import { initExplorer } from './explorer.js';
 
 import {
   clearRiddleData,
@@ -9,6 +6,7 @@ import {
   isPathSensitive,
   parseRiddleAndPath,
   riddles,
+  sendMessageToPopup,
   SERVER_HOST,
   updateRiddleData,
 } from './riddle.js';

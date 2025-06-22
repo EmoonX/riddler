@@ -49,14 +49,6 @@ export async function initExplorer(callback) {
   });
 }
 
-/** Sends message containing riddle data to popup.js. */
-export function sendMessageToPopup(port) {
-  port.postMessage({
-    riddles: riddles,
-    currentRiddle: currentRiddle,
-  });
-}
-
 /** Recursively inserts files on parent with correct margin. */
 export function insertFiles(parent, object, offset, prefix) {
   const basename = object.path.split('/').at(-1);
@@ -73,7 +65,7 @@ export function insertFiles(parent, object, offset, prefix) {
   }
 
   const riddle = riddles[currentRiddle];
-  const level = riddle.levels[riddle.shownSet][riddle.shownLevel];
+  const level = riddle.levels[riddle.shownLevel];
   const token = `${prefix}${basename}` || '/';
   const figure = getFileFigure(object, token, offset);
   if (object.path === level.frontPath) {
@@ -115,9 +107,9 @@ function getFileFigure(node, token, offset) {
   let fileCount = '';
   if (node.folder) {
     const riddle = riddles[currentRiddle];
-    const level = riddle.levels[riddle.shownSet][riddle.shownLevel];
+    const level = riddle.levels[riddle.shownLevel];
     const filesFound = node.filesFound;
-    const filesTotal = level.beaten ? node.filesTotal : '??';
+    const filesTotal = level.solved ? node.filesTotal : '??';
     fileCount =
       `<div class="file-count">(${filesFound} / ${filesTotal})</div>`;
   }
@@ -139,56 +131,48 @@ function getFileFigure(node, token, offset) {
  */
 export function changeLevelSet() {
   const riddle = riddles[currentRiddle];
-  let level = riddle.levels[riddle.shownSet][riddle.shownLevel];
-  const setName =
-    $(this).is('#previous-set') ?
-    level.previousSet :
-    level.nextSet;
-  const levelName =
-    Object.keys(riddle.levels[setName]).at(
-      riddle.shownSet !== Object.keys(riddle.levels).at(-1) ?
-      0 :
-      ($(this).is('#previous-set') ? 0 : -1)
-    );
-  level = riddle.levels[setName][levelName];
-  console.log(levelName);
-  console.log(level);
-  riddle.shownSet = setName;
-  riddle.shownLevel = levelName;
-  updatePopupNavigation(riddle, level, setName, levelName);
+  let levelSet = riddle.levelSets[riddle.shownSet];
+  let level = riddle.levels[riddle.shownLevel];
+  if ($(this).is('#previous-set')) {
+    if (levelSet.previous && level.name === levelSet.firstLevel) {
+      levelSet = riddle.levelSets[levelSet.previous];
+    }
+    level = riddle.levels[levelSet.firstLevel];
+  } else {
+    if (levelSet.next) {
+      levelSet = riddle.levelSets[levelSet.next];
+      level = riddle.levels[levelSet.firstLevel];
+    } else {
+      level = riddle.levels[levelSet.lastLevel];
+    }
+  }
+  updatePopupNavigation(riddle, level);
 }
 
 /** Changes displayed level to previous or next one, upon arrow click. */
 export function changeLevel() {
   const riddle = riddles[currentRiddle];
-  let levelSet = riddle.levels[riddle.shownSet];
-  let level = levelSet[riddle.shownLevel];
-  let [setName, levelName] = [riddle.shownSet, null];
+  let level = riddle.levels[riddle.shownLevel];
   if ($(this).is('#previous-level')) {
-    const firstInSet = Object.keys(levelSet).at(0);
-    if (riddle.shownLevel === firstInSet) {
-      setName = level.previousSet;
-    }
-    levelName = level.previousLevel
+    level = riddle.levels[level.previous];
   } else {
-    const lastInSet = Object.keys(levelSet).at(-1);
-    if (riddle.shownLevel === lastInSet) {
-      setName = level.nextSet;
-    }
-    levelName = level.nextLevel;
+    level = riddle.levels[level.next];
   }
-  level = riddle.levels[setName][levelName];
-  updatePopupNavigation(riddle, level, setName, levelName);
+  updatePopupNavigation(riddle, level);
 }
 
-function updatePopupNavigation(riddle, level, setName, levelName) {
-  riddle.shownSet = setName;
-  riddle.shownLevel = levelName;
-  $('#level var#current-level').text(levelName);
-  $('#level #previous-set').toggleClass('disabled', !level.previousSet);
-  $('#level #previous-level').toggleClass('disabled', !level.previousLevel);
-  $('#level #next-level').toggleClass('disabled', !level.nextLevel);
-  $('#level #next-set').toggleClass('disabled', !level.nextSet);
+/** Updates level/set being shown and navigation buttons. */
+function updatePopupNavigation(riddle, level) {
+  const levelSet = riddle.levelSets[level.setName];
+  riddle.shownSet = levelSet.name;
+  riddle.shownLevel = level.name;
+
+  $('#level var#current-level').text(level.name);
+  $('#level #previous-set').toggleClass('disabled', !level.previous);
+  $('#level #previous-level').toggleClass('disabled', !level.previous);
+  $('#level #next-level').toggleClass('disabled', !level.next);
+  $('#level #next-set').toggleClass('disabled', !level.next);
+
   $('.page-explorer').empty();
   insertFiles($('.page-explorer'), level.pages['/'], 0, '');
 }

@@ -9,6 +9,7 @@ export let currentRiddle;
 
 /** Builds riddle object from riddle and levels JSON data. */
 export async function buildRiddle(riddle, pages) {
+
   const iconUrlExternal = `${SERVER_HOST}/static/riddles/${riddle.alias}.png`;
   fetch(iconUrlExternal, {cache : 'force-cache'})
     .then(response => response.blob({type: 'image/png'}))
@@ -20,35 +21,46 @@ export async function buildRiddle(riddle, pages) {
         reader.readAsDataURL(blob);
       });
     });
+
+  riddle.levels = {};
+  riddle.levelSets = {};
+  riddle.pagesByPath = {};
   riddle.shownSet = riddle.lastVisitedSet;
   riddle.shownLevel = riddle.lastVisitedLevel;
-  riddle.pagesByPath = {};
-  const setsArray = Object.keys(riddle.levels);
-  let previousSetName = null;
-  let previousLevelName = null;
-  for (const [setIdx, setName] of Object.entries(setsArray)) {
-    const levelSet = riddle.levels[setName];
-    for (const [levelName, level] of Object.entries(levelSet)) {
-      level.pages = pages[levelName];
-      if (previousLevelName) {
-        const previousLevel =
-          riddle.levels[previousSetName][previousLevelName];
-        level.previousLevel = previousLevelName;
-        previousLevel.nextLevel = levelName;
-        level.previousSet = previousSetName
-      }
-      if (setName !== setsArray.at(-1)) {
-        level.nextSet = setsArray[Number(setIdx) + 1];
-      } else if (levelName !== Object.keys(levelSet).at(-1)) {
-        level.nextSet = setName;
-      }
-      previousSetName = setName;
-      previousLevelName = levelName;
-      if (level.pages) {
-        updatePathsIndex(riddle, level.pages['/']);
-      }
+  
+  let currentSet;
+  for (const [i, level] of Object.entries(riddle.orderedLevels)) {
+    if (i > 0) {
+      const previousLevel = riddle.orderedLevels[i-1];
+      level.previous = previousLevel.name;
+      previousLevel.next = level.name;
     }
+    if (level.setName !== currentSet?.name) {
+      if (currentSet) {
+        currentSet.lastLevel = level.previous;
+        currentSet.next = level.setName;
+      }
+      const levelSet = {
+        name: level.setName,
+        firstLevel: level.name,
+      };
+      if (level.previous) {
+        levelSet.previous = currentSet.name;
+      }
+      riddle.levelSets[level.setName] = currentSet = levelSet;
+    }
+    if (i == riddle.orderedLevels.length - 1) {
+      currentSet.lastLevel = level.name;
+    }
+
+    level.pages = pages[level.name];
+    if (level.pages) {
+      updatePathsIndex(riddle, level.pages['/']);
+    }
+
+    riddle.levels[level.name] = level;
   }
+
   riddles[riddle.alias] = riddle;
 }
 
@@ -80,7 +92,7 @@ export async function updateRiddleData(alias, setName, levelName) {
         riddle.lastVisitedSet = riddle.shownSet = setName;
         riddle.lastVisitedLevel = riddle.shownLevel = levelName;
         for (const [levelName, pages] of Object.entries(pagesData)) {
-          const level = riddle.levels[setName][levelName];
+          const level = riddle.levels[levelName];
           level.pages = pages;
           updatePathsIndex(riddle, level.pages['/']);
         }
@@ -162,6 +174,14 @@ export function getPageNode(url) {
 export function isPathSensitive(riddle, path) {
   // (no, pr0ners, I am NOT interested in hoarding your personal user data)
   return riddle.alias === 'notpron' && path.indexOf('/jerk2') === 0;
+}
+
+/** Sends message containing riddle data to popup.js. */
+export function sendMessageToPopup(port) {
+  port.postMessage({
+    riddles: riddles,
+    currentRiddle: currentRiddle,
+  });
 }
 
 /** Updates module members' state. */
