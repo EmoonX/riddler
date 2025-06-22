@@ -107,20 +107,25 @@ export function changeDir(explorer, folderPath, admin) {
     let type;
     if (node.folder) {
       type = 'folder';
+    } else if (filename.indexOf('.') === -1) {
+      type = 'html';
     } else if (node.unknownExtension) {
       type = 'unknown';
     } else {
       type = filename.split('.').at(-1).toLowerCase();
     }
-    let current = '';
+    let class_ = 'file';
+    if (type === 'folder') {
+      class_ += ' folder';
+    }
     if (admin) {
       if (type === 'folder') {
         if (node['levels'][levelName]) {
-          current = 'class="current"';
+          class_ += ' current';
         }
       } else {
         if (node['level_name'] == levelName) {
-          current = 'class="current"';
+          class_ = ' current';
         }
       }
     }
@@ -131,7 +136,7 @@ export function changeDir(explorer, folderPath, admin) {
     }
     const figure = `
       <figure
-        ${current}
+        class="${class_}"
         title="${node['path']}${accessTimeMessage}"
         data-username=${node['username']}
         data-password=${node['password']}
