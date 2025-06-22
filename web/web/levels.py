@@ -1,6 +1,7 @@
 from collections.abc import Iterator
 from copy import deepcopy
 from datetime import datetime
+from itertools import islice
 import json
 import os
 
@@ -84,10 +85,13 @@ async def level_list(alias: str):
 
         # Get player's current found pages count for level
         query = '''
-            SELECT `path` FROM user_pages
-            WHERE riddle = :riddle
-                AND username = :username
-                AND level_name = :level
+            SELECT *
+            FROM user_pages up INNER JOIN level_pages lp
+                ON up.riddle = lp.riddle AND up.path = lp.path
+            WHERE up.riddle = :riddle
+                AND up.username = :username
+                AND up.level_name = :level
+                AND lp.hidden IS NOT TRUE
         '''
         values = base_values | {'level': level['name']}
         pages_data = await database.fetch_all(query, values)
@@ -95,16 +99,17 @@ async def level_list(alias: str):
             found_pages = [row['path'] for row in pages_data]
             level['pages_found'] = len(found_pages)
 
-            # Get topmost folder by longest
-            # common prefix of all found level pages
-            longest_prefix = found_pages[0].rsplit('/', 1)[0] + '/'
-            for path in found_pages[1:]:
-                k = min(len(path), len(longest_prefix))
+            # Get topmost folder by the
+            # longest common prefix of all found level pages
+            parsed_prefix = found_pages[0].split('/')
+            for path in islice(found_pages, 1, None):
+                parsed_path = path.split('/')
+                k = min(len(parsed_path), len(parsed_prefix))
                 for i in range(k):
-                    if path[i] != longest_prefix[i]:
-                        longest_prefix = longest_prefix[:i]
+                    if parsed_path[i] != parsed_prefix[i]:
+                        parsed_prefix = parsed_prefix[:i]
                         break
-            level['topmost_folder'] = longest_prefix
+            level['topmost_folder'] = f"{'/'.join(parsed_prefix)}/"
 
             if level['path'] not in found_pages:
                 # Fallback for when front path has changed

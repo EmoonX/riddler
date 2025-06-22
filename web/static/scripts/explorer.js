@@ -148,7 +148,7 @@ export function changeDir(explorer, folderPath, admin) {
 
     // Append current level files in correct order
     // (current folders -> other folders -> current files -> other files)
-    if (name == 'folder') {
+    if (type === 'folder') {
       const folderNode = files.children('.folder');
       if (admin && node['levels'][levelName]) {
         folderNode.children('.first').append(figure);
