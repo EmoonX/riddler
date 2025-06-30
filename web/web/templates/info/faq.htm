@@ -28,7 +28,7 @@
       <p>Almost certainly, you haven&#39;t recorded the <em>credentials</em> for that specific folder/path yet. This usually happens post-extension install when you&#39;re navigating with previous session/cache data. To amend it:</p>
       <ul>
       <li>Press <code>Ctrl+F5</code> to trigger a hard-refresh (close/open browser if it doesn&#39;t work at first). This should bring the credentials box, and then you can just input the correct username/password as usual;</li>
-      <li>If all else fails, directly embedding the credentials into the URL (<code>https://user:pass@riddledomain.com/folder/page.htm</code>) also works.</li>
+      <li>If all else fails, directly embedding the credentials into the URL (<code style="word-break: break-all;">https://<strong>user:pass@</strong>riddledomain.com/folder/page.htm</code>) also works.</li>
       </ul>
       <h4 id="the-password-field-is-explicitly-showing-the-password-without-the-">The password field is explicitly showing the password without the ●●●●●.</h4>
       <p>That&#39;s intentional. Folder-specific credentials contain no sensitive info; so there&#39;s no point in hiding it either. Using a <code>type=&quot;password&quot;</code> input field makes the user too prone to commit spelling mistakes (an extra letter, a wrong one, etc), which tends to happen all the time. Therefore, the plain <code>type=&quot;text&quot;</code> password is, riddle-wise, also an improvement over the native browser box UI.</p>

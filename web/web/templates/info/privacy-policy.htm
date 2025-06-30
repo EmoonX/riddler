@@ -17,7 +17,7 @@
         <li><code>webRequestAuthProvider</code>: to implement the <code>onAuthRequired</code> listener, which allows the extension to cancel the browser's default auth box and present Riddler's custom proxy credentials box in its place.</li>
       </ol>
 
-      <h2>Riddle credentials</h2>
+      <h2 id="riddle-credentials">Riddle credentials</h2>
       <p>Starting on version <strong>0.5</strong>, Riddler implements <a href="/static/extra/credentials.png">its own custom auth box</a>. By itself, the interface works essentially by embedding the provided username/password as part of the URL. The box, therefore, is merely a helpful proxy, and the same result can be achieved if the user directly adds the <code>user:pass@</code> component to the address bar's URL, like so:</p>
       <p><code>https://<strong>user:pass@</strong>riddledomain.com/folder/page.htm</code></p>
       <p><a href="https://riddler.app">https://riddler.app</a> then receives the extension-sent URL, parses the required credentials, and applies the needed procedures.</p>

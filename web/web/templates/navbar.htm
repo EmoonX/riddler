@@ -74,9 +74,8 @@
         <nav class="dropdown">
           <button class="nav-button burger">≡</button>
           <div class="menu">
-            <a href="{{ url_for('players.global_list') }}" class="nav-button">All players</a>
-            <a href="{{ url_for('countries.global_list') }}" class="nav-button">Countries</a>
-            <a href="{{ url_for('info.info_page', page='about') }}" class="nav-button">About / Help</a>
+            <a href="/players" class="nav-button">Global Leaderboard</a>
+            <a href="/countries" class="nav-button">Countries</a>            
             <a href="https://discord.gg/ktaPPtnPSn" class="nav-button" target="_blank">
               <img class="icon" src="/static/icons/discord.png">Wonderland II
             </a>
@@ -85,8 +84,10 @@
               <img class="icon" src="/static/icons/ko-fi.png">Donate
             </a>
           -->
-            <a href="{{ url_for('info.info_page', page='terms-and-conditions') }}" class="nav-button">Terms & Conditions</a>
-            <a href="{{ url_for('info.info_page', page='privacy-policy') }}" class="nav-button">Privacy Policy</a>
+            <a href="/about" class="nav-button">About</a>
+            <a href="/faq" class="nav-button">F.A.Q.</a>
+            <a href="/privacy-policy" class="nav-button">Privacy Policy</a>
+            <a href="/terms-and-conditions" class="nav-button">Terms & Conditions</a>
           </div>
         </nav>
       {% if not is_authorized() %}
