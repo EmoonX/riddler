@@ -1268,9 +1268,9 @@ section.list.players > .row {
       }
     }
     &:has(.count:not(.disabled)) {
-    &:hover > .thumbs, > .thumbs:hover {
-      transform: scaleY(1);
-      opacity: 1;
+      &:hover > .thumbs, > .thumbs:hover {
+        transform: scaleY(1);
+        opacity: 1;
       }
     }
   }
@@ -1819,12 +1819,14 @@ s {
   opacity: .3;
 }
 
-ol {
+ol, ul {
+  margin: 20px 80px;
   text-align: left;
-  text-indent: 3em;
   line-height: 1.3em;
   counter-reset: item;
+}
 
+ol {
   > li {
     margin: .2em auto;
     list-style-type: none;
@@ -1836,6 +1838,9 @@ ol {
       font-weight: bold;
       text-shadow: 0 0 0.8em white;
       content: counter(item) ".";
+    }
+    * {
+      text-indent: initial;
     }
     > nav.extension-links, > figure {
       display: flex;
