@@ -62,7 +62,10 @@
           <span class="smaller">(alias for {{ referenced_path(page_data['alias_for']) }})</span>
         {% endif %}
         </li>
-      {% endfor %}  
+      {% endfor %}
+      {% if not level['pages'] %}
+        <em style="color: #bbb">(no recorded pages)</em>
+      {% endif %}
       {% set answer_page = all_pages_by_path.get(level['answer']) %}
       {% if level['answer'] and answer_page['level_name'] != level_name %}
         <li class="smaller">
@@ -71,6 +74,9 @@
       {% endif %}
       </ul>
     {% endfor %}
+    {% if not levels %}
+      <img src="/static/extra/tumbleweed.gif" alt="tumbleweed is rolling...">
+    {% endif %}
     </main>
   </body>
 </html>
