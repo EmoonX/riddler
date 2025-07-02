@@ -19,9 +19,9 @@
     {% for level_name, level in levels.items() %}
       <h2>
         {{ level_name }}<!--
-     -->{% if level['latinName'] %}
-          <span class="smaller">({{ level['latinName'] }})</span>
-        {% endif %}
+   -->{% if level['latinName'] %}
+        <span class="smaller">({{ level['latinName'] }})</span>
+      {% endif %}
       </h2>
       <ul>
       {% macro referenced_path(path, title) %}
@@ -29,13 +29,17 @@
         <a
           href="{{ (riddle['root_path'] ~ path) if path.startswith('/') else path }}"
           {% if title %}title="{{ title }}"{% endif %}
-          {% if path.startswith('/') and (not page or page['removed']) %}class="strikethrough"{% endif %}
+          {% if page['removed'] %}class="strikethrough"{% endif %}
           target="_blank"
           rel="noreferrer"
         >
           {{- path -}}
         </a>
-        {%- if page and page['level_name'] != level_name %} ({{ page['level_name'] }}){% endif %}
+        {%- if page and page['level_name'] != level_name %}
+          ({{ page['level_name'] }})
+        {%- elif not page %}
+          <em style="color: #bbb">(missing)</em>
+        {%- endif -%}
       {% endmacro %}
       {% for path, page_data in level['pages'].items() %}
         {% if page_data.get('flag', '').startswith('front-') %}
@@ -46,16 +50,16 @@
         {% if page_data.get('flag') == 'answer' %}
           <span class="smaller">answer:</span>
         {% endif %}
-          {% set styles = [] %}
+          {% set classes = [] %}
           {% if page_data['hidden'] %} 
-            {% set styles = styles + ['translucent'] %}
+            {% set classes = classes + ['translucent'] %}
             {% set title = '(hidden page)' %}
           {% endif %}
           {% if page_data['removed'] %}
-            {% set styles = styles + ['strikethrough'] %}
+            {% set classes = classes + ['strikethrough'] %}
             {% set title = '(removed page)' %}
           {% endif %}
-          <a class="{{ ' '.join(styles) }}" title="{{ title }}" href="{{ page_data['url'] }}" target="_blank" rel="noreferrer">{{ path }}</a>
+          <a class="{{ ' '.join(classes) }}" title="{{ title }}" href="{{ page_data['url'] }}" target="_blank" rel="noreferrer">{{ path }}</a>
         {% set redirect_path = page_data['redirects_to'] %}
         {% if redirect_path %}
           <span class="smaller">➜ {{ referenced_path(redirect_path, '(redirects to)') }}</span>
