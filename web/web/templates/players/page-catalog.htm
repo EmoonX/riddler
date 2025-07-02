@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Page Catalog ⬩ {{ riddle['full_name'] }}</title>
+    <link rel="icon" href="/static/icons/letter-r-icon.png">
+    <link rel="fluid-icon" href="/static/icons/letter-r-icon.png" title="Riddler">
+
+    <!-- Less CSS -->
+    <link rel="stylesheet/less" type="text/css" href="/static/health.less">
+    <script src="//cdn.jsdelivr.net/npm/less@3.13" ></script>
+  </head>
+  <body>
+    <header>
+      <h1>Page Catalog ⬩ {{ riddle['full_name'] }}</h1>
+    </header>
+    <main>
+    {% for level_name, level in levels.items() %}
+      <h2>
+        {{ level_name }}<!--
+     -->{% if level['latinName'] %}
+          <span class="smaller">({{ level['latinName'] }})</span>
+        {% endif %}
+      </h2>
+      <ul>
+      {% macro referenced_path(path, title) %}
+        {% set page = all_pages_by_path.get(path) %}
+        <a
+          href="{{ (riddle['root_path'] ~ path) if path.startswith('/') else path }}"
+          {% if title %}title="{{ title }}"{% endif %}
+          {% if path.startswith('/') and (not page or page['removed']) %}class="strikethrough"{% endif %}
+          target="_blank"
+          rel="noreferrer"
+        >
+          {{- path -}}
+        </a>
+        {%- if page and page['level_name'] != level_name %} ({{ page['level_name'] }}){% endif %}
+      {% endmacro %}
+      {% for path, page_data in level['pages'].items() %}
+        {% if page_data.get('flag', '').startswith('front-') %}
+          {% set icon_class = page_data['flag'] %}
+          {% set icon_title = page_data['flag'].capitalize().replace('-', ' ') %}
+        {% endif %}
+        <li{% if icon_class and icon_title %} class="{{ icon_class }}" title="{{ icon_title }}"{% endif %}>
+        {% if page_data.get('flag') == 'answer' %}
+          <span class="smaller">answer:</span>
+        {% endif %}
+          {% set styles = [] %}
+          {% if page_data['hidden'] %} 
+            {% set styles = styles + ['translucent'] %}
+            {% set title = '(hidden page)' %}
+          {% endif %}
+          {% if page_data['removed'] %}
+            {% set styles = styles + ['strikethrough'] %}
+            {% set title = '(removed page)' %}
+          {% endif %}
+          <a class="{{ ' '.join(styles) }}" title="{{ title }}" href="{{ page_data['url'] }}" target="_blank" rel="noreferrer">{{ path }}</a>
+        {% set redirect_path = page_data['redirects_to'] %}
+        {% if redirect_path %}
+          <span class="smaller">➜ {{ referenced_path(redirect_path, '(redirects to)') }}</span>
+        {% elif page_data['alias_for'] %}
+          <span class="smaller">(alias for {{ referenced_path(page_data['alias_for']) }})</span>
+        {% endif %}
+        </li>
+      {% endfor %}  
+      {% set answer_page = all_pages_by_path.get(level['answer']) %}
+      {% if level['answer'] and answer_page['level_name'] != level_name %}
+        <li class="smaller">
+          answer: {{ referenced_path(level['answer']) }}
+        </li>
+      {% endif %}
+      </ul>
+    {% endfor %}
+    </main>
+  </body>
+</html>

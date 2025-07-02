@@ -224,7 +224,7 @@ async def get_pages(
         user = await discord.get_user()
         # TODO
         query = f"""
-            SELECT up.level_name, up.path, access_time
+            SELECT up.level_name, up.path, up.access_time, lp.*
             FROM user_pages up INNER JOIN level_pages lp
                 ON up.riddle = lp.riddle AND up.path = lp.path
             WHERE up.riddle = :riddle
@@ -232,7 +232,7 @@ async def get_pages(
                 AND {
                     level_condition
                         .replace('level_name LIKE', 'up.level_name LIKE')
-                        .replace('level_name IS', 'up.level_name IS')
+                        .replace('level_name IS  ', 'up.level_name IS  ')
                 }
                 {'AND hidden  IS NOT TRUE' if not include_hidden  else ''}
                 {'AND removed IS NOT TRUE' if not include_removed else ''}

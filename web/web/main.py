@@ -47,6 +47,7 @@ from inject import context_processor
 from levels import levels
 from players.account import account
 from players.export import export
+from players.page_catalog import page_catalog
 from players.players import players
 from players.profile import profile
 from process import process
@@ -55,8 +56,8 @@ from util.db import database
 for blueprint in (
     admin_cheevos, admin_health, admin_levels, admin_upload_pages,
     admin_page_changes, admin_recent, admin_update,
-    account, auth, countries, export, get, home, info, levels,
-    players, process, profile,
+    account, auth, countries, export, get, home, info,
+    levels, page_catalog, players, process, profile,
 ):
     # Context processor for blueprint
     blueprint.context_processor(context_processor)
