@@ -17,15 +17,22 @@
 
 h2 {
   font-family: standard-font;
+
+  &::before {
+    content: "➤ ";
+  }
 }
 
 .page-count {
+  display: inline-flex;
+  gap: .25em;
   margin: .2em;
   border-radius: .8em;
   padding: .2em .5em;
 	background-color: #eee;
   font-family: calculator;
-  font-size: .7em;
+  font-size: .85em;
+  letter-spacing: .1em;
 	color: #666;
   cursor: default;
 
@@ -38,7 +45,7 @@ h2 {
 }
 
 .all-found {
-  font-size: .35em;
+  font-size: .45em;
   cursor: help;
 
   &::selection {

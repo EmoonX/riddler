@@ -16,8 +16,13 @@
       <h1>Page Catalog ⬩ {{ riddle['full_name'] }}</h1>
     </header>
     <main>
+    {% set ns = namespace(current_set='') %}
     {% for level_name, level in levels.items() %}
-      <h2>
+    {% if level['levelSet'] != ns.current_set %}
+      {% set ns.current_set = level['levelSet'] %}
+      <h2>{{ ns.current_set }}</h2>
+    {% endif %}
+      <h3>
         {{ level_name }}<!--
    -->{% if level['latinName'] %}
         <span class="smaller">({{ level['latinName'] }})</span>
@@ -30,7 +35,7 @@
       {%- if pages_found == pages_total -%}
         <sup class="all-found" title="All (non-hidden) level pages found">✔️</sup>
       {%- endif -%}
-      </h2>
+      </h3>
       <ul>
       {% macro referenced_path(path, title) %}
         {% set page = all_pages_by_path.get(path) %}
