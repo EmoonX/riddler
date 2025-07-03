@@ -332,14 +332,16 @@ async def get_pages(
                         children[seg] = deepcopy(base)
                     else:
                         children[seg] = data
-                parent['filesFound'] += 1
-                parent['pagesFound'] += 1
+
+                if not data['hidden']:
+                    parent['filesFound'] += 1
+                    parent['pagesFound'] += 1
                 parent = children[seg]
 
     # Recursively calculate total file count for each folder
     # and record credentials based on innermost protected directory
     query = f"""
-        SELECT level_name, `path` FROM level_pages
+        SELECT * FROM level_pages
         WHERE riddle = :riddle
             AND {level_condition}
             {'AND hidden  IS NOT TRUE' if not include_hidden  else ''}
@@ -362,8 +364,9 @@ async def get_pages(
             if unlocked_levels.get(level_name, {}).get('solveTime'):
                 if not parent.get('pagesTotal'):
                     parent |= {'filesTotal': 0, 'pagesTotal': 0}
-                parent['filesTotal'] += 1
-                parent['pagesTotal'] += 1
+                if not data['hidden']:
+                    parent['filesTotal'] += 1
+                    parent['pagesTotal'] += 1
             if not seg in parent['children']:
                 # Avoid registering locked folders/pages
                 break
