@@ -298,9 +298,8 @@ async def has_unlocked_path_credentials(
         'riddle': alias,
         'username': user.name,
         'path': path,
-    }
-    has_player_unlocked = await database.fetch_val(query, values)
-    return has_player_unlocked
+    } 
+    return await database.fetch_val(query, values)
 
 
 async def get_all_unlocked_credentials(

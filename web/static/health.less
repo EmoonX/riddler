@@ -58,6 +58,8 @@ ul {
   list-style: none;
 
     > li {
+      width: fit-content;
+
       &::before {
         position: absolute;
         left: 1.5em;
@@ -70,7 +72,6 @@ ul {
       }
       &.front-page::before {
         content: "📌";
-        
       }
       &.front-image::before {
         content: "🖌️";

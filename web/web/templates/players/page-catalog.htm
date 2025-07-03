@@ -40,11 +40,11 @@
       {% macro referenced_path(path, title) %}
         {% set page = all_pages_by_path.get(path) %}
         <a
-          href="{{ (riddle['root_path'] ~ path) if path.startswith('/') else path }}"
-          {% if title %}title="{{ title }}"{% endif %}
           {% if page['removed'] %}class="strikethrough"{% endif %}
+          href="{{ (riddle['root_path'] ~ path) if path.startswith('/') else path }}"
           target="_blank"
           rel="noreferrer"
+          {% if title %}title="{{ title }}"{% endif %}
         >
           {{- path -}}
         </a>
@@ -72,7 +72,15 @@
             {% set classes = classes + ['strikethrough'] %}
             {% set title = '(removed page)' %}
           {% endif %}
-          <a class="{{ ' '.join(classes) }}" title="{{ title }}" href="{{ page_data['url'] }}" target="_blank" rel="noreferrer">{{ path }}</a>
+          <a
+            class="{{ ' '.join(classes) }}"
+            href="{{ page_data['url'] }}"
+            target="_blank"
+            rel="noreferrer"
+            {% if title %}title="{{ title }}"{% endif %}
+          >
+            {{- path -}}
+          </a>
         {% set redirect_path = page_data['redirects_to'] %}
         {% if redirect_path %}
           <span class="smaller">➜ {{ referenced_path(redirect_path, '(redirects to)') }}</span>

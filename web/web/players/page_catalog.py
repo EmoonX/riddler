@@ -1,18 +1,12 @@
-from datetime import datetime
-import re
 from urllib.parse import urljoin
 
-from quart import Blueprint, render_template, request
+from quart import Blueprint, render_template
 from quartcord import requires_authorization
-import requests
 
-from admin.admin_auth import admin_auth
-from admin.archive import ArchivedPage
-from credentials import get_path_credentials
+from auth import discord
+from credentials import get_path_credentials, has_unlocked_path_credentials
 from inject import get_riddle
 from levels import absolute_paths, get_pages
-from process import process_url
-from util.db import database
 
 page_catalog = Blueprint('page_catalog', __name__)
 
@@ -20,9 +14,10 @@ page_catalog = Blueprint('page_catalog', __name__)
 @page_catalog.get('/<alias>/page-catalog')
 @requires_authorization
 async def catalog(alias: str):
-    '''Show page catalog.'''
+    '''Show page catalog for logged in player.'''
 
     riddle = await get_riddle(alias)
+    user = await discord.get_user()
     all_pages_by_level = await get_pages(
         alias,
         include_hidden=True,
@@ -32,16 +27,18 @@ async def catalog(alias: str):
     )
 
     async def _retrieve_page(path: str, page_data: dict) -> dict:
+        '''Build URL (possibly w/ credentials) and return page data with it.'''
 
-        # Build URL (with possibly embedded credentials)
         url = f"{riddle['root_path']}{path}"
         credentials = await get_path_credentials(alias, path)
-        username = credentials['username']
-        password = credentials['password']
-        if username or password:
-            url = url.replace('://', f"://{username or ''}:{password or ''}@")
-        page_data |= {'url': url}
-        return page_data
+        if await has_unlocked_path_credentials(alias, user, credentials['path']):
+            username = credentials['username']
+            password = credentials['password']
+            if username or password:
+                auth = f"{username or ''}:{password or ''}"
+                url = url.replace('://', f"://{auth}@")
+
+        return page_data | {'url': url}
 
     # Start iterating at user-informed level (if any)
     levels = {}
