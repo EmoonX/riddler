@@ -22,6 +22,14 @@
    -->{% if level['latinName'] %}
         <span class="smaller">({{ level['latinName'] }})</span>
       {% endif %}
+        {% set pages_found = level['/']['pagesFound'] %}
+        {% set pages_total = level['/']['pagesTotal'] %}
+        <span class="page-count {% if not pages_total %}translucent{% endif %}">
+          {{- pages_found }} <span class="bar">/</span> {{ pages_total or ('?' * pages_found|string|length) -}}
+        </span>
+      {%- if pages_found == pages_total -%}
+        <sup class="all-found" title="All (non-hidden) level pages found">✔️</sup>
+      {%- endif -%}
       </h2>
       <ul>
       {% macro referenced_path(path, title) %}

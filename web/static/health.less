@@ -1,4 +1,50 @@
-/* -- 🔒 Health Diagnostics -- */
+/* -- Page Catalog / 🔒 Health Diagnostics -- */
+
+@font-face {
+  font-family: standard-font;
+  src: url("/static/fonts/font.ttf");
+}
+@font-face {
+  font-family: standard-font;
+  src: url("/static/fonts/font-bold.ttf");
+  font-weight: bold;
+}
+@font-face {
+  font-family: calculator;
+  src: url("/static/fonts/calculator.ttf");
+  unicode-range: U+00-B0, U+100-FFFF;
+}
+
+h2 {
+  font-family: standard-font;
+}
+
+.page-count {
+  margin: .2em;
+  border-radius: .8em;
+  padding: .2em .5em;
+	background-color: #eee;
+  font-family: calculator;
+  font-size: .7em;
+	color: #666;
+  cursor: default;
+
+  &:hover {
+    opacity: 1;
+  }
+  .bar {
+    color: #aaa;
+  }
+}
+
+.all-found {
+  font-size: .35em;
+  cursor: help;
+
+  &::selection {
+    user-select: none;
+  }
+}
 
 ul {
   position: relative;
