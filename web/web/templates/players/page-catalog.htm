@@ -77,7 +77,7 @@
             href="{{ page_data['url'] }}"
             target="_blank"
             rel="noreferrer"
-            {% if title %}title="{{ title }}"{% endif %}
+            title="{{ title ~ (title and '&#10;'|safe) ~ '🖊️ recorded on ' ~ page_data['access_time'] }}"
           >
             {{- path -}}
           </a>
