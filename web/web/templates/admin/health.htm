@@ -75,6 +75,15 @@
             {% set classes = classes + ['strikethrough'] %}
             {% set title = '(removed page)' %}
           {% endif %}
+          {% if page_data['find_username'] or page_data['find_time'] %}
+            {% set title = title ~ (title and '&#10;'|safe) ~ '✨ found' %}
+            {% if page_data['find_username'] %}
+              {% set title = title ~ ' by ' ~ page_data['find_username'] %}
+            {% endif %}
+            {% if page_data['find_time'] %}
+              {% set title = title ~ ' on ' ~ page_data['find_time'] %}
+            {% endif %}
+          {% endif %}
           <a
             class="{{ ' '.join(classes) }}"
             href="{{ page_data['url'] }}"

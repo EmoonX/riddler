@@ -204,7 +204,7 @@ async def get_pages(
     admin &= await is_admin_of(alias)
 
     # Fetch user page data
-    level_condition = 'level_name LIKE :level_name'
+    level_condition = ' level_name LIKE :level_name'
     if include_unlisted:
         level_condition = f"({level_condition} OR level_name IS NULL)"
     values = {
@@ -214,9 +214,11 @@ async def get_pages(
     if admin:
         user = None
         query = f"""
-            SELECT *, current_timestamp() AS access_time FROM level_pages
-            WHERE riddle = :riddle
-                AND {level_condition}
+            SELECT lp.*, fp.username AS find_username, fp.access_time AS find_time
+            FROM level_pages lp LEFT JOIN _found_pages fp
+                ON lp.riddle = fp.riddle AND lp.path = fp.path
+            WHERE lp.riddle = :riddle
+                AND {level_condition.replace(' level_name', ' lp.level_name')}
                 {'AND hidden  IS NOT TRUE' if not include_hidden  else ''}
                 {'AND removed IS NOT TRUE' if not include_removed else ''}
         """
@@ -301,8 +303,11 @@ async def get_pages(
         data['page'] = data['path'].rpartition('/')[-1]
         data['folder'] = 0
         data['unknownExtension'] = extension not in available_extensions
-        data['access_time'] = data['accessTime'] = \
-            _stringify_datetime(data['access_time'])
+        if access_time := data.get('access_time'):
+            data['access_time'] = data['accessTime'] = \
+                _stringify_datetime(access_time)
+        elif find_time := data.get('find_time'):
+            data['find_time'] = _stringify_datetime(find_time)
         paths[data['level_name']].append(data)
 
     # Build recursive dict of folders and files
