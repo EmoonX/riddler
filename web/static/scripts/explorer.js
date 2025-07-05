@@ -76,7 +76,7 @@ export function changeDir(explorer, folderPath, admin) {
   }
 
   // Get sorted (by extension and then name) pages object
-  const pages =
+  const pagesInFolder =
     Object.keys(folder.children)
     .sort((a, b) => {
       const i = a.lastIndexOf('.');
@@ -103,7 +103,7 @@ export function changeDir(explorer, folderPath, admin) {
     )
   ;
   // And now add the current dir files
-  $.each(pages, (filename, node) => {
+  $.each(pagesInFolder, (filename, node) => {
     let type;
     if (node.folder) {
       type = 'folder';
@@ -114,29 +114,35 @@ export function changeDir(explorer, folderPath, admin) {
     } else {
       type = filename.split('.').at(-1).toLowerCase();
     }
-    let class_ = 'file';
+
+    let classes = 'file';
+    let title = '';
+    if (node['path'] === pages[levelName].frontPage) {
+      classes += ' active';
+      title += '(Front page)&#10;';
+    }
+    title += node['path'];
     if (type === 'folder') {
-      class_ += ' folder';
+      classes += ' folder';
+    } else {
+      title += `&#10;🖊️ recorded on ${node['access_time']}`;
     }
     if (admin) {
       if (type === 'folder') {
         if (node['levels'][levelName]) {
-          class_ += ' current';
+          classes += ' current';
         }
       } else {
         if (node['level_name'] == levelName) {
-          class_ = ' current';
+          classes = ' current';
         }
       }
     }
-    let accessTimeMessage = '';
-    if (type !== 'folder') {
-      accessTimeMessage = `🖊️ recorded on ${node['access_time']}`;
-    }
+
     const figure = `
       <figure
-        class="${class_}"
-        title="${node['path']}&#10;${accessTimeMessage}"
+        class="${classes}"
+        title="${title}"
         data-username=${node['username']}
         data-password=${node['password']}
       >
