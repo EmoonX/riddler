@@ -39,7 +39,7 @@
             {% include 'util/external-link.htm' %}
             </a>
           {% endif %}
-          {% if level['pages_found'] %}
+          {% if level['unlocked'] and level['pages_found'] > 0 %}
             <div class="menu-button">☰</div>
           {% endif %}
           </div>
@@ -71,9 +71,9 @@
               <figcaption style="color: gray"><span class="rank-letter">?</span>-rank (?? points)</figcaption>
             {% endif %}
             </figure>
-          {% if level['pages_found'] %}
+          {% if level['unlocked'] %}
             <figure class="page-count">
-              {% if level['pages_found'] == level['pages_total'] %}
+              {% if level['pages_found'] == level['pages_total'] and level['pages_total'] > 0 %}
                 {% set check = '<span class="check">✅</span>'|safe %}
               {% endif %}
               {% set pages_total = '??' %}
@@ -170,11 +170,10 @@
           </div>
         </div>
         <div class="page-explorer">
-        {% if level['pages_found'] %}
-          {% set folder = level['topmost_folder'] %}
+        {% if level['unlocked'] %}
           <nav>
             <img width="40" height="40" class="folder-up" src="/static/icons/folderup.png">
-            <div class="path">{{ folder }}</div>
+            <div class="path">{{ level['initial_folder'] }}</div>
           {% if level['beaten'] %}
             <div class="completion">
               <span class="check">✅</span>

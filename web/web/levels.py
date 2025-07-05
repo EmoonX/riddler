@@ -81,7 +81,8 @@ async def level_list(alias: str):
                 GROUP BY riddle, level_name
             '''
             values = {'riddle': alias, 'level': level['name']}
-            level['pages_total'] = await database.fetch_val(query, values)
+            level['pages_total'] = \
+                await database.fetch_val(query, values) or 0
 
         # Get player's current found pages count for level
         query = '''
@@ -95,26 +96,27 @@ async def level_list(alias: str):
         '''
         values = base_values | {'level': level['name']}
         pages_data = await database.fetch_all(query, values)
-        if pages_data:
-            found_pages = [row['path'] for row in pages_data]
-            level['pages_found'] = len(found_pages)
+        found_pages = [row['path'] for row in pages_data]
+        level['pages_found'] = len(found_pages)
 
-            # Get topmost folder by the
-            # longest common prefix of all found level pages
-            parsed_prefix = found_pages[0].split('/')
-            for path in islice(found_pages, 1, None):
-                parsed_path = path.split('/')
-                k = min(len(parsed_path), len(parsed_prefix))
-                for i in range(k):
-                    if parsed_path[i] != parsed_prefix[i]:
-                        parsed_prefix = parsed_prefix[:i]
-                        break
-            level['topmost_folder'] = f"{'/'.join(parsed_prefix)}/"
-
-            if level['path'] not in found_pages:
-                # Fallback for when front path has changed
-                # but user hasn't accessed it yet
-                level['path'] = ''
+        if level['path'] in found_pages:
+            level['initial_folder'] = os.path.dirname(level['path'])
+        else:
+            # Fallback for when front path has changed
+            # but user hasn't accessed it yet
+            level['path'] = None
+            if found_pages:
+                # Get topmost folder by the
+                # longest common prefix of all found level pages
+                parsed_prefix = os.path.dirname(found_pages[0]).split('/')
+                for path in islice(found_pages, 1, None):
+                    parsed_path = path.split('/')
+                    k = min(len(parsed_path), len(parsed_prefix))
+                    for i in range(k):
+                        if parsed_path[i] != parsed_prefix[i]:
+                            parsed_prefix = parsed_prefix[:i]
+                            break
+                level['initial_folder'] = '/'.join(parsed_prefix)
 
         # Register list of users currently working on level
         query = '''

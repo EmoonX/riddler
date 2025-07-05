@@ -34,7 +34,7 @@ export function toggleExplorer() {
 
 export function getFolderEntry(folderPath, level, admin) {
   // Get pages dictionary entry corresponding to bottom folder in path
-  const segments = folderPath.split('/').slice(1, -1);
+  const segments = folderPath === '/' ? [] : folderPath.split('/').slice(1);
   let folder = admin ?  pages['/'] : pages[level]['/'];
   segments.forEach(seg => {
     folder = folder['children'][seg];
@@ -131,13 +131,12 @@ export function changeDir(explorer, folderPath, admin) {
     }
     let accessTimeMessage = '';
     if (type !== 'folder') {
-      const accessTime = node['access_time'];
-      accessTimeMessage = `&#10;↳ found on ${accessTime}`;
+      accessTimeMessage = `🖊️ recorded on ${node['access_time']}`;
     }
     const figure = `
       <figure
         class="${class_}"
-        title="${node['path']}${accessTimeMessage}"
+        title="${node['path']}&#10;${accessTimeMessage}"
         data-username=${node['username']}
         data-password=${node['password']}
       >
@@ -204,8 +203,8 @@ export function folderUp() {
     // Nothing to do if already on top folder
     return
   }
-  const re = /[^/]+\/$/g;
-  const folder = node.text().replace(re, '');
+  const re = /\/[^/]+$/g;
+  const folder = node.text().replace(re, '') || '/';
   const admin = explorer.parents('.list').hasClass('admin');
   changeDir(explorer, folder, admin);
 }

@@ -16,19 +16,15 @@ function clickIcon() {
 
 function doubleClickIcon() {
   // Action to be taken upon double-clicking icon
-
-  const page = $(this).find('figcaption').text();
+  const explorer = $(this).parents('.page-explorer');
+  const currentFolder = explorer.find('.path').text();
+  const basename = $(this).find('figcaption').text();
+  const path = currentFolder.replace(/([^/])$/, '$1/') + basename;
   if ($(this).attr('class').split(' ').indexOf('folder') !== -1) {
     // Change current directory to folder's one
-    const explorer = $(this).parents('.page-explorer');
-    const node = explorer.find('.path');
-    const folder = node.text() + page + '/';
-    changeDir(explorer, folder);
+    changeDir(explorer, path);
   } else {
     // Open desired page in new tab
-    const explorer = $(this).parents('.page-explorer');
-    const path = explorer.find('.path').text() +
-        $(this).find('figcaption').text();
     const endpoint = location.href + '/get-root-path';
     $.get(endpoint, rootPath => {
       const url = rootPath + path;
