@@ -217,3 +217,23 @@ async def _apply_change(page_change: dict, expanded: bool = False):
         WHERE riddle = :riddle AND answer = :path
     '''
     await database.execute(query, values)
+
+    # Update achievement data
+    query = '''
+        SELECT * FROM achievements
+        WHERE riddle = :riddle
+    '''
+    values = {'riddle': alias}
+    achievements = await database.fetch_all(query, values)
+    for achievement in achievements:
+        if f'"{path}"' in (paths_json := achievement['paths_json']):
+            query = '''
+                UPDATE achievements
+                SET paths_json = :paths_json
+                WHERE riddle = :riddle AND title = :title
+            '''
+            values |= {
+                'title': achievement['title'],
+                'paths_json': re.sub(f'"{path}"', f'"{new_path}"', paths_json),
+            }
+            await database.execute(query, values)
