@@ -1,5 +1,6 @@
 from copy import copy
 from itertools import chain
+import os
 import re
 
 from quart import Blueprint
@@ -253,20 +254,35 @@ async def _apply_change(page_change: dict, expanded: bool = False):
     if page_change['trivial_move']:
         await _apply_trivial_move(path, new_path, level_name)
 
-    # Update level data in case the old path was a front/answer one
+    # Update level data in case the old path was a front/answer/image one
     query = '''
-        UPDATE levels
-        SET path = :new_path
-        WHERE riddle = :riddle AND path = :path
+        SELECT * FROM levels
+        WHERE riddle = :riddle AND name = :level_name
     '''
-    values = {'riddle': alias, 'path': path, 'new_path': new_path}
-    await database.execute(query, values)
-    query = '''
-        UPDATE levels
-        SET answer = :new_path
-        WHERE riddle = :riddle AND answer = :path
-    '''
-    await database.execute(query, values)
+    values = {'riddle': alias, 'level_name': level_name}
+    if level := await database.fetch_one(query, values):
+        values = {'riddle': alias, 'path': path, 'new_path': new_path}
+        query = '''
+            UPDATE levels
+            SET path = :new_path
+            WHERE riddle = :riddle AND path = :path
+        '''
+        await database.execute(query, values)
+        query = '''
+            UPDATE levels
+            SET answer = :new_path
+            WHERE riddle = :riddle AND path = :path
+        '''
+        await database.execute(query, values)
+        if level['image'] == os.path.basename(path):
+            query = '''
+                UPDATE levels
+                SET image = :new_path
+                WHERE riddle = :riddle AND image = :path
+            '''
+            values['path'] = os.path.basename(path)
+            values['new_path'] = os.path.basename(new_path)
+            await database.execute(query, values)
 
     # Update achievement data
     query = '''
