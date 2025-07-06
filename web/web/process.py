@@ -657,16 +657,16 @@ class _PathHandler:
         values = {
             'riddle': self.riddle_alias,
             'username': self.user.name,
+            'level_name': self.path_level,
             'path': self.path,
             'time': tnow
         }
-        if not await database.execute(
-            query, values | {'level_name': self.path_level}
-        ):
-            # Page's already there, so just update its last access
+        if not await database.execute(query, values):
+            # Page's already there, so just update it
+            # (account for NULL level records granted a priori)
             query = '''
                 UPDATE user_pages
-                SET last_access_time = :time
+                SET level_name = :level_name, last_access_time = :time
                 WHERE riddle = :riddle AND username = :username AND path = :path
             '''
             await database.execute(query, values)
@@ -680,6 +680,7 @@ class _PathHandler:
                 SET page_count = page_count + 1, last_page_time = :time
                 WHERE riddle = :riddle AND username = :username
             '''
+            del values['level_name']
             del values['path']
             await database.execute(query, values)
 
