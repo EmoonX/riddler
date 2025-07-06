@@ -210,6 +210,21 @@ async def health_diagnostics(alias: str):
 
         include_level &= not name == end_level
 
+    # TODO
+    # Retroactively grant user records for non-demo riddles; temp-fix for now
+    query = '''
+        UPDATE user_pages up
+        SET level_name = (
+            SELECT level_name FROM level_pages lp
+            WHERE up.riddle = lp.riddle AND up.path = lp.path
+        )
+        WHERE level_name IS NULL AND up.riddle IN (
+            SELECT alias FROM riddles
+            WHERE demo IS NOT TRUE
+        )
+    '''
+    await database.execute(query)
+
     return await render_template(
         'admin/health.htm',
         riddle=riddle, levels=levels, all_pages_by_path=all_pages_by_path,
