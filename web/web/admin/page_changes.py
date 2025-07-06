@@ -137,6 +137,9 @@ async def _apply_change(page_change: dict, expanded: bool = False):
 
     alias = page_change['riddle']
     path, new_path = page_change['path'], page_change['new_path']
+    if path == new_path:
+        # Explicitly-ignored path; skip it
+        return
 
     query = '''
         SELECT level_name FROM level_pages
