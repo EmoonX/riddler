@@ -129,18 +129,52 @@ async def _apply_change(page_change: dict, expanded: bool = False):
 
     alias = page_change['riddle']
     path, new_path = page_change['path'], page_change['new_path']
-    level_name = page_change['level_name']
 
-    async def _update_page_level(path: str, level_name: str | None) -> bool:
-        '''Update level for page with specified path.'''
-        query = f"""
-            UPDATE level_pages
-            SET level_name = :level_name,
-                removed = {'TRUE' if not level_name else 'NULL'}
-            WHERE riddle = :riddle AND path = :path
-        """
-        values = {'riddle': alias, 'path': path, 'level_name': level_name}
-        return await database.execute(query, values)
+    query = '''
+        SELECT level_name FROM level_pages
+        WHERE riddle = :riddle AND path = :path
+    '''
+    values = {'riddle': alias, 'path': path}
+    if level_name := await database.fetch_val(query, values):
+        if not page_change['level_name']:
+            page_change['level_name'] = level_name
+        elif level_name != page_change['level_name']:
+            raise ValueError(
+                f"mismatching levels for page {path}: "
+                f"'{level_name}' (level_pages) and "
+                f"'{page_change['level_name']}' (_page_changes)"
+            )
+
+    async def _update_page_data(
+        path: str, level_name: str | None, removed: bool
+    ) -> bool:
+        '''Update level and/or removed status for page.'''
+
+        values = {'riddle': alias, 'path': path}
+        success = False
+        if removed:
+            query = '''
+                UPDATE level_pages
+                SET hidden = TRUE, removed = TRUE
+                WHERE riddle = :riddle AND path = :path
+            '''
+            success |= await database.execute(query, values)
+        if level_name:
+            query = '''
+                UPDATE level_pages
+                SET level_name = :level_name
+                WHERE riddle = :riddle AND path = :path
+            '''
+            values |= {'level_name': level_name}
+            success |= await database.execute(query, values)
+            query = '''
+                UPDATE user_pages
+                SET level_name = :level_name
+                WHERE riddle = :riddle AND path = :path
+            '''
+            success |= await database.execute(query, values)
+
+        return success
 
     async def _apply_trivial_move(path: str, new_path: str, level_name: str):
         '''
@@ -149,12 +183,21 @@ async def _apply_change(page_change: dict, expanded: bool = False):
         '''
 
         # Mark old path as (removed) alias
+        # query = '''
+        #     UPDATE IGNORE level_pages
+        #     SET alias_for = :new_path
+        #     WHERE riddle = :riddle AND path = :path
+        # '''
+        # values = {'riddle': alias, 'path': path, 'new_path': new_path}
+        # await database.execute(query, values)
+
+        # Remove level from the old page (to not pollute the catalog)
         query = '''
-            UPDATE IGNORE level_pages
-            SET alias_for = :new_path
+            UPDATE level_pages
+            SET level_name = NULL
             WHERE riddle = :riddle AND path = :path
         '''
-        values = {'riddle': alias, 'path': path, 'new_path': new_path}
+        values = {'riddle': alias, 'path': path}
         await database.execute(query, values)
 
         # Duplicate user records from old path to new one
@@ -165,7 +208,7 @@ async def _apply_change(page_change: dict, expanded: bool = False):
             FROM user_pages up
             WHERE riddle = :riddle AND path = :path
         '''
-        values |= {'level_name': level_name}
+        values |= {'level_name': level_name, 'new_path': new_path}
         await database.execute(query, values)
 
     def _log(msg: str):
@@ -182,14 +225,14 @@ async def _apply_change(page_change: dict, expanded: bool = False):
 
     success = False
     if path:
-        # Erase level from the old page
-        success |= await _update_page_level(path, None)
+        # Mark old page as removed
+        success |= await _update_page_data(path, level_name, removed=True)
         if not new_path:
-            _log(f"Removing page \033[3m{path}\033[0m")
+            _log(f"Marking page \033[3m{path}\033[0m as removed")
             return
     if new_path:
         # Write level to the new page
-        success |= await _update_page_level(new_path, level_name)
+        success |= await _update_page_data(new_path, level_name, removed=False)
         if not path:
             _log(f"Adding page \033[1;3m{new_path}\033[0m")
             return
@@ -197,7 +240,7 @@ async def _apply_change(page_change: dict, expanded: bool = False):
     # Both `path`` and `new_path`` given, so handle page move
     _log(
         f"Moving page "
-        f"\033[3m{path}\033[0m ➜ \033[1;3m{new_path}\033[0m"
+        f"\033[3m{path}\033[0m to \033[1;3m{new_path}\033[0m"
         f"{' (trivial)' if page_change['trivial_move'] else ''}"
     )
     if page_change['trivial_move']:
