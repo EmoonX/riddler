@@ -19,6 +19,8 @@ async def apply_page_changes(alias: str):
     # Check for admin permissions
     await admin_auth(alias)
 
+    processed_paths = set()
+
     async def _handle_wildcards(glob_change: dict):
         '''Handle paths with wildcards (`*` and/or `?`).'''
 
@@ -42,6 +44,9 @@ async def apply_page_changes(alias: str):
         pages = await database.fetch_all(query, values)
 
         for path in [page['path'] for page in pages]:
+            if path in processed_paths:
+                # Skip expanded paths already processed as single
+                continue
             single_change = copy(glob_change)
             single_change['path'] = path
             pattern = glob_change['path'] \
@@ -78,6 +83,7 @@ async def apply_page_changes(alias: str):
             )
 
             await _apply_change(single_change, expanded=True)
+            processed_paths.add(single_change['path'])
 
     def _log_glob_change(glob_type: str, glob_change: str):
         '''Log glob change, highlighting pattern(s).'''
@@ -111,6 +117,7 @@ async def apply_page_changes(alias: str):
     # Apply single changes
     for single_change in single_changes:
         await _apply_change(single_change)
+        processed_paths.add(single_change['path'])
 
     # Apply glob changes, iterating in `most specific -> most general` order
     for glob_change in reversed(glob_changes):
