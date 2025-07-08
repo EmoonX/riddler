@@ -187,8 +187,8 @@ async def _check_and_record_credentials(
         print(
             f"> \033[1m[{riddle['alias']}]\033[0m "
             f"New credentials \033[1m{username}:{password}\033[0m "
-            f"for path \033[1;3m{credentials_path}\033[0m "
-            f"found by \033[1m{user.name}\033[0m "
+            f"found for path \033[1;3m{credentials_path}\033[0m "
+            f"by \033[1m{user.name}\033[0m "
             f"({datetime.utcnow()})"
         )
 
@@ -340,7 +340,7 @@ def _log_received_credentials(
     password: str = '',
 ):
     '''Log received correct/wrong credentials, highlighting their path.'''
-    remaining_path = path.replace(credentials_path, '')
+    remaining_path = re.sub(fr"^{credentials_path}", '', path)
     highlighted_path = \
         f"\033[3m{credentials_path}\033[90;3m{remaining_path}\033[0m"
     print(
