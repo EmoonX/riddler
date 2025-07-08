@@ -73,6 +73,8 @@ async def _check_and_insert_empty_credentials(
 
     while True:
         credentials_path = path
+        if path == '/' or os.path.basename(path) == '..':
+            break
         path = os.path.dirname(path)
 
         url = f"{riddle['root_path']}{path}"
@@ -122,6 +124,8 @@ async def _check_and_record_credentials(
 
     while True:
         credentials_path = path
+        if path == '/' or os.path.basename(path) == '..':
+            break
         path = os.path.dirname(path)
 
         url = f"{riddle['root_path']}{path}"
@@ -276,7 +280,7 @@ async def get_path_credentials(alias: str, path: str) -> dict:
         if credentials := all_credentials.get(path):
             # Innermost credentials found
             return dict(credentials)
-        if path == '/':
+        if path == '/' or os.path.basename(path) == '..':
             break
         path = os.path.dirname(path)
 
