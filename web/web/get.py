@@ -25,6 +25,11 @@ async def get_riddle_hosts():
     #     root_folder = f"{parsed.path}/"
     #     return f"*://*.{parsed.hostname}{root_folder}*"
 
+    def _param_is_true(param: str):
+        return request.args.get(param).lower() in ['', '1', 'on', 'true', 'yes']
+
+    unlisted_only = _param_is_true('unlistedOnly')
+
     is_root = False
     if discord.user_id:
         is_root = await is_admin_of('*')
@@ -33,6 +38,8 @@ async def get_riddle_hosts():
     riddles = await get_riddles(unlisted=is_root)
     hosts = {}
     for riddle in riddles:
+        if unlisted_only and not riddle['unlisted']:
+            continue
         try:
             for root_path in json.loads(riddle['root_path']):
                 hosts[root_path] = riddle['alias']
