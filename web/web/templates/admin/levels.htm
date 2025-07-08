@@ -15,7 +15,7 @@
         <section class="list levels admin">
         {% for index, level in level_set.items() %}
           {% if level['image'] %}
-            {% set image = '/static/thumbs/' + alias + '/' + level['image'] %}
+            {% set image = '/static/thumbs/' + alias + '/' + level['image'].rpartition('/')[-1] %}
           {% else %}
             {% set image = '/static/images/locked.png' %}
           {% endif %}
