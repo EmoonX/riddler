@@ -42,7 +42,7 @@ class ArchivedPage:
         self.alias = alias
         self.path = path
         self.local_path = self._get_local_path(path)
-        if content:
+        if content is not None:
             self.content = content
             self.content_hash = hashlib.md5(content).hexdigest()
         elif content_hash:
