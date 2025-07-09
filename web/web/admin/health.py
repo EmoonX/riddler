@@ -141,7 +141,10 @@ async def health_diagnostics(alias: str):
             f"{riddle['root_path']}{path}",
             re.sub(r';|=|\'|"', ' ', content).split()[-1],
         )
-        redirect_path = await process_url(None, redirect_url, admin=True)
+        redirect_alias, redirect_path = \
+            await process_url(None, redirect_url, admin=True)
+        if redirect_alias != alias:
+            redirect_path = redirect_url
 
         # Record redirect in DB
         query = '''

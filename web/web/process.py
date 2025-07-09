@@ -48,21 +48,19 @@ async def process_url(
 
     # Receive url and status code from request
     if not auto:
+        user = await discord.get_user()
         url = (await request.data).decode('utf-8')
+    else:
+        user = lambda: None
+        setattr(user, 'name', username)
     status_code = int(request.headers.get('Statuscode', 200))
     location = request.headers.get('Location')
 
     # Create path handler object and build player data
-    if not auto:
-        user = await discord.get_user()
-    else:
-        user = lambda: None
-        setattr(user, 'name', username)
-    try:
-        ph = await _PathHandler.build(user, url, status_code, location)
-        if admin:
-            return ph.path
-    except AttributeError:
+    ph = await _PathHandler.build(user, url, status_code, location)
+    if admin:
+        return ph.riddle_alias, ph.path
+    if not ph:
         # TODO
         # Not inside root path (e.g forum or admin pages)
         print(f"??? {url} ???")
