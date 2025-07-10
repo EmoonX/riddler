@@ -244,10 +244,17 @@ class LevelUpdater:
             image_url = image_url.replace(
                 '://', f"://{username or ''}:{password or ''}@"
             )
+        headers = {
+            # Impersonate real browser so certain hosts don't throw 412
+            'User-Agent': (
+                'Mozilla/5.0 (Windows NT 11.0; Win64; x64; rv:128.0) '
+                'Gecko/20100101 Firefox/128.0'
+            )
+        }
         self.log(
             f"Fetching level image from \033[3;4m{image_url}\033[0m... ", end=''
         )
-        res = requests.get(image_url, stream=True, timeout=10)
+        res = requests.get(image_url, headers=headers, stream=True, timeout=10)
         print(f"\033[1m{'OK' if res.ok else res.status_code}\033[0m", flush=True)
 
         if not res.ok:
