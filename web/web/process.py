@@ -59,7 +59,7 @@ async def process_url(
     # Create path handler object and build player data
     ph = await _PathHandler.build(user, url, status_code, location)
     if admin:
-        return ph.riddle_alias, ph.path
+        return (ph.riddle_alias, ph.path) if ph else (None, None)
     if not ph:
         # TODO
         # Not inside root path (e.g forum or admin pages)
