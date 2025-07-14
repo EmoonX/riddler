@@ -48,7 +48,7 @@
       {% for path, page_data in level['pages'].items() %}
         {% set status_code = page_data['status_code'] %}
         {% if page_data['new'] %}
-          {% set status = '<em>✨ new</em> | content hash: ' ~ page_data['content_hash'] %}
+          {% set status = '<em>✨ new</em> | content hash: <code>' ~ page_data['content_hash'] ~ '</code>' %}
         {% elif status_code == 200 %}
           {% set status = 'OK' %}
         {% elif status_code %}
