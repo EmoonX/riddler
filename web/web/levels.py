@@ -30,10 +30,11 @@ async def level_list(alias: str):
         user_level = user_level_data.get(level['name'])
         level['unlocked'] = user_level is not None
         if not level['unlocked']:
-            level['unlocked'] = (
-                not level['has_requirements']
-                and not level['is_secret']
-            )
+            if not level['has_requirements'] and not level['is_secret']:
+                level['unlocked'] = True
+            else:
+                level['path'] = None
+
         level['beaten'] = bool(user_level and user_level['completion_time'])
 
         # _, status = await admin.auth(alias)
@@ -104,7 +105,6 @@ async def level_list(alias: str):
         else:
             # Fallback for when front path has changed
             # but user hasn't accessed it yet
-            level['path'] = None
             if found_pages:
                 # Get topmost folder by the
                 # longest common prefix of all found level pages
