@@ -290,7 +290,7 @@ class _PathHandler:
                 root_paths |= {riddle['root_path']: riddle}
 
         # Search for matching hostname (if any) and save data
-        for root_path, riddle in root_paths.items():
+        for root_path, riddle in reversed(root_paths.items()):
             parsed_root = urlsplit(root_path.replace('://www.', '://'))
             if _url_matches_root(parsed_url, parsed_root):
                 self.riddle_alias = riddle['alias']
