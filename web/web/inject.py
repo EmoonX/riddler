@@ -8,6 +8,7 @@ from pycountry import pycountry
 from admin.admin_auth import is_admin_of
 from auth import discord
 from countries import country_names
+from levels import get_root_path
 from riddles import level_ranks, cheevo_ranks, player_ranks
 from webclient import bot_request
 from util.db import database
@@ -24,8 +25,7 @@ async def get_riddle(alias: str) -> dict:
 
     # Account for multi-root-path riddles
     riddle = dict(riddle)
-    if riddle['root_path'][0] == '[':
-        riddle['root_path'] = riddle['root_path'].split('"')[1]
+    riddle['root_path'] = await get_root_path(alias)
 
     # Get icon URL
     riddle['icon_url'] = f"/static/riddles/{alias}.png"

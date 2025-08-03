@@ -406,6 +406,8 @@ async def get_root_path(alias: str):
         root_path = json.loads(root_path)[0]
     except json.decoder.JSONDecodeError:
         pass
+    if root_path.endswith('/*'):
+        root_path = root_path[:-2]
     return root_path
 
 
