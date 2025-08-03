@@ -153,15 +153,30 @@ function parseRiddle(parsedUrl) {
       riddleHosts[riddle.rootPath] = alias;
     }
   }
-  
-  for (const [rootPath, alias] of Object.entries(riddleHosts)) {
-    const parsedRoot = new URL(rootPath);
+
+  let [alias, rootPath] = [null, null];
+  for (const [_rootPath, _alias] of Object.entries(riddleHosts)) {
+    const parsedRoot = new URL(_rootPath);
     const rootHostname = parsedRoot.hostname.replace(/^www\d*\./, '');
-    if (rootHostname === hostname) {
-      return [alias, rootPath];
+    if (_rootPath.indexOf('*') !== -1) {
+      // Wildcard root path; ignore host pages outside given pattern
+      const rootRegex = new RegExp(
+        `${rootHostname}${parsedRoot.pathname}`
+        .replaceAll('.', '\\.').replaceAll('*', '.*')
+      );
+      const url = `${hostname}${parsedUrl.pathname}`;
+      if (rootRegex.test(url)) {
+        [alias, rootPath] = [_alias, _rootPath];
+        break;
+      }
+    } else {
+      // Simple root path
+      if (rootHostname === hostname) {
+        [alias, rootPath] = [_alias, _rootPath];
+      }
     }
   }
-  return [null, null];
+  return [alias, rootPath];
 }
 
 /** Gets page tree node from URL. */

@@ -248,9 +248,11 @@ class _PathHandler:
             url.replace('://www.', '://').replace('@www.', '@')
         )
 
-        def _get_relative_path(root_path: str) -> str:
+        def _get_relative_path(parsed_root: ParseResult) -> str:
             '''Build relative path from root (with "../"s if needed).''' 
             root_segments = parsed_root.path.split('/')
+            if root_segments[-1] == '*':
+                root_segments.pop()
             url_segments = parsed_url.path.split('/')
             smallest_len = idx = min(len(root_segments), len(url_segments))
             for i in range(smallest_len):
@@ -261,6 +263,21 @@ class _PathHandler:
             parent_count = len(root_segments[idx:])
             path = f"/{'/'.join((['..'] * parent_count) + [url_suffix])}"
             return path
+
+        def _url_matches_root(
+            parsed_url: ParseResult, parsed_root: ParseResult
+        ) -> bool:
+            if '*' in urlunsplit(parsed_root):
+                # Wildcard root path; ignore host pages outside given pattern
+                pattern = (
+                    f"{parsed_root.hostname}{parsed_root.path}"
+                    .replace('.', r'\.').replace('*', r'.*')
+                )
+                host_and_path = f"{parsed_url.hostname}{parsed_url.path}"
+                return re.fullmatch(pattern, host_and_path)
+            else:
+                # Simple root path
+                return parsed_root.hostname == parsed_url.hostname
 
         # Build dict of {root_path: riddle}
         riddles = await get_riddles(unlisted=True)
@@ -275,11 +292,10 @@ class _PathHandler:
         # Search for matching hostname (if any) and save data
         for root_path, riddle in root_paths.items():
             parsed_root = urlsplit(root_path.replace('://www.', '://'))
-            if parsed_root.hostname == parsed_url.hostname:
-                path = _get_relative_path(parsed_root)
+            if _url_matches_root(parsed_url, parsed_root):
                 self.riddle_alias = riddle['alias']
                 self.unlisted = bool(riddle['unlisted'])
-                self.path = path
+                self.raw_path = _get_relative_path(parsed_root)
                 self.credentials = (
                     parsed_url.username or '',
                     parsed_url.password or '',
