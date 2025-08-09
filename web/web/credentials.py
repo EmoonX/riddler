@@ -6,6 +6,7 @@ import requests
 from requests.auth import HTTPBasicAuth
 
 from auth import discord, User
+from players.account import is_user_incognito
 from util.db import database
 
 
@@ -233,14 +234,15 @@ async def _record_user_credentials(
     # Create new user record
     query = '''
         INSERT IGNORE INTO user_credentials
-            (riddle, username, path, unlock_time)
-        VALUES (:riddle, :username, :path, :unlock_time)
+            (riddle, username, path, unlock_time, incognito)
+        VALUES (:riddle, :username, :path, :unlock_time, :incognito)
     '''
     values = {
         'riddle': alias,
         'username': user.name,
         'path': credentials_path,
         'unlock_time': datetime.utcnow(),
+        'incognito': await is_user_incognito(),
     }
     if not await database.execute(query, values):
         # Record unlock time if not present yet
@@ -253,6 +255,7 @@ async def _record_user_credentials(
                 AND path = :path
                 AND unlock_time IS NULL
         '''
+        del values['incognito']
         if not await database.execute(query, values):
             return
 

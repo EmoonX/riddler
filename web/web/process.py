@@ -18,6 +18,7 @@ from credentials import (
     process_credentials,
 )
 from inject import get_riddle, get_riddles
+from players.account import is_user_incognito
 from riddles import level_ranks, cheevo_ranks
 from util.db import database
 from util.riddle import has_player_mastered_riddle
@@ -665,15 +666,16 @@ class _PathHandler:
         tnow = datetime.utcnow()
         query = '''
             INSERT IGNORE INTO user_pages
-                (riddle, username, level_name, `path`, access_time)
-            VALUES (:riddle, :username, :level_name, :path, :time)
+                (riddle, username, level_name, `path`, access_time, incognito)
+            VALUES (:riddle, :username, :level_name, :path, :time, :incognito)
         '''
         values = {
             'riddle': self.riddle_alias,
             'username': self.user.name,
             'level_name': self.path_level,
             'path': self.path,
-            'time': tnow
+            'time': tnow,
+            'incognito': await is_user_incognito(),
         }
         if not await database.execute(query, values):
             # Page's already there, so just update it
@@ -683,6 +685,7 @@ class _PathHandler:
                 SET level_name = :level_name, last_access_time = :time
                 WHERE riddle = :riddle AND username = :username AND path = :path
             '''
+            del values['incognito']
             await database.execute(query, values)
 
             return False
@@ -696,6 +699,7 @@ class _PathHandler:
             '''
             del values['level_name']
             del values['path']
+            del values['incognito']
             await database.execute(query, values)
 
         return True
@@ -735,14 +739,15 @@ class _PathHandler:
         # If positive, add it to the player's collection
         query = '''
             INSERT INTO user_achievements
-                (riddle, username, title, unlock_time)
-            VALUES (:riddle, :username, :title, :time)
+                (riddle, username, title, unlock_time, incognito)
+            VALUES (:riddle, :username, :title, :time, :incognito)
         '''
         values = {
             'riddle': self.riddle_alias,
             'username': self.user.name,
             'title': achievement['title'],
             'time': datetime.utcnow(),
+            'incognito': await is_user_incognito(),
         }
         try:
             await database.execute(query, values)
@@ -795,12 +800,13 @@ class _PathHandler:
         # (as a personal "reward" if eventually a listed level page)
         query = '''
             INSERT IGNORE INTO user_pages 
-                (riddle, username, level_name, path, access_time)
-            VALUES (:riddle, :username, NULL, :path, :access_time)
+                (riddle, username, level_name, path, access_time, incognito)
+            VALUES (:riddle, :username, NULL, :path, :access_time, :incognito)
         '''
         values |= {
             'username': self.user.name,
             'access_time': datetime.utcnow(),
+            'incognito': await is_user_incognito,
         }
         await database.execute(query, values)
 
@@ -845,14 +851,15 @@ class _LevelHandler:
         # Record it on user table with current time
         query = '''
             INSERT INTO user_levels
-                (riddle, username, level_name, find_time)
-            VALUES (:riddle, :username, :level_name, :time)
+                (riddle, username, level_name, find_time, incognito_unlock)
+            VALUES (:riddle, :username, :level_name, :time, :incognito_unlock)
         '''
         values = {
             'riddle': self.ph.riddle_alias,
             'username': self.ph.user.name,
             'level_name': self.level['name'],
             'time': datetime.utcnow(),
+            'incognito_unlock': await is_user_incognito(),
         }
         await database.execute(query, values)
 
@@ -898,7 +905,8 @@ class _LevelHandler:
         # Register level completion on designated table
         alias, username = self.ph.riddle_alias, self.ph.user.name
         query = '''
-            UPDATE user_levels SET completion_time = :time
+            UPDATE user_levels
+            SET completion_time = :time, incognito_solve = :incognito_solve
             WHERE riddle = :riddle
                 AND username = :username
                 AND level_name = :level
@@ -908,6 +916,7 @@ class _LevelHandler:
             'username': username,
             'level': self.level['name'],
             'time': datetime.utcnow(),
+            'incognito_solve': await is_user_incognito(),
         }
         await database.execute(query, values)
 
