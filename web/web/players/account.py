@@ -42,3 +42,13 @@ async def settings():
     await database.execute(query, values)
 
     return await r('Account details updated successfully!')
+
+
+async def is_user_incognito() -> bool:
+    '''Return whether user has incognito mode activated.'''
+    user = await discord.get_user()
+    query = '''
+        SELECT incognito FROM accounts
+        WHERE username = :username
+    '''
+    return await database.fetch_val(query, {'username': user.name})
