@@ -39,25 +39,36 @@ async def global_list(country: Optional[str] = None):
     # Init dict of (handle -> player info)
     accounts = {}
     query = f"""
-        SELECT acc.*, SUM(page_count), MAX(last_page_time)
-        FROM accounts AS acc INNER JOIN riddle_accounts AS racc
-            ON acc.username = racc.username
-        WHERE
-            (
-                global_score > 0
-                OR acc.username IN (SELECT creator_username FROM riddles)
-            )
-            {'AND country = :country' if country else ''}
-        GROUP BY acc.username
-        ORDER BY global_score DESC, page_count DESC, last_page_time DESC
+        SELECT * FROM accounts
+        {'WHERE country = :country' if country else ''}
     """
     values = {}
     if country:
         values['country'] = country
-    result = await database.fetch_all(query, values)
-    for row in result:
-        player = dict(row) | {'current_level': {}, 'cheevo_count': {}}
-        accounts[row['username']] = player
+    accounts = {
+        acc['username']: dict(acc) | {'current_level': {}, 'cheevo_count': {}}
+        for acc in await database.fetch_all(query, values)
+    }
+
+    # Incognito data
+    user = await discord.get_user() if discord.user_id else None
+    query = f"""
+        SELECT * FROM _incognito_accounts
+        {'WHERE country = :country' if country else ''}
+    """
+    incognito_accounts = await database.fetch_all(query, values)
+    for iacc in incognito_accounts:
+        if iacc['username'] == user.name:
+            for key in ['global_score', 'recent_score']:
+                accounts[iacc['username']][key] += iacc[key]
+
+    # Order accounts by score, filtering out 0-score ones
+    accounts = {
+        acc['username']: acc
+        for acc in sorted(
+            accounts.values(), key=lambda acc: acc['global_score'], reverse=True
+        ) if acc['global_score'] > 0
+    }
 
     # Get current levels for each riddle and player (ignore unplayed ones)
     query = 'SELECT * FROM riddle_accounts WHERE score > 0'
@@ -80,9 +91,6 @@ async def global_list(country: Optional[str] = None):
             continue
         alias = row['riddle']
         accounts[row['username']]['cheevo_count'][alias] = row['cheevo_count']
-
-    # Get session user, if any
-    user = await discord.get_user() if discord.user_id else None
 
     for username, player in accounts.items():
         # Hide username, country and riddles for non logged-in `hidden` players
@@ -124,7 +132,9 @@ async def global_list(country: Optional[str] = None):
     # Render page with account info
     return await render_template(
         'players/list.htm',
-        players=accounts.values(), riddles=riddles, country=country
+        accounts=accounts,
+        country=country,
+        riddles=riddles,
     )
 
 
@@ -164,17 +174,9 @@ async def riddle_list(alias: str, country: str | None = None):
         SELECT *
         FROM accounts AS acc INNER JOIN riddle_accounts racc
             ON acc.username = racc.username
-        WHERE riddle = :riddle 
+        WHERE riddle = :riddle
             {'AND country = :country' if country else ''}
-            AND (
-                racc.score > 0
-                OR racc.username IN (
-                    SELECT creator_username FROM riddles
-                    WHERE alias = racc.riddle
-                )
-            )
         ORDER BY racc.score DESC, last_page_time ASC
-        LIMIT 1000
     """
     if country:
         values |= {'country': country}
@@ -186,15 +188,21 @@ async def riddle_list(alias: str, country: str | None = None):
         for acc in result
     }
 
-    # Get session user, if any
+    # Incognito data
     user = await discord.get_user() if discord.user_id else None
-    riddle_admin = False
-    if user:
-        # _, status = await admin.auth(alias)
-        # if status == 200:
-        if False:
-            # Logged user is respective riddle's admin
-            riddle_admin = True
+    query = f"""
+        SELECT *
+        FROM accounts AS acc INNER JOIN _incognito_riddle_accounts racc
+            ON acc.username = racc.username
+        WHERE riddle = :riddle
+            {'AND country = :country' if country else ''}
+    """
+    incognito_accounts = await database.fetch_all(query, values)
+    for iacc in incognito_accounts:
+        if iacc['username'] == user.name:
+            for key in ['score', 'recent_score', 'page_count']:
+                accounts[iacc['username']][key] += iacc[key]
+
 
     players_by_level = {}
     for username, account in accounts.items():
@@ -302,7 +310,11 @@ async def riddle_list(alias: str, country: str | None = None):
         '''Compare accounts first by score and then page count.'''
         a_count = a.get('page_count', 0)
         b_count = b.get('page_count', 0)
-        return -1 if (a['score'], a_count) < (b['score'], b_count) else +1
+        a_time = a['last_page_time'].timestamp() if a['last_page_time'] else 0
+        b_time = b['last_page_time'].timestamp() if b['last_page_time'] else 0
+        a_data = (-a['score'], -a_count, a_time)
+        b_data = (-b['score'], -b_count, b_time)
+        return +1 if a_data < b_data else -1
 
     # Sort account list using custom key above
     cmp_key = cmp_to_key(_account_cmp)
