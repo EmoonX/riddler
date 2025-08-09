@@ -395,6 +395,18 @@ class _PathHandler:
         '''
         values = {'riddle': self.riddle_alias, 'username': self.user.name}
         await database.execute(query, values)
+        if await is_user_incognito():
+            # Possibly likewise create incognito accounts
+            query = '''
+                INSERT IGNORE INTO _incognito_riddle_accounts (riddle, username)
+                VALUES (:riddle, :username)
+            '''
+            await database.execute(query, values)
+            query = '''
+                INSERT IGNORE INTO _incognito_accounts (username)
+                VALUES (:username)
+            '''
+            await database.execute(query, {'username': self.user.name})
 
         # Fetch player riddle data
         query = '''
@@ -632,12 +644,15 @@ class _PathHandler:
         '''Record player score increase, by given points, in DB.'''
 
         # Increase player's riddle score
-        query = '''
-            UPDATE riddle_accounts
+        incognito = await is_user_incognito()
+        query = f"""
+            UPDATE {
+                '_incognito_riddle_accounts' if incognito else 'riddle_accounts'
+            }
             SET score = score + :points,
                 recent_score = recent_score + :points
             WHERE riddle = :riddle AND username = :username
-        '''
+        """
         values = {
             'points': points,
             'riddle': self.riddle_alias,
@@ -647,12 +662,14 @@ class _PathHandler:
 
         # Increase global score (unless riddle is unlisted)
         if not self.unlisted:
-            query = '''
-                UPDATE accounts
+            query = f"""
+                UPDATE {
+                    '_incognito_accounts' if incognito else 'accounts'
+                }
                 SET global_score = global_score + :points,
                     recent_score = recent_score + :points
                 WHERE username = :username
-            '''
+            """
             values.pop('riddle')
             await database.execute(query, values)
 
@@ -692,11 +709,14 @@ class _PathHandler:
 
         # New page; unless hidden, update player's riddle data
         if not self.hidden:
-            query = '''
-                UPDATE riddle_accounts
+            query = f"""
+                UPDATE {
+                    '_incognito_riddle_accounts' if await is_user_incognito()
+                    else 'riddle_accounts'
+                }
                 SET page_count = page_count + 1, last_page_time = :time
                 WHERE riddle = :riddle AND username = :username
-            '''
+            """
             del values['level_name']
             del values['path']
             del values['incognito']
