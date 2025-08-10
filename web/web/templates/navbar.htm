@@ -98,7 +98,13 @@
         <nav class="dropdown">
           {% set avatar = '' %}
           <button class="nav-button profile">
-            <img class="avatar-small" src="{{ get_avatar_url(discord_id=user.id) }}">{{ user.display_name }}
+            <figure style="position: relative; display: inline-block;">
+              <img class="avatar-small" src="{{ get_avatar_url(discord_id=user.id) }}" alt="Avatar">
+            {% if is_user_incognito() %}
+              <img class="incognito" src="/static/icons/incognito.png" alt="Incognito" title="Incognito enabled">
+            {% endif %}
+            </figure>
+            {{ user.display_name }}
           </button>
           <div class="menu">
             {% set redirect_url = request.url if '/admin' not in request.url else '/' %}
