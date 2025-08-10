@@ -202,6 +202,7 @@ async def riddle_list(alias: str, country: str | None = None):
         if user and iacc['username'] == user.name:
             for key in ['score', 'recent_score', 'page_count']:
                 accounts[iacc['username']][key] += iacc[key]
+            accounts[iacc['username']]['last_page_time'] = iacc['last_page_time']
 
     players_by_level = {}
     for username, account in accounts.items():

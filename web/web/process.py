@@ -900,12 +900,16 @@ class _LevelHandler:
                 f"secret level \033[1m{self.level['name']}\033[0m",
             )
         elif self.ph.riddle_account['current_level'] != '🏅':
-            # Update player's `current_level``
-            # (given that riddle hasn't been finished yet)
-            query = '''
-                UPDATE riddle_accounts SET current_level = :name_next
+            # Update player's `current_level`
+            # (given that riddle hasn't been completed yet)
+            query = f"""
+                UPDATE {
+                    '_incognito_riddle_accounts' if await is_user_incognito()
+                    else 'riddle_accounts'
+                }
+                SET current_level = :name_next
                 WHERE riddle = :riddle AND username = :username
-            '''
+            """
             values = {
                 'riddle': self.ph.riddle_alias,
                 'username': self.ph.user.name,
