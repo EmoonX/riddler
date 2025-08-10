@@ -123,12 +123,17 @@ async def level_list(alias: str):
             SELECT * FROM user_levels
             WHERE riddle = :riddle
                 AND level_name = :name
-                AND completion_time IS NULL
+                AND (completion_time IS NULL OR incognito_solve IS TRUE)
             ORDER BY find_time DESC
         '''
         values = {'riddle': alias, 'name': level['name']}
-        result = await database.fetch_all(query, values)
-        level['users'] = [dict(level) for level in result]
+        level['users'] = list(map(dict, filter(
+            lambda level: not (
+                (level['incognito_unlock'] and level['username'] != user.name) or
+                (level['incognito_solve']  and level['username'] == user.name)
+            ),
+            await database.fetch_all(query, values)
+        )))
 
     # async def _add_credentials(level: dict):
     #     '''Add credentials (if any) for level's front path.'''

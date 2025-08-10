@@ -77,6 +77,10 @@ async def get_achievements(
             SELECT * FROM user_achievements
             WHERE riddle = :riddle AND username = :username
         '''
+        if discord.user_id:
+            user = await discord.get_user()
+            if user and account['username'] != user.name:
+                query += 'AND incognito IS NOT TRUE'
         values |= {'username': account['username']}
     cheevos = await database.fetch_all(query, values)
 

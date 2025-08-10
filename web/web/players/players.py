@@ -232,8 +232,8 @@ async def riddle_list(alias: str, country: str | None = None):
             account['mastered_on'] = await database.fetch_val(query, values)
         else:
             # Retrieve player's milestones and furthest reached levels
-            query = '''
-                SELECT level_name, completion_time FROM user_levels ul
+            query = f"""
+                SELECT * FROM user_levels ul
                 WHERE riddle = :riddle
                     AND username = :username
                     AND (
@@ -261,16 +261,24 @@ async def riddle_list(alias: str, country: str | None = None):
                         SELECT name FROM levels lv
                         WHERE ul.riddle = lv.riddle
                             AND ul.level_name = lv.name
-                            AND is_secret IS TRUE
-                    )
-            '''
+                            AND (is_secret IS TRUE OR set_index >= 99)
+                    ) {
+                        'AND incognito_unlock IS NOT TRUE'
+                        if user and username != user.name else ''
+                    }
+            """
             levels = await database.fetch_all(query, values)
             for level in levels:
                 name = level['level_name']
                 if name not in players_by_level:
                     players_by_level[name] = set()
                 players_by_level[name].add(username)
-                if level['completion_time']:
+                if (
+                    level['completion_time'] and (
+                        not level['incognito_solve'] or
+                        (user and username == user.name)
+                    )
+                ):
                     account['completed_milestones'][name] = level
 
         # Add achievements dict
