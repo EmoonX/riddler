@@ -31,17 +31,22 @@ async def settings():
     # Check if user tried to submit a phony country code
     country = country_names.get(form['country'])
     if not country:
-        return await r('No bogus countries allowed...')
+        return await r('Something went wrong. Please try again.')
 
     # Update info in accounts table
     query = '''
-        UPDATE accounts SET country = :country
-        WHERE username = :name
+        UPDATE accounts
+        SET country = :country, incognito = :incognito
+        WHERE username = :username
     '''
-    values = {'country': form['country'], 'name': user.name}
+    values = {
+        'username': user.name,
+        'country': form['country'],
+        'incognito': 'incognito' in form,
+    }
     await database.execute(query, values)
 
-    return await r('Account details updated successfully!')
+    return await r('Account details successfully updated!')
 
 
 async def is_user_incognito() -> bool:

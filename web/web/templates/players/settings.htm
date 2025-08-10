@@ -11,11 +11,11 @@
         <form method="post">
           <fieldset>
             <legend>Account info</legend>
-              <label class="icon">
+              <label class="icon" style="font-size: .6em;">
                 Discord username
-                <input type="text" name="discord_username" value="{{ user.name }}" readonly>
+                <input type="text" name="discord_username" value="{{ user.name }}" readonly style="color: gray;">
               </label>
-              <label>
+              <label style="font-size: .6em;">
                 Country
                 <input type="hidden" id="selected" value="{{ country }}">
                 <select name="country" required>
@@ -24,8 +24,21 @@
                   <option value="{{ alpha_2 }}">{{ short_name }}</option>
                 {% endfor %}
                 </select>
-            </label>
-              <input type="submit" value="Update">
+              </label>
+              <hr style="margin: 0;">
+              <label style="display: flex; align-items: center; gap: .5em;">
+                <img src="/static/icons/incognito.png" alt="Incognito" style="height: .9em;">
+                Incognito mode
+                <input type="checkbox" name="incognito" style="margin: 0;" {% if is_user_incognito() %}checked{% endif %}>
+              </label>
+              <p style="font-size: .6em;">
+                Hide your public presence from the prying eyes. Once enabled (and until you disable it), your newer progress won't figure in the homepage's <code><em>Recent activity</em></code> section, and your current standings in the site-wide leaderboards will appear as frozen for anyone besides you. <em>Old progress is <strong>unnafected</strong></em>.
+              </p>
+              <p style="font-size: .6em;">
+                A <img src="/static/icons/incognito.png" alt="Incognito" style="width: 1em;"> over your profile picture on the top right means incognito is <strong>active</strong> at the moment.
+              </p>
+              <hr style="margin: 0;">
+              <input type="submit" value="Update" style="font-size: .7em !important;">
             </form>
           </fieldset>
         </form>
@@ -40,5 +53,5 @@
         </fieldset>
       </section>
     </main>
-    <footer>{{ msg }}</footer>
+    <footer style="margin: 1em;">{{ msg }}</footer>
 {% endblock %}

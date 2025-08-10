@@ -9,6 +9,7 @@ from admin.admin_auth import is_admin_of
 from auth import discord
 from countries import country_names
 from levels import get_root_path
+from players.account import is_user_incognito
 from riddles import level_ranks, cheevo_ranks, player_ranks
 from webclient import bot_request
 from util.db import database
@@ -276,6 +277,7 @@ async def context_processor():
         'get_achievements': get_achievements,
         'get_accounts': get_accounts,
         'get_display_name': get_display_name,
+        'is_user_incognito': is_user_incognito,
         'level_ranks': level_ranks,
         'cheevo_ranks': cheevo_ranks,
         'country_names': country_names,
