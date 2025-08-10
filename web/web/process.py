@@ -826,7 +826,7 @@ class _PathHandler:
         values |= {
             'username': self.user.name,
             'access_time': datetime.utcnow(),
-            'incognito': await is_user_incognito,
+            'incognito': await is_user_incognito(),
         }
         await database.execute(query, values)
 
@@ -836,6 +836,7 @@ class _PathHandler:
                 (riddle, path, username, access_time)
             VALUES (:riddle, :path, :username, :access_time)
         '''
+        del values['incognito']
         if await database.execute(query, values):
             print(
                 f"> \033[1m[{self.riddle_alias}]\033[0m "

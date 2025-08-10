@@ -58,7 +58,7 @@ async def global_list(country: Optional[str] = None):
     """
     incognito_accounts = await database.fetch_all(query, values)
     for iacc in incognito_accounts:
-        if iacc['username'] == user.name:
+        if user and iacc['username'] == user.name:
             for key in ['global_score', 'recent_score']:
                 accounts[iacc['username']][key] += iacc[key]
 
@@ -199,10 +199,9 @@ async def riddle_list(alias: str, country: str | None = None):
     """
     incognito_accounts = await database.fetch_all(query, values)
     for iacc in incognito_accounts:
-        if iacc['username'] == user.name:
+        if user and iacc['username'] == user.name:
             for key in ['score', 'recent_score', 'page_count']:
                 accounts[iacc['username']][key] += iacc[key]
-
 
     players_by_level = {}
     for username, account in accounts.items():
