@@ -48,11 +48,11 @@ async def homepage():
     # Recent player progress (newly found pages)
     query = '''
         SELECT *, MAX(access_time) AS time FROM user_pages
-        WHERE
-            TIMESTAMPDIFF(DAY, access_time, NOW()) < 30
+        WHERE TIMESTAMPDIFF(DAY, access_time, NOW()) < 30
             AND riddle NOT IN (
                 SELECT alias FROM riddles WHERE unlisted IS TRUE
             )
+            AND incognito IS NOT TRUE
         GROUP BY username
         ORDER BY time DESC
     '''
@@ -65,6 +65,7 @@ async def homepage():
             SELECT username, MAX(completion_time) AS max_time
             FROM user_levels
             WHERE TIMESTAMPDIFF(DAY, completion_time, NOW()) < 30
+                AND incognito_solve IS NOT TRUE
             GROUP BY username
         ) u2
         ON u1.username = u2.username
@@ -84,6 +85,7 @@ async def homepage():
                 ON ul.riddle = lv.riddle AND ul.level_name = lv.name
             WHERE lv.is_secret IS TRUE
                 AND TIMESTAMPDIFF(DAY, find_time, NOW()) < 30
+                AND incognito_unlock IS NOT TRUE
             GROUP BY username
         ) u2
         ON u1.username = u2.username
