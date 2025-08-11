@@ -200,9 +200,12 @@ async def riddle_list(alias: str, country: str | None = None):
     incognito_accounts = await database.fetch_all(query, values)
     for iacc in incognito_accounts:
         if user and iacc['username'] == user.name:
+            account = accounts[iacc['username']]
+            account['has_incognito_progress'] = False
             for key in ['score', 'recent_score', 'page_count']:
-                accounts[iacc['username']][key] += iacc[key]
-            accounts[iacc['username']]['last_page_time'] = iacc['last_page_time']
+                account[key] += iacc[key]
+                account['has_incognito_progress'] |= bool(iacc[key])
+            account['last_page_time'] = iacc['last_page_time']
 
     players_by_level = {}
     for username, account in accounts.items():
