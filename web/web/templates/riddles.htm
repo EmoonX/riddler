@@ -1,0 +1,36 @@
+{% extends 'layout.htm' %}
+{% block title %}All riddles ⬩ Riddler{% endblock %}
+{% block content %}
+    <main>
+      <h1>All riddles</h1>
+      <table>
+      {% set riddles = get_riddles(unlisted=True) %}
+        <thead>
+          <th></th>
+          <th>Name</th>
+          <th>Links</th>
+        </thead>
+        <tbody>
+        {% for riddle in riddles %}
+          <tr>
+            <td><img src="/static/riddles/{{ riddle['alias'] }}.png" width="30"></td>
+            <td>
+              <a href="{{ riddle['alias'] }}">
+                {{ riddle['full_name'] }}
+              </a>
+            </td>
+            <td>
+              <a href="{{ riddle['front_page'] }}" target="_blank" rel="noreferrer"><img src="/static/icons/external-link.png" width="30"></a>
+            {% if riddle['invite_code'] %}
+              <a href="https://discord.gg/{{ riddle['invite_code'] }}" target="_blank"><img src="/static/icons/discord.png" width="30"></a>
+            {% endif %}
+            {% if riddle['nordinho_link'] %}
+              <a href="{{ riddle['nordinho_link'] }}" target="_blank"><img src="/static/icons/nordinho.png" width="30"></a>
+            {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </main>
+{% endblock %}
