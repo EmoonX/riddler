@@ -2,23 +2,39 @@
 {% block title %}All riddles ⬩ Riddler{% endblock %}
 {% block content %}
     <main>
+      {% set riddles = get_riddles(unlisted=True) %}
+      {% set statuses = {
+        '🎖️': 'Released',
+        '🚧': 'Update in Progress',
+        '🧪': 'Demo',
+      } %}
       <h1>All riddles</h1>
       <table>
-      {% set riddles = get_riddles(unlisted=True) %}
         <thead>
-          <th></th>
-          <th>Name</th>
+          <th>Riddle</th>
+          <th>Status</th>
+          <th>Players</th>
+          <th>Levels</th>
+          <th>Pages</th>
           <th>Links</th>
         </thead>
         <tbody>
         {% for riddle in riddles %}
           <tr>
-            <td><img src="/static/riddles/{{ riddle['alias'] }}.png" width="30"></td>
             <td>
+            {%- if riddle['status'] -%}
+              <span title="{{ statuses[riddle['status']] }}">{{ riddle['status'] }}</span>
+            {%- endif -%}
+            </td>
+            <td style="text-align: left;">
               <a href="{{ riddle['alias'] }}">
+                <img class="riddle-icon" src="/static/riddles/{{ riddle['alias'] }}.png" width="35" style="vertical-align: middle; margin-right: .3em;">
                 {{ riddle['full_name'] }}
               </a>
             </td>
+            <td><var>{{ riddle['player_count'] or '<span style="opacity: .3;">--</span>'|safe }}</var></td>
+            <td><var>{{ riddle['level_count'] or '<span style="opacity: .3;">--</span>'|safe }}</var></td>
+            <td><var style="font-size: .8em;">{{ riddle['page_count'] or '<span style="opacity: .3;">--</span>'|safe }}</var></td>
             <td>
               <a href="{{ riddle['front_page'] }}" target="_blank" rel="noreferrer"><img src="/static/icons/external-link.png" width="30"></a>
             {% if riddle['invite_code'] %}

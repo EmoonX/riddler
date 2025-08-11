@@ -39,11 +39,37 @@ async def get_riddles(unlisted: bool = False) -> list[dict]:
     Return a list of all riddles.
     :param unlisted: Whether to also return unlisted riddles.
     '''
+
     query = f"""
         SELECT * FROM riddles
         {'WHERE unlisted IS NOT TRUE' if not unlisted else ''}
     """
-    riddles = await database.fetch_all(query)
+    riddles = [dict(row) for row in await database.fetch_all(query)]
+
+    # Add counter data
+    for riddle in riddles:
+        query = '''
+            SELECT COUNT(*) FROM achievements
+            WHERE riddle = :riddle
+        '''
+        values = {'riddle': riddle['alias']}
+        riddle['achievement_count'] = await database.fetch_val(query, values)
+        query = '''
+            SELECT COUNT(*) FROM levels
+            WHERE riddle = :riddle
+        '''
+        riddle['level_count'] = await database.fetch_val(query, values)
+        query = '''
+            SELECT COUNT(*) FROM level_pages
+            WHERE riddle = :riddle AND level_name IS NOT NULL
+        '''
+        riddle['page_count'] = await database.fetch_val(query, values)
+        query = '''
+            SELECT COUNT(*) FROM riddle_accounts
+            WHERE riddle = :riddle AND score > 0
+        '''
+        riddle['player_count'] = await database.fetch_val(query, values)
+
     return riddles
 
 

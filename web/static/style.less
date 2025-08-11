@@ -761,6 +761,27 @@ time {
   cursor: default;
 }
 
+tr {
+  background-image: linear-gradient(
+    to right,
+    transparent,
+    rgba(127, 127, 127, 0.15) 15% 85%,
+    transparent
+  );
+  text-align: center;
+  font-size: 1.2rem;
+  color: #ffd;
+
+  &:nth-child(even) {
+    background-image: linear-gradient(
+      to right,
+      transparent,
+      rgba(127, 127, 127, 0.25) 15% 85%,
+      transparent
+    );
+  }
+}
+
 th, td {
   padding: 15px;
   border: 1px solid #ffd;
