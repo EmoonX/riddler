@@ -1019,16 +1019,18 @@ class _LevelHandler:
     async def _update_info(self):
         '''Update level-related tables.'''
 
-        # Update global user completion count
-        query = '''
-            UPDATE levels SET completion_count = completion_count + 1
-            WHERE riddle = :riddle AND name = :level_name
-        '''
-        values = {
-            'riddle': self.ph.riddle_alias,
-            'level_name': self.level['name']
-        }
-        await database.execute(query, values)
+        if not await is_user_incognito():
+            # Update global user completion count
+            query = '''
+                UPDATE levels
+                SET completion_count = completion_count + 1
+                WHERE riddle = :riddle AND name = :level_name
+            '''
+            values = {
+                'riddle': self.ph.riddle_alias,
+                'level_name': self.level['name']
+            }
+            await database.execute(query, values)
 
         # Update user and global scores
         await self.ph.update_score(self.points)
