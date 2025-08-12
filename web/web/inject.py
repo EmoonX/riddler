@@ -1,4 +1,5 @@
 import json
+import os
 from typing import overload
 
 import country_converter as coco
@@ -279,6 +280,10 @@ async def context_processor():
         for rank in player_ranks:
             if user['global_score'] >= rank['min_score']:
                 return rank['color']
+
+    def file_exists(absolute_path: str) -> bool:
+        '''Check whether file exists in the given path.'''
+        return os.path.exists(f"..{absolute_path}")
 
     # Build dict of country names
     # (also a separate loop for UK nations)

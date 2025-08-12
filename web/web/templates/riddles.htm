@@ -11,15 +11,15 @@
       <h1>All riddles</h1>
       <table>
         <thead>
-          <th>Riddle</th>
           <th>Status</th>
+          <th>Riddle</th>
           <th>Players</th>
           <th>Levels</th>
           <th>Pages</th>
           <th>Links</th>
         </thead>
         <tbody>
-        {% for riddle in riddles %}
+        {% for riddle in riddles|sort(attribute="full_name") %}
           <tr>
             <td>
             {%- if riddle['status'] -%}
@@ -28,7 +28,12 @@
             </td>
             <td style="text-align: left;">
               <a href="{{ riddle['alias'] }}">
-                <img class="riddle-icon" src="/static/riddles/{{ riddle['alias'] }}.png" width="35" style="vertical-align: middle; margin-right: .3em;">
+                {% set src = '/static/riddles/' ~ riddle['alias'] ~ '.png' %}
+              {% if file_exists(src) %}
+                <img class="riddle-icon" src="{{ src }}" width="35" style="vertical-align: middle; margin-right: .3em;">
+              {% else %}
+                <div style="display: inline-block; margin-right: .3em; width: 35px; height: 35px;"></div>
+              {% endif %}
                 {{ riddle['full_name'] }}
               </a>
             </td>
