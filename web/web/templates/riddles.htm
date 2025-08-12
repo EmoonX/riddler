@@ -4,7 +4,7 @@
     <main>
       {% set riddles = get_riddles(unlisted=True) %}
       {% set statuses = {
-        '🎖️': 'Released',
+        '🎖️': 'Complete',
         '🚧': 'Update in Progress',
         '🧪': 'Demo',
       } %}
@@ -23,23 +23,47 @@
           <tr>
             <td>
             {%- if riddle['status'] -%}
-              <span title="{{ statuses[riddle['status']] }}">{{ riddle['status'] }}</span>
+              <span title="{{ statuses[riddle['status']] }}" style="border-bottom: 1px dotted #ffd8;">{{ riddle['status'] }}</span>
             {%- endif -%}
             </td>
             <td style="text-align: left;">
-              <a href="{{ riddle['alias'] }}">
+              <a href="{{ riddle['alias'] }}" style="display: inline-flex; align-items: center; gap: .6em; vertical-align: middle;">
                 {% set src = '/static/riddles/' ~ riddle['alias'] ~ '.png' %}
               {% if file_exists(src) %}
-                <img class="riddle-icon" src="{{ src }}" width="35" style="vertical-align: middle; margin-right: .3em;">
+                <img class="riddle-icon" src="{{ src }}" width="35">
               {% else %}
-                <div style="display: inline-block; margin-right: .3em; width: 35px; height: 35px;"></div>
+                <div style="display: inline-block; width: 35px; height: 35px;"></div>
               {% endif %}
                 {{ riddle['full_name'] }}
               </a>
             </td>
-            <td><var>{{ riddle['player_count'] or '<span style="opacity: .3;">--</span>'|safe }}</var></td>
-            <td><var>{{ riddle['level_count'] or '<span style="opacity: .3;">--</span>'|safe }}</var></td>
-            <td><var style="font-size: .8em;">{{ riddle['page_count'] or '<span style="opacity: .3;">--</span>'|safe }}</var></td>
+            <td>
+              <var class="player-count">
+              {%- if riddle['player_count'] -%}
+                {{ riddle['player_count'] }}<span class="bg-emoji">👤</span>
+              {%- else -%}
+                <span style="opacity: .3;">--</span>
+              {%- endif -%}
+              </var>
+            </td>
+            <td>
+              <var class="level-count">
+              {%- if riddle['level_count'] -%}
+                {{ riddle['level_count'] }}<span class="bg-emoji">🧩</span>
+              {%- else -%}
+                <span style="opacity: .3;">--</span>
+              {%- endif -%}
+              </var>
+            </td>
+            <td>
+              <var class="page-count">
+              {%- if riddle['page_count'] -%}
+                <span style="font-size: .8em;">{{ riddle['page_count'] }}</span><span class="bg-emoji">📄</span>
+              {%- else -%}
+                <span style="opacity: .3;">--</span>
+              {%- endif -%}
+              </var>
+            </td>
             <td>
               <a href="{{ riddle['front_page'] }}" target="_blank" rel="noreferrer"><img src="/static/icons/external-link.png" width="30"></a>
             {% if riddle['invite_code'] %}
