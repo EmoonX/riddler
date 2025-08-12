@@ -4,8 +4,7 @@
     <main>
       <h1 class="riddler-title">Riddler</h1>
       <p class='riddler-synopsis'>
-        {% set riddle_full_count = riddle_count - riddle_demo_count %}
-        Serving <var>{{ riddle_full_count }}<span class="smaller" title="(riddles in demo state)">+{{ riddle_demo_count }}</span></var> online riddles, <var>{{ level_count }}</var> levels,<br>
+        Serving <var class="dotted" title="{{ riddle_full_count }} full riddles + {{ riddle_demo_count }} demos + {{ riddle_other_count }} in the catalog">{{ riddle_full_count }}<span class="smaller">+{{ riddle_demo_count }}+<span class="smaller">{{ riddle_other_count }}</span></span></var> online riddles, <var>{{ level_count }}</var> levels,<br>
         <var>{{ page_count }}</var> pages and <var>{{ player_count }}</var> players. <a href="/about">Learn more</a>.
       </p>
       <hr>
@@ -22,14 +21,7 @@
           {% set class = 'just-playing' %}
         {% endif %}
           <div class="status {{ class }}">
-            <a class="player">
-              {% set url = (
-                avatar_urls[player['username']] if player['username'] in avatar_urls
-                else '/static/images/locked.png'
-              ) %}
-              <img class="avatar" src="{{ url }}">
-              {{ get_display_name(player) }}
-            </a>
+            {% include 'util/player.htm' %}
             <div>
               <!-- {% set country_name = country_names[player['country']] %} -->
               {% set riddle = riddles[player['riddle']] %}

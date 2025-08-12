@@ -18,10 +18,17 @@ async def homepage():
 
     # Big number counters
     query = '''
-        SELECT COUNT(*) AS count, COUNT(demo) AS demo_count FROM riddles
-        WHERE unlisted IS NOT TRUE
+        SELECT * FROM riddles
     '''
-    riddle_count, riddle_demo_count = (await database.fetch_one(query)).values()
+    riddles = await database.fetch_all(query)
+    riddle_full_count = riddle_demo_count = riddle_other_count = 0
+    for riddle in riddles:
+        if not riddle['demo'] and not riddle['unlisted']:
+            riddle_full_count += 1
+        elif riddle['demo'] and not riddle['unlisted']:
+            riddle_demo_count += 1
+        else:
+            riddle_other_count += 1
     query = '''
         SELECT COUNT(*) AS count FROM levels
         WHERE riddle NOT IN (
