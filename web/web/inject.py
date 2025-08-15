@@ -62,7 +62,9 @@ async def get_riddles(unlisted: bool = False) -> list[dict]:
         riddle['level_count'] = await database.fetch_val(query, values)
         query = '''
             SELECT COUNT(*) FROM level_pages
-            WHERE riddle = :riddle AND level_name IS NOT NULL
+            WHERE riddle = :riddle
+                AND level_name IS NOT NULL
+                AND hidden IS NOT TRUE
         '''
         riddle['page_count'] = await database.fetch_val(query, values)
         query = '''

@@ -30,24 +30,16 @@ async def homepage():
         else:
             riddle_other_count += 1
     query = '''
-        SELECT COUNT(*) AS count FROM levels
-        WHERE riddle NOT IN (
-            SELECT alias FROM riddles WHERE unlisted IS TRUE
-        )
+        SELECT COUNT(*) FROM levels
     '''
     level_count = await database.fetch_val(query)
     query = '''
-        SELECT COUNT(*) AS count FROM level_pages
-        WHERE
-            riddle NOT IN (
-                SELECT alias FROM riddles WHERE unlisted IS TRUE
-            )
-            AND level_name IS NOT NULL
-            AND hidden IS NOT TRUE
+        SELECT COUNT(*) FROM level_pages
+        WHERE level_name IS NOT NULL AND hidden IS NOT TRUE
     '''
     page_count = await database.fetch_val(query,)
     query = '''
-        SELECT COUNT(*) AS count FROM accounts
+        SELECT COUNT(*) FROM accounts
         WHERE global_score > 0
     '''
     player_count = await database.fetch_val(query)
