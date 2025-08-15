@@ -787,7 +787,9 @@ tr {
 th, td {
   padding: 15px;
   color: #ffd;
+}
 
+td {
   a:not(:hover) {
   text-decoration: none;
 }
@@ -824,6 +826,16 @@ th, td {
       opacity: .25;
       filter: saturate(0);
       user-select: none;
+    }
+  }
+  .external-links {
+    display: flex;
+    justify-content: center;
+    gap: .3em;
+
+    a {
+      height: 30px;
+      cursor: pointer;
     }
   }
 }

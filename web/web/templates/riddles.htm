@@ -65,13 +65,15 @@
               </var>
             </td>
             <td>
-              <a href="{{ riddle['front_page'] }}" target="_blank" rel="noreferrer"><img src="/static/icons/external-link.png" width="30"></a>
-            {% if riddle['invite_code'] %}
-              <a href="https://discord.gg/{{ riddle['invite_code'] }}" target="_blank"><img src="/static/icons/discord.png" width="30"></a>
-            {% endif %}
-            {% if riddle['nordinho_link'] %}
-              <a href="{{ riddle['nordinho_link'] }}" target="_blank"><img src="/static/icons/nordinho.png" width="30"></a>
-            {% endif %}
+              <div class="external-links">
+                <a href="{{ riddle['front_page'] }}" title="Visit riddle's website" target="_blank" rel="noreferrer"><img src="/static/icons/external-link.png" width="30"></a>
+              {% if riddle['invite_code'] %}
+                <a href="https://discord.gg/{{ riddle['invite_code'] }}" title="Discord invite" target="_blank"><img src="/static/icons/discord.png" width="30"></a>
+              {% endif %}
+              {% if riddle['nordinho_link'] %}
+                <a href="{{ riddle['nordinho_link'] }}" title="Nordinho thread" target="_blank"><img src="/static/icons/nordinho.png" width="30"></a>
+              {% endif %}
+              </div>
             </td>
           </tr>
         {% endfor %}
