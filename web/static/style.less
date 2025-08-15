@@ -134,15 +134,16 @@ header > nav {
       font-size: 0.8em;
       backdrop-filter: blur(1em) saturate(0%);
 
-      &.riddles {
-        grid-template-columns: 1fr 1fr 1fr 1fr 1fr;
+      .riddles {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 1em .5em;
         width: 500px;
-        padding: 1.5em 1em;
 
         > a.riddle {
-          margin: 0.5em;
           font-size: 1.25em;
           text-decoration: none;
+          zoom: 75%;
           transition: filter 1s;
 
           &:hover {
@@ -150,11 +151,42 @@ header > nav {
             transition: filter 0.2s;
           }
         }
+        &.demo {
+          grid-template-columns: repeat(8, 1fr);
+
+          > a.riddle {
+            zoom: 65%;
+          }
+        }
+      }
+      hr {
+        margin: 0;
+      }
+      a[href="/riddles"] {
+        display: inline-block;        
+        padding: .5em 1em;
+        border: 1px solid #ffd1;
+        border-radius: 1em;
+        background-color: #ffd1;
+        color: #ffd;
+        font-size: 1.1em;
+
+        &:not(:hover) {
+          text-decoration: none;
+        }
       }
     }
     &:hover > div {
       display: block;
 
+      &:has(.riddles) {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5em;
+        padding: 1.5em;
+        zoom: 95%;
+      }
       &.riddles {
         display: grid;
       }

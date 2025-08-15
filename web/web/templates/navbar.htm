@@ -1,3 +1,19 @@
+{% macro riddle_card(_alias) %}
+  {% set riddle = get_riddle(_alias) %}
+  {% set url = '/' ~ _alias %}
+  {% set current_url = url_for(request.endpoint, **request.view_args) %}
+  {% if alias %}
+    {% if not current_url.startswith('/admin') or is_admin_of(_alias) %}
+      {% set url = current_url.replace(alias, _alias, 1) %}
+    {% endif %}
+  {% endif %}
+  <a href="{{ url }}" class="riddle">
+    <figure>
+      {% include 'util/riddle-icon.htm' %}
+      <figcaption>{{ riddle['short_name'] }}</figcaption>
+    </figure>
+  </a>
+{% endmacro %}    
     <header>
       <nav>
         <a class="title" href="/">
@@ -5,24 +21,21 @@
         </a>
         <nav class="dropdown">
           <button class="nav-button riddles">⋮</button>
-          {% set riddles = get_riddles(unlisted=True) %}
-          <div class="menu riddles">
-          {% for riddle in riddles if not riddle['unlisted'] %}
-            {% set riddle = get_riddle(riddle['alias']) %}
-            {% set url = '/' + riddle['alias'] %}
-            {% set current_url = url_for(request.endpoint, **request.view_args) %}
-            {% if alias %}
-              {% if not current_url.startswith('/admin') or is_admin_of(riddle['alias']) %}
-                {% set url = current_url.replace(alias, riddle['alias'], 1) %}
-              {% endif %}
-            {% endif %}
-            <a href="{{ url }}" class="riddle">
-              <figure>
-                {% include 'util/riddle-icon.htm' %}
-                <figcaption>{{ riddle['short_name'] }}</figcaption>
-              </figure>
-            </a>
+          {% set riddles = get_riddles(unlisted) %}
+          <div class="menu">
+            <div class="riddles">
+            {% for riddle in riddles if not riddle['demo'] %}
+              {{ riddle_card(riddle['alias']) }}
+            {% endfor %}
+            </div>
+            <hr>
+            <div class="riddles demo">
+            {% for riddle in riddles if riddle['demo'] %}
+              {{ riddle_card(riddle['alias']) }}
           {% endfor %}
+          </div>
+            <hr>
+            <a href="/riddles">Browse riddle catalog ↗</a>
           </div>
         </nav>
     {% if alias %}
