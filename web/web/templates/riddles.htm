@@ -8,15 +8,22 @@
         '🚧': 'Update in Progress',
         '🧪': 'Demo',
       } %}
+      {% set total = namespace(
+        players=get_accounts().values()|selectattr('global_score')|list|length,
+        levels=0,
+        pages=0,
+      ) %}
       <h1>All riddles</h1>
       <table>
         <thead>
-          <th>Status</th>
-          <th>Riddle</th>
-          <th>Players</th>
-          <th>Levels</th>
-          <th>Pages</th>
-          <th>Links</th>
+          <tr>
+            <th>Status</th>
+            <th>Riddle</th>
+            <th>Players</th>
+            <th>Levels</th>
+            <th>Pages</th>
+            <th>Links</th>
+          </tr>
         </thead>
         <tbody>
         {% for riddle in riddles|sort(attribute="full_name") %}
@@ -39,29 +46,31 @@
             </td>
             <td>
               <var class="player-count">
-              {%- if riddle['player_count'] -%}
+              {% if riddle['player_count'] %}
                 {{ riddle['player_count'] }}<span class="bg-emoji">👤</span>
-              {%- else -%}
+              {% else %}
                 <span style="opacity: .3;">--</span>
-              {%- endif -%}
+              {% endif %}
               </var>
             </td>
             <td>
               <var class="level-count">
-              {%- if riddle['level_count'] -%}
+              {% if riddle['level_count'] %}
                 {{ riddle['level_count'] }}<span class="bg-emoji">🧩</span>
-              {%- else -%}
+                {% set total.levels = total.levels + riddle['level_count'] %}
+              {% else %}
                 <span style="opacity: .3;">--</span>
-              {%- endif -%}
+              {% endif %}
               </var>
             </td>
             <td>
               <var class="page-count">
-              {%- if riddle['page_count'] -%}
-                <span style="font-size: .8em;">{{ riddle['page_count'] }}</span><span class="bg-emoji">📄</span>
-              {%- else -%}
+              {% if riddle['page_count'] %}
+                {{ riddle['page_count'] }}<span class="bg-emoji">📄</span>
+                {% set total.pages = total.pages + riddle['page_count'] %}
+              {% else %}
                 <span style="opacity: .3;">--</span>
-              {%- endif -%}
+              {% endif %}
               </var>
             </td>
             <td>
@@ -78,6 +87,36 @@
           </tr>
         {% endfor %}
         </tbody>
+        <tfoot>
+          <tr>
+            <td style="font-weight: bold;">Total</td>
+            <td>
+              <figure>
+                <var class="riddle-count">{{ riddles|length }}</var>
+                <figcaption>riddles</figcaption>
+              </figure>
+            </td>
+            <td>
+              <figure>
+                <var class="player-count">{{ total.players }}</var>
+                <figcaption>players</figcaption>
+              </figure>
+            </td>
+            <td>
+              <figure>
+                <var class="level-count">{{ total.levels }}</var>
+                <figcaption>levels</figcaption>
+              </figure>
+            </td>
+            <td>
+              <figure>
+                <var class="page-count">{{ total.pages }}</var>
+                <figcaption>pages</figcaption>
+              </figure>
+            </td>
+            <td></td>
+          </tr>
+        </tfoot>
       </table>
     </main>
 {% endblock %}

@@ -724,23 +724,29 @@ table {
   border-spacing: 0;
 }
 
-thead th {
-  border-bottom: 1px solid rgba(255, 255, 221, .5);
-
+thead th, tfoot td {
   &:first-child {
-    border-bottom: 1px solid;
     border-image: linear-gradient(
       to right, transparent, rgba(255, 255, 221, .5) 50% 100%
     );
     border-image-slice: 1;
   }
   &:last-child {
-    border-bottom: 1px solid;
     border-image: linear-gradient(
       to left, transparent, rgba(255, 255, 221, .5) 50% 100%
     );
     border-image-slice: 1;
   }
+  &:not(:first-child), &:not(:last-child) {
+    border-color: rgba(255, 255, 221, .5);
+  }
+}
+thead th {
+  border-bottom: 1px solid;
+}
+tfoot td {
+  padding-bottom: .4em;
+  border-top: 1px solid;
 }
 
 tbody > tr:hover, tbody > tr.active {
@@ -795,8 +801,40 @@ td {
 }
   var {
     position: relative;
+    display: flex;
+    justify-content: center;
     font-size: 1.1em;
     
+    > .bg-emoji {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: -1;
+      font-size: 1.5em;
+      text-shadow: none;
+      opacity: .25;
+      filter: saturate(0);
+      user-select: none;
+    }
+    + figcaption {
+      font-size: .7em;
+      font-style: normal;
+    }
+    &.riddle-count {
+      display: inline;
+      margin: 0;
+      font-size: 1.3em;
+      text-shadow:
+        0 0 .3em navy,
+        0 0 .6em navy,
+        0 0 .9em navy;
+
+      + figcaption {
+       display: inline;
+       font-size: .9em;
+      }
+    }
     &.player-count {
       text-shadow:
         0 0 .3em crimson,
@@ -810,22 +848,11 @@ td {
         0 0 .9em MediumVioletRed;
     }
     &.page-count {
+      font-size: .9em;
       text-shadow:
         0 0 .3em darkcyan,
         0 0 .6em darkcyan,
         0 0 .9em darkcyan;
-}
-    > .bg-emoji {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: -1;
-      font-size: 1.5em;
-      text-shadow: none;
-      opacity: .25;
-      filter: saturate(0);
-      user-select: none;
     }
   }
   .external-links {
