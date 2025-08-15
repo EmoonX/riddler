@@ -41,7 +41,10 @@
             {%- endif -%}
             </td>
             <td style="text-align: left;">
-              <a href="{{ riddle['alias'] }}" style="display: inline-flex; align-items: center; gap: .6em; vertical-align: middle;">
+              <a
+                href="{{ riddle['alias'] if riddle['level_count'] else '#' }}"
+                style="display: inline-flex; align-items: center; gap: .6em; vertical-align: middle;"
+              >
                 {% set src = '/static/riddles/' ~ riddle['alias'] ~ '.png' %}
               {% if file_exists(src) %}
                 <img class="riddle-icon" src="{{ src }}" width="35">
