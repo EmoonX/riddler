@@ -9,6 +9,8 @@
         '🧪': 'Demo',
       } %}
       {% set total = namespace(
+        riddles_released=0,
+        riddles_demo=0,
         players=get_accounts().values()|selectattr('global_score')|list|length,
         levels=0,
         pages=0,
@@ -31,6 +33,11 @@
             <td>
             {%- if riddle['status'] -%}
               <span title="{{ statuses[riddle['status']] }}" style="border-bottom: 1px dotted #ffd8;">{{ riddle['status'] }}</span>
+              {%- if riddle['status'] in ['🎖️', '🚧'] -%}
+                {%- set total.riddles_released = total.riddles_released + 1 -%}
+              {%- elif riddle['status'] == '🧪' -%}
+                {%- set total.riddles_demo = total.riddles_demo + 1 -%}
+              {%- endif -%}
             {%- endif -%}
             </td>
             <td style="text-align: left;">
@@ -93,7 +100,7 @@
             <td>
               <figure>
                 <var class="riddle-count">{{ riddles|length }}</var>
-                <figcaption>riddles</figcaption>
+                <figcaption>riddles (<code>{{ total.riddles_released }}</code> released, <code>{{ total.riddles_demo }}</code> demo)</figcaption>
               </figure>
             </td>
             <td>

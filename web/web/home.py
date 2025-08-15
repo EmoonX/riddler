@@ -21,10 +21,10 @@ async def homepage():
         SELECT * FROM riddles
     '''
     riddles = await database.fetch_all(query)
-    riddle_full_count = riddle_demo_count = riddle_other_count = 0
+    riddle_released_count = riddle_demo_count = riddle_other_count = 0
     for riddle in riddles:
         if not riddle['demo'] and not riddle['unlisted']:
-            riddle_full_count += 1
+            riddle_released_count += 1
         elif riddle['demo'] and not riddle['unlisted']:
             riddle_demo_count += 1
         else:
