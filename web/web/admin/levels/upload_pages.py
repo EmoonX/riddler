@@ -45,8 +45,6 @@ async def upload_pages(alias: str):
         lu = RiddleLevelUpdater(level_name, set_name, paths)
         if level_name:
             await lu.process_level()
-            if paths[1:] and _is_image(image_path := paths[1]):
-                await lu.process_image(image_path)
 
         # Process individual pages
         for path in paths:
@@ -54,6 +52,11 @@ async def upload_pages(alias: str):
                 lu.log(f"Skipping wrong format path: \033[3;9m{path}\033[0m")
                 continue
             await lu.process_page(path)
+
+        # Update core level paths (front, image, answer)
+        await lu.update_core_paths()
+        if lu.image_path and _is_image(lu.image_path):
+            await lu.process_image(lu.image_path)
 
     return 'OK', 200
 

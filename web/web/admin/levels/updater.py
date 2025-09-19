@@ -80,7 +80,13 @@ class LevelUpdater:
         self._set_name = set_name or self.level_set['name']
         self.paths = paths
 
-    def _retrieve_level_and_set(self, level_name: str, set_name: str):
+        self.front_path = self.image_path = self.answer_path = None
+        if not self.level:
+            # Mark two topmost paths as front/image ones by default
+            self.front_path = paths[0] if paths     else None
+            self.image_path = paths[1] if paths[1:] else None
+
+    def _retrieve_level_and_set(self, level_name: str, set_name: str | None):
         '''Search for and retrieve (possibly existing) level and/or level set.'''
         self.level = None
         self.level_set = self.__class__.current_set if not set_name else None
@@ -154,10 +160,10 @@ class LevelUpdater:
         index = max(self.level_set['levels'].keys(), default=0) + 1
         query = '''
             INSERT INTO levels (
-                riddle, level_set, set_index, `index`, name, path,
+                riddle, level_set, set_index, `index`, name,
                 is_secret, discord_category, discord_name
             ) VALUES (
-                :riddle, :level_set, :set_index, :index, :name, :path,
+                :riddle, :level_set, :set_index, :index, :name,
                 :is_secret, :discord_category, :discord_name
             )
         '''
@@ -167,7 +173,6 @@ class LevelUpdater:
             'level_set': self._set_name,
             'index': index,
             'name': self._level_name,
-            'path': self.paths[0] if self.paths else None,
             'is_secret': True if self.level_set['index'] == 99 else None,
             'discord_category': self._set_name,
             'discord_name': self._level_name.lower().replace(' ', '-'),
@@ -269,23 +274,22 @@ class LevelUpdater:
         with open(save_path, 'wb') as image:
             shutil.copyfileobj(res.raw, image)
 
-        # Add or update image's filename
-        query = '''
-            UPDATE levels
-            SET image = :image
-            WHERE riddle = :riddle AND name = :name
-        '''
-        values = {
-            'riddle': self.alias,
-            'name': self.level['name'],
-            'image': image_filename,
-        }
-        await database.execute(query, values)
-
         return image_filename
 
     async def process_page(self, path: str):
         '''Insert/update page in(to) DB, possibly attached to a level.'''
+
+        # When present, parse tokens and mark core pages
+        tokens = path.split()
+        path = tokens[0]
+        for token in tokens:
+            match token:
+                case '*f':
+                    self.front_path = path
+                case '*i':
+                    self.image_path = path
+                case '*a':
+                    self.answer_path = path
 
         # Insert page entry if indeed new
         query = '''
@@ -326,6 +330,26 @@ class LevelUpdater:
             f"Skipping page \033[3m{path}\033[0m"
             + (f" ({self.level['name']})" if self.level else '')
         )
+
+    async def update_core_paths(self):
+        '''Update front, image and answer paths for the level.'''
+        core_paths = {
+            'path': self.front_path,
+            'image': self.image_path,
+            'answer': self.answer_path,
+        }
+        for field in filter(lambda field: core_paths[field], core_paths):
+            query = f'''
+                UPDATE levels
+                SET {field} = :path
+                WHERE riddle = :riddle AND name = :name
+            '''
+            values = {
+                'riddle': self.alias,
+                'name': self.level['name'],
+                'path': core_paths[field],
+            }
+            await database.execute(query, values)
 
     @classmethod
     def log(cls, msg: str, end: str = '\n'):
