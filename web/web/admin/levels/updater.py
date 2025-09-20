@@ -350,6 +350,7 @@ class LevelUpdater:
                 'path': core_paths[field],
             }
             await database.execute(query, values)
+            self.level[field] = core_paths[field]
 
     @classmethod
     def log(cls, msg: str, end: str = '\n'):
