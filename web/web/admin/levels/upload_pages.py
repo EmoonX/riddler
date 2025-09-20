@@ -53,10 +53,11 @@ async def upload_pages(alias: str):
                 continue
             await lu.process_page(path)
 
-        # Update core level paths (front, image, answer)
-        await lu.update_core_paths()
-        if lu.image_path and _is_image(lu.image_path):
-            await lu.process_image(lu.image_path)
+        if level_name:
+            # Update core level paths (front, image, answer)
+            await lu.update_core_paths()
+            if lu.image_path and _is_image(lu.image_path):
+                await lu.process_image(lu.image_path)
 
     return 'OK', 200
 
