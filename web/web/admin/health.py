@@ -1,4 +1,6 @@
 from datetime import datetime
+import os
+import posixpath
 import re
 from urllib.parse import urljoin
 import warnings
@@ -112,7 +114,7 @@ async def health_diagnostics(alias: str):
             page_data['content_hash'] = archived_page.content_hash
             page_data['retrieval_time'] = archived_page.retrieval_time
 
-            page_extension = path.partition('.')[-1].lower()
+            page_extension = os.path.splitext(path)[1][1:]
             if page_extension in ['htm', 'html', 'php', '']:
                 # Check for redirects inside HTML pages
                 page_data['redirects_to'] = \
@@ -139,7 +141,7 @@ async def health_diagnostics(alias: str):
         content = meta_refresh_tag.attrs['content']
         redirect_url = urljoin(
             f"{riddle['root_path']}{path}",
-            re.sub(r';|=|\'|"', ' ', content).split()[-1],
+            re.sub(r';|=|\'|"', ' ', content).split()[-1]
         )
         redirect_alias, redirect_path = \
             await process_url(None, redirect_url, admin=True)
@@ -192,7 +194,11 @@ async def health_diagnostics(alias: str):
                 level['frontPage']: front_page | {'flag': 'front-page'}
             }
             del pages[level['frontPage']]
-        image_path = urljoin(level.get('frontPage'), level.get('image'))
+        image_path = posixpath.join(
+            # Use `posixpath` instead of `urljoin` to avoid `..` resolution
+            f"{(level.get('frontPage') or '').rpartition('/')[0]}/",
+            level.get('image') or ''
+        )
         if image_page := pages.get(image_path):
             level['pages'] |= {
                 image_path: image_page | {'flag': 'front-image'}
