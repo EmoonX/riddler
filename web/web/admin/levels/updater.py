@@ -339,6 +339,12 @@ class LevelUpdater:
             'answer': self.answer_path,
         }
         for field in filter(lambda field: core_paths[field], core_paths):
+            path = core_paths[field]
+            if field == 'image':
+                common_path = os.path.commonpath([self.level['path'], path])
+                if not '/' in self.level['path'][(len(common_path) + 1):]:
+                    # Use relative path for image whenever within front's dir
+                    path = path[(len(common_path) + 1):]
             query = f'''
                 UPDATE levels
                 SET {field} = :path
