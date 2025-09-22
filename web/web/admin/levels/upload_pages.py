@@ -59,6 +59,9 @@ async def upload_pages(alias: str):
             if lu.image_path and _is_image(lu.image_path):
                 await lu.process_image(lu.image_path)
 
+            # Add requirement and previous answer, if suitable
+            await lu.chain_to_previous_level()
+
     return 'OK', 200
 
 

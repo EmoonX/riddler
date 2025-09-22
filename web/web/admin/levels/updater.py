@@ -117,11 +117,6 @@ class LevelUpdater:
                 f"Level \033[1m{self._level_name}\033[0m found in the database."
             )
 
-        if previous_level := self._get_previous_level():
-            await self._add_requirement(previous_level)
-            if not previous_level.get('answer') and self.paths:
-                await self._update_previous_answer(previous_level)
-
         # Update riddle-wise set tracker
         self.__class__.current_set = self.level_set
 
@@ -180,6 +175,13 @@ class LevelUpdater:
         await database.execute(query, values)
         self.level_set['levels'][index] = self.level = values
 
+    async def chain_to_previous_level(self):
+        '''Chain new level to the previous one in the ordering.'''
+        if previous_level := self._get_previous_level():
+            await self._add_requirement(previous_level)
+            if not previous_level.get('answer') and self.paths:
+                await self._update_previous_answer(previous_level)
+
     def _get_previous_level(self) -> dict | None:
         '''Get level before the current one in the set_index/index ordering,'''
 
@@ -232,10 +234,10 @@ class LevelUpdater:
         values = {
             'riddle': self.alias,
             'name': previous_level['name'],
-            'answer': self.paths[0],
+            'answer': self.front_path,
         }
         await database.execute(query, values)
-        previous_level['answer'] = self.paths[0]
+        previous_level['answer'] = self.front_path
 
     async def process_image(self, image_path: str) -> str | None:
         '''Fetch image content from riddle website and update related info.'''
@@ -344,10 +346,14 @@ class LevelUpdater:
         for field in filter(lambda field: core_paths[field], core_paths):
             path = core_paths[field]
             if field == 'image':
-                common_path = os.path.commonpath([self.level['path'], path])
-                if not '/' in self.level['path'][(len(common_path) + 1):]:
+                common_path = os.path.commonpath(map(
+                    os.path.dirname, [self.level['path'], path]
+                ))
+                if common_path != '/':
+                    common_path += '/'
+                if not '/' in self.level['path'][len(common_path):]:
                     # Use relative path for image whenever within front's dir
-                    path = path[(len(common_path) + 1):]
+                    path = path[len(common_path):]
             query = f'''
                 UPDATE levels
                 SET {field} = :path
@@ -356,7 +362,7 @@ class LevelUpdater:
             values = {
                 'riddle': self.alias,
                 'name': self.level['name'],
-                'path': core_paths[field],
+                'path': path,
             }
             await database.execute(query, values)
             self.level[field] = core_paths[field]
