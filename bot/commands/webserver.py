@@ -105,12 +105,6 @@ async def unlock(request):
         logging.error(tb)
         return web.Response(status=500)
 
-    # Check for riddle mastery upon score increase
-    methods = ['beat', 'cheevo_found', 'game_completed']
-    if params['method'] in methods:
-        if await has_player_mastered_riddle(alias, data['username']):
-            await unlock_handler.game_mastered()
-
     if 'points' in params and unlock_handler.member:
         # Update Wonderland guild score-based role, if the case
         await update_score_role(unlock_handler.member)

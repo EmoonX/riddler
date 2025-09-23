@@ -796,13 +796,19 @@ class _PathHandler:
             f"\033[1m\033[3m{achievement['title']}\033[0m\033[0m"
         )
         if await has_player_mastered_riddle(self.riddle_alias, self.user.name):
-            self.log_mastery()
+            await self.grant_mastery()
 
-    def log_mastery(self):
-        '''Log player mastering the riddle (i.e 100% score).'''
+    async def grant_mastery(self):
+        '''Log and message player mastering the riddle (i.e 100% score).'''
         print(
             f"> \033[1m[{self.riddle_alias}]\033[0m "
             f"\033[1m{self.user.name}\033[0m has mastered the game 💎"
+        )
+        await bot_request(
+            'unlock',
+            method='game_mastered',
+            alias=self.riddle_alias,
+            username=self.user.name,
         )
 
     async def _register_new_unlisted_page(self):
@@ -991,8 +997,10 @@ class _LevelHandler:
                 f"\033[1m{username}\033[0m has finished the game 🏅"
             )
 
-        if await has_player_mastered_riddle(alias, username):
-            self.ph.log_mastery()
+        # Assure level is ranked (points > 0) to avoid redundant mastery
+        # logs/messages (i.e for post-100% unranked solves and 0-score riddles)
+        if self.points and await has_player_mastered_riddle(alias, username):
+            await self.ph.grant_mastery()
 
         # Update level-related tables
         await self._update_info()
