@@ -5,7 +5,7 @@ from quart import Blueprint, render_template
 
 from auth import discord
 from inject import get_achievements
-from webclient import bot_request
+from players.account import is_user_incognito
 from util.db import database
 from util.levels import remove_ancestor_levels
 from util.riddle import has_player_mastered_riddle
@@ -79,19 +79,6 @@ async def global_list(country: Optional[str] = None):
         alias = row['riddle']
         accounts[row['username']]['current_level'][alias] = row['current_level']
 
-    # Fetch players' cheevo counts and add them to dict
-    query = '''
-        SELECT riddle, username, COUNT(*) as cheevo_count
-        FROM user_achievements
-        GROUP BY riddle, username
-    '''
-    player_cheevo_counts = await database.fetch_all(query)
-    for row in player_cheevo_counts:
-        if not row['username'] in accounts:
-            continue
-        alias = row['riddle']
-        accounts[row['username']]['cheevo_count'][alias] = row['cheevo_count']
-
     for username, player in accounts.items():
         # Hide username, country and riddles for non logged-in `hidden` players
         if player['hidden']:
@@ -120,9 +107,7 @@ async def global_list(country: Optional[str] = None):
             completed = current_level == '🏅'
             if completed:
                 # Append riddle to list of mastered or completed ones
-                mastered = \
-                    player['cheevo_count'].get(alias, 0) == riddle['cheevo_count']
-                if mastered:
+                if await has_player_mastered_riddle(alias, username):
                     player['mastered_riddles'].append(riddle)
                 else:
                     player['completed_riddles'].append(riddle)
@@ -220,7 +205,7 @@ async def riddle_list(alias: str, country: str | None = None):
 
         values |= {'riddle': alias}
         if await has_player_mastered_riddle(alias, username):
-            # Show 💎 and register mastery time if player reached max score
+            # Show 💎 and register mastery time
             account['current_level'] = '💎'
             query = '''
                 SELECT MAX(`time`) FROM ((
@@ -276,11 +261,10 @@ async def riddle_list(alias: str, country: str | None = None):
                 if name not in players_by_level:
                     players_by_level[name] = set()
                 players_by_level[name].add(username)
+                is_session_user = bool(user and username == user.name)
                 if (
-                    level['completion_time'] and (
-                        not level['incognito_solve'] or
-                        (user and username == user.name)
-                    )
+                    level['completion_time']
+                    and (not level['incognito_solve'] or is_session_user)
                 ):
                     account['completed_milestones'][name] = level
 

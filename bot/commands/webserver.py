@@ -17,7 +17,6 @@ from commands.update import insert, update
 from commands.wonderland import update_score_role
 from riddle import create_and_add_riddle, riddles
 from util.db import database
-from util.riddle import has_player_mastered_riddle
 
 
 class WebServer(commands.Cog):
