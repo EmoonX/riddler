@@ -211,14 +211,11 @@ async def context_processor():
 
         return riddles
 
-    def is_authorized() -> bool:
-        '''Return if the user is currently logged in.'''
-        return discord.authorized
-
-    async def get_session_user():
-        '''Return current Discord OAuth2 session user.'''
-        user = await discord.get_user()
-        return user
+    async def get_session_user() -> User | None:
+        '''Return current Discord OAuth2 session user (if any).'''
+        if not discord.user_id:
+            return None
+        return await discord.get_user()
 
     async def get_avatar_url(username: str = None, discord_id: int = None):
         '''Returns user's avatar url from a request sent to bot.'''

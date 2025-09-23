@@ -104,7 +104,8 @@
             <a href="/terms-and-conditions" class="nav-button">Terms & Conditions</a>
           </div>
         </nav>
-      {% if not is_authorized() %}
+        {% set user = get_session_user() %}
+      {% if not user %}
         <a class="nav-button" href="{{ url_for('players_auth.login', redirect_url=(request.url)) }}">Log in</a>
       {% else %}
         {% set user = get_session_user() %}
