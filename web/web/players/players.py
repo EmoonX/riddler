@@ -252,7 +252,7 @@ async def riddle_list(alias: str, country: str | None = None):
                             AND (is_secret IS TRUE OR set_index >= 99)
                     ) {
                         'AND incognito_unlock IS NOT TRUE'
-                        if user and username != user.name else ''
+                        if not user or username != user.name else ''
                     }
             """
             levels = await database.fetch_all(query, values)

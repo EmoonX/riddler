@@ -98,6 +98,7 @@ async def get_achievements(
     result = await database.fetch_all(query, values)
     all_cheevos = {row['title']: dict(row) for row in result}
 
+    user = await discord.get_user() if discord.user_id else None
     if not account:
         # Get riddle's achievement list
         query = 'SELECT * FROM achievements WHERE riddle = :riddle'
@@ -107,17 +108,14 @@ async def get_achievements(
             SELECT * FROM user_achievements
             WHERE riddle = :riddle AND username = :username
         '''
-        if discord.user_id:
-            user = await discord.get_user()
-            if user and account['username'] != user.name:
-                query += 'AND incognito IS NOT TRUE'
+        if not user or account['username'] != user.name:
+            query += 'AND incognito IS NOT TRUE'
         values |= {'username': account['username']}
     cheevos = await database.fetch_all(query, values)
 
     # Get unlocked achievements for current session user (if any)
     unlocked_cheevos = set()
-    if discord.user_id:
-        user = await discord.get_user()
+    if user:
         query = '''
             SELECT * FROM user_achievements
             WHERE riddle = :riddle AND username = :username
