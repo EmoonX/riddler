@@ -55,6 +55,7 @@ async def update_all(alias: str):
 
     update_methods = (
         update_scores,
+        # update_current_levels,
         update_completion_counts, update_page_counts,
         update_user_credentials, update_ratings,
     )
@@ -123,6 +124,78 @@ async def update_scores(alias: str):
                 WHERE riddle = :riddle AND username = :name
             """
             values |= {'score': _score}
+            await database.execute(query, values)
+
+    return 'SUCCESS :)', 200
+
+
+@admin_update.get('/admin/<alias>/update-current-levels')
+@requires_authorization
+async def update_current_levels(alias: str):
+    '''Úpdate riddle players' current levels (and 🏅s).'''
+    # TODO; slow
+
+    # Check for admin permissions
+    await admin_auth(alias)
+
+    query = '''
+        SELECT * FROM levels lv
+        WHERE riddle = :riddle AND name = (
+            SELECT final_level FROM riddles r
+            WHERE lv.riddle = r.alias
+        )
+
+    '''
+    final_level = await database.fetch_one(query, {'riddle': alias})
+
+    # Iterate over riddle accounts
+    query = 'SELECT * FROM riddle_accounts WHERE riddle = :riddle'
+    riddle_accounts = await database.fetch_all(query, {'riddle': alias})
+    for racc in riddle_accounts:
+        query = '''
+            SELECT * FROM user_levels ul INNER JOIN levels lv
+                ON ul.riddle = lv.riddle AND ul.level_name = lv.name
+            WHERE ul.riddle = :riddle
+                AND ul.username = :username
+                AND lv.is_secret IS NOT TRUE
+            ORDER BY find_time DESC
+        '''
+        values = {'riddle': alias, 'username': racc['username']}
+        user_levels = {
+            level['level_name']: level
+            for level in await database.fetch_all(query, values)
+        }
+        
+        ordered_levels = (
+            await get_ancestor_levels(alias, final_level)
+            if final_level else user_levels
+        ).values()
+
+        current_level = incognito_current_level = None
+        for level in ordered_levels:
+            if user_level := user_levels.get(level['name']):
+                if final_level and level['name'] == final_level['name']:
+                    if user_level['incognito_solve']:
+                        incognito_current_level = '🏅'
+                    else:
+                        current_level = '🏅'
+                        break
+                if not user_level['incognito_unlock']:
+                    current_level = level['name']
+                    break
+                if not incognito_current_level:
+                    incognito_current_level = level['name']
+
+        for table, _current_level in (
+            ('riddle_accounts', current_level),
+            ('_incognito_riddle_accounts', incognito_current_level),
+        ):
+            query = f"""
+                UPDATE {table}
+                SET current_level = :current_level
+                WHERE riddle = :riddle AND username = :username
+            """
+            values |= {'current_level': _current_level}
             await database.execute(query, values)
 
     return 'SUCCESS :)', 200
