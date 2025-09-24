@@ -414,6 +414,13 @@ class _PathHandler:
             WHERE riddle = :riddle AND username = :username
         '''
         self.riddle_account = dict(await database.fetch_one(query, values))
+        query = '''
+            SELECT current_level FROM _incognito_riddle_accounts
+            WHERE riddle = :riddle AND username = :username
+        '''
+        if await database.fetch_val(query, values) == '🏅':
+            # TODO, temp fix
+            self.riddle_account['current_level'] = '🏅'
 
         # Update current riddle being played
         query = '''
@@ -976,10 +983,14 @@ class _LevelHandler:
         final_name = await database.fetch_val(query, values, 'final_level')
         if self.level['name'] == final_name:
             # Player has just completed the riddle :)
-            query = '''
-                UPDATE riddle_accounts SET current_level = "🏅"
+            query = f"""
+                UPDATE {
+                    '_incognito_riddle_accounts' if await is_user_incognito()
+                    else 'riddle_accounts'
+                }
+                SET current_level = "🏅"
                 WHERE riddle = :riddle AND username = :username
-            '''
+            """
             values |= {'username': username}
             await database.execute(query, values)
 

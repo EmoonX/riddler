@@ -9,6 +9,7 @@
     <main>
       <h1>Leaderboard{{ flag_html }}</h1>
       <section class="list players">
+        {% set user = get_session_user() %}
         {% set avatar_urls = get_all_avatar_urls() %}
         {% set riddles = fetch_riddles() %}
         {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
@@ -27,8 +28,13 @@
           </div>
           <div class="player">
             <a href="#">
-              {% set url = avatar_urls[player['username']] or '/static/images/locked.png' %}
-              <img class="avatar" src="{{ url }}">
+              {% set url = avatar_urls[username] or '/static/images/locked.png' %}
+              <figure style="position: relative; display: inline-block;">
+                <img class="avatar-small" src="{{ url }}" alt="Avatar">
+              {% if player['username'] == user.name and player['has_incognito_progress'] %}
+                <img class="incognito" src="/static/icons/incognito.png" alt="Incognito" title="Includes your own incognito progress. Public view may differ.">
+              {% endif %}
+              </figure>
             </a>
             <div>
               {% set name = player['display_name'] or player['username'] %}

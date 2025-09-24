@@ -46,7 +46,11 @@ async def global_list(country: Optional[str] = None):
     if country:
         values['country'] = country
     accounts = {
-        acc['username']: dict(acc) | {'current_level': {}, 'cheevo_count': {}}
+        acc['username']: dict(acc) | {
+            'current_level': {},
+            'cheevo_count': {},
+            'has_incognito_progress': False,
+        }
         for acc in await database.fetch_all(query, values)
     }
 
@@ -71,13 +75,25 @@ async def global_list(country: Optional[str] = None):
     }
 
     # Get current levels for each riddle and player (ignore unplayed ones)
-    query = 'SELECT * FROM riddle_accounts WHERE score > 0'
-    result = await database.fetch_all(query)
-    for row in result:
-        if not row['username'] in accounts:
+    query = 'SELECT * FROM riddle_accounts'
+    for racc in await database.fetch_all(query):
+        if not racc['username'] in accounts:
             continue
-        alias = row['riddle']
-        accounts[row['username']]['current_level'][alias] = row['current_level']
+        account = accounts[racc['username']]
+        score, current_level = racc['score'], racc['current_level']
+        if user and racc['username'] == user.name:
+            # Take incognito progress into account for logged-in user
+            query = '''
+                SELECT * FROM _incognito_riddle_accounts
+                WHERE riddle = :riddle AND username = :username
+            '''
+            values = {'riddle': racc['riddle'], 'username': racc['username']}
+            if iracc := await database.fetch_one(query, values):
+                score += iracc['score']
+                current_level = iracc['current_level']
+                account['has_incognito_progress'] |= bool(iracc['score'])
+        if score:
+            account['current_level'][racc['riddle']] = current_level
 
     for username, player in accounts.items():
         # Hide username, country and riddles for non logged-in `hidden` players
