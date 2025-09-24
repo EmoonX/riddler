@@ -18,16 +18,18 @@ async def update_recent():
     await root_auth()
 
     await _update_recent_scores(days=30)
+    await _update_recent_scores(days=30, incognito=True)
     await _update_last_placements()
 
     return 'SUCCESS :)', 200
 
 
-async def _update_recent_scores(days: int):
+async def _update_recent_scores(days: int, incognito: bool = False):
     '''Update recent player scores, both riddle-wise and global.'''
 
     # Init dict of recent user/riddle scores with ALL players at 0
-    query = '''SELECT * FROM riddle_accounts'''
+    racc_table = '_incognito_riddle_accounts' if incognito else 'riddle_accounts'
+    query = f"SELECT * FROM {racc_table}" 
     riddle_accounts = await database.fetch_all(query)
     recent_scores = defaultdict(dict[str, int])
     for riddle_account in riddle_accounts:
@@ -36,21 +38,23 @@ async def _update_recent_scores(days: int):
         recent_scores[username][riddle] = 0
 
     # Fetch recently completed levels and unlocked achievements
-    query = '''
+    query = f"""
         SELECT *
         FROM user_levels ul INNER JOIN levels lv
             ON ul.riddle = lv.riddle AND ul.level_name = lv.name
         WHERE completion_time IS NOT NULL
             AND TIMESTAMPDIFF(DAY, completion_time, NOW()) < :days
-    '''
+            AND incognito_solve IS {'TRUE' if incognito else 'NOT TRUE'}
+    """
     values = {'days': days}
     recent_levels = await database.fetch_all(query, values)
-    query = '''
+    query = f"""
         SELECT *
         FROM user_achievements ua INNER JOIN achievements ac
             ON ua.riddle = ac.riddle AND ua.title = ac.title
         WHERE TIMESTAMPDIFF(DAY, unlock_time, NOW()) < :days
-    '''
+            AND incognito IS {'TRUE' if incognito else 'NOT TRUE'}
+    """
     recent_achievements = await database.fetch_all(query, values)
 
     # Populate dict of recent scores by point sums
@@ -69,11 +73,11 @@ async def _update_recent_scores(days: int):
         global_points = 0
         for riddle, riddle_points in recent_scores[username].items():
             # Update player's recent score for individual riddle
-            query = '''
-                UPDATE riddle_accounts
+            query = f"""
+                UPDATE {racc_table}
                 SET recent_score = :points
                 WHERE riddle = :riddle AND username = :username
-            '''
+            """
             values = {
                 'riddle': riddle,
                 'username': username,
@@ -83,11 +87,12 @@ async def _update_recent_scores(days: int):
             global_points += riddle_points
 
         # Update player's global recent score
-        query = '''
-            UPDATE accounts
+        acc_table = '_incognito_accounts' if incognito else 'accounts'
+        query = f"""
+            UPDATE {acc_table}
             SET recent_score = :points
             WHERE username = :username
-        '''
+        """
         values = {'username': username, 'points': global_points}
         await database.execute(query, values)
 
