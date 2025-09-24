@@ -441,8 +441,11 @@ hr {
 .hoverable-figures {
   figure {
     > img {
-      margin: 0;
       transition: opacity 0.4s;
+
+      + img.incognito {
+        top: 18px;
+      }
     }
     > figcaption {
       position: absolute;

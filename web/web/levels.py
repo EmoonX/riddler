@@ -68,9 +68,12 @@ async def level_list(alias: str):
                 if level['path'][0] == '[':
                     level['path'] = ''  # safeguard
 
+            level['incognito_unlock'] = bool(
+                user_level and user_level['incognito_unlock']
+            )
+
         if level['beaten']:
             # Get level rating
-            user_level = user_level_data[level['name']]
             level['rating_given'] = user_level['rating_given']
 
             # Get total file count for level
@@ -169,7 +172,7 @@ async def level_list(alias: str):
     # Retrieve user-specific level data
     user = await discord.get_user()
     query = '''
-        SELECT level_name, completion_time, rating_given FROM user_levels
+        SELECT * FROM user_levels
         WHERE riddle = :riddle AND username = :username
     '''
     base_values = values | {'username': user.name}

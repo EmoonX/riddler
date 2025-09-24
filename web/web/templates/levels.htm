@@ -135,19 +135,24 @@
           {% endif %}
           </div>
           <div class="currently-on hoverable-figures">
-        {% for user in level['users'][:9] %}
+        {% for _user in level['users'][:9] %}
           {% if loop.index < 9 or level['users']|length == 9 %}
-            {% set player = accounts[user['username']] %}
-            <a class="player" href="#">
-              {% set url = (
-                avatar_urls[player['username']] if player['username'] in avatar_urls
-                else '/static/images/locked.png'
-              ) %}
-              <figure>
-                <img width="50" height="50" class="avatar-small" src="{{ url }}">
-                <figcaption>{{ get_display_name(player) }}</figcaption>
-              </figure>
-            </a>
+            {% set player = accounts[_user['username']] %}
+            <div class="player">
+              <a href="#">
+                {% set url = (
+                  avatar_urls[player['username']] if player['username'] in avatar_urls
+                  else '/static/images/locked.png'
+                ) %}
+                <figure style="position: relative; display: inline-block;">
+                  <img class="avatar-small" src="{{ url }}" alt="Avatar">
+                {% if player['username'] == user.name and level['incognito_unlock'] %}
+                  <img class="incognito" src="/static/icons/incognito.png" alt="Incognito" title="Unlocked in incognito mode. Visible only to you.">
+                {% endif %}
+                  <figcaption>{{ get_display_name(player) }}</figcaption>
+                </figure>
+              </a>
+            </div>
           {% else %}
             {% set rem_count = level['users']|length - 8 %}
             {% set ns = namespace(rem_players='') %}
