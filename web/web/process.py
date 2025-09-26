@@ -706,10 +706,13 @@ class _PathHandler:
             # (account for NULL level records granted a priori)
             query = '''
                 UPDATE user_pages
-                SET level_name = :level_name, last_access_time = :time
-                WHERE riddle = :riddle AND username = :username AND path = :path
+                SET level_name = :level_name,
+                    last_access_time = :time,
+                    incognito_last = :incognito
+                WHERE riddle = :riddle
+                    AND username = :username
+                    AND path = :path
             '''
-            del values['incognito']
             await database.execute(query, values)
 
             return False
