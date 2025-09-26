@@ -13,14 +13,14 @@
         {% set avatar_urls = get_all_avatar_urls() %}
         {% set riddles = fetch_riddles() %}
       {% for player in recent_progress %}
-        <div class="row">
+        {% if not 'is_solve' in player and not 'is_secret_find' in player %}
+          {% set class = ' just-playing' %}
+        {% endif %}
+        <div class="row {{- class }}">
           <div class="time">
             {{ player['time'] }}
           </div>
-        {% if not 'is_solve' in player and not 'is_secret_find' in player %}
-          {% set class = 'just-playing' %}
-        {% endif %}
-          <div class="status {{ class }}">
+          <div class="status">
             {% include 'util/player.htm' %}
             <div>
               <!-- {% set country_name = country_names[player['country']] %} -->
@@ -41,6 +41,14 @@
           </div>
         </div>
       {% endfor %}
+      {% if incognito_count > 0 %}
+        <div class="row just-playing">
+          <div class="time"></div>
+          <div class="status">
+            (<var class="purple">+{{ incognito_count}}</var> players in incognito <img class="incognito" src="/static/icons/incognito.png" alt="Incognito" width="24" height="24"> mode)
+          </div>
+        </div>
+      {% endif %}
       </section>
     </main>
 {% endblock %}

@@ -410,6 +410,11 @@ var, .menu-button {
     font-style: italic;
     letter-spacing: .15em;
   }
+  &.purple {
+    text-shadow:
+      0 0 .4em rebeccapurple,
+      0 0 .8em rebeccapurple,
+  }
   &.smaller {
     font-size: 1.3em;
   }
@@ -1862,28 +1867,22 @@ section.list.levels.admin + button {
   height: 4em;
   border: none;
 
-  > .completion-time {
-    font-style: italic;
+  > .time {
+    width: 150px;
+    font-size: .9em;
   }
   > .status {
     flex-direction: row;
     gap: 0.5em;
 
-    * {
+    :not(.player) {
       display: flex;
       align-items: center;
       gap: 0.3em;
     }
-    > .player {
-      display: flex;
-      gap: 0.6em;
-
-      img.avatar {
-        width: 2.5em;
-      }
-    }
     var {
       letter-spacing: 0.02em;
+      text-shadow: 0 0 .4em deeppink, 0 0 .8em deeppink;
     }
     a.riddle {
       gap: 0.3em;
@@ -1903,10 +1902,14 @@ section.list.levels.admin + button {
         background-color: rgba(255, 255, 255, 0.15);
         text-decoration: underline;
       }
+      }
     }
     &.just-playing {
+    opacity: .7;
       font-style: italic;
-      opacity: 0.75;
+
+    .player {
+      font-style: normal;
     }
   }
 }

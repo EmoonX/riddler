@@ -11,7 +11,7 @@ home = Blueprint('home', __name__)
 async def homepage():
     '''Frontpage for the website.'''
 
-    # Big number counters
+    # Several counters
     query = '''
         SELECT * FROM riddles
     '''
@@ -38,6 +38,24 @@ async def homepage():
         WHERE global_score > 0
     '''
     player_count = await database.fetch_val(query)
+    query = '''
+        SELECT COUNT(*) FROM accounts acc
+        WHERE EXISTS (
+            SELECT * FROM user_pages up
+            WHERE acc.username = up.username
+                AND TIMESTAMPDIFF(
+                    DAY, COALESCE(last_access_time, access_time), NOW()
+                ) < 30
+        ) AND NOT EXISTS (
+            SELECT * FROM user_pages up
+            WHERE acc.username = up.username
+                AND incognito IS NOT TRUE AND incognito_last IS NOT TRUE
+                AND TIMESTAMPDIFF(
+                    DAY, COALESCE(last_access_time, access_time), NOW()
+                ) < 30
+        )
+    '''
+    incognito_count = await database.fetch_val(query)
 
     # Recent player progress (newly found/revisited pages)
     query = '''
