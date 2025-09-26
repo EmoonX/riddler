@@ -1,10 +1,5 @@
-from functools import cmp_to_key
-
 from quart import Blueprint, render_template
 
-from auth import discord
-from inject import get_achievements
-from webclient import bot_request
 from util.db import database
 
 # Create app blueprint
@@ -44,16 +39,26 @@ async def homepage():
     '''
     player_count = await database.fetch_val(query)
 
-    # Recent player progress (newly found pages)
+    # Recent player progress (newly found/revisited pages)
     query = '''
-        SELECT *, MAX(access_time) AS time FROM user_pages
-        WHERE TIMESTAMPDIFF(DAY, access_time, NOW()) < 30
-            AND riddle NOT IN (
-                SELECT alias FROM riddles WHERE unlisted IS TRUE
-            )
-            AND incognito IS NOT TRUE
-        GROUP BY username
-        ORDER BY time DESC
+        WITH recent_pages_by_user AS (
+            SELECT *,
+                COALESCE(last_access_time, access_time) AS time,
+                ROW_NUMBER() OVER (
+                    PARTITION BY username
+                    ORDER BY time DESC
+                ) AS rn
+            FROM user_pages
+            WHERE
+                riddle NOT IN (SELECT alias FROM riddles WHERE unlisted IS TRUE)
+                AND incognito IS NOT TRUE AND incognito_last IS NOT TRUE
+            HAVING
+                TIMESTAMPDIFF(
+                    DAY, COALESCE(last_access_time, access_time), NOW()
+                ) < 30
+        )
+        SELECT * FROM recent_pages_by_user
+        WHERE rn = 1
     '''
     recent_progress = await database.fetch_all(query)
 
