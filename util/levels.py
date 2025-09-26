@@ -16,7 +16,9 @@ async def get_ordered_levels(alias: str) -> dict[list]:
     return ordered_levels
 
 
-async def get_ancestor_levels(alias: str, root_level: dict) -> dict:
+async def get_ancestor_levels(
+    alias: str, root_level: dict, full_search: bool = False,
+) -> dict:
     '''Build set of ancestor levels from a given root one.'''
 
     # Run a BFS through the requirements DAG
@@ -30,21 +32,25 @@ async def get_ancestor_levels(alias: str, root_level: dict) -> dict:
         # Get top level from queue
         level = queue.pop(0)
 
-        # Don't search node's children if level is final in set
-        # (sole exception if this is the root level itself)
-        query = '''
-            SELECT name FROM level_sets
-            WHERE riddle = :riddle AND final_level = :level_name
-        '''
         values = {'riddle': alias, 'level_name': level['name']}
-        is_final_in_set = bool(await database.fetch_one(query, values))
-        if is_final_in_set and len(ancestor_levels) > 1:
-            continue
+        if not full_search:
+            # Don't search node's children if level is final in set
+            # (sole exception if this is the root level itself)
+            query = '''
+                SELECT name FROM level_sets
+                WHERE riddle = :riddle AND final_level = :level_name
+            '''
+            is_final_in_set = bool(await database.fetch_one(query, values))
+            if is_final_in_set and len(ancestor_levels) > 1:
+                continue
 
         # Fetch level requirements and add unseen ones to queue
         query = '''
-            SELECT requires FROM level_requirements
-            WHERE riddle = :riddle AND level_name = :level_name
+            SELECT requires
+            FROM level_requirements lr INNER JOIN levels lv
+                ON lr.riddle = lv.riddle AND lr.requires = lv.name
+            WHERE lr.riddle = :riddle AND level_name = :level_name
+            ORDER BY set_index DESC
         '''
         result = await database.fetch_all(query, values)
         for row in result:
