@@ -55,7 +55,7 @@ async def update_all(alias: str):
 
     update_methods = (
         update_scores,
-        # update_current_levels,
+        update_current_levels,
         update_completion_counts, update_page_counts,
         update_user_credentials, update_ratings,
     )
@@ -133,7 +133,6 @@ async def update_scores(alias: str):
 @requires_authorization
 async def update_current_levels(alias: str):
     '''Úpdate riddle players' current levels (and 🏅s).'''
-    # TODO; slow
 
     # Check for admin permissions
     await admin_auth(alias)
@@ -144,37 +143,42 @@ async def update_current_levels(alias: str):
             SELECT final_level FROM riddles r
             WHERE lv.riddle = r.alias
         )
-
     '''
-    final_level = await database.fetch_one(query, {'riddle': alias})
+    values = {'riddle': alias}
+    final_level = await database.fetch_one(query, values)
+    if final_level:
+        reverse_ordered_levels = (await get_ancestor_levels(
+            alias, final_level, full_search=True
+        )).values()
+    else:
+        query = '''
+            SELECT * FROM levels
+            WHERE riddle = :riddle AND set_index < 99
+            ORDER BY set_index DESC, `index` DESC
+        '''
+        reverse_ordered_levels = await database.fetch_all(query, values)
 
     # Iterate over riddle accounts
     query = 'SELECT * FROM riddle_accounts WHERE riddle = :riddle'
-    riddle_accounts = await database.fetch_all(query, {'riddle': alias})
+    riddle_accounts = await database.fetch_all(query, {'riddle': alias})    
     for racc in riddle_accounts:
         query = '''
-            SELECT * FROM user_levels ul INNER JOIN levels lv
-                ON ul.riddle = lv.riddle AND ul.level_name = lv.name
-            WHERE ul.riddle = :riddle
-                AND ul.username = :username
-                AND lv.is_secret IS NOT TRUE
-            ORDER BY find_time DESC
+            SELECT * FROM user_levels
+            WHERE riddle = :riddle AND username = :username
         '''
         values = {'riddle': alias, 'username': racc['username']}
         user_levels = {
             level['level_name']: level
             for level in await database.fetch_all(query, values)
         }
-        
-        ordered_levels = (
-            await get_ancestor_levels(alias, final_level)
-            if final_level else user_levels
-        ).values()
-
         current_level = incognito_current_level = None
-        for level in ordered_levels:
+        for level in reverse_ordered_levels:
             if user_level := user_levels.get(level['name']):
-                if final_level and level['name'] == final_level['name']:
+                if (
+                    final_level
+                    and level['name'] == final_level['name']
+                    and user_level['completion_time']
+                ):
                     if user_level['incognito_solve']:
                         incognito_current_level = '🏅'
                     else:
