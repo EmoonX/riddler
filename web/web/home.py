@@ -46,13 +46,15 @@ async def homepage():
                 AND TIMESTAMPDIFF(
                     DAY, COALESCE(last_access_time, access_time), NOW()
                 ) < 30
+                AND level_name IS NOT NULL
         ) AND NOT EXISTS (
             SELECT * FROM user_pages up
             WHERE acc.username = up.username
-                AND incognito IS NOT TRUE AND incognito_last IS NOT TRUE
                 AND TIMESTAMPDIFF(
                     DAY, COALESCE(last_access_time, access_time), NOW()
                 ) < 30
+                AND level_name IS NOT NULL
+                AND incognito IS NOT TRUE AND incognito_last IS NOT TRUE
         )
     '''
     incognito_count = await database.fetch_val(query)
