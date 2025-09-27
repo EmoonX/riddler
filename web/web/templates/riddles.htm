@@ -14,6 +14,7 @@
         players=get_accounts().values()|selectattr('global_score')|list|length,
         levels=0,
         pages=0,
+        raw_pages=0,
       ) %}
       <h1>All riddles</h1>
       <table>
@@ -43,7 +44,7 @@
             <td style="text-align: left;">
               <a
                 href="{{ riddle['alias'] if riddle['level_count'] else '#' }}"
-                style="display: inline-flex; align-items: center; gap: .6em; vertical-align: middle;"
+                style="display: inline-flex; align-items: center; gap: .8em; vertical-align: middle;"
               >
                 {% set src = '/static/riddles/' ~ riddle['alias'] ~ '.png' %}
               {% if file_exists(src) %}
@@ -74,10 +75,18 @@
               </var>
             </td>
             <td>
-              <var class="page-count">
               {% if riddle['page_count'] %}
-                {{ riddle['page_count'] }}<span class="bg-emoji">📄</span>
+                {% set page_count = riddle['page_count'] %}
+                {% set class = 'page-count' %}
+              {% else %}
+                {% set page_count = '(' ~ riddle['raw_page_count'] ~ ')' %}
+                {% set class = 'raw-page-count' %}
+              {% endif %}
+              <var class="{{ class }}">
+              {% if riddle['raw_page_count'] %}
+                {{ page_count }}<span class="bg-emoji">📄</span>
                 {% set total.pages = total.pages + riddle['page_count'] %}
+                {% set total.raw_pages = total.raw_pages + riddle['raw_page_count'] %}
               {% else %}
                 <span style="opacity: .3;">--</span>
               {% endif %}
@@ -103,7 +112,7 @@
             <td>
               <figure>
                 <var class="riddle-count">{{ riddles|length }}</var>
-                <figcaption>riddles (<code>{{ total.riddles_released }}</code> released, <code>{{ total.riddles_demo }}</code> demo)</figcaption>
+                <figcaption>riddles<br>(<code>{{ total.riddles_released }}</code> released, <code>{{ total.riddles_demo }}</code> demo)</figcaption>
               </figure>
             </td>
             <td>
@@ -121,6 +130,7 @@
             <td>
               <figure>
                 <var class="page-count">{{ total.pages }}</var>
+                <var class="raw-page-count">({{ total.raw_pages }})</var>
                 <figcaption>pages</figcaption>
               </figure>
             </td>

@@ -506,6 +506,16 @@ hr {
   }
 }
 
+.player {
+	display: inline-flex;
+	align-items: center;
+	gap: .6em;
+
+  img.avatar {
+    width: 2.5em;
+  }
+}
+
 [title] {
   cursor: help;
   gap: .3em;
@@ -887,12 +897,20 @@ td {
         0 0 .6em MediumVioletRed,
         0 0 .9em MediumVioletRed;
     }
-    &.page-count {
+    &.page-count, &.raw-page-count {
       font-size: .9em;
       text-shadow:
         0 0 .3em darkcyan,
         0 0 .6em darkcyan,
         0 0 .9em darkcyan;
+
+      &.raw-page-count {
+        filter: grayscale(1) brightness(.7) contrast(.7);
+
+        > .bg-emoji {
+          opacity: .1;
+        }
+      }
     }
   }
   .external-links {

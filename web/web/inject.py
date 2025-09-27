@@ -50,28 +50,28 @@ async def get_riddles(unlisted: bool = False) -> list[dict]:
     # Add counter data
     for riddle in riddles:
         query = '''
-            SELECT COUNT(*) FROM achievements
-            WHERE riddle = :riddle
+            SELECT COUNT(*) FROM riddle_accounts
+            WHERE riddle = :riddle AND score > 0
         '''
         values = {'riddle': riddle['alias']}
-        riddle['achievement_count'] = await database.fetch_val(query, values)
+        riddle['player_count'] = await database.fetch_val(query, values)
         query = '''
             SELECT COUNT(*) FROM levels
             WHERE riddle = :riddle
         '''
         riddle['level_count'] = await database.fetch_val(query, values)
         query = '''
-            SELECT COUNT(*) FROM level_pages
+            SELECT COUNT(*) FROM achievements
             WHERE riddle = :riddle
-                AND level_name IS NOT NULL
-                AND hidden IS NOT TRUE
         '''
-        riddle['page_count'] = await database.fetch_val(query, values)
+        riddle['achievement_count'] = await database.fetch_val(query, values)
         query = '''
-            SELECT COUNT(*) FROM riddle_accounts
-            WHERE riddle = :riddle AND score > 0
+            SELECT COUNT(*), SUM(level_name IS NOT NULL AND hidden IS NOT TRUE)
+            FROM level_pages
+            WHERE riddle = :riddle
         '''
-        riddle['player_count'] = await database.fetch_val(query, values)
+        result = await database.fetch_one(query, values)
+        riddle['raw_page_count'], riddle['page_count'] = result.values()
 
     return riddles
 
