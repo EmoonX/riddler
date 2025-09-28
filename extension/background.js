@@ -21,6 +21,8 @@ const filter = {
 
 /** Sends user-visited URL and request data to the `/process` endpoint. */
 async function sendToProcess(details) {
+
+  // Build request params; look out for specific useful headers
   const params = {
     method: "post",
     headers: {
@@ -29,14 +31,14 @@ async function sendToProcess(details) {
     contentType: 'text/uri-list',
     body: details.url,
   };
-  const location =
-    details.responseHeaders
-    .find(h => h.name.toLowerCase() === 'location');
-  if (location) {
-    // Send redirect location response header on 301/302/307/308
-    params.headers['Location'] = location.value;
+  for (const name of ['Content-Location', 'Location']) {
+    const header = details.responseHeaders
+      .find(_header => _header.name.toLowerCase() === name.toLowerCase());
+    if (header) {
+      params.headers[name] = header.value;
+    }
   }
-  console.log(details.url, details.statusCode, location || '');
+  console.log(details.url, details.statusCode);
 
   let data;
   await fetch(`${SERVER_HOST}/process`, params)
@@ -68,6 +70,7 @@ async function sendToProcess(details) {
       }
       await updateRiddleData(data.riddle, data.setName, data.levelName);
     });
+
   return data;
 }
 

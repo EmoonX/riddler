@@ -47,15 +47,18 @@ async def process_url(
         status_code = 401 if request.method == 'POST' else 200
         return 'Not logged in', status_code
 
-    # Receive url and status code from request
+    # Retrieve url, headers and status code from request
     if not auto:
         user = await discord.get_user()
         url = (await request.data).decode('utf-8')
+        if content_location := request.headers.get('Content-Location'):
+            print(content_location)
+            url = urljoin(url, content_location)
     else:
         user = lambda: None
         setattr(user, 'name', username)
-    status_code = int(request.headers.get('Statuscode', 200))
     location = request.headers.get('Location')
+    status_code = int(request.headers.get('Statuscode', 200))    
 
     # Create path handler object and build player data
     ph = await _PathHandler.build(user, url, status_code, location)
