@@ -4,17 +4,17 @@
   {% set flag_title = flag + ' ⬩ ' %}
   {% set flag_html = (' ⬩ <span class="flag">' + flag + '</span>')|safe %}
 {% endif %}
-{% block title %}{{ flag_title }}Leaderboard{% endblock %}
+{% block title %}{{ flag_title }}Global Leaderboard ⬩ Riddler{% endblock %}
 {% block content %}
     <main>
-      <h1>Leaderboard{{ flag_html }}</h1>
+      <h1>Global Leaderboard</h1>
       <section class="list players">
         {% set user = get_session_user() %}
         {% set avatar_urls = get_all_avatar_urls() %}
         {% set riddles = fetch_riddles() %}
         {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
         {% set badges = {'created': '👑', 'mastered': '💎', 'completed': '🏅'} %}
-      {% for player in players %}
+      {% for username, player in accounts.items() %}
         <div class="row">
           <div class="rank">
             {% if loop.index <= 3 %}
@@ -37,7 +37,7 @@
               </figure>
             </a>
             <div>
-              {% set name = player['display_name'] or player['username'] %}
+              {% set name = player['display_name'] or username %}
               {% set color = get_score_ranked_color(player) %}
               {% set country_name = country_names[player['country']] %}
               <a class="username" href="#" style="color: {{ color }}; text-shadow: 0 0 1em {{ color }}">{{ name }}</a><!--
@@ -56,9 +56,16 @@
             <figcaption>total points</figcaption>            
           </figure>
           <div class="honors hoverable-figures">
-        {% for honor in ('created', 'mastered', 'completed', 'other') %}
-          {% set honor_set = honor + '_riddles' %}
-          {% for riddle in player[honor_set] %}
+      {% set honors_extra = namespace(
+        count=0,
+        total_count=0,
+        progress=[],
+      ) %}
+      {% for honor in ['created', 'mastered', 'completed', 'other'] %}
+        {% set honors_extra.count = 0 %}
+        {% for riddle in player[honor ~ '_riddles'] %}
+          {% set honors_extra.total_count = honors_extra.total_count + 1 %}
+          {% if honors_extra.total_count <= 14 %}
             {% set icon_url = riddles[riddle['alias']]['icon_url'] %}
             {% set progress = '%s'|safe % riddle['full_name'] %}
             {% if honor != 'other' %}
@@ -76,8 +83,23 @@
                 <figcaption>{{ progress }}</figcaption>
               </figure>
             </a>
-          {% endfor %}
+          {% else %}
+            {% set honors_extra.count = honors_extra.count + 1 %}
+          {% endif %}
         {% endfor %}
+        {% if honors_extra.count %}
+          {% set progress = badges[honor] ~ ' ' ~ honors_extra.count ~ ' ' ~ honor %}
+          {% set honors_extra.progress = honors_extra.progress + [progress] %}
+        {% endif %}
+      {% endfor %}
+          {% if honors_extra.progress %}
+            <a class="honor" href="#">
+              <figure>
+                <div class='riddle-icon'>...</div>
+                <figcaption>Additionally:<br>{{ ', '.join(honors_extra.progress)|safe }}</figcaption>
+              </figure>
+            </a>
+          {% endif %}
           </div>
         </div>
       {% endfor %}

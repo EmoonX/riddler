@@ -20,7 +20,10 @@ async def global_list(country: Optional[str] = None):
     '''Global (and country-wise) players list.'''
 
     # Get riddle data from database
-    query = 'SELECT * FROM riddles'
+    query = '''
+        SELECT * FROM riddles
+        WHERE unlisted IS NOT TRUE
+    '''
     result = await database.fetch_all(query)
     riddles = {riddle['alias']: dict(riddle) for riddle in result}
 
