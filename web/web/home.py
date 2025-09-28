@@ -12,9 +12,7 @@ async def homepage():
     '''Frontpage for the website.'''
 
     # Several counters
-    query = '''
-        SELECT * FROM riddles
-    '''
+    query = 'SELECT * FROM riddles'
     riddles = await database.fetch_all(query)
     riddle_released_count = riddle_demo_count = riddle_other_count = 0
     for riddle in riddles:
@@ -38,26 +36,6 @@ async def homepage():
         WHERE global_score > 0
     '''
     player_count = await database.fetch_val(query)
-    query = '''
-        SELECT COUNT(*) FROM accounts acc
-        WHERE EXISTS (
-            SELECT * FROM user_pages up
-            WHERE acc.username = up.username
-                AND TIMESTAMPDIFF(
-                    DAY, COALESCE(last_access_time, access_time), NOW()
-                ) < 30
-                AND level_name IS NOT NULL
-        ) AND NOT EXISTS (
-            SELECT * FROM user_pages up
-            WHERE acc.username = up.username
-                AND TIMESTAMPDIFF(
-                    DAY, COALESCE(last_access_time, access_time), NOW()
-                ) < 30
-                AND level_name IS NOT NULL
-                AND incognito IS NOT TRUE AND incognito_last IS NOT TRUE
-        )
-    '''
-    incognito_count = await database.fetch_val(query)
 
     # Recent player progress (newly found/revisited pages)
     query = '''
@@ -81,6 +59,18 @@ async def homepage():
         WHERE rn = 1
     '''
     recent_progress = await database.fetch_all(query)
+
+    # Get incognito-only player count
+    query = '''
+        SELECT * FROM user_pages up
+        WHERE
+            TIMESTAMPDIFF(
+                DAY, COALESCE(last_access_time, access_time), NOW()
+            ) < 30
+            AND level_name IS NOT NULL
+        GROUP BY username
+    '''
+    incognito_count = len(await database.fetch_all(query)) - len(recent_progress)
 
     # Recent level find/completion data
     query = '''
