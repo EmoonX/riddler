@@ -63,7 +63,7 @@ async function sendToProcess(details) {
         return;
       }
       data = await response.json();
-      if (response.ok) {
+      if (response.ok && data.path) {
         console.log(
           `[${data.riddle}] Page "${data.path}" (${data.levelName}) found`
         );
