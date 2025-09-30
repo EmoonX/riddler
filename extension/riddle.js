@@ -10,24 +10,35 @@ export let currentRiddle;
 /** Builds riddle object from riddle and levels JSON data. */
 export async function buildRiddle(riddle, pages) {
 
-  const iconUrlExternal = `${SERVER_HOST}/static/riddles/${riddle.alias}.png`;
-  fetch(iconUrlExternal, {cache : 'force-cache'})
-    .then(response => response.blob({type: 'image/png'}))
-    .then(async blob => {
-      // Store/retrieve cached image blob to avoid annoying icon load times
-      riddle.iconUrl = await new Promise(resolve => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result);
-        reader.readAsDataURL(blob);
-      });
+  // Retrieve riddle icon; fetch-cache it to avoid subsequent request bloat
+  riddle.iconUrl = await (async () => {
+    const iconUrlExternal = `${SERVER_HOST}/static/riddles/${riddle.alias}.png`;
+    const cache = await caches.open('riddles');
+    let response = await cache.match(iconUrlExternal);
+    if (! response) {
+      try {
+        await cache.add(iconUrlExternal);
+      } catch {
+        // Couldn't fetch external image (usually 404)
+        return null;
+      }
+      response = await cache.match(iconUrlExternal);
+    }
+    const blob = await response.blob();
+    return await new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result);
+      reader.readAsDataURL(blob);
     });
+  })();
 
   riddle.levels = {};
   riddle.levelSets = {};
   riddle.pagesByPath = {};
   riddle.shownSet = riddle.lastVisitedSet;
   riddle.shownLevel = riddle.lastVisitedLevel;
-  
+
+  // Build level/set navigation structure
   let currentSet;
   for (const [i, level] of Object.entries(riddle.orderedLevels)) {
     if (i > 0) {
