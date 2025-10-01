@@ -90,7 +90,7 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
   const password = parsedUrl.searchParams.get('password');
 
   // Save this function so we can unlisten it later
-  credentialsHandler = (async port => {
+  credentialsHandler = (port => {
     console.log('Connected to credentials.js...');
     if (username && password) {
       // Query '?username=...&password=...' found, send to redirect
@@ -99,10 +99,15 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
         username: username,
         password: password,
       });
-    } else {
+    } else (async () => {
       // Request auth box with given (explicit) realm message
       // and autocompleted credentials (if logged in and unlocked beforehand)
-      const message = {realm: details.realm};
+      const response = await fetch(chrome.runtime.getURL('credentials.html'));
+      const boxHtml = await response.text();
+      const message = {
+        html: boxHtml,
+        realm: details.realm,
+      };
       if (riddle) {
         let pageNode = getPageNode(details.url);
         while (! pageNode) {
@@ -121,8 +126,8 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
         }
       }
       port.postMessage(message);
-    }
-    port.onMessage.addListener(async data => {
+    })();
+    port.onMessage.addListener(data => {
       if (data.disconnect) {
         chrome.runtime.onConnect.removeListener(credentialsHandler);
       }
@@ -173,7 +178,7 @@ chrome.runtime.onConnect.addListener(port => {
   });
 });
 
-(() => {
+(async () => {
   initExplorer();
 
   /** Communication with popup.js. */

@@ -29,7 +29,7 @@
   "web_accessible_resources": [
     {
       "matches": ["<all_urls>"],
-      "resources": ["credentials.css", "credentials.html", "fonts/*"]
+      "resources": ["credentials.css", "fonts/*"]
     }
   ]
 }

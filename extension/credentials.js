@@ -21,21 +21,16 @@ port.onMessage.addListener(async data => {
     return;
   }
 
-  const credentialsUrl = chrome.runtime.getURL('credentials.html');
-  await fetch(credentialsUrl)
-    .then(response => response.text())
-    .then(html => {
-      // Prompt user with auth box
-      const box = $($.parseHTML(html));
-      const boxCss = chrome.runtime.getURL('credentials.css');
-      const credentials = data.unlockedCredentials;
-      box.find('.realm').text(`"${data.realm}"`);
-      if (credentials) {
-        box.find('[name="username"]').attr('value', credentials.username);
-        box.find('[name="password"]').attr('value', credentials.password);
-      }
-      $('head').append(`<link rel="stylesheet" href="${boxCss}">`)
-      $('body').append(box[0].outerHTML);
-      $('[name="username"]').trigger('focus');
-    });
+  // Prompt user with auth box
+  const box = $($.parseHTML(data.html));
+  const boxCss = chrome.runtime.getURL('credentials.css');
+  const credentials = data.unlockedCredentials;
+  box.find('.realm').text(`"${data.realm}"`);
+  if (credentials) {
+    box.find('[name="username"]').attr('value', credentials.username);
+    box.find('[name="password"]').attr('value', credentials.password);
+  }
+  $('head').append(`<link rel="stylesheet" href="${boxCss}">`)
+  $('body').append(box[0].outerHTML);
+  $('[name="username"]').trigger('focus');
 });
