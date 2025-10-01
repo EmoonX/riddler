@@ -102,10 +102,11 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
     } else (async () => {
       // Request auth box with given (explicit) realm message
       // and autocompleted credentials (if logged in and unlocked beforehand)
-      const response = await fetch(chrome.runtime.getURL('credentials.html'));
-      const boxHtml = await response.text();
       const message = {
-        html: boxHtml,
+        boxHtml: await fetch(chrome.runtime.getURL('credentials.html'))
+          .then(response => response.text()),
+        boxCss: await fetch(chrome.runtime.getURL('credentials.css'))
+          .then(response => response.text()),
         realm: details.realm,
       };
       if (riddle) {

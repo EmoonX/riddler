@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Riddler",
   "description": "Browser extension for Riddler, the online riddle enhancer.",
-  "version": "0.6.8",
+  "version": "0.6.9",
 
   "background": {
     "service_worker": "background.js",
@@ -24,12 +24,6 @@
     {
       "matches": ["<all_urls>"],
       "js": ["thirdParty/jquery.min.js", "credentials.js"]
-    }
-  ],
-  "web_accessible_resources": [
-    {
-      "matches": ["<all_urls>"],
-      "resources": ["credentials.css", "fonts/*"]
     }
   ]
 }

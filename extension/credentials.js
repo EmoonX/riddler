@@ -22,15 +22,14 @@ port.onMessage.addListener(async data => {
   }
 
   // Prompt user with auth box
-  const box = $($.parseHTML(data.html));
-  const boxCss = chrome.runtime.getURL('credentials.css');
+  const box = $($.parseHTML(data.boxHtml));
   const credentials = data.unlockedCredentials;
   box.find('.realm').text(`"${data.realm}"`);
   if (credentials) {
     box.find('[name="username"]').attr('value', credentials.username);
     box.find('[name="password"]').attr('value', credentials.password);
   }
-  $('head').append(`<link rel="stylesheet" href="${boxCss}">`)
+  $('head').append(`<style>${data.boxCss}</style>`);
   $('body').append(box[0].outerHTML);
   $('[name="username"]').trigger('focus');
 });
