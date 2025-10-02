@@ -79,8 +79,9 @@ let credentialsHandler = null;
 /** Handle riddle auth attempts, prompting user with custom auth box. */
 chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
   const [riddle, path] = parseRiddleAndPath(details.url);
-  if (riddle && isPathSensitive(riddle, path)) {
-    // Fallback to browser's auth box when real auth is involved
+  if (!riddle || isPathSensitive(riddle, path)) {
+    // Fallback to browser's native auth box
+    // when outside riddle domains and/or real auth is involved
     asyncCallback({ cancel: false });
     return;
   }
