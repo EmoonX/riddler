@@ -1,35 +1,31 @@
-let port = chrome.runtime.connect(
-  { name: `credentials.js` }
-);
+const port = chrome.runtime.connect({ name: 'credentials.js' });
 
-port.postMessage({'disconnect': true});
-
-/** Listener for whenever credentials are needed. */
-port.onMessage.addListener(async data => {
+/** One-shot listener for prompting/embedding credentials. */
+const credentialsListener = (data => {
   console.log('Received data from background.js...');
+  port.onMessage.removeListener(credentialsListener);
+
   if (data.username && data.password) {
     // Embed auth box's un/pw into URL and redirect
-    const href = new URL(data.url);
-    href.username = data.username;
-    href.password = data.password;
-    href.searchParams.delete('username');
-    href.searchParams.delete('password');
-    window.location.href = href.toString();
+    const parsedUrl = new URL(data.url);
+    parsedUrl.username = data.username;
+    parsedUrl.password = data.password;
+    parsedUrl.searchParams.delete('username');
+    parsedUrl.searchParams.delete('password');
+    window.location.href = parsedUrl.toString();
   }
-  if (! data.realm) {
-    // Gambiarra
-    return;
+  if (data.boxHtml) {
+    // Prompt user with auth box
+    const box = $($.parseHTML(data.boxHtml));
+    const credentials = data.unlockedCredentials;
+    box.find('.realm').text(`"${data.realm}"`);
+    if (credentials) {
+      box.find('[name="username"]').attr('value', credentials.username);
+      box.find('[name="password"]').attr('value', credentials.password);
+    }
+    $('head').append(`<style>${data.boxCss}</style>`);
+    $('body').append(box[0].outerHTML);
+    $('[name="username"]').trigger('focus');
   }
-
-  // Prompt user with auth box
-  const box = $($.parseHTML(data.boxHtml));
-  const credentials = data.unlockedCredentials;
-  box.find('.realm').text(`"${data.realm}"`);
-  if (credentials) {
-    box.find('[name="username"]').attr('value', credentials.username);
-    box.find('[name="password"]').attr('value', credentials.password);
-  }
-  $('head').append(`<style>${data.boxCss}</style>`);
-  $('body').append(box[0].outerHTML);
-  $('[name="username"]').trigger('focus');
 });
+port.onMessage.addListener(credentialsListener);

@@ -81,17 +81,17 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
   const [riddle, path] = parseRiddleAndPath(details.url);
   if (riddle && isPathSensitive(riddle, path)) {
     // Fallback to browser's auth box when real auth is involved
-    asyncCallback({cancel: false});
+    asyncCallback({ cancel: false });
     return;
   }
 
-  const parsedUrl = new URL(details.url);
-  const username = parsedUrl.searchParams.get('username');
-  const password = parsedUrl.searchParams.get('password');
-
   // Save this function so we can unlisten it later
-  credentialsHandler = (port => {
+  const credentialsHandler = (port => {
     console.log('Connected to credentials.js...');
+
+    const parsedUrl = new URL(details.url);
+    const username = parsedUrl.searchParams.get('username');
+    const password = parsedUrl.searchParams.get('password');
     if (username && password) {
       // Query '?username=...&password=...' found, send to redirect
       port.postMessage({
@@ -103,11 +103,11 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
       // Request auth box with given (explicit) realm message
       // and autocompleted credentials (if logged in and unlocked beforehand)
       const message = {
-        boxHtml: await fetch(chrome.runtime.getURL('credentials.html'))
+        realm: details.realm,
+        boxHtml:await fetch(chrome.runtime.getURL('credentials.html'))
           .then(response => response.text()),
         boxCss: await fetch(chrome.runtime.getURL('credentials.css'))
           .then(response => response.text()),
-        realm: details.realm,
       };
       if (riddle) {
         let pageNode = getPageNode(details.url);
@@ -128,11 +128,7 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
       }
       port.postMessage(message);
     })();
-    port.onMessage.addListener(data => {
-      if (data.disconnect) {
         chrome.runtime.onConnect.removeListener(credentialsHandler);
-      }
-    })
   });
   chrome.runtime.onConnect.addListener(credentialsHandler);
   
@@ -170,9 +166,7 @@ chrome.webRequest.onHeadersReceived.addListener(async details => {
 /** Send regular pings to avoid service worker becoming inactive. */
 chrome.runtime.onConnect.addListener(port => {
   const pingInterval = setInterval(() => {
-    port.postMessage({
-      status: "ping",
-    });
+    port.postMessage({ status: "ping" });
   }, 10000);
   port.onDisconnect.addListener(_ => {
     clearInterval(pingInterval);
