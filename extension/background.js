@@ -127,22 +127,19 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
 }, filter, ['asyncBlocking']);
 
 /** Send a process request to server whenever response is received. */
-chrome.webRequest.onHeadersReceived.addListener(async details => {
+async function responseHandler(details) {
   const [riddle, path] = parseRiddleAndPath(details.url);
   if (! riddle) {
     // Completely ignore pages outside riddle domains
     return;
   }
-
   if (details.statusCode === 401 || isPathSensitive(riddle, path)) {
-    // Pluck wrong credentials from 401s and special cases,
-    // to avoid possibly sending mistakenly entered personal info
+    // Pluck wrong credentials from 401s and special cases;
+    // avoid possibly sending mistakenly entered personal info
     const parsedUrl = new URL(details.url);
-    parsedUrl.username = '';
-    parsedUrl.password = '';
+    parsedUrl.username = parsedUrl.password = '';
     details.url = parsedUrl.toString();
   }
-  
   if (Object.keys(riddles).length === 0) {
     // Fallback for when user logs in *after* the extension is loaded
     initExplorer(() => {
@@ -151,7 +148,15 @@ chrome.webRequest.onHeadersReceived.addListener(async details => {
     return;
   }
   sendToProcess(details);
-}, filter, ['responseHeaders']);
+};
+chrome.webRequest.onBeforeRedirect.addListener(
+  // Explicitly handle 30x (redirect) responses
+  responseHandler, filter, ['responseHeaders']
+);
+chrome.webRequest.onCompleted.addListener(
+  // Handle all completed responses; filter out premature 401s
+  responseHandler, filter, ['responseHeaders']
+);
 
 /** Send regular pings to avoid service worker becoming inactive. */
 chrome.runtime.onConnect.addListener(port => {
