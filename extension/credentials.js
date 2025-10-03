@@ -1,31 +1,34 @@
 const port = chrome.runtime.connect({ name: 'credentials.js' });
 
-/** One-shot listener for prompting/embedding credentials. */
+/** One-shot listener for prompting credentials. */
 const credentialsListener = (data => {
   console.log('Received data from background.js...');
   port.onMessage.removeListener(credentialsListener);
+  if (! data.realm) {
+    // Not from an auth request; nothing to show
+    return;
+  }
 
-  if (data.username && data.password) {
-    // Embed auth box's un/pw into URL and redirect
-    const parsedUrl = new URL(data.url);
-    parsedUrl.username = data.username;
-    parsedUrl.password = data.password;
-    parsedUrl.searchParams.delete('username');
-    parsedUrl.searchParams.delete('password');
-    window.location.href = parsedUrl.toString();
+  // Prompt user with auth box
+  const box = $($.parseHTML(data.boxHTML));
+  const credentials = data.unlockedCredentials;
+  box.find('.realm').text(`"${data.realm}"`);
+  if (credentials) {
+    box.find('input[name="username"]').attr('value', credentials.username);
+    box.find('input[name="password"]').attr('value', credentials.password);
   }
-  if (data.boxHtml) {
-    // Prompt user with auth box
-    const box = $($.parseHTML(data.boxHtml));
-    const credentials = data.unlockedCredentials;
-    box.find('.realm').text(`"${data.realm}"`);
-    if (credentials) {
-      box.find('[name="username"]').attr('value', credentials.username);
-      box.find('[name="password"]').attr('value', credentials.password);
-    }
-    $('head').append(`<style>${data.boxCss}</style>`);
-    $('body').append(box[0].outerHTML);
-    $('[name="username"]').trigger('focus');
-  }
+  $('head').append(`<style>${data.boxCSS}</style>`);
+  $('body').append(box[0].outerHTML);
+  $('input[name="username"]').trigger('focus');
+  $('form.credentials').on('submit', embedCredentials);
 });
 port.onMessage.addListener(credentialsListener);
+
+/** Embed credentials (`un:pw@...`) into URL, replacing current page. */
+function embedCredentials(e) {
+  e.preventDefault(); // block GET-submit
+  const parsedUrl = new URL(window.location.href);
+  parsedUrl.username = $('input[name="username"]').val();
+  parsedUrl.password = $('input[name="password"]').val();
+  window.location.replace(parsedUrl.toString());
+}

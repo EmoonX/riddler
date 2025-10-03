@@ -89,25 +89,14 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
   // Save this function so we can unlisten it later
   const credentialsHandler = (port => {
     console.log('Connected to credentials.js...');
-
-    const parsedUrl = new URL(details.url);
-    const username = parsedUrl.searchParams.get('username');
-    const password = parsedUrl.searchParams.get('password');
-    if (username && password) {
-      // Query '?username=...&password=...' found, send to redirect
-      port.postMessage({
-        url: details.url,
-        username: username,
-        password: password,
-      });
-    } else (async () => {
+    (async () => {
       // Request auth box with given (explicit) realm message
       // and autocompleted credentials (if logged in and unlocked beforehand)
       const message = {
         realm: details.realm,
-        boxHtml:await fetch(chrome.runtime.getURL('credentials.html'))
+        boxHTML: await fetch(chrome.runtime.getURL('credentials.html'))
           .then(response => response.text()),
-        boxCss: await fetch(chrome.runtime.getURL('credentials.css'))
+        boxCSS: await fetch(chrome.runtime.getURL('credentials.css'))
           .then(response => response.text()),
       };
       if (riddle) {
