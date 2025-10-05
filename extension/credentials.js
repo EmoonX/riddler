@@ -1,14 +1,13 @@
 const port = chrome.runtime.connect({ name: 'credentials.js' });
 
 /** One-shot listener for prompting credentials. */
-const credentialsListener = (data => {
+port.onMessage.addListener(data => {
   console.log('Received data from background.js...');
-  port.onMessage.removeListener(credentialsListener);
+  port.disconnect();
   if (! data.realm) {
     // Not from an auth request; nothing to show
     return;
   }
-
   // Prompt user with auth box
   const box = $($.parseHTML(data.boxHTML));
   const credentials = data.unlockedCredentials;
@@ -22,7 +21,6 @@ const credentialsListener = (data => {
   $('input[name="username"]').trigger('focus');
   $('form.credentials').on('submit', embedCredentials);
 });
-port.onMessage.addListener(credentialsListener);
 
 /** Embed credentials (`un:pw@...`) into URL, replacing current page. */
 function embedCredentials(e) {
