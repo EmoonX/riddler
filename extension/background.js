@@ -74,15 +74,26 @@ async function sendToProcess(details) {
   return data;
 }
 
-let credentialsHandler = null;
-
-/** Handle riddle auth attempts, prompting user with custom auth box. */
+/** Handle riddle auth attempts, triggering custom auth box when suitable. */
+const staleNativeAuthTabs = new Set();
 chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
+
   const [riddle, path] = parseRiddleAndPath(details.url);
   if (!riddle || isPathSensitive(riddle, path)) {
     // Fallback to browser's native auth box
     // when outside riddle domains and/or real auth is involved
     asyncCallback({ cancel: false });
+    staleNativeAuthTabs.add(details.tabId);
+    return;
+  }
+  if (staleNativeAuthTabs.has(details.tabId)) {
+    // Native auth has been triggered before in this tab (i.e network context);
+    // employ tab replacement trick to circumvent persistent native dialog
+    chrome.tabs.duplicate(details.tabId, dupTab => {
+      chrome.tabs.update(dupTab.id,{ active: false, url: details.url });
+      chrome.tabs.remove(details.tabId);
+    });
+    staleNativeAuthTabs.delete(details.tabId);
     return;
   }
 
@@ -91,7 +102,6 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
     console.log('Connected to credentials.js...');
     (async () => {
       // Request auth box with given (explicit) realm message
-      // and autocompleted credentials (if logged in and unlocked beforehand)
       const message = {
         realm: details.realm,
         boxHTML: await fetch(chrome.runtime.getURL('credentials.html'))
@@ -110,6 +120,7 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
           pageNode = getPageNode(details.url);
         }
         if (pageNode && pageNode.username && pageNode.password) {
+          // Logged in and credentials previously unlocked; autocomplete them
           message.unlockedCredentials = {
             username: pageNode.username,
             password: pageNode.password,
@@ -123,7 +134,8 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
   chrome.runtime.onConnect.addListener(credentialsHandler);
   
   // Block browser's native auth dialog
-  asyncCallback({cancel: true});
+  asyncCallback({ cancel: true });
+
 }, filter, ['asyncBlocking']);
 
 /** Send a process request to server whenever response is received. */

@@ -9,6 +9,7 @@
     "type": "module"
   },
   "permissions": [
+    "tabs",
     "webRequest",
     "webRequestAuthProvider"
   ],
