@@ -196,6 +196,19 @@ export function getPageNode(url) {
   return riddle.pagesByPath[path];
 }
 
+/** Find innermost path in set which contains the base one (if any). */
+export function findContainingPath(basePath, paths) {
+  const tokens = basePath.replace('/{2,}', '/').split('/');
+  while (tokens.length !== 0) {
+    const path = tokens.join('/') || '/';
+    if (paths.has(path)) {
+      return path;
+    }
+    tokens.pop();
+  }
+  return null;
+}
+
 /** Check whether the riddle path deals with real personal auth. */
 export function isPathSensitive(riddle, path) {
   // (no, pr0ners, I am NOT interested in hoarding your personal user data)

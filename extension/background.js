@@ -2,6 +2,7 @@ import { initExplorer } from './explorer.js';
 
 import {
   clearRiddleData,
+  findContainingPath,
   getPageNode,
   isPathSensitive,
   parseRiddleAndPath,
@@ -12,12 +13,13 @@ import {
 } from './riddle.js';
 
 /** Wildcard URLs to be matched. */
-const filter = {
-  urls: ['<all_urls>'],
-};
+const filter = { urls: ['<all_urls>'] };
 
 /** Time of last login request. */
 // let t0;
+
+const missingAuthPaths = new Map();
+const staleNativeAuthTabs = new Set();
 
 /** Sends user-visited URL and request data to the `/process` endpoint. */
 async function sendToProcess(details) {
@@ -32,18 +34,17 @@ async function sendToProcess(details) {
     body: details.url,
   };
   for (const name of ['Content-Location', 'Location']) {
-    const header = details.responseHeaders
-      .find(_header => _header.name.toLowerCase() === name.toLowerCase());
+    const header = details.responseHeaders.find(
+      _header => _header.name.toLowerCase() === name.toLowerCase()
+    );
     if (header) {
       params.headers[name] = header.value;
     }
   }
   console.log(details.url, details.statusCode);
 
-  let data;
-  await fetch(`${SERVER_HOST}/process`, params)
-    .then(async response => {
-      // Callbacks on successful and failed responses
+  // Send request to processing endpoint
+  const response = await fetch(`${SERVER_HOST}/process`, params);
       if (response.status === 401) {
         // // If current login request is less than 5 seconds
         // // after marked one, don't open a new login tab.
@@ -62,21 +63,52 @@ async function sendToProcess(details) {
         clearRiddleData();
         return;
       }
-      data = await response.json();
-      if (response.ok && data.path) {
+  const data = await response.json();
+  if (response.status === 403) {
+    if (data.realm && details.statusCode != 401) {
+      // Player is navigating inside a protected path but still haven't unlocked
+      // credentials for it; force-trigger auth box as fallback
+      chrome.tabs.get(details.tabId, tab => {
+        if (chrome.runtime.lastError) {
+          return;
+        }
+        if (missingAuthPaths.has(data.credentialsPath)) {
+          return;
+        }
+        if (tab.url === details.url) {
+          details.realm = data.realm;
+          promptCustomAuth(details);
+          chrome.tabs.update(tab.id, { active: true, url: details.url });
+          missingAuthPaths.set(data.credentialsPath, data.realm);
+        }
+      });
+    }
+  }
+  if ([401, 403].indexOf(response.status) === -1) {
+    if (missingAuthPaths.has(details.credentialsPath)) {
+      // Fallback auth was successful and player credentials unlocked;
+      // Clear persistent box for the given protected path
+      chrome.tabs.get(details.tabId, tab => {
+        if (chrome.runtime.lastError) {
+          return;
+        }
+        if (tab.url === details.url) {
+          chrome.tabs.update(tab.id, { active: true, url: details.url });
+          missingAuthPaths.delete(details.credentialsPath);
+        }
+      });
+    }
+  }
+  if (response.ok) {
         console.log(
           `[${data.riddle}] Page "${data.path}" (${data.levelName}) found`
         );
       }
       await updateRiddleData(data.riddle, data.setName, data.levelName);
-    });
-
-  return data;
 }
 
 /** Handle riddle auth attempts, triggering custom auth box when suitable. */
-const staleNativeAuthTabs = new Set();
-chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
+function promptCustomAuth(details, asyncCallback) {
 
   const [riddle, path] = parseRiddleAndPath(details.url);
   if (!riddle || isPathSensitive(riddle, path)) {
@@ -134,16 +166,26 @@ chrome.webRequest.onAuthRequired.addListener((details, asyncCallback) => {
   chrome.runtime.onConnect.addListener(credentialsHandler);
   
   // Block browser's native auth dialog
+  if (asyncCallback) {
   asyncCallback({ cancel: true });
+  }
+}
+chrome.webRequest.onAuthRequired.addListener(
+  promptCustomAuth, filter, ['asyncBlocking']
+);
 
-}, filter, ['asyncBlocking']);
-
-/** Send a process request to server whenever response is received. */
+/** Parse and (possibly) send intercepted HTTP responses to processing. */
 async function responseHandler(details) {
   const [riddle, path] = parseRiddleAndPath(details.url);
   if (! riddle) {
     // Completely ignore pages outside riddle domains
     return;
+  }
+  details.path = path;
+  details.credentialsPath = findContainingPath(path, missingAuthPaths);
+  if (details.credentialsPath) {
+    details.realm = missingAuthPaths.get(details.credentialsPath),
+    promptCustomAuth(details);
   }
   if (details.statusCode === 401 || isPathSensitive(riddle, path)) {
     // Pluck wrong credentials from 401s and special cases;

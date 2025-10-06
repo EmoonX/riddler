@@ -78,10 +78,13 @@ async def process_url(
     # Process received credentials (possibly none)
     riddle = await get_riddle(ph.riddle_alias)
     ok = await process_credentials(riddle, ph.path, ph.credentials, status_code)
+    path_credentials = await get_path_credentials(ph.riddle_alias, ph.path)
     if not ok:
         return jsonify({
             'message': 'Wrong or missing user credentials',
-            'riddle': ph.riddle_alias
+            'riddle': ph.riddle_alias,
+            'credentialsPath': path_credentials['path'],
+            'realm': path_credentials['realm'],
         }), 403
     if ph.short_run:
         return jsonify({
@@ -161,7 +164,6 @@ async def process_url(
         'levelName': ph.path_level,
         'path': ph.path,
     }
-    path_credentials = await get_path_credentials(ph.riddle_alias, ph.path)
     if await has_unlocked_path_credentials(
         ph.riddle_alias, user, path_credentials['path']
     ):

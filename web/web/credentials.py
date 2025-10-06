@@ -67,7 +67,7 @@ async def _check_and_insert_empty_credentials(
 ) -> str:
 
     url = f"{riddle['root_path']}{path}"
-    status_code, realm_message = _send_raw_request(url)
+    status_code, realm = _send_raw_request(url)
     if status_code != 401:
         # 200 masked as 401?
         return '/'
@@ -79,24 +79,24 @@ async def _check_and_insert_empty_credentials(
         path = os.path.dirname(path)
 
         url = f"{riddle['root_path']}{path}"
-        status_code, _realm_message = _send_raw_request(url)
+        status_code, _realm = _send_raw_request(url)
         if status_code != 401:
             break
-        if _realm_message != realm_message:
+        if _realm != realm:
             break
 
     # Insert raw record with unknown (NULL) username/password
     query = '''
         INSERT INTO riddle_credentials (
-            riddle, path, realm_message, username, password
+            riddle, path, realm, username, password
         ) VALUES (
-            :riddle, :path, :realm_message, NULL, NULL
+            :riddle, :path, :realm, NULL, NULL
         )
     '''
     values = {
         'riddle': riddle['alias'],
         'path': credentials_path,
-        'realm_message': realm_message,
+        'realm': realm,
     }
     await database.execute(query, values)
     print(
@@ -118,7 +118,7 @@ async def _check_and_record_credentials(
         # Wrong user credentials (leftover, 401 masked as 200, etc)
         return None
 
-    status_code, realm_message = _send_raw_request(url)
+    status_code, realm = _send_raw_request(url)
     if status_code != 401:
         # Credentials removed altogether?
         username = password = ''
@@ -132,10 +132,10 @@ async def _check_and_record_credentials(
         url = f"{riddle['root_path']}{path}"
         if _send_authenticated_request(url, username, password) == 401:
             break
-        status_code, _realm_message = _send_raw_request(url)
+        status_code, _realm = _send_raw_request(url)
         if status_code != 401:
             break
-        if _realm_message != realm_message:
+        if _realm != realm:
             break
 
     # Add username and password to previously recorded empty credentials
@@ -157,28 +157,28 @@ async def _check_and_record_credentials(
         # Empty record not present, so just insert a full new one
         query = '''
             INSERT IGNORE INTO riddle_credentials (
-                riddle, path, realm_message, username, password
+                riddle, path, realm, username, password
             ) VALUES (
-                :riddle, :path, :realm_message, :username, :password
+                :riddle, :path, :realm, :username, :password
             )
         '''
-        values |= {'realm_message': realm_message}
+        values |= {'realm': realm}
         await database.execute(query, values)
 
     # Log finding and user who did it
     query = '''
         INSERT IGNORE INTO _found_credentials (
-            riddle, path, realm_message, cred_username, cred_password,
+            riddle, path, realm, cred_username, cred_password,
             acc_username, unlock_time
         ) VALUES (
-            :riddle, :path, :realm_message, :cred_username, :cred_password,
+            :riddle, :path, :realm, :cred_username, :cred_password,
             :acc_username, :unlock_time
         )
     '''
     values = {
         'riddle': riddle['alias'],
         'path': credentials_path,
-        'realm_message': realm_message,
+        'realm': realm,
         'cred_username': username,
         'cred_password': password,
         'acc_username': user.name,
