@@ -127,6 +127,15 @@ function promptCustomAuth(details) {
     staleNativeAuthTabs.delete(details.tabId);
     return;
   }
+  const parsedUrl = new URL(details.url);
+  if (parsedUrl.username && parsedUrl.password) {
+    return {
+      authCredentials: {
+        username: parsedUrl.username,
+        password: parsedUrl.password,
+      }
+    }
+  }
 
   // Save this function so we can unlisten it later
   const credentialsHandler = (port => {
@@ -162,6 +171,9 @@ function promptCustomAuth(details) {
   });
   chrome.runtime.onConnect.addListener(credentialsHandler);
 }
+chrome.webRequest.onAuthRequired.addListener(
+  promptCustomAuth, filter, ['blocking']
+);
 
 chrome.webRequest.onHeadersReceived.addListener(async details => {
   const [riddle, path] = parseRiddleAndPath(details.url);
@@ -197,8 +209,8 @@ chrome.webRequest.onHeadersReceived.addListener(async details => {
             staleNativeAuthTabs.add(details.tabId);
             parsedUrl.username = parsedUrl.password = '';
             details.url = parsedUrl.toString();
-            promptCustomAuth(details);
           }
+          promptCustomAuth(details);
         }, 25);
       }
     }
