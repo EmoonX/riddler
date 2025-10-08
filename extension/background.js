@@ -108,13 +108,12 @@ async function sendToProcess(details) {
 }
 
 /** Handle riddle auth attempts, triggering custom auth box when suitable. */
-function promptCustomAuth(details, asyncCallback) {
+function promptCustomAuth(details) {
 
   const [riddle, path] = parseRiddleAndPath(details.url);
   if (!riddle || isPathSensitive(riddle, path)) {
     // Fallback to browser's native auth box
     // when outside riddle domains and/or real auth is involved
-    asyncCallback({ cancel: false });
     staleNativeAuthTabs.add(details.tabId);
     return;
   }
@@ -141,38 +140,71 @@ function promptCustomAuth(details, asyncCallback) {
         boxCSS: await fetch(chrome.runtime.getURL('credentials.css'))
           .then(response => response.text()),
       };
-      if (riddle) {
-        let pageNode = getPageNode(details.url);
-        while (! pageNode) {
-          details.url = details.url.split('/').slice(0, -1).join('/');
-          if (details.url.indexOf('://') === -1) {
-            // Page not in tree
-            break;
-          }
-          pageNode = getPageNode(details.url);
+      let pageNode = getPageNode(details.url);
+      while (!pageNode) {
+        details.url = details.url.split('/').slice(0, -1).join('/');
+        if (details.url.indexOf('://') === -1) {
+          // Page not in tree
+          break;
         }
-        if (pageNode && pageNode.username && pageNode.password) {
-          // Logged in and credentials previously unlocked; autocomplete them
-          message.unlockedCredentials = {
-            username: pageNode.username,
-            password: pageNode.password,
-          };
-        }
+        pageNode = getPageNode(details.url);
+      }
+      if (pageNode && pageNode.username && pageNode.password) {
+        // Logged in and credentials previously unlocked; autocomplete them
+        message.unlockedCredentials = {
+          username: pageNode.username,
+          password: pageNode.password,
+        };
       }
       port.postMessage(message);
     })();
-        chrome.runtime.onConnect.removeListener(credentialsHandler);
+    chrome.runtime.onConnect.removeListener(credentialsHandler);
   });
   chrome.runtime.onConnect.addListener(credentialsHandler);
-  
-  // Block browser's native auth dialog
-  if (asyncCallback) {
-  asyncCallback({ cancel: true });
-  }
 }
-chrome.webRequest.onAuthRequired.addListener(
-  promptCustomAuth, filter, ['asyncBlocking']
-);
+
+chrome.webRequest.onHeadersReceived.addListener(async details => {
+  const [riddle, path] = parseRiddleAndPath(details.url);
+  if (!riddle || isPathSensitive(riddle, path)) {
+    // Completely ignore pages outside riddle domains
+    return;
+  }
+  console.log(details.url, details.statusCode);
+  console.log(details);
+  if (details.statusCode === 401) {
+    const headers = details.responseHeaders;
+    console.log(headers);
+    const idx = headers.findIndex(
+      header => header.name.toLowerCase() === 'www-authenticate'
+    );
+    if (idx !== -1) {
+      const authHeader = headers[idx];
+      console.log(authHeader);
+      details.realm = authHeader.value.match(/realm="(.*?)"/)?.[1];
+      console.log(details.realm);
+    }
+    const parsedUrl = new URL(details.url);
+    if (details.realm) {
+      if (! (parsedUrl.username && parsedUrl.password)) {
+        headers.splice(idx, 1);
+        promptCustomAuth(details);
+        return { responseHeaders: headers };
+      } else {
+        setTimeout(() => {
+          console.log(responseHandler.authRequests);
+          console.log(details.requestId);
+          if (! responseHandler.authRequests.has(details.requestId)) {
+            staleNativeAuthTabs.add(details.tabId);
+            parsedUrl.username = parsedUrl.password = '';
+            details.url = parsedUrl.toString();
+            promptCustomAuth(details);
+          }
+        }, 25);
+      }
+    }
+  }
+  return { cancel: false };
+}, filter, ['blocking', 'responseHeaders']);
 
 /** Parse and (possibly) send intercepted HTTP responses to processing. */
 async function responseHandler(details) {
@@ -181,6 +213,11 @@ async function responseHandler(details) {
     // Completely ignore pages outside riddle domains
     return;
   }
+  if (details.statusCode === 401) {
+    responseHandler.authRequests.add(details.requestId);
+  }
+  console.log('completed ->', details.url, details.statusCode);
+  console.log(details);
   details.path = path;
   details.credentialsPath = findContainingPath(path, missingAuthPaths);
   if (details.credentialsPath) {
@@ -211,6 +248,7 @@ chrome.webRequest.onCompleted.addListener(
   // Handle all completed responses; filter out premature 401s
   responseHandler, filter, ['responseHeaders']
 );
+responseHandler.authRequests = new Set();
 
 /** Send regular pings to avoid service worker becoming inactive. */
 chrome.runtime.onConnect.addListener(port => {
