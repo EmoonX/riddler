@@ -279,6 +279,7 @@ browser.webRequest.onCompleted.addListener(
   // Handle all completed responses; filter out premature 401s
   responseHandler, filter, ['responseHeaders']
 );
+responseHandler.authRequests = new Set();
 
 /** Send regular pings to avoid service worker becoming inactive. */
 browser.runtime.onConnect.addListener(port => {
