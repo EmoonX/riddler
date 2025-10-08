@@ -175,6 +175,7 @@ chrome.webRequest.onAuthRequired.addListener(
   promptCustomAuth, filter, ['blocking']
 );
 
+const authRequests = new Set();
 chrome.webRequest.onHeadersReceived.addListener(async details => {
   const [riddle, path] = parseRiddleAndPath(details.url);
   if (!riddle || isPathSensitive(riddle, path)) {
@@ -183,39 +184,37 @@ chrome.webRequest.onHeadersReceived.addListener(async details => {
   }
   console.log(details.url, details.statusCode);
   console.log(details);
-  if (details.statusCode === 401) {
-    const headers = details.responseHeaders;
-    console.log(headers);
-    const idx = headers.findIndex(
-      header => header.name.toLowerCase() === 'www-authenticate'
-    );
-    if (idx !== -1) {
-      const authHeader = headers[idx];
-      console.log(authHeader);
-      details.realm = authHeader.value.match(/realm="(.*?)"/)?.[1];
-      console.log(details.realm);
+  if (details.statusCode !== 401) {
+    return;
+  }
+  const headers = details.responseHeaders;
+  console.log(headers);
+  const idx = headers.findIndex(
+    header => header.name.toLowerCase() === 'www-authenticate'
+  );
+  if (idx !== -1) {
+    const [authHeader] = headers.splice(idx, 1);
+    console.log(authHeader);
+    details.realm = authHeader.value.match(/realm="(.*?)"/)?.[1];
+    console.log(details.realm);
+  }
+  const parsedUrl = new URL(details.url);
+  if (details.realm) {
+    if (! (parsedUrl.username && parsedUrl.password)) {
+      promptCustomAuth(details);
+      return { responseHeaders: headers };
     }
-    const parsedUrl = new URL(details.url);
-    if (details.realm) {
-      if (! (parsedUrl.username && parsedUrl.password)) {
-        headers.splice(idx, 1);
+    if (details.statusCode === 401) {
+      console.log(authRequests, details.requestId);
+      if (authRequests.has(details.requestId)) {
+        parsedUrl.username = parsedUrl.password = '';
+        details.url = parsedUrl.toString();
         promptCustomAuth(details);
         return { responseHeaders: headers };
-      } else {
-        setTimeout(() => {
-          console.log(responseHandler.authRequests);
-          console.log(details.requestId);
-          if (! responseHandler.authRequests.has(details.requestId)) {
-            staleNativeAuthTabs.add(details.tabId);
-            parsedUrl.username = parsedUrl.password = '';
-            details.url = parsedUrl.toString();
-          }
-          promptCustomAuth(details);
-        }, 25);
       }
+      authRequests.add(details.requestId);
     }
   }
-  return { cancel: false };
 }, filter, ['blocking', 'responseHeaders']);
 
 /** Parse and (possibly) send intercepted HTTP responses to processing. */
@@ -224,9 +223,6 @@ async function responseHandler(details) {
   if (! riddle) {
     // Completely ignore pages outside riddle domains
     return;
-  }
-  if (details.statusCode === 401) {
-    responseHandler.authRequests.add(details.requestId);
   }
   console.log('completed ->', details.url, details.statusCode);
   console.log(details);
@@ -260,7 +256,6 @@ chrome.webRequest.onCompleted.addListener(
   // Handle all completed responses; filter out premature 401s
   responseHandler, filter, ['responseHeaders']
 );
-responseHandler.authRequests = new Set();
 
 /** Send regular pings to avoid service worker becoming inactive. */
 chrome.runtime.onConnect.addListener(port => {
