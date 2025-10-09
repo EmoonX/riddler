@@ -21,17 +21,18 @@ async def has_player_mastered_riddle(alias: str, username: str) -> bool:
 
     async def _has_player_beaten_all_levels() -> bool:
         query = f"""
-            SELECT 1 FROM levels
+            SELECT 1 FROM levels lv
             WHERE riddle = :riddle
-                AND rank != 'F'
-                AND name NOT IN (
+                AND (
+                    rank != 'F' OR name IN (
+                        SELECT final_level FROM riddles r
+                        WHERE lv.riddle = r.alias
+                    )    
+                ) AND name NOT IN (
                     SELECT level_name FROM user_levels
                     WHERE riddle = :riddle AND username = :username
                         AND completion_time IS NOT NULL
-                        {
-                            'AND incognito_solve IS NOT TRUE'
-                            if not is_session_user else ''
-                        }
+                        {'AND incognito_solve IS NOT TRUE' if not is_session_user else ''}
                 )
         """
         values = {'riddle': alias, 'username': username}
