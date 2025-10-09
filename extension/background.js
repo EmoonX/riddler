@@ -65,7 +65,7 @@ async function sendToProcess(details) {
       }
   const data = await response.json();
   if (response.status === 403) {
-    if (data.realm && details.statusCode != 401) {
+    if (data.realm && details.statusCode !== 401) {
       // Player is navigating inside a protected path but still haven't unlocked
       // credentials for it; force-trigger auth box as fallback
       chrome.tabs.get(details.tabId, tab => {
@@ -84,7 +84,7 @@ async function sendToProcess(details) {
       });
     }
   }
-  if ([401, 403].indexOf(response.status) === -1) {
+  if (! [401, 403].includes(response.status)) {
     if (missingAuthPaths.has(details.credentialsPath)) {
       // Fallback auth was successful and player credentials unlocked;
       // Clear persistent box for the given protected path
@@ -99,12 +99,10 @@ async function sendToProcess(details) {
       });
     }
   }
-  if (response.ok) {
-        console.log(
-          `[${data.riddle}] Page "${data.path}" (${data.levelName}) found`
-        );
-      }
-      await updateRiddleData(data.riddle, data.setName, data.levelName);
+  if (response.ok && data.path) {
+    console.log(`[${data.riddle}] Received page "${data.path}" (${data.levelName})`);
+  }
+  await updateRiddleData(data.riddle, data.setName, data.levelName);
 }
 
 /** Handle riddle auth attempts, triggering custom auth box when suitable. */
