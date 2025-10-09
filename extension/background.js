@@ -3,7 +3,6 @@ import { initExplorer } from './explorer.js';
 import {
   clearRiddleData,
   findContainingPath,
-  getPageNode,
   isPathSensitive,
   parseRiddleAndPath,
   riddles,
@@ -139,33 +138,24 @@ function promptCustomAuth(details, asyncCallback) {
         boxCSS: await fetch(chrome.runtime.getURL('credentials.css'))
           .then(response => response.text()),
       };
-      if (riddle) {
-        let pageNode = getPageNode(details.url);
-        while (! pageNode) {
-          details.url = details.url.split('/').slice(0, -1).join('/');
-          if (details.url.indexOf('://') === -1) {
-            // Page not in tree
-            break;
-          }
-          pageNode = getPageNode(details.url);
-        }
-        if (pageNode && pageNode.username && pageNode.password) {
-          // Logged in and credentials previously unlocked; autocomplete them
-          message.unlockedCredentials = {
-            username: pageNode.username,
-            password: pageNode.password,
-          };
-        }
+      const containingPath = findContainingPath(path, riddle.pagesByPath);
+      const pageNode = riddle.pagesByPath.get(containingPath);
+      if (pageNode?.username && pageNode?.password) {
+        // Logged in and credentials previously unlocked; autocomplete them
+        message.unlockedCredentials = {
+          username: pageNode.username,
+          password: pageNode.password,
+        };
       }
       port.postMessage(message);
     })();
-        chrome.runtime.onConnect.removeListener(credentialsHandler);
+    chrome.runtime.onConnect.removeListener(credentialsHandler);
   });
   chrome.runtime.onConnect.addListener(credentialsHandler);
   
   // Block browser's native auth dialog
   if (asyncCallback) {
-  asyncCallback({ cancel: true });
+    asyncCallback({ cancel: true });
   }
 }
 chrome.webRequest.onAuthRequired.addListener(

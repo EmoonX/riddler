@@ -34,7 +34,7 @@ export async function buildRiddle(riddle, pages) {
 
   riddle.levels = {};
   riddle.levelSets = {};
-  riddle.pagesByPath = {};
+  riddle.pagesByPath = new Map();
   riddle.shownSet = riddle.lastVisitedSet;
   riddle.shownLevel = riddle.lastVisitedLevel;
 
@@ -112,9 +112,9 @@ export async function updateRiddleData(alias, setName, levelName) {
 }
 
 function updatePathsIndex(riddle, pageNode) {
-  riddle.pagesByPath[pageNode.path] = pageNode;
+  riddle.pagesByPath.set(pageNode.path, pageNode);
   if (pageNode.folder) {
-    for (const child of Object.values(pageNode['children'])) {
+    for (const child of Object.values(pageNode.children)) {
       updatePathsIndex(riddle, child);
     }
   }
@@ -190,13 +190,7 @@ function parseRiddle(parsedUrl) {
   return [alias, rootPath];
 }
 
-/** Gets page tree node from URL. */
-export function getPageNode(url) {
-  const [riddle, path] = parseRiddleAndPath(url);
-  return riddle.pagesByPath[path];
-}
-
-/** Find innermost path in set which contains the base one (if any). */
+/** Find innermost path in set/map which contains the base one (if any). */
 export function findContainingPath(basePath, paths) {
   const tokens = basePath.replace('/{2,}', '/').split('/');
   while (tokens.length !== 0) {
