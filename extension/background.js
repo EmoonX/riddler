@@ -257,22 +257,12 @@ chrome.webRequest.onCompleted.addListener(
   responseHandler, filter, ['responseHeaders']
 );
 
-/** Send regular pings to avoid service worker becoming inactive. */
-chrome.runtime.onConnect.addListener(port => {
-  const pingInterval = setInterval(() => {
-    port.postMessage({ status: "ping" });
-  }, 10000);
-  port.onDisconnect.addListener(_ => {
-    clearInterval(pingInterval);
-  });
-});
-
 (async () => {
   initExplorer();
 
   /** Communication with popup.js. */
   chrome.runtime.onConnect.addListener(port => {
-    if (port.name != 'popup.js') {
+    if (port.name !== 'popup.js') {
       return;
     }
     console.log('Connected to popup.js...');
