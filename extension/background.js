@@ -118,6 +118,13 @@ function promptCustomAuth(details, asyncCallback) {
     staleNativeAuthTabs.delete(details.tabId);
     return;
   }
+  chrome.tabs.get(details.tabId, tab => {
+    if (tab.pendingUrl?.startsWith('view-source:')) {
+      // Source code browsing doesn't count as actual content pages;
+      // update tab with real URL to allow prompting custom box
+      chrome.tabs.update(tab.id, { active: true, url: details.url });
+    }
+  });
 
   // Save this function so we can unlisten it later
   const credentialsHandler = (port => {
