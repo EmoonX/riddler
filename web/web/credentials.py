@@ -39,10 +39,11 @@ async def process_credentials(
         # we assume thus unprotected folder to avoid frequent HTTP checks
         return True
 
-    if credentials == ('', ''):
-        if await has_unlocked_path_credentials(alias, user, credentials_path):
-            # No credentials given but path already unlocked; good to go
-            return True
+    has_unlocked_credentials = \
+        await has_unlocked_path_credentials(alias, user, credentials_path)
+    if credentials == ('', '') and has_unlocked_credentials:
+        # No credentials given but path already unlocked; good to go
+        return True
 
     if credentials == correct_credentials or credentials_data.get('sensitive'):
         # Matching informed credentials or sensitive auth path;
@@ -59,7 +60,7 @@ async def process_credentials(
         await _record_user_credentials(alias, path, credentials_path, *credentials)
         return True
 
-    return False
+    return has_unlocked_credentials
 
 
 async def _check_and_insert_empty_credentials(
