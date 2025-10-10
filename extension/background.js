@@ -44,57 +44,50 @@ async function sendToProcess(details) {
 
   // Send request to processing endpoint
   const response = await fetch(`${SERVER_HOST}/process`, params);
-      if (response.status === 401) {
-        // // If current login request is less than 5 seconds
-        // // after marked one, don't open a new login tab.
-        // const tNow = new Date();
-        // const dt = tNow - t0;
-        // if (t0 && dt < 5000) {
-        //   return;
-        // }
-        // t0 = tNow;
-        // if (response.text() == 'Not logged in') {
-        //   // Not logged in, so open Discord auth page on new tab
-        //   chrome.tabs.create({url: `${SERVER_HOST}/login`});
-        // }
+  if (response.status === 401) {
+    // // If current login request is less than 5 seconds
+    // // after marked one, don't open a new login tab.
+    // const tNow = new Date();
+    // const dt = tNow - t0;
+    // if (t0 && dt < 5000) {
+    //   return;
+    // }
+    // t0 = tNow;
+    // if (response.text() == 'Not logged in') {
+    //   // Not logged in, so open Discord auth page on new tab
+    //   chrome.tabs.create({url: `${SERVER_HOST}/login`});
+    // }
 
-        // Logged out, so possibly clear riddle data
-        clearRiddleData();
-        return;
-      }
+    // Logged out, so possibly clear riddle data
+    clearRiddleData();
+    return;
+  }
   const data = await response.json();
   if (response.status === 403) {
     if (data.realm && details.statusCode !== 401) {
       // Player is navigating inside a protected path but still haven't unlocked
       // credentials for it; force-trigger auth box as fallback
-      chrome.tabs.get(details.tabId, tab => {
-        if (chrome.runtime.lastError) {
-          return;
-        }
-        if (missingAuthPaths.has(data.credentialsPath)) {
-          return;
-        }
-        if (tab.url === details.url) {
-          details.realm = data.realm;
-          promptCustomAuth(details);
-          chrome.tabs.update(tab.id, { active: true, url: details.url });
-          missingAuthPaths.set(data.credentialsPath, data.realm);
-        }
-      });
+      if (! missingAuthPaths.has(data.credentialsPath)) {
+        missingAuthPaths.set(data.credentialsPath, data.realm);
+        chrome.tabs.get(details.tabId, tab => {
+          if (chrome.runtime.lastError) {
+            return;
+          }
+          chrome.tabs.update(tab.id, { active: true, url: tab.url });
+        });
+      }
     }
   }
   if (! [401, 403].includes(response.status)) {
     if (missingAuthPaths.has(details.credentialsPath)) {
       // Fallback auth was successful and player credentials unlocked;
       // Clear persistent box for the given protected path
+      missingAuthPaths.delete(details.credentialsPath);
       chrome.tabs.get(details.tabId, tab => {
         if (chrome.runtime.lastError) {
           return;
         }
-        if (tab.url === details.url) {
-          chrome.tabs.update(tab.id, { active: true, url: details.url });
-          missingAuthPaths.delete(details.credentialsPath);
-        }
+        chrome.tabs.update(tab.id, { active: true, url: tab.url });
       });
     }
   }
@@ -172,6 +165,7 @@ async function responseHandler(details) {
   details.path = path;
   details.credentialsPath = findContainingPath(path, missingAuthPaths);
   if (details.credentialsPath) {
+    // Missing unlocked credentials for path; prompt auth box straight away
     details.realm = missingAuthPaths.get(details.credentialsPath),
     promptCustomAuth(details);
   }
