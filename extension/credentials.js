@@ -8,6 +8,7 @@ const credentialsListener = (data => {
     // Not from an auth request; nothing to show
     return;
   }
+
   // Prompt user with auth box
   const box = $($.parseHTML(data.boxHTML));
   const credentials = data.unlockedCredentials;
@@ -18,8 +19,18 @@ const credentialsListener = (data => {
   }
   $('head').append(`<style>${data.boxCSS}</style>`);
   $('body').append(box[0].outerHTML);
-  $('input[name="username"]').trigger('focus');
+  $('input[name="username"]').trigger('focus').attr;
   $('form.credentials').on('submit', embedCredentials);
+
+  // Retrieve un/pw from last immediate attempt as placeholders (if any)
+  const lastCredentials = JSON.parse(sessionStorage.getItem("lastCredentials"));
+  const parsedUrl = new URL(window.location.href);
+  parsedUrl.username = parsedUrl.password = '';
+  if (lastCredentials?.url === parsedUrl.toString()) {
+    $('input[name="username"]').attr('placeholder', lastCredentials.username);
+    $('input[name="password"]').attr('placeholder', lastCredentials.password);
+  }
+  sessionStorage.setItem('lastCredentials', null);
 });
 port.onMessage.addListener(credentialsListener);
 
@@ -27,7 +38,14 @@ port.onMessage.addListener(credentialsListener);
 function embedCredentials(e) {
   e.preventDefault(); // block GET-submit
   const parsedUrl = new URL(window.location.href);
+  parsedUrl.username = parsedUrl.password = '';
+  const baseUrl = parsedUrl.toString();
   parsedUrl.username = $('input[name="username"]').val();
-  parsedUrl.password = $('input[name="password"]').val();
+  parsedUrl.password = $('input[name="password"]').val(); 
+  sessionStorage.setItem('lastCredentials', JSON.stringify({
+    url: baseUrl,
+    username: parsedUrl.username,
+    password: parsedUrl.password,
+  }));
   window.location.replace(parsedUrl.toString());
 }
