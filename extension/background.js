@@ -17,7 +17,6 @@ const filter = { urls: ['<all_urls>'] };
 /** Time of last login request. */
 // let t0;
 
-const missingAuthPaths = new Map();
 const staleNativeAuthTabs = new Set();
 
 /** Sends user-visited URL and request data to the `/process` endpoint. */
@@ -63,26 +62,29 @@ async function sendToProcess(details) {
     return;
   }
   const data = await response.json();
+  const alias = data.riddle;
+  const riddle = riddles[alias];
   if (response.status === 403) {
     if (data.realm && details.statusCode !== 401) {
       // Player is navigating inside a protected path but still haven't unlocked
       // credentials for it; force-trigger auth box as fallback
-      if (! missingAuthPaths.has(data.credentialsPath)) {
-        missingAuthPaths.set(data.credentialsPath, data.realm);
+      if (! riddle.missingAuthPaths.has(data.credentialsPath)) {
+        riddle.missingAuthPaths.set(data.credentialsPath, data.realm);
         chrome.tabs.get(details.tabId, tab => {
           if (chrome.runtime.lastError) {
             return;
           }
-          chrome.tabs.update(tab.id, { active: true, url: tab.url });
+          const url = tab.url.replace(/^view-source:/, '');
+          chrome.tabs.update(tab.id, { active: true, url: url });
         });
       }
     }
   }
   if (! [401, 403].includes(response.status)) {
-    if (missingAuthPaths.has(details.credentialsPath)) {
+    if (riddle.missingAuthPaths.has(details.credentialsPath)) {
       // Fallback auth was successful and player credentials unlocked;
       // Clear persistent box for the given protected path
-      missingAuthPaths.delete(details.credentialsPath);
+      riddle.missingAuthPaths.delete(details.credentialsPath);
       chrome.tabs.get(details.tabId, tab => {
         if (chrome.runtime.lastError) {
           return;
@@ -92,9 +94,9 @@ async function sendToProcess(details) {
     }
   }
   if (response.ok && data.path) {
-    console.log(`[${data.riddle}] Received page "${data.path}" (${data.levelName})`);
+    console.log(`[${alias}] Received page "${data.path}" (${data.levelName})`);
   }
-  await updateRiddleData(data.riddle, data.setName, data.levelName);
+  await updateRiddleData(alias, data.setName, data.levelName);
 }
 
 /** Handle riddle auth attempts, triggering custom auth box when suitable. */
@@ -163,17 +165,23 @@ chrome.webRequest.onAuthRequired.addListener(
 );
 
 /** Parse and (possibly) send intercepted HTTP responses to processing. */
-async function responseHandler(details) {
+function responseHandler(details) {
   const [riddle, path] = parseRiddleAndPath(details.url);
   if (! riddle) {
     // Completely ignore pages outside riddle domains
     return;
   }
   details.path = path;
-  details.credentialsPath = findContainingPath(path, missingAuthPaths);
+  details.credentialsPath = findContainingPath(path, riddle.missingAuthPaths);
   if (details.credentialsPath) {
     // Missing unlocked credentials for path; prompt auth box straight away
-    details.realm = missingAuthPaths.get(details.credentialsPath),
+    details.realm = riddle.missingAuthPaths.get(details.credentialsPath);
+    chrome.tabs.get(details.tabId, tab => {
+      if (tab.url.startsWith('view-source')) {
+        const url = tab.url.replace(/^view-source:/, '');
+        chrome.tabs.update(tab.id, { active: true, url: url });
+      }
+    });
     promptCustomAuth(details);
   }
   if (details.statusCode === 401 || isPathSensitive(riddle, path)) {

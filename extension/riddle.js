@@ -35,6 +35,7 @@ export async function buildRiddle(riddle, pages) {
   riddle.levels = {};
   riddle.levelSets = {};
   riddle.pagesByPath = new Map();
+  riddle.missingAuthPaths = new Map();
   riddle.shownSet = riddle.lastVisitedSet;
   riddle.shownLevel = riddle.lastVisitedLevel;
 
