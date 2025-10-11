@@ -204,9 +204,15 @@ export async function doubleClickFile() {
         return riddle.rootPath;
       }
     })();
-    const url = new URL(`${rootPath}${path}`);
-    url.username = $(this).attr('data-username') || '';
-    url.password = $(this).attr('data-password') || '';
-    window.open(url.toString(), '_blank');
+    const parsedUrl = new URL(`${rootPath}${path}`);
+    parsedUrl.username = $(this).attr('data-username') || '';
+    parsedUrl.password = $(this).attr('data-password') || '';
+    chrome.windows.getCurrent({ populate: false }, currentWindow => {
+      // Window-aware tab creation (account for e.g. incognito browsing)
+      chrome.tabs.create({
+        url: parsedUrl.toString(),
+        windowId: currentWindow.id,
+      });
+    });
   }
 }
