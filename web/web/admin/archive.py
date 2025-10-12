@@ -40,8 +40,8 @@ class ArchivedPage:
         content_hash: str | None = None,
     ):
         self.alias = alias
-        self.path = path
-        self.local_path = self._get_local_path(path)
+        self.path = Path(path)
+        self.local_path = self._get_local_path()
         if content is not None:
             self.content = content
             self.content_hash = hashlib.md5(content).hexdigest()
@@ -52,9 +52,13 @@ class ArchivedPage:
         else:
             raise TypeError
 
-    def _get_local_path(self, path: str) -> Path:
+    def _get_local_path(self) -> Path:
         '''Ǵet full sanitized path to the (currently or to-be) archived page.'''
-        base_path = path.replace('..', '(parent)')
+        base_path = Path(str(self.path).replace('..', '(parent)'))
+        if not base_path.suffix:
+            if base_path == Path('/'):
+                base_path = Path('/(root)')
+            base_path = base_path.with_suffix('.page')
         return Path(f"../archive/{self.alias}{base_path}")
 
     async def record_hash(self) -> bool:
