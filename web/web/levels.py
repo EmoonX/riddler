@@ -311,7 +311,7 @@ async def get_pages(
     for data in page_data.values():
         extension = data['path'].rpartition('.')[-1].lower()
         data['page'] = data['path'].rpartition('/')[-1]
-        data['folder'] = 0
+        data['folder'] = False
         data['unknownExtension'] = extension not in available_extensions
         if access_time := data.get('access_time'):
             data['access_time'] = data['accessTime'] = \
@@ -322,7 +322,7 @@ async def get_pages(
 
     # Build recursive dict of folders and files
     base = {
-        'children': {}, 'folder': 1, 'path': '/',
+        'children': {}, 'folder': True, 'path': '/',
         'filesFound': 0, 'pagesFound': 0,
     }
     if not index_by_levels:
@@ -340,14 +340,18 @@ async def get_pages(
             parent = level_pages['/']
             path = data['path']
             segments = path.split('/')[1:]
-            for seg in segments:
+            for i, seg in enumerate(segments):
+                if not 'children' in parent:
+                    parent['children'] = {}
+                    parent['path'] = f"/{'/'.join(segments[:i])}"
+                    parent['filesFound'] = parent['pagesFound'] = 0
                 children = parent['children']
                 if seg not in children:
                     if seg != data['page']:
                         children[seg] = deepcopy(base)
+                        children[seg]['path'] = f"/{'/'.join(segments[:i+1])}"
                     else:
                         children[seg] = data
-
                 if not data['hidden']:
                     parent['filesFound'] += 1
                     parent['pagesFound'] += 1
@@ -382,7 +386,7 @@ async def get_pages(
                 if not data['hidden']:
                     parent['filesTotal'] += 1
                     parent['pagesTotal'] += 1
-            if not seg in parent['children']:
+            if seg not in parent['children']:
                 # Avoid registering locked folders/pages
                 break
             if not index_by_levels:
@@ -399,6 +403,17 @@ async def get_pages(
                 parent['password'] = greatparent['password']
 
     return jsonify(pages) if as_json else pages
+
+
+def absolute_paths(page_node: dict) -> Iterator[tuple[str, dict]]:
+    '''Iterator for `levels.get_pages` resulting page tree.'''
+    if not page_node['folder']:
+        yield (page_node['path'], page_node)
+        if not page_node.get('children'):
+            return
+    get_path = lambda node: node['path']
+    for child in sorted(page_node['children'].values(), key=get_path):
+        yield from absolute_paths(child)
 
 
 @levels.get('/<alias>/levels/get-root-path')
@@ -517,12 +532,3 @@ async def rate(alias: str, level_name: str, rating: int):
 
     # Return new rating data
     return f"{average} {count} {rating}", status_code
-
-
-def absolute_paths(page_node: dict) -> Iterator[tuple[str, dict]]:
-    '''Iterator for `levels.get_pages` resulting page tree.'''
-    if not page_node['folder']:
-        yield (page_node['path'], page_node)
-        return
-    for child in page_node['children'].values():
-        yield from absolute_paths(child)
