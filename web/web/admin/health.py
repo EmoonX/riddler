@@ -194,16 +194,16 @@ async def health_diagnostics(alias: str):
                 level['frontPage']: front_page | {'flag': 'front-page'}
             }
             del pages[level['frontPage']]
-        image_path = posixpath.join(
-            # Use `posixpath` instead of `urljoin` to avoid `..` resolution
-            f"{(level.get('frontPage') or '').rpartition('/')[0]}/",
-            level.get('image') or ''
-        )
-        if image_page := pages.get(image_path):
-            level['pages'] |= {
-                image_path: image_page | {'flag': 'front-image'}
-            }
-            del pages[image_path]
+            image_path = posixpath.join(
+                # Use `posixpath` instead of `urljoin` to avoid `..` resolution
+                f"{(level.get('frontPage') or '').rpartition('/')[0]}/",
+                level.get('image') or ''
+            )
+            if image_page := pages.get(image_path):
+                level['pages'] |= {
+                    image_path: image_page | {'flag': 'front-image'}
+                }
+                del pages[image_path]
 
         # Show remaining paths, with answer path at the bottom
         answer_page = pages.pop(level.get('answer'), None)
