@@ -67,19 +67,20 @@ class ArchivedPage:
         '''Record possibly new content hash, return whether successful.'''
 
         query = '''
-            SELECT retrieval_time FROM _page_hashes
-            WHERE riddle = :riddle
-                AND path = :path
-                AND content_hash = :content_hash
+            SELECT * FROM _page_hashes
+            WHERE riddle = :riddle AND path = :path
+            ORDER BY retrieval_time DESC
         '''
-        values = {
-            'riddle': self.alias,
-            'path': self.path,
+        values = {'riddle': self.alias, 'path': self.path}
+        last_snapshot = await database.fetch_one(query, values)
+        values |= {
             'content_hash': self.content_hash,
+            'last_modified': self.last_modified,
         }
-        if retrieval_time := await database.fetch_val(query, values):
+        if last_snapshot and last_snapshot['content_hash'] == self.content_hash:
             # Update `last_modified` field when missing;
             # avoid overwriting it on trivial same-hash header value changes
+            self.retrieval_time = last_snapshot['retrieval_time']
             query = '''
                 UPDATE _page_hashes
                 SET last_modified = :last_modified
@@ -88,12 +89,11 @@ class ArchivedPage:
                     AND content_hash = :content_hash
                     AND last_modified IS NULL
             '''
-            values |= {'last_modified': self.last_modified}
             await database.execute(query, values)
 
-            self.retrieval_time = retrieval_time
             return False
 
+        # Unseen page or differing hash from last; insert new snapshot entry
         self.retrieval_time = datetime.utcnow()
         query = '''
             INSERT INTO _page_hashes
