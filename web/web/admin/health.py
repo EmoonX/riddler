@@ -107,7 +107,11 @@ async def health_diagnostics(alias: str):
         }
         if res.ok:
             # Valid page, so archive it if new/changed
-            archived_page = ArchivedPage(alias, path, res.content)
+            if last_modified := res.headers.get('Last-Modified'):
+                last_modified = parsedate_to_datetime(last_modified)
+            archived_page = ArchivedPage(
+                alias, path, content=res.content, last_modified=last_modified
+            )
             if await archived_page.record_hash():
                 archived_page.save()
                 page_data['new'] = True

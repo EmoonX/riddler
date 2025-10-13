@@ -25,11 +25,11 @@ class ArchivedPage:
         return cls(alias, path, content_hash=latest_snapshot['content_hash'])
 
     @overload
-    def __init__(self, alias: str, path: str, content: bytes):
+    def __init__(self, alias, path, content, last_modified):
         ...
 
     @overload
-    def __init__(self, alias: str, path: str, content_hash: str):
+    def __init__(self, alias, path, content_hash):
         ...
 
     def __init__(
@@ -38,6 +38,7 @@ class ArchivedPage:
         path: str,
         content: bytes | None = None,
         content_hash: str | None = None,
+        last_modified: datetime | None = None,
     ):
         self.alias = alias
         self.path = Path(path)
@@ -45,6 +46,7 @@ class ArchivedPage:
         if content is not None:
             self.content = content
             self.content_hash = hashlib.md5(content).hexdigest()
+            self.last_modified = last_modified
         elif content_hash:
             self.content = self._read_local_file()
             self.content_hash = content_hash
@@ -76,14 +78,28 @@ class ArchivedPage:
             'content_hash': self.content_hash,
         }
         if retrieval_time := await database.fetch_val(query, values):
+            # Update `last_modified` field when missing;
+            # avoid overwriting it on trivial same-hash header value changes
+            query = '''
+                UPDATE _page_hashes
+                SET last_modified = :last_modified
+                WHERE riddle = :riddle
+                    AND path = :path
+                    AND content_hash = :content_hash
+                    AND last_modified IS NULL
+            '''
+            values |= {'last_modified': self.last_modified}
+            await database.execute(query, values)
+
             self.retrieval_time = retrieval_time
             return False
 
         self.retrieval_time = datetime.utcnow()
         query = '''
             INSERT INTO _page_hashes
-                (riddle, path, content_hash, retrieval_time)
-            VALUES (:riddle, :path, :content_hash, :retrieval_time)
+                (riddle, path, content_hash, last_modified, retrieval_time)
+            VALUES
+                (:riddle, :path, :content_hash, :last_modified, :retrieval_time)
         '''
         values |= {'retrieval_time': self.retrieval_time}
         await database.execute(query, values)
