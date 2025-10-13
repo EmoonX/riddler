@@ -120,6 +120,8 @@ async def health_diagnostics(alias: str):
                 page_data['redirects_to'] = \
                     await _check_and_record_redirect(path, res.text)
 
+        await _update_status_code(path, res.status_code)
+
         return page_data
 
     async def _check_and_record_redirect(path: str, html: str) -> str | None:
@@ -163,6 +165,20 @@ async def health_diagnostics(alias: str):
             )
 
         return redirect_path
+
+    async def _update_status_code(path: str, status_code: int):
+        '''Mark response status code of page's last request (NULL if 200/OK).'''
+        query = '''
+            UPDATE level_pages
+            SET status_code = :status_code
+            WHERE riddle = :riddle AND path = :path
+        '''
+        values = {
+            'riddle': alias,
+            'path': path,
+            'status_code': status_code if status_code != 200 else None,
+        }
+        await database.execute(query, values)
 
     # Start iterating at user-informed level (if any)
     levels = {}
