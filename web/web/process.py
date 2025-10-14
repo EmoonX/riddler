@@ -330,15 +330,6 @@ class _PathHandler:
     async def _format_and_sanitize_path(self, riddle: dict, url: str):
         '''Format and sanitize a valid path to its canonical form.'''
 
-        if riddle['html_extension']:
-            if self.path[-1] == '/':
-                # If a folder itself, add trailing "index.htm[l]" etc
-                self.path += f"index.{riddle['html_extension']}"
-            else:
-                # If missing the extension, append explicit ".htm[l]" etc
-                if not '.' in self.path:
-                    self.path += f".{riddle['html_extension']}"
-
         async def _format(sub_path: str):
             '''Format path if suitable (i.e indeed not unique).'''
 
@@ -375,6 +366,18 @@ class _PathHandler:
             # Replace path iff both pages are available and the content matches
             if content_hash == current_hash:
                 self.path = sub_path
+
+        if riddle['html_extension']:
+            if self.path.endswith('/'):
+                # If a folder itself, add trailing "index.htm[l]" etc
+                self.path += f"index.{riddle['html_extension']}"
+            else:
+                # If missing the extension, append explicit ".htm[l]" etc
+                if not '.' in self.path:
+                    self.path += f".{riddle['html_extension']}"
+        else:
+            # Omit superflous slash from extension-less hosts
+            self.path = self.path.removesuffix('/')
 
         # Riddle-specific path formatting
         if self.riddle_alias == 'decifra':
