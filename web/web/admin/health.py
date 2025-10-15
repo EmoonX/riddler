@@ -1,5 +1,6 @@
 from datetime import datetime
 from email.utils import parsedate_to_datetime
+from pathlib import Path
 import posixpath
 import re
 from urllib.parse import urljoin, urlsplit
@@ -22,6 +23,7 @@ admin_health = Blueprint('admin_health', __name__)
 
 status_symbols = {
     200: '✔️',
+    302: '🧭',
     401: '⛔',
     403: '🔴',
     404: '🔴',
@@ -87,6 +89,9 @@ async def health_diagnostics(alias: str):
             values = {'riddle': alias, 'path': path}
             if await database.fetch_val(query, values):
                 # Path has already been recorded, so skip it as instructed
+                page_data |= {
+                    'status_symbol': status_symbols.get(page_data['status_code'])
+                }
                 return page_data
 
         headers = {
@@ -99,6 +104,7 @@ async def health_diagnostics(alias: str):
         res = requests.get(
             _build_request_url(url),
             headers=headers,
+            allow_redirects=False,  # don't follow 30x redirects
             timeout=10,
         )
         page_data |= {
@@ -118,11 +124,10 @@ async def health_diagnostics(alias: str):
             page_data['content_hash'] = archived_page.content_hash
             page_data['retrieval_time'] = archived_page.retrieval_time
 
-            page_extension = os.path.splitext(path)[1][1:]
-            if page_extension in ['htm', 'html', 'php', '']:
-                # Check for redirects inside HTML pages
+            if Path(path).suffix in ['.htm', '.html', '.php', '']:
+                # Look for redirects (30x and <meta> ones)
                 page_data['redirects_to'] = \
-                    await _check_and_record_redirect(path, res.text)
+                    await _search_and_record_redirect(path, res)
 
         await _update_status_code(path, res.status_code)
 
@@ -156,31 +161,45 @@ async def health_diagnostics(alias: str):
         
         return url
 
-    async def _check_and_record_redirect(path: str, html: str) -> str | None:
+    async def _search_and_record_redirect(
+        path: str, response: requests.models.Response
+    ) -> str | None:
         '''
-        Search for and record redirect path when page contains the meta
-        refresh tag (i.e `<meta http-equiv="refresh" "content=...; URL=...">).
+        Search for and record redirect path when page either:
+            - comes from a `30x` response (`Location` header); or
+            - has a `<meta http-equiv="refresh" ...>` tag.
         '''
 
-        # Parse HTML content in search for specific tag
-        soup = BeautifulSoup(html, features='html.parser')
-        meta_refresh_tag = soup.find(
-            'meta', {'http-equiv': re.compile('refresh', re.I)}
-        )
-        if not meta_refresh_tag:
+        def _extract_redirect_href(res: requests.models.Response) -> str | None:
+            '''Extract redirect href from response (header/content), if any.'''
+
+            if location := res.headers.get('Location'):
+                # 30x response, direct `Location` header
+                return location
+            
+            # Parse HTML content in search for specific <meta> tag
+            soup = BeautifulSoup(res.text, features='html.parser')
+            meta_refresh_tag = soup.find(
+                'meta', {'http-equiv': re.compile('refresh', re.I)}
+            )
+            if meta_refresh_tag:
+                # Tag found; extract href from `content="X; URL=..."`` or similar
+                content = meta_refresh_tag.attrs['content']
+                return re.sub(r';|=|\'|"', ' ', content).split()[-1]
+
             return None
 
-        # Build absolute URL from tag's content and extract
-        # processed path from it (either an actual path or external link)
-        content = meta_refresh_tag.attrs['content']
-        redirect_url = urljoin(
-            f"{riddle['root_path']}{path}",
-            re.sub(r';|=|\'|"', ' ', content).split()[-1]
-        )
+        href = _extract_redirect_href(response)
+        if not href:
+            return None
+
+        # Build processed path from href
+        # (either an actual riddle page or full external link)
+        redirect_url = urljoin(f"{riddle['root_path']}{path}", href)
         redirect_alias, redirect_path = \
             await process_url(None, redirect_url, admin=True)
         if redirect_alias != alias:
-            redirect_path = redirect_url
+            redirect_path = href
 
         # Record redirect in DB
         query = '''
