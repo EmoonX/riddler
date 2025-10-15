@@ -165,9 +165,10 @@ async def health_diagnostics(alias: str):
         path: str, response: requests.models.Response
     ) -> str | None:
         '''
-        Search for and record redirect path when page either:
+        Search for, parse and record redirect path when page either:
             - comes from a `30x` response (`Location` header); or
-            - has a `<meta http-equiv="refresh" ...>` tag.
+            - contains `<script> [window.]location[.href] = '...'; </script>`; or
+            - contains `<meta http-equiv="refresh" content="...">`.
         '''
 
         def _extract_redirect_href(res: requests.models.Response) -> str | None:
@@ -177,13 +178,22 @@ async def health_diagnostics(alias: str):
                 # 30x response, direct `Location` header
                 return location
             
-            # Parse HTML content in search for specific <meta> tag
+            # Parse HTML content in search of specific tags and patterns
             soup = BeautifulSoup(res.text, features='html.parser')
+
+            # <script> window.location.href = '...'; </script>
+            if script_tag := soup.script:
+                if match := re.fullmatch(
+                    r'''(window[.])?location([.]href)?\s*=\s*['"](.+)['"];?''',
+                    script_tag.text.strip()
+                ):
+                    return match[3]
+
+            # <meta http-equiv="refresh" content="X; URL='...'">
             meta_refresh_tag = soup.find(
                 'meta', {'http-equiv': re.compile('refresh', re.I)}
             )
             if meta_refresh_tag:
-                # Tag found; extract href from `content="X; URL=..."`` or similar
                 content = meta_refresh_tag.attrs['content']
                 return re.sub(r';|=|\'|"', ' ', content).split()[-1]
 
