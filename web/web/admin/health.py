@@ -1,8 +1,8 @@
 from datetime import datetime
-import os
+from email.utils import parsedate_to_datetime
 import posixpath
 import re
-from urllib.parse import urljoin
+from urllib.parse import urljoin, urlsplit
 import warnings
 
 from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
@@ -61,22 +61,18 @@ async def health_diagnostics(alias: str):
         Retrieve page directly from riddle's host through web request,
         unless `include_level` or `redo_existing` conditions are(n't) met.
         '''
-
-        # Build URL (with possibly embedded credentials)
-        url = f"{riddle['root_path']}{path}"
-        credentials = await get_path_credentials(alias, path)
-        username = credentials['username']
-        password = credentials['password']
-        if username or password:
-            url = url.replace('://', f"://{username or ''}:{password or ''}@")
+        
+        url =  await _build_url(path)
         page_data |= {'url': url}
 
         if show_new_in_days:
             # Mark page as *new* if existing and newer than the X days given
             archived_page = await ArchivedPage.get_latest_snapshot(alias, path)
             if archived_page:
-                page_data['content_hash'] = archived_page.content_hash
-                page_data['retrieval_time'] = archived_page.retrieval_time
+                page_data |= {
+                    'content_hash': archived_page.content_hash,
+                    'retrieval_time': archived_page.retrieval_time,
+                }
                 tdiff = datetime.utcnow() - archived_page.retrieval_time
                 if tdiff.days < show_new_in_days:
                     page_data['new'] = True
@@ -100,7 +96,11 @@ async def health_diagnostics(alias: str):
                 'Gecko/20100101 Firefox/128.0'
             )
         }
-        res = requests.get(url, headers=headers, timeout=10)
+        res = requests.get(
+            _build_request_url(url),
+            headers=headers,
+            timeout=10,
+        )
         page_data |= {
             'status_code': res.status_code,
             'status_symbol': status_symbols.get(res.status_code),
@@ -127,6 +127,34 @@ async def health_diagnostics(alias: str):
         await _update_status_code(path, res.status_code)
 
         return page_data
+
+    async def _build_url(path: str) -> str:
+        '''Build full external URL, embedding credentials if needed.'''
+
+        url = f"{riddle['root_path']}{page_data['path']}"
+
+        credentials = await get_path_credentials(alias, path)
+        username = credentials['username']
+        password = credentials['password']
+        if username and password:
+            url = url.replace('://', f"://{username or ''}:{password or ''}@")
+
+        return url
+ 
+    def _build_request_url(url: str) -> str:
+        '''Build request-safe URL, accounting for quirks of certain hosts.'''
+
+        parsed_url = urlsplit(url)
+        if parsed_url.netloc.endswith('.neocities.org'):
+            if parsed_url.path.endswith(('.htm', '.html')) and '?' not in url:
+                # Add empty query to trick neocities.org's `.htm[l]` stripping
+                url += '?'
+
+        if url.endswith('?'):
+            # Append dummy key/value so `requests` doesn't ignore the '?'
+            url += '_='
+        
+        return url
 
     async def _check_and_record_redirect(path: str, html: str) -> str | None:
         '''

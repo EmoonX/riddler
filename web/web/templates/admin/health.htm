@@ -36,7 +36,7 @@
         {% set page = all_pages_by_path.get(path) %}
         <a
           {% if page['removed'] %}class="strikethrough"{% endif %}
-          href="{{ (riddle['root_path'] ~ path) if path.startswith('/') else path }}"
+          href="{{ page['url'] or path }}"
           target="_blank"
           rel="noreferrer"
           {% if title %}title="{{ title }}"{% endif %}
