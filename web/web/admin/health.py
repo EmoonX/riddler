@@ -7,7 +7,7 @@ from urllib.parse import urljoin, urlsplit
 import warnings
 
 from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
-from quart import Blueprint, render_template, request
+from quart import Blueprint, current_app, render_template, request
 from quartcord import requires_authorization
 import requests
 
@@ -35,12 +35,19 @@ warnings.filterwarnings("ignore", category=MarkupResemblesLocatorWarning)
 
 @admin_health.get('/admin/<alias>/health-diagnostics')
 @requires_authorization
-async def health_diagnostics(alias: str):
+async def health_diagnostics(alias: str, background: bool = False):
     '''Run level/page health diagnostics for a given riddle.'''
 
     await admin_auth(alias)
 
     args = request.args
+    if bool(args.get('background')) and not background:
+        # Run background diagnostics to avoid worker timeout restarts
+        current_app.add_background_task(
+            health_diagnostics, alias, background=True
+        )
+        return f"[{alias}] Running Health Diagnostics in the background.", 202
+    
     riddle = await get_riddle(alias)
     all_pages_by_level = await get_pages(
         alias,
