@@ -224,9 +224,14 @@ async def get_pages(
     if admin:
         user = None
         query = f"""
-            SELECT lp.*, fp.username AS find_username, fp.access_time AS find_time
-            FROM level_pages lp LEFT JOIN _found_pages fp
-                ON lp.riddle = fp.riddle AND lp.path = fp.path
+            SELECT lp.*,
+                fp.username AS find_username,
+                fp.access_time AS find_time, ph.retrieval_time
+            FROM level_pages lp
+                LEFT JOIN _found_pages fp
+                    ON lp.riddle = fp.riddle AND lp.path = fp.path
+                LEFT JOIN _page_hashes ph
+                    ON lp.riddle = ph.riddle AND lp.path = ph.path
             WHERE lp.riddle = :riddle
                 AND {level_condition.replace(' level_name', ' lp.level_name')}
                 {'AND hidden  IS NOT TRUE' if not include_hidden  else ''}
@@ -328,7 +333,9 @@ async def get_pages(
                 _stringify_datetime(access_time)
         elif find_time := data.get('find_time'):
             data['find_time'] = _stringify_datetime(find_time)
-            data['find_time_raw'] = find_time
+            data['time'] = find_time
+        else:
+            data['time'] = data['retrieval_time']
         paths[data['level_name']].append(data)
 
     # Build recursive dict of folders and files

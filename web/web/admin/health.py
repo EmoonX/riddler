@@ -310,7 +310,7 @@ async def health_diagnostics(alias: str, background: bool = False):
                 # Order displayed pages by harvest time
                 level['pages'] = dict(sorted(
                     level['pages'].items(),
-                    key=lambda page: page[1].get('find_time_raw') or datetime.min,
+                    key=lambda page: page[1].get('time') or datetime.min,
                 ))
 
         include_level &= not name == end_level
