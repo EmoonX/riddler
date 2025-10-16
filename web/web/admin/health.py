@@ -289,6 +289,13 @@ async def health_diagnostics(alias: str, background: bool = False):
                 }
                 del pages[image_path]
 
+        if args.get('orderBy') == 'time':
+            # Order displayed pages by harvest time
+            pages = dict(sorted(
+                pages.items(),
+                key=lambda page: page[1].get('find_time_raw') or datetime.min,
+            ))
+
         # Show remaining paths, with answer path at the bottom
         answer_page = pages.pop(level.get('answer'), None)
         level['pages'] |= pages

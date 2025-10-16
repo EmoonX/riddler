@@ -318,6 +318,7 @@ async def get_pages(
                 _stringify_datetime(access_time)
         elif find_time := data.get('find_time'):
             data['find_time'] = _stringify_datetime(find_time)
+            data['find_time_raw'] = find_time
         paths[data['level_name']].append(data)
 
     # Build recursive dict of folders and files
