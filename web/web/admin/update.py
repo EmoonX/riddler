@@ -425,9 +425,8 @@ async def update_discord_account_info():
             await database.execute(query, values)
 
         else:
-            url = account['avatar_url']
-            response = requests.get(url)
-            if response.status_code == 404:
+            avatar_url = account['avatar_url']
+            if not avatar_url or not requests.get(avatar_url).ok:
                 # Outdated profile picture
                 avatar_url = await bot_request(
                     'get-avatar-url',
