@@ -290,13 +290,6 @@ async def health_diagnostics(alias: str, background: bool = False):
                 }
                 del pages[image_path]
 
-        if args.get('orderBy') == 'time':
-            # Order displayed pages by harvest time
-            pages = dict(sorted(
-                pages.items(),
-                key=lambda page: page[1].get('find_time_raw') or datetime.min,
-            ))
-
         # Show remaining paths, with answer(s) at the bottom
         level['answers'] = listify(level.get('answer'))
         answer_pages = []
@@ -312,6 +305,13 @@ async def health_diagnostics(alias: str, background: bool = False):
         if include_level:
             # Include levels only within the [start, end] range (when given)
             levels[name] = level
+
+            if args.get('orderBy') == 'time':
+                # Order displayed pages by harvest time
+                level['pages'] = dict(sorted(
+                    level['pages'].items(),
+                    key=lambda page: page[1].get('find_time_raw') or datetime.min,
+                ))
 
         include_level &= not name == end_level
 
