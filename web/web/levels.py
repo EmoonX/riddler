@@ -281,20 +281,30 @@ async def get_pages(
     result = await database.fetch_all(query, values)
     for row in result:
         level_name = row['name']
-        unlocked_levels[level_name] = {
+        level = unlocked_levels[level_name] = {
             'levelSet': row['level_set'],
             'latinName': row['latin_name'],
             'image': row['image'],
             'unlockTime': _stringify_datetime(row['find_time']),
         }
-        if page_data.get(row['path']) or admin:
-            unlocked_levels[level_name] |= {'frontPage': row['path']}
+        if front_paths := listify(row['path']):
+            if not admin:
+                front_paths = list(front_paths & page_data.keys())
+            if front_paths:
+                level |= {'frontPage':
+                    json.dumps(front_paths) if front_paths[1:]
+                    else front_paths[0]
+                }
         if row['completion_time']:
-            if page_data.get(row['answer']) or admin:
-                unlocked_levels[level_name] |= {'answer': row['answer']}
-            unlocked_levels[level_name] |= {
-                'solveTime': _stringify_datetime(row['completion_time']),
-            }
+            if answers := listify(row['answer']):
+                if not admin:
+                    answers = list(answers & page_data.keys())
+                if answers:
+                    level |= {'answer':
+                        json.dumps(answers) if answers[1:]
+                        else answers[0]
+                    }
+            level |= {'solveTime': _stringify_datetime(row['completion_time'])}
 
     # Scan extensions dir for available extension icon names
     available_extensions = set()
@@ -415,6 +425,16 @@ def absolute_paths(page_node: dict) -> Iterator[tuple[str, dict]]:
     get_path = lambda node: node['path']
     for child in sorted(page_node['children'].values(), key=get_path):
         yield from absolute_paths(child)
+
+
+def listify(path: str | None) -> list[str]:
+    '''Turn path(s) string into list of paths (be it 0, 1 or more).'''
+    if not path:
+        return []
+    try:
+        return json.loads(path)
+    except json.decoder.JSONDecodeError:
+        return [path]
 
 
 @levels.get('/<alias>/levels/get-root-path')

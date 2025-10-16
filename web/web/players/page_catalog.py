@@ -1,3 +1,4 @@
+import posixpath
 from urllib.parse import urljoin
 
 from quart import Blueprint, render_template
@@ -6,7 +7,7 @@ from quartcord import requires_authorization
 from auth import discord
 from credentials import get_path_credentials, has_unlocked_path_credentials
 from inject import get_riddle
-from levels import absolute_paths, get_pages
+from levels import absolute_paths, get_pages, listify
 
 page_catalog = Blueprint('page_catalog', __name__)
 
@@ -51,25 +52,34 @@ async def catalog(alias: str):
 
         # Show front page/image paths at the top
         level |= {'pages': {}}
-        if front_page := pages.get(level.get('frontPage')):
-            level['pages'] |= {
-                level['frontPage']: front_page | {'flag': 'front-page'}
-            }
-            del pages[level['frontPage']]
-        image_path = urljoin(level.get('frontPage'), level.get('image'))
-        if image_page := pages.get(image_path):
-            level['pages'] |= {
-                image_path: image_page | {'flag': 'front-image'}
-            }
-            del pages[image_path]
+        level['frontPages'] = listify(level.get('frontPage'))
+        for path in level['frontPages']:
+            if front_page := pages.get(path):
+                level['pages'] |= {path: front_page | {'flag': 'front-page'}}
+                del pages[path]
+        if level['frontPages']:
+            image_path = posixpath.join(
+                # Use `posixpath` to avoid `urljoin`'s '..' resolution
+                f"{level['frontPages'][0].rpartition('/')[0]}/",
+                level.get('image') or '',
+            )
+            if image_page := pages.get(image_path):
+                level['pages'] |= {
+                    image_path: image_page | {'flag': 'front-image'}
+                }
+                del pages[image_path]
 
-        # Show remaining paths, with answer path at the bottom
-        answer_page = pages.pop(level.get('answer'), None)
-        level['pages'] |= pages
-        if answer_page:
-            level['pages'] |= {
-                level['answer']: answer_page | {'flag': 'answer'}
-            }
+        # Show remaining paths, with answer(s) at the bottom
+        level['answers'] = listify(level.get('answer'))
+        answer_pages = []
+        for path in level['answers']:
+            if page := pages.pop(path, None):
+                answer_pages.append(page)
+        level['pages'] |= pages            
+        level['pages'] |= {
+            page['path']: page | {'flag': 'answer'}
+            for page in answer_pages
+        }
 
         levels[name] = level
 

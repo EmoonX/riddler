@@ -15,7 +15,7 @@ from admin.admin_auth import admin_auth
 from admin.archive import ArchivedPage
 from credentials import get_path_credentials
 from inject import get_riddle
-from levels import absolute_paths, get_pages
+from levels import absolute_paths, get_pages, listify
 from process import process_url
 from util.db import database
 
@@ -273,15 +273,16 @@ async def health_diagnostics(alias: str, background: bool = False):
 
         # Show front page/image paths at the top
         level |= {'pages': {}}
-        if front_page := pages.get(level.get('frontPage')):
-            level['pages'] |= {
-                level['frontPage']: front_page | {'flag': 'front-page'}
-            }
-            del pages[level['frontPage']]
+        level['frontPages'] = listify(level.get('frontPage'))
+        for path in level['frontPages']:
+            if front_page := pages.get(path):
+                level['pages'] |= {path: front_page | {'flag': 'front-page'}}
+                del pages[path]
+        if level['frontPages']:
             image_path = posixpath.join(
-                # Use `posixpath` instead of `urljoin` to avoid `..` resolution
-                f"{(level.get('frontPage') or '').rpartition('/')[0]}/",
-                level.get('image') or ''
+                # Use `posixpath` to avoid `urljoin`'s '..' resolution
+                f"{level['frontPages'][0].rpartition('/')[0]}/",
+                level.get('image') or '',
             )
             if image_page := pages.get(image_path):
                 level['pages'] |= {
@@ -296,13 +297,17 @@ async def health_diagnostics(alias: str, background: bool = False):
                 key=lambda page: page[1].get('find_time_raw') or datetime.min,
             ))
 
-        # Show remaining paths, with answer path at the bottom
-        answer_page = pages.pop(level.get('answer'), None)
-        level['pages'] |= pages
-        if answer_page:
-            level['pages'] |= {
-                level['answer']: answer_page | {'flag': 'answer'}
-            }
+        # Show remaining paths, with answer(s) at the bottom
+        level['answers'] = listify(level.get('answer'))
+        answer_pages = []
+        for path in level['answers']:
+            if page := pages.pop(path, None):
+                answer_pages.append(page)
+        level['pages'] |= pages            
+        level['pages'] |= {
+            page['path']: page | {'flag': 'answer'}
+            for page in answer_pages
+        }
 
         if include_level:
             # Include levels only within the [start, end] range (when given)

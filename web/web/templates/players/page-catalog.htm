@@ -92,12 +92,15 @@
       {% if not level['pages'] %}
         <em style="color: #bbb">(no recorded pages)</em>
       {% endif %}
-      {% set answer_page = all_pages_by_path.get(level['answer']) %}
-      {% if level['answer'] and answer_page['level_name'] != level_name %}
-        <li class="smaller">
-          answer: {{ referenced_path(level['answer']) }}
-        </li>
-      {% endif %}
+      {% for answer in level['answers'] %}
+        {% set answer_page = all_pages_by_path.get(answer) %}
+        {% if answer_page['level_name'] != level_name %}
+          <li class="smaller">
+            <span {{- ' style="visibility: hidden;"'|safe if loop.index0 > 0 }}>answer:</span>
+            {{ referenced_path(answer) }}
+          </li>
+        {% endif %}
+      {% endfor %}
       </ul>
     {% endfor %}
     {% if not levels %}
