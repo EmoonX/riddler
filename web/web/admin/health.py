@@ -12,7 +12,7 @@ from quartcord import requires_authorization
 import requests
 
 from admin.admin_auth import admin_auth
-from admin.archive import ArchivedPage
+from admin.archive import PageSnapshot
 from credentials import get_path_credentials
 from inject import get_riddle
 from levels import absolute_paths, get_pages, listify
@@ -76,25 +76,19 @@ async def health_diagnostics(alias: str, background: bool = False):
 
         if show_new_in_days:
             # Mark page as *new* if existing and newer than the X days given
-            archived_page = await ArchivedPage.get_latest_snapshot(alias, path)
-            if archived_page:
+            if snapshot := await PageSnapshot.get_latest(alias, path):
                 page_data |= {
-                    'content_hash': archived_page.content_hash,
-                    'retrieval_time': archived_page.retrieval_time,
+                    'content_hash': snapshot.content_hash,
+                    'retrieval_time': snapshot.retrieval_time,
                 }
-                tdiff = datetime.utcnow() - archived_page.retrieval_time
+                tdiff = datetime.utcnow() - snapshot.retrieval_time
                 if tdiff.days < show_new_in_days:
                     page_data['new'] = True
 
         if not include_level:
             return page_data
         if not redo_existing:
-            query = '''
-                SELECT 1 FROM _page_hashes
-                WHERE riddle = :riddle AND path = :path
-            '''
-            values = {'riddle': alias, 'path': path}
-            if await database.fetch_val(query, values):
+            if await PageSnapshot.get_latest(alias, path):
                 # Path has already been recorded, so skip it as instructed
                 page_data |= {
                     'status_symbol': status_symbols.get(page_data['status_code'])
@@ -122,14 +116,18 @@ async def health_diagnostics(alias: str, background: bool = False):
             # Valid page, so archive it if new/changed
             if last_modified := res.headers.get('Last-Modified'):
                 last_modified = parsedate_to_datetime(last_modified)
-            archived_page = ArchivedPage(
-                alias, path, content=res.content, last_modified=last_modified
+            snapshot = PageSnapshot(
+                alias,
+                path,
+                retrieval_time=datetime.utcnow(),
+                last_modified=last_modified,
+                content=res.content,
             )
-            if await archived_page.record_hash():
-                archived_page.save()
+            if await snapshot.record_hash():
+                snapshot.save()
                 page_data['new'] = True
-            page_data['content_hash'] = archived_page.content_hash
-            page_data['retrieval_time'] = archived_page.retrieval_time
+            page_data['content_hash'] = snapshot.content_hash
+            page_data['retrieval_time'] = snapshot.retrieval_time
 
             if Path(path).suffix in ['.htm', '.html', '.php', '']:
                 # Look for redirects (30x and <meta> ones)

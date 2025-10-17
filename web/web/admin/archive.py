@@ -2,57 +2,53 @@ from datetime import datetime
 import hashlib
 import os
 from pathlib import Path
-from typing import overload, Self
+from typing import Self
 
 from util.db import database
 
 
-class ArchivedPage:
+class PageSnapshot:
+    '''Archived page snapshot.'''
 
     @classmethod
-    async def get_latest_snapshot(cls, alias: str, path: str) -> Self | None:
-        '''Retrieve latest archived page snapshot, based on retrieval time.'''
+    async def get_latest(cls, alias: str, path: Path | str) -> Self | None:
+        '''Get latest snapshot for given page, based on retrieval time.'''
         query = '''
             SELECT * FROM _page_hashes
             WHERE riddle = :riddle AND path = :path
             ORDER BY retrieval_time DESC
-            LIMIT 1
         '''
         values = {'riddle': alias, 'path': path}
-        latest_snapshot = await database.fetch_one(query, values)
-        if not latest_snapshot:
-            return None        
-        return cls(alias, path, content_hash=latest_snapshot['content_hash'])
-
-    @overload
-    def __init__(self, alias, path, content, last_modified):
-        ...
-
-    @overload
-    def __init__(self, alias, path, content_hash):
-        ...
+        data = await database.fetch_one(query, values)
+        if not data:
+            return None
+        return cls(
+            alias,
+            path,
+            retrieval_time=data['retrieval_time'],
+            content_hash=data['content_hash'],
+            last_modified=data['last_modified'],
+        )
 
     def __init__(
         self,
         alias: str,
-        path: str,
+        path: Path | str,
+        retrieval_time: datetime,
+        last_modified: datetime | None = None,
         content: bytes | None = None,
         content_hash: str | None = None,
-        last_modified: datetime | None = None,
     ):
         self.alias = alias
         self.path = Path(path)
         self.local_path = self._get_local_path()
+        self.retrieval_time = retrieval_time
+        self.last_modified = last_modified
+        self.content = content
         if content is not None:
-            self.content = content
             self.content_hash = hashlib.md5(content).hexdigest()
-            self.last_modified = last_modified
-        elif content_hash:
-            self.content = self._read_local_file()
-            self.content_hash = content_hash
-            self.retrieval_time = self._get_local_mtime()
         else:
-            raise TypeError
+            self.content_hash = content_hash
 
     def _get_local_path(self) -> Path:
         '''Ǵet full sanitized path to the (currently or to-be) archived page.'''
@@ -66,21 +62,17 @@ class ArchivedPage:
     async def record_hash(self) -> bool:
         '''Record possibly new content hash, return whether successful.'''
 
-        query = '''
-            SELECT * FROM _page_hashes
-            WHERE riddle = :riddle AND path = :path
-            ORDER BY retrieval_time DESC
-        '''
-        values = {'riddle': self.alias, 'path': self.path}
-        last_snapshot = await database.fetch_one(query, values)
-        values |= {
+        values = {
+            'riddle': self.alias,
+            'path': self.path,
             'content_hash': self.content_hash,
             'last_modified': self.last_modified,
         }
-        if last_snapshot and last_snapshot['content_hash'] == self.content_hash:
+        last_snapshot = await PageSnapshot.get_latest(self.alias, self.path)
+        if last_snapshot and last_snapshot.content_hash == self.content_hash:
             # Update `last_modified` field when missing;
             # avoid overwriting it on trivial same-hash header value changes
-            self.retrieval_time = last_snapshot['retrieval_time']
+            self.retrieval_time = last_snapshot.retrieval_time
             query = '''
                 UPDATE _page_hashes
                 SET last_modified = :last_modified
@@ -94,7 +86,6 @@ class ArchivedPage:
             return False
 
         # Unseen page or differing hash from last; insert new snapshot entry
-        self.retrieval_time = datetime.utcnow()
         query = '''
             INSERT INTO _page_hashes
                 (riddle, path, content_hash, last_modified, retrieval_time)
@@ -146,11 +137,7 @@ class ArchivedPage:
         Rename local file as hidden (i.e starting with '.'),
         appending its modification date to the filename.
         '''
-        local_mtime = self._get_local_mtime().strftime("%Y-%m-%d")
+        local_mtime = self.retrieval_time.strftime("%Y-%m-%d")
         renamed_filename = f".{self.local_path.name}-{local_mtime}"
         renamed_path = f"{self.local_path.parent}/{renamed_filename}"
         os.rename(self.local_path, renamed_path)
-
-    def _get_local_mtime(self) -> datetime:
-        '''Get current local file's modification/retrieval time.'''
-        return datetime.fromtimestamp(self.local_path.stat().st_mtime)
