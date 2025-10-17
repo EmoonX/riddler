@@ -3,7 +3,7 @@ from datetime import datetime
 import hashlib
 import json
 import re
-from typing import Self
+from typing import Callable, Self
 from urllib.parse import urljoin, urlsplit
 
 from pymysql.err import IntegrityError
@@ -210,7 +210,7 @@ class _PathHandler:
         cls,
         user: User,
         url: str,
-        status_code: str,
+        status_code: int,
         location: str | None = None,
     ) -> Self | None:
         '''Build handler from DB's user info and URL info.'''
@@ -221,7 +221,7 @@ class _PathHandler:
         if not riddle:
             return None
         self.user = user
-        self.raw_path = copy(self.path)
+        self.path = copy(self.raw_path)
         self.status_code = status_code
 
         # Always ignore occurrences of consecutive slashes
@@ -230,7 +230,10 @@ class _PathHandler:
         self.short_run = False
         if status_code in [301, 302, 303, 307, 308]:
             # Handle sufficiently trivial redirects (regardless of 30x semantics)
-            self.short_run = await self._is_short_run(url, location)
+            full_location = urljoin(url, location)
+            ph_to = await _PathHandler.build(self.user, full_location, 418)
+            if ph_to and ph_to.riddle_alias == self.riddle_alias:
+                self.short_run = is_trivial_redirect(self.raw_path, ph_to.path)
 
         if 200 <= status_code < 400 and not self.short_run:
             # Valid non-trivial path; format it in accordance to the guidelines
@@ -1064,3 +1067,26 @@ class _LevelHandler:
 
         # Update user and global scores
         await self.ph.update_score(self.points)
+
+
+def is_trivial_redirect(path_from: str, path_to: str) -> bool:
+    '''Check whether a redirect is trivial (i.e not a relevant page).'''
+
+    def _matches_either_way(f: Callable[[str], str]):
+        return f(path_from) == path_to or path_from == f(path_to)
+
+    if path_from == path_to:
+        # Scheme/host/port change
+        return True
+    if _matches_either_way(lambda s: s.removesuffix('/')):
+        # Folder trailing slashes
+        return True
+    if _matches_either_way(lambda s: re.sub(r'(index)?([.]\w+)?$', '', s)):
+        # Implicit [index].htm[l] (usually Neocities)
+        return True
+    if path_from.lower() == path_to:
+        # Case insensitive webserver w/ auto-lowercase (e.g wingheart)
+        return True
+
+    return False
+
