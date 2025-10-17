@@ -377,7 +377,7 @@ class _PathHandler:
                     self.path += f".{riddle['html_extension']}"
         else:
             # Omit superflous slash from extension-less hosts
-            self.path = self.path.removesuffix('/')
+            self.path = self.path.removesuffix('/') or '/'
 
         # Riddle-specific path formatting
         if self.riddle_alias == 'decifra':
