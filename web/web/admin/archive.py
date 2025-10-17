@@ -60,7 +60,7 @@ class PageSnapshot:
         return Path(f"../archive/{self.alias}{base_path}")
 
     async def record_hash(self) -> bool:
-        '''Record possibly new content hash, return whether successful.'''
+        '''Record possibly new content hash, return whether to continue.'''
 
         values = {
             'riddle': self.alias,
@@ -82,6 +82,13 @@ class PageSnapshot:
                     AND last_modified IS NULL
             '''
             await database.execute(query, values)
+
+            # Force file save on missing local copy or mismatched hash
+            local_content = self._read_local_file()
+            if not local_content:
+                return True
+            if hashlib.md5(local_content).hexdigest() != self.content_hash:
+                return True
 
             return False
 
