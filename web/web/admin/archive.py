@@ -147,4 +147,7 @@ class PageSnapshot:
         local_mtime = self.retrieval_time.strftime("%Y-%m-%d")
         renamed_filename = f".{self.local_path.name}-{local_mtime}"
         renamed_path = f"{self.local_path.parent}/{renamed_filename}"
-        os.rename(self.local_path, renamed_path)
+        if Path(renamed_path).exists():
+            # Expand timestamp on same-day renaming conflicts
+            renamed_path += self.retrieval_time.strftime("T%H-%M-%S")
+        self.local_path.rename(renamed_path)
