@@ -102,6 +102,7 @@ async def health_diagnostics(alias: str, background: bool = False):
                 'Gecko/20100101 Firefox/128.0'
             )
         }
+        _path = path
         res = redirect_path = None
         while res is None:
             res = requests.get(
@@ -112,12 +113,14 @@ async def health_diagnostics(alias: str, background: bool = False):
             )
             if res.ok:
                 # Lookout for redirects (30x and <meta> ones)
-                redirect_path = await _find_and_parse_redirect(path, res)
-                if redirect_path and is_trivial_redirect(path, redirect_path):
+                redirect_path = \
+                    await _find_and_parse_redirect(_path, res, raw=True)
+                if redirect_path and is_trivial_redirect(_path, redirect_path):
                     # Disregard trivial redirects; retrieve next URL in chain
-                    if redirect_path == path:
+                    if redirect_path == _path:
                         raise requests.exceptions.TooManyRedirects(url)
                     url = await _build_url(redirect_path)
+                    _path = redirect_path
                     res = redirect_path = None
 
         page_data |= {
@@ -127,6 +130,8 @@ async def health_diagnostics(alias: str, background: bool = False):
         await _update_status_code(path, res.status_code)
         if res.ok:
             if redirect_path:
+                # Get (possibly) non raw redirect path
+                redirect_path = await _find_and_parse_redirect(path, res)
                 await _record_redirect(path, redirect_path)
                 page_data['redirects_to'] = redirect_path
 
@@ -177,7 +182,7 @@ async def health_diagnostics(alias: str, background: bool = False):
         return url
 
     async def _find_and_parse_redirect(
-        path: str, response: requests.models.Response
+        path: str, response: requests.models.Response, raw: bool = False,
     ) -> str | None:
         '''
         Search for and parse redirect path when page either:
@@ -221,11 +226,12 @@ async def health_diagnostics(alias: str, background: bool = False):
         # Build processed path from href
         # (either an actual riddle page or full external link)
         redirect_url = urljoin(f"{riddle['root_path']}{path}", href)
-        redirect_alias, redirect_path = \
-            await process_url(None, redirect_url, admin=True)
+        redirect_alias, redirect_path = await process_url(
+            None, redirect_url, admin=True, status_code=(418 if raw else 200)
+        )
+
         if redirect_alias != alias:
             return redirect_url
-
         return redirect_path
 
     async def _record_redirect(path_from: str, path_to: str | None):

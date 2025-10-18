@@ -33,6 +33,7 @@ async def process_url(
     username: str | None = None,
     url: str | None = None,
     admin: bool = False,
+    status_code: int | None = None,
 ):
     '''Process URL (usually) sent by the browser extension.'''
 
@@ -58,12 +59,13 @@ async def process_url(
         user = lambda: None
         setattr(user, 'name', username)
     location = request.headers.get('Location')
-    status_code = int(request.headers.get('Statuscode', 418))
+    if not status_code:
+        status_code = int(request.headers.get('Statuscode', 200))
 
     # Create path handler object and build player data
     ph = await _PathHandler.build(user, url, status_code, location)
     if admin:
-        return (ph.riddle_alias, ph.raw_path) if ph else (None, None)
+        return (ph.riddle_alias, ph.path) if ph else (None, None)
     if not ph:
         # TODO
         # Not inside root path (e.g forum or admin pages)
@@ -310,25 +312,6 @@ class _PathHandler:
                     parsed_url.password or '',
                 )
                 return riddle
-
-    async def _is_short_run(self, url: str, location: str | None):
-
-        full_location = urljoin(url, location)
-        ph_loc = await _PathHandler.build(self.user, full_location, 418)
-        if not ph_loc:
-            return False
-
-        if ph_loc.path == f"{self.path}/":
-            # Auto trailing slashes for folders
-            return True
-        if ph_loc.path == re.sub(r'(index)?([.]\w+)?$', '', self.path):
-            # Implicit [index].htm[l] (usually Neocities)
-            return True
-        if ph_loc.path == self.path.lower():
-            # Case insensitive webserver w/ auto-lowercase (e.g wingheart)
-            return True
-
-        return False
 
     async def _format_and_sanitize_path(self, riddle: dict, url: str):
         '''Format and sanitize a valid path to its canonical form.'''
