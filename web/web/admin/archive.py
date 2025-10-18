@@ -1,6 +1,5 @@
 from datetime import datetime
 import hashlib
-import os
 from pathlib import Path
 from typing import Self
 
@@ -19,8 +18,7 @@ class PageSnapshot:
             ORDER BY retrieval_time DESC
         '''
         values = {'riddle': alias, 'path': path}
-        data = await database.fetch_one(query, values)
-        if not data:
+        if not (data := await database.fetch_one(query, values)):
             return None
         return cls(
             alias,
@@ -85,7 +83,7 @@ class PageSnapshot:
 
             # Force file save on missing local copy or mismatched hash
             local_content = self._read_local_file()
-            if not local_content:
+            if local_content is None:
                 return True
             if hashlib.md5(local_content).hexdigest() != self.content_hash:
                 return True
@@ -144,10 +142,14 @@ class PageSnapshot:
         Rename local file as hidden (i.e starting with '.'),
         appending its modification date to the filename.
         '''
-        local_mtime = self.retrieval_time.strftime("%Y-%m-%d")
+        local_mtime = self._get_local_mtime().strftime("%Y-%m-%d")
         renamed_filename = f".{self.local_path.name}-{local_mtime}"
         renamed_path = f"{self.local_path.parent}/{renamed_filename}"
         if Path(renamed_path).exists():
             # Expand timestamp on same-day renaming conflicts
-            renamed_path += self.retrieval_time.strftime("T%H-%M-%S")
+            renamed_path += self._get_local_mtime().strftime("T%H-%M-%S")
         self.local_path.rename(renamed_path)
+
+    def _get_local_mtime(self) -> datetime:
+        '''Get current local file's modification/retrieval time.'''
+        return datetime.fromtimestamp(self.local_path.stat().st_mtime)
