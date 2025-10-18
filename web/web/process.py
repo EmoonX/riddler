@@ -426,48 +426,24 @@ class _PathHandler:
     async def process(self) -> bool:
         '''Process level path.'''
 
-        # Search for found but unbeaten levels
-        query = '''
-            SELECT is_secret, `index`, name, latin_name,
-                answer, `rank`, discord_name
-            FROM user_levels INNER JOIN levels
-            ON levels.riddle = user_levels.riddle
-                AND levels.name = user_levels.level_name
-            WHERE user_levels.riddle = :riddle
-                AND username = :username
-                AND completion_time IS NULL
-        '''
-        values = {
-            'riddle': self.riddle_alias,
-            'username': self.user.name
-        }
-        current_levels = await database.fetch_all(query, values)
-
-        # Register completion if path is answer to any of the found levels
-        # (must hold even when answer points to a 404 or non-level page)
-        for level in current_levels:
-            try:
-                is_answer = self.path in json.loads(level['answer'] or '')
-            except json.decoder.JSONDecodeError:
-                is_answer = self.path == level['answer']
-            if is_answer:
-                lh = _LevelHandler(level, self)
-                await lh.register_completion()
-                break
-
-        # Check if the page is a normal one (i.e html-like)
-        extension = self.path.rpartition('/')[-1].partition('.')[-1]
-        is_normal_page = extension in ['', 'htm', 'html', 'php']
-
-        # Fetch page data (if present)
+        # Fetch page data (if existing)
         query = '''
             SELECT * FROM level_pages
             WHERE riddle = :riddle AND path = :path
         '''
         values = {'riddle': self.riddle_alias, 'path': self.path}
         page = dict(await database.fetch_one(query, values) or {})
-        self.hidden = page.get('hidden')
-        self.removed = page.get('removed')
+        self.hidden = bool(page.get('hidden'))
+        self.removed = bool(page.get('removed'))
+
+        if answer_level := await self._find_level_being_solved():
+            # Path is a (non removed) answer for an unsolved level
+            lh = _LevelHandler(answer_level, self)
+            await lh.register_completion()
+
+        # Check if the page is a normal one (i.e html-like)
+        extension = self.path.rpartition('/')[-1].partition('.')[-1]
+        is_normal_page = extension in ['', 'htm', 'html', 'php']
 
         if not page:
             if self.status_code in [300, 403, 404]:
@@ -537,11 +513,51 @@ class _PathHandler:
 
         return 201 if is_new_page else 200
 
+    async def _find_level_being_solved(self) -> dict | None:
+        '''Find unsolved level given path is an answer for, if any,'''
+
+        if self.removed:
+            # Ignore old/removed answers
+            return None
+
+        # Search for unlocked but unsolved levels
+        query = '''
+            SELECT is_secret, `index`, name, latin_name,
+                answer, `rank`, discord_name
+            FROM user_levels INNER JOIN levels
+            ON levels.riddle = user_levels.riddle
+                AND levels.name = user_levels.level_name
+            WHERE user_levels.riddle = :riddle
+                AND username = :username
+                AND completion_time IS NULL
+        '''
+        values = {
+            'riddle': self.riddle_alias,
+            'username': self.user.name
+        }
+        current_levels = await database.fetch_all(query, values)
+
+        # Register completion if path is answer to any of the
+        # unlocked levels (bar removed page cases)
+        for level in current_levels:
+            try:
+                is_answer = self.path in json.loads(level['answer'] or '')
+            except json.decoder.JSONDecodeError:
+                is_answer = self.path == level['answer']
+            if is_answer:
+                return level
+
+        return None
+
     async def _are_level_requirements_satisfied(self, level_name: str) -> bool:
         '''
         Check if all required levels are already beaten
         (or, if `finding_is_enough` flag is on, at least found).
         '''
+
+        if self.removed:
+            # Always record removed pages
+            return True
 
         query = '''
             SELECT * FROM level_requirements
@@ -569,12 +585,16 @@ class _PathHandler:
             req_satisfied = await database.fetch_val(query, values)
             if not req_satisfied:
                 return False
-        
+
         return True
 
     async def _check_and_unlock(self, level: dict):
         '''Check if a level hasn't been AND can be unlocked.
         If positive, proceeds with unlocking procedures.'''
+
+        if self.removed:
+            # Ignore removed front pages
+            return
 
         # Check if level has already been unlocked beforehand
         query = '''
