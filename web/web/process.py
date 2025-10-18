@@ -156,7 +156,7 @@ async def process_url(
         f"\033[1m[{ph.riddle_alias}]\033[0m "
         f"Received {'removed ' if ph.removed else ''}path "
         f"\033[3m\033[1m{formatted_path}\033[0m\033[0m "
-        f"\033[1m({ph.path_level})\033[0m "
+        f"\033[1m({ph.path_level or '\033[0;3mspecial\033[1m'})\033[0m "
         f"from \033[1m{ph.user.name}\033[0m "
         f"({tnow})"
     )
@@ -435,6 +435,7 @@ class _PathHandler:
         page = dict(await database.fetch_one(query, values) or {})
         self.hidden = bool(page.get('hidden'))
         self.removed = bool(page.get('removed'))
+        self.special = bool(page.get('special'))
 
         if answer_level := await self._find_level_being_solved():
             # Path is a (non removed) answer for an unsolved level
@@ -457,13 +458,13 @@ class _PathHandler:
             await self._register_new_unlisted_page()
 
         if not page.get('level_name'):
-            if self.removed:
-                return 410
-
-            # Look for "special" achievements that aren't part of any level
+            if not self.special:
+                if self.removed:
+                    return 410
+                return 412
+        
+            # Look out for "special" achievements that aren't part of any level
             await self._process_achievement()
-
-            return 412
 
         # Get requested page's level info from DB
         query = '''
@@ -472,11 +473,12 @@ class _PathHandler:
         '''
         values = {'riddle': self.riddle_alias, 'level_name': page['level_name']}
         level = await database.fetch_one(query, values)
-        self.path_level = level['name']
-        self.path_level_set = level['level_set']
-        if self.path == level['path']:
-            # Path points to its level's front page, possibly unlock it
-            await self._check_and_unlock(level)
+        self.path_level = level and level['name']
+        self.path_level_set = level and level['level_set']
+        if level and level['path']:
+            if self.path == level['path'] or f'"{self.path}"' in level['path']:
+                # Path points to the level's front page(s), possibly unlock it
+                await self._check_and_unlock(level)
 
         # Check if level has been unlocked (right now or before)
         query = '''
@@ -777,12 +779,12 @@ class _PathHandler:
                     'username': self.user.name,
                     'path': path,
                 }
-                if not (page_found := await database.fetch_val(query, values)):
+                if not await database.fetch_val(query, values):
                     return
 
         # If positive, add it to the player's collection
         query = '''
-            INSERT INTO user_achievements
+            INSERT IGNORE INTO user_achievements
                 (riddle, username, title, unlock_time, incognito)
             VALUES (:riddle, :username, :title, :time, :incognito)
         '''
@@ -793,9 +795,7 @@ class _PathHandler:
             'time': datetime.utcnow(),
             'incognito': await is_user_incognito(),
         }
-        try:
-            await database.execute(query, values)
-        except IntegrityError:
+        if not await database.execute(query, values):
             return
 
         # Also update user and global scores
