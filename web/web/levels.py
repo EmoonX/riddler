@@ -294,21 +294,25 @@ async def get_pages(
         }
         if front_paths := listify(row['path']):
             if not admin:
-                front_paths = list(front_paths & page_data.keys())
+                front_paths = [
+                    # Avoid messing up ordering with set operation `a & b`
+                    path for path in front_paths if path in page_data
+                ]
             if front_paths:
                 level |= {'frontPage':
                     json.dumps(front_paths) if front_paths[1:]
                     else front_paths[0]
                 }
+
+        if answers := listify(row['answer']):
+            if not admin:
+                answers = [path for path in answers if path in page_data]
+            if answers:
+                level |= {'answer':
+                    json.dumps(answers) if answers[1:]
+                    else answers[0]
+                }
         if row['completion_time']:
-            if answers := listify(row['answer']):
-                if not admin:
-                    answers = list(answers & page_data.keys())
-                if answers:
-                    level |= {'answer':
-                        json.dumps(answers) if answers[1:]
-                        else answers[0]
-                    }
             level |= {'solveTime': _stringify_datetime(row['completion_time'])}
 
     # Scan extensions dir for available extension icon names

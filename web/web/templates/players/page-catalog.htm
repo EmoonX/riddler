@@ -38,9 +38,18 @@
       </h3>
       <ul>
       {% macro referenced_path(path, title) %}
+        {% set classes = [] %}
         {% set page = all_pages_by_path.get(path) %}
+        {% if not page or page['removed'] %}
+          {% set classes = classes + ['strikethrough'] %}
+          {% set title = title or '(removed page)' %}
+        {% endif %}
+        {% if not page or page['hidden'] %} 
+          {% set classes = classes + ['translucent'] %}
+          {% set title = title or '(hidden page)' %}
+        {% endif %}
         <a
-          {% if page['removed'] %}class="strikethrough"{% endif %}
+          class="{{ ' '.join(classes) }}"
           href="{{ page['url'] or path }}"
           target="_blank"
           rel="noreferrer"
@@ -64,13 +73,13 @@
           <span class="smaller">answer:</span>
         {% endif %}
           {% set classes = [] %}
-          {% if page_data['hidden'] %} 
-            {% set classes = classes + ['translucent'] %}
-            {% set title = '(hidden page)' %}
-          {% endif %}
           {% if page_data['removed'] %}
             {% set classes = classes + ['strikethrough'] %}
             {% set title = '(removed page)' %}
+          {% endif %}
+          {% if page_data['hidden'] %} 
+            {% set classes = classes + ['translucent'] %}
+            {% set title = title or '(hidden page)' %}
           {% endif %}
           <a
             class="{{ ' '.join(classes) }}"
