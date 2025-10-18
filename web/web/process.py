@@ -435,6 +435,7 @@ class _PathHandler:
         page = dict(await database.fetch_one(query, values) or {})
         self.hidden = bool(page.get('hidden'))
         self.removed = bool(page.get('removed'))
+        self.special = bool(page.get('special'))
 
         if answer_level := await self._find_level_being_solved():
             # Path is a (non removed) answer for an unsolved level
@@ -460,8 +461,9 @@ class _PathHandler:
             if self.removed:
                 return 410
 
-            # Look for "special" achievements that aren't part of any level
-            await self._process_achievement()
+            # Look out for "special" achievements that aren't part of any level
+            if self.special:
+                await self._process_achievement()
 
             return 412
 
@@ -777,12 +779,12 @@ class _PathHandler:
                     'username': self.user.name,
                     'path': path,
                 }
-                if not (page_found := await database.fetch_val(query, values)):
+                if not await database.fetch_val(query, values):
                     return
 
         # If positive, add it to the player's collection
         query = '''
-            INSERT INTO user_achievements
+            INSERT IGNORE INTO user_achievements
                 (riddle, username, title, unlock_time, incognito)
             VALUES (:riddle, :username, :title, :time, :incognito)
         '''
@@ -793,9 +795,7 @@ class _PathHandler:
             'time': datetime.utcnow(),
             'incognito': await is_user_incognito(),
         }
-        try:
-            await database.execute(query, values)
-        except IntegrityError:
+        if not await database.execute(query, values):
             return
 
         # Also update user and global scores
