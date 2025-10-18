@@ -58,7 +58,7 @@ async def process_url(
         user = lambda: None
         setattr(user, 'name', username)
     location = request.headers.get('Location')
-    status_code = int(request.headers.get('Statuscode', 200))    
+    status_code = int(request.headers.get('Statuscode', 418))
 
     # Create path handler object and build player data
     ph = await _PathHandler.build(user, url, status_code, location)

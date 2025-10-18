@@ -16,7 +16,7 @@ from admin.archive import PageSnapshot
 from credentials import get_path_credentials
 from inject import get_riddle
 from levels import absolute_paths, get_pages, listify
-from process import process_url
+from process import is_trivial_redirect, process_url
 from util.db import database
 
 admin_health = Blueprint('admin_health', __name__)
@@ -71,7 +71,7 @@ async def health_diagnostics(alias: str, background: bool = False):
         unless `include_level` or `redo_existing` conditions are(n't) met.
         '''
         
-        url =  await _build_url(path)
+        url = await _build_url(path)
         page_data |= {'url': url}
 
         if show_new_in_days:
@@ -102,17 +102,34 @@ async def health_diagnostics(alias: str, background: bool = False):
                 'Gecko/20100101 Firefox/128.0'
             )
         }
-        res = requests.get(
-            _build_request_url(url),
-            headers=headers,
-            allow_redirects=False,  # don't follow 30x redirects
-            timeout=10,
-        )
+        res = redirect_path = None
+        while res is None:
+            res = requests.get(
+                _build_request_url(url),
+                headers=headers,
+                allow_redirects=False,  # don't follow 30x redirects
+                timeout=10,
+            )
+            if res.ok:
+                # Lookout for redirects (30x and <meta> ones)
+                redirect_path = await _find_and_parse_redirect(path, res)
+                if redirect_path and is_trivial_redirect(path, redirect_path):
+                    # Disregard trivial redirects; retrieve next URL in chain
+                    if redirect_path == path:
+                        raise requests.exceptions.TooManyRedirects(url)
+                    url = await _build_url(redirect_path)
+                    res = redirect_path = None
+
         page_data |= {
             'status_code': res.status_code,
             'status_symbol': status_symbols.get(res.status_code),
         }
+        await _update_status_code(path, res.status_code)
         if res.ok:
+            if redirect_path:
+                await _record_redirect(path, redirect_path)
+                page_data['redirects_to'] = redirect_path
+
             # Valid page, so archive it if new/changed
             if last_modified := res.headers.get('Last-Modified'):
                 last_modified = parsedate_to_datetime(last_modified)
@@ -129,19 +146,12 @@ async def health_diagnostics(alias: str, background: bool = False):
             page_data['content_hash'] = snapshot.content_hash
             page_data['retrieval_time'] = snapshot.retrieval_time
 
-            if Path(path).suffix in ['.htm', '.html', '.php', '']:
-                # Look for redirects (30x and <meta> ones)
-                page_data['redirects_to'] = \
-                    await _search_and_record_redirect(path, res)
-
-        await _update_status_code(path, res.status_code)
-
         return page_data
 
     async def _build_url(path: str) -> str:
         '''Build full external URL, embedding credentials if needed.'''
 
-        url = f"{riddle['root_path']}{page_data['path']}"
+        url = f"{riddle['root_path']}{path}"
 
         credentials = await get_path_credentials(alias, path)
         username = credentials['username']
@@ -166,11 +176,11 @@ async def health_diagnostics(alias: str, background: bool = False):
         
         return url
 
-    async def _search_and_record_redirect(
+    async def _find_and_parse_redirect(
         path: str, response: requests.models.Response
     ) -> str | None:
         '''
-        Search for, parse and record redirect path when page either:
+        Search for and parse redirect path when page either:
             - comes from a `30x` response (`Location` header); or
             - contains `<script> [window.]location[.href] = '...'; </script>`; or
             - contains `<meta http-equiv="refresh" content="...">`.
@@ -214,23 +224,24 @@ async def health_diagnostics(alias: str, background: bool = False):
         redirect_alias, redirect_path = \
             await process_url(None, redirect_url, admin=True)
         if redirect_alias != alias:
-            redirect_path = href
+            return redirect_url
 
-        # Record redirect in DB
+        return redirect_path
+
+    async def _record_redirect(path_from: str, path_to: str | None):
+        '''Record redirect in database.'''
         query = '''
             UPDATE level_pages
             SET redirects_to = :redirect_path
             WHERE riddle = :riddle AND path = :path
         '''
-        values = {'riddle': alias, 'path': path, 'redirect_path': redirect_path}
+        values = {'riddle': alias, 'path': path_from, 'redirect_path': path_to}
         if await database.execute(query, values):
             print(
                 f"> \033[1m[{alias}]\033[0m "
-                f"Added redirect \033[3m{path} ➜ \033[1m{redirect_path}\033[0m",
+                f"Added redirect \033[3m{path_from} ➜ \033[1m{path_to}\033[0m",
                 flush=True
             )
-
-        return redirect_path
 
     async def _update_status_code(path: str, status_code: int):
         '''Mark response status code of page's last request (NULL if 200/OK).'''
