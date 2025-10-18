@@ -70,11 +70,21 @@ ul {
         font-size: .7em;
         cursor: help;
       }
-      &.front-page::before {
-        content: "📌";
+      &.front-page {
+        &::before {
+          content: "📌";
+        }
+        &:has(a.translucent)::before {
+          opacity: .4;
+        }
       }
-      &.front-image::before {
-        content: "🖌️";
+      &.front-image {
+        &::before {
+          content: "🖌️";
+        }
+        &:has(a.translucent)::before {
+          opacity: .4;
+        }
       }
     }
 }
