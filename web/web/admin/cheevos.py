@@ -1,3 +1,5 @@
+import json
+
 from quart import Blueprint, request, render_template
 from quartcord import requires_authorization
 
@@ -83,12 +85,29 @@ async def manage_cheevos(alias: str):
             )
 
     if len(cheevos_after) > len(cheevos_before):
+        index = len(cheevos_before) + 1
+        try:
+            paths_json = json.loads(form[f"{index}-paths_json"])
+        except json.decoder.JSONDecodeError:
+            paths_json = {}
+        if list(paths_json.keys()) not in [['paths'], ['paths', 'operator']]:
+            return await r('Wrong format for Paths JSON.')
+
+        # Mark levelless achievement pages as `special`
+        for path in paths_json['paths']:
+            query = '''
+                UPDATE level_pages
+                SET special = TRUE
+                WHERE riddle = :riddle AND path = :path AND level_name IS NULL
+            '''
+            values = {'riddle': alias, 'path': path}
+            await database.execute(query, values)
+
         # Insert new level data on database
         query = '''
             INSERT INTO achievements
             VALUES (:riddle, :title, :description, :image, :rank, :paths_json)
         '''
-        index = len(cheevos_before) + 1
         values = {
             'riddle': alias, 'title': form[f"{index}-title"],
             'description': form[f"{index}-description"],
@@ -114,7 +133,7 @@ async def manage_cheevos(alias: str):
             cheevo['index'] = k
             k += 1
 
-    return await r('Guild info updated successfully!')
+    return await r('Achievement data successfully updated.')
 
 
 @admin_cheevos.get('/admin/<_alias>/cheevo-row')
