@@ -41,7 +41,7 @@ async function sendToProcess(details) {
   }
   console.log(details.url, details.statusCode);
 
-  // Send request to processing endpoint
+  // Send request to processing endpoint; retrieve response data
   const response = await fetch(`${SERVER_HOST}/process`, params);
   if (response.status === 401) {
     // // If current login request is less than 5 seconds
@@ -64,8 +64,10 @@ async function sendToProcess(details) {
   const data = await response.json();
   const alias = data.riddle;
   const riddle = riddles[alias];
-  if (response.status === 403) {
-    if (data.realm && details.statusCode !== 401) {
+
+  // Missing auth procedures
+  if (response.status === 403 && data.realm) {
+    if (details.statusCode !== 401) {
       // Player is navigating inside a protected path but still haven't unlocked
       // credentials for it; force-trigger auth box as fallback
       if (! riddle.missingAuthPaths.has(data.credentialsPath)) {
@@ -79,8 +81,7 @@ async function sendToProcess(details) {
         });
       }
     }
-  }
-  if (! [401, 403].includes(response.status)) {
+  } else {
     if (riddle.missingAuthPaths.has(details.credentialsPath)) {
       // Fallback auth was successful and player credentials unlocked;
       // Clear persistent box for the given protected path
@@ -93,6 +94,7 @@ async function sendToProcess(details) {
       });
     }
   }
+
   if (response.ok && data.path) {
     console.log(`[${alias}] Received page "${data.path}" (${data.levelName})`);
   }
