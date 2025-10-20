@@ -1,12 +1,11 @@
-from copy import copy
 from datetime import datetime
 import hashlib
 import json
+from pathlib import Path
 import re
 from typing import Callable, Self
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import SplitResult, parse_qsl, urljoin, urlsplit, urlunsplit
 
-from pymysql.err import IntegrityError
 from quart import Blueprint, request, jsonify
 from quartcord.models import User
 import requests
@@ -223,7 +222,7 @@ class _PathHandler:
         if not riddle:
             return None
         self.user = user
-        self.path = copy(self.raw_path)
+        self.path = self.raw_path.partition('?')[0]
         self.status_code = status_code
 
         # Always ignore occurrences of consecutive slashes
@@ -233,13 +232,20 @@ class _PathHandler:
         if status_code in [301, 302, 303, 307, 308]:
             # Handle sufficiently trivial redirects (regardless of 30x semantics)
             full_location = urljoin(url, location)
-            ph_to = await _PathHandler.build(self.user, full_location, 418)
+            ph_to = await cls.build(self.user, full_location, 418)
             if ph_to and ph_to.riddle_alias == self.riddle_alias:
-                self.short_run = is_trivial_redirect(self.raw_path, ph_to.path)
+                self.short_run = is_trivial_redirect(self.path, ph_to.path)
 
         if 200 <= status_code < 400 and not self.short_run:
             # Valid non-trivial path; format it in accordance to the guidelines
             await self._format_and_sanitize_path(riddle, url)
+
+        # Mark whether page is html-like
+        file_extension = Path(self.path).suffix
+        self.normal_page = file_extension in ['', '.htm', '.html', '.php']
+
+        # Rejoin query (if any) post path formatting
+        self.path += self.raw_query
 
         # If applicable, retrieve path alias info
         query = '''
@@ -254,12 +260,12 @@ class _PathHandler:
     async def _parse_riddle_data_from_url(self, url: str) -> dict | None:
         '''Retrieve riddle, path and (possibly) credentials info from URL.'''
 
-        # Parse URL into hostname and path parts
+        # Parse URL into its significant parts
         parsed_url = urlsplit(
             url.replace('://www.', '://').replace('@www.', '@')
         )
 
-        def _get_relative_path(parsed_root: ParseResult) -> str:
+        def _get_relative_path(parsed_root: SplitResult) -> str:
             '''Build relative path from root (with "../"s if needed).''' 
             root_segments = parsed_root.path.split('/')
             if root_segments[-1] == '*':
@@ -275,9 +281,7 @@ class _PathHandler:
             path = f"/{'/'.join((['..'] * parent_count) + suffix_tokens)}"
             return path
 
-        def _url_matches_root(
-            parsed_url: ParseResult, parsed_root: ParseResult
-        ) -> bool:
+        def _url_matches_root(parsed_root: SplitResult) -> bool:
             if '*' in urlunsplit(parsed_root):
                 # Wildcard root path; ignore host pages outside given pattern
                 pattern = (
@@ -286,9 +290,9 @@ class _PathHandler:
                 )
                 host_and_path = f"{parsed_url.hostname}{parsed_url.path}"
                 return re.fullmatch(pattern, host_and_path)
-            else:
-                # Simple root path
-                return parsed_root.hostname == parsed_url.hostname
+
+            # Single root path
+            return parsed_root.hostname == parsed_url.hostname
 
         # Build dict of {root_path: riddle}
         riddles = await get_riddles(unlisted=True)
@@ -300,18 +304,26 @@ class _PathHandler:
             except json.decoder.JSONDecodeError:
                 root_paths |= {riddle['root_path']: riddle}
 
-        # Search for matching hostname (if any) and save data
+        # Search for riddle with matching root path (if any)
         for root_path, riddle in reversed(root_paths.items()):
             parsed_root = urlsplit(root_path.replace('://www.', '://'))
-            if _url_matches_root(parsed_url, parsed_root):
-                self.riddle_alias = riddle['alias']
-                self.unlisted = bool(riddle['unlisted'])
-                self.raw_path = _get_relative_path(parsed_root)
-                self.credentials = (
-                    parsed_url.username or '',
-                    parsed_url.password or '',
-                )
-                return riddle
+            if _url_matches_root(parsed_root):
+                break
+        else:            
+            return None
+
+        # Save riddle and parsed URL data
+        self.riddle_alias = riddle['alias']
+        self.unlisted = bool(riddle['unlisted'])
+        self.query_params = dict(parse_qsl(parsed_url.query))
+        self.credentials = (
+            parsed_url.username or self.query_params.get('username') or '',
+            parsed_url.password or self.query_params.get('password') or '',
+        )
+        self.raw_query = f"?{parsed_url.query}" if '?' in url else ''
+        self.raw_path = _get_relative_path(parsed_root) + self.raw_query
+
+        return riddle
 
     async def _format_and_sanitize_path(self, riddle: dict, url: str):
         '''Format and sanitize a valid path to its canonical form.'''
@@ -328,7 +340,7 @@ class _PathHandler:
                 # Given path is unique and has been recorded before
                 return
 
-            # Retrieve given's page hash directly the from the website
+            # Retrieve given page's hash directly from the website
             res = requests.get(url, cookies={'s': 'eGNIqq1R'}, timeout=5)
             if not res.ok:
                 return
@@ -442,10 +454,6 @@ class _PathHandler:
             lh = _LevelHandler(answer_level, self)
             await lh.register_completion()
 
-        # Check if the page is a normal one (i.e html-like)
-        extension = self.path.rpartition('/')[-1].partition('.')[-1]
-        is_normal_page = extension in ['', 'htm', 'html', 'php']
-
         if not page:
             if self.status_code in [300, 403, 404]:
                 # 404-like (and not e.g unlisted page);
@@ -503,8 +511,8 @@ class _PathHandler:
             # Level not unlocked and can't access yet pages from it
             return 403
 
-        # If a normal page, update all hit counters
-        if is_normal_page:
+        # If a de facto page (i.e html-like), update all hit counters
+        if self.normal_page:
             await self._update_hit_counters()
 
         # Register new page access in database (if applicable)
@@ -1078,13 +1086,17 @@ def is_trivial_redirect(path_from: str, path_to: str) -> bool:
     def _matches_either_way(f: Callable[[str], str]):
         return f(path_from) == path_to or path_from == f(path_to)
 
+    # Ignore query strings when comparing
+    path_from = path_from.partition('?')[0]
+    path_to = path_to.partition('?')[0]
+
     if path_from == path_to:
         # Scheme/host/port change
         return True
-    if _matches_either_way(lambda s: s.removesuffix('/')):
+    if _matches_either_way(lambda path: path.removesuffix('/')):
         # Folder trailing slashes
         return True
-    if _matches_either_way(lambda s: re.sub(r'(index)?([.]\w+)?$', '', s)):
+    if _matches_either_way(lambda path: re.sub(r'(index)?([.]\w+)?$', '', path)):
         # Implicit [index].htm[l] (usually Neocities)
         return True
     if path_from.lower() == path_to:

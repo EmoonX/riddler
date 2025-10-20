@@ -19,7 +19,8 @@ async def process_credentials(
 
     alias = riddle['alias']
     user = await discord.get_user()
-    credentials_data = await get_path_credentials(alias, path)
+    clean_path = path.partition('?')[0]
+    credentials_data = await get_path_credentials(alias, clean_path)
     credentials_path = credentials_data['path']
     correct_credentials = \
         (credentials_data['username'], credentials_data['password'])
@@ -28,7 +29,9 @@ async def process_credentials(
         if correct_credentials == ('', ''):
             # Almost certainly new and unseen protected path
             credentials_path = \
-                await _check_and_insert_empty_credentials(riddle, user, path)
+                await _check_and_insert_empty_credentials(
+                    riddle, user, clean_path
+                )
 
         # User couldn't access path, so nothing more to do
         _log_received_credentials(alias, user, path, credentials_path)
@@ -48,16 +51,20 @@ async def process_credentials(
     if credentials == correct_credentials or credentials_data.get('sensitive'):
         # Matching informed credentials or sensitive auth path;
         # grant access and possibly record new user data
-        await _record_user_credentials(
-            alias, path, credentials_path, *correct_credentials
-        )
+        if await _record_user_credentials(alias, credentials_path):
+            _log_received_credentials(
+                alias, user, path, credentials_path, *credentials
+            )
         return True
 
     # Possibly unseen credentials, so HTTP-investigate and perhaps record them
     if credentials_path := (
-        await _check_and_record_credentials(riddle, user, path, *credentials)
+        await _check_and_record_credentials(riddle, user, clean_path, *credentials)
     ):
-        await _record_user_credentials(alias, path, credentials_path, *credentials)
+        if await _record_user_credentials(alias, credentials_path):
+            _log_received_credentials(
+                alias, user, path, credentials_path, *credentials
+            )
         return True
 
     return has_unlocked_credentials
@@ -218,17 +225,8 @@ def _send_authenticated_request(url: str, username: str, password: str) -> int:
     return res.status_code
 
 
-async def _record_user_credentials(
-    alias: str,
-    path: str,
-    credentials_path: str,
-    username: str | None,
-    password: str | None,
-):
-    '''
-    Insert new user credentials,
-    or update existing ones with missing unlock time.
-    '''
+async def _record_user_credentials(alias: str, credentials_path: str) -> bool:
+    '''Record new user credentials, or otherwise add missing unlock time.'''
 
     user = await discord.get_user()
 
@@ -245,24 +243,24 @@ async def _record_user_credentials(
         'unlock_time': datetime.utcnow(),
         'incognito': await is_user_incognito(),
     }
-    if not await database.execute(query, values):
-        # Record unlock time if not present yet
-        # (i.e credentials were retroactively given to player before)
-        query = '''
-            UPDATE user_credentials
-            SET unlock_time = :unlock_time
-            WHERE riddle = :riddle
-                AND username = :username
-                AND path = :path
-                AND unlock_time IS NULL
-        '''
-        del values['incognito']
-        if not await database.execute(query, values):
-            return
+    if await database.execute(query, values):
+        return True
+    
+    # Record unlock time if not present yet
+    # (i.e credentials were retroactively given to player before)
+    query = '''
+        UPDATE user_credentials
+        SET unlock_time = :unlock_time
+        WHERE riddle = :riddle
+            AND username = :username
+            AND path = :path
+            AND unlock_time IS NULL
+    '''
+    del values['incognito']
+    if await database.execute(query, values):
+        return True
 
-    _log_received_credentials(
-        alias, user, path, credentials_path, username, password
-    )
+    return False
 
 
 async def get_path_credentials(alias: str, path: str) -> dict:
@@ -280,6 +278,7 @@ async def get_path_credentials(alias: str, path: str) -> dict:
         # Avoid frequent iterations in credentialless riddles
         return {'path': '/', 'username': '', 'password': ''}
 
+    path = path.partition('?')[0]
     while True:
         if credentials := all_credentials.get(path):
             # Innermost credentials found
