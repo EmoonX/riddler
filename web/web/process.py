@@ -218,11 +218,11 @@ class _PathHandler:
 
         # Parse and save basic data + status code
         self = cls()
-        riddle = await self._parse_riddle_data_from_url(url)
-        if not riddle:
+        await self._parse_riddle_data_from_url(url)
+        if not self.riddle:
             return None
         self.user = user
-        self.path = self.raw_path.partition('?')[0]
+        self.path = self.raw_path
         self.status_code = status_code
 
         # Always ignore occurrences of consecutive slashes
@@ -238,14 +238,11 @@ class _PathHandler:
 
         if 200 <= status_code < 400 and not self.short_run:
             # Valid non-trivial path; format it in accordance to the guidelines
-            await self._format_and_sanitize_path(riddle, url)
+            await self._format_and_sanitize_path()
 
         # Mark whether page is html-like
         file_extension = Path(self.path).suffix
         self.normal_page = file_extension in ['', '.htm', '.html', '.php']
-
-        # Rejoin query (if any) post path formatting
-        self.path += self.raw_query
 
         # If applicable, retrieve path alias info
         query = '''
@@ -257,7 +254,7 @@ class _PathHandler:
 
         return self
 
-    async def _parse_riddle_data_from_url(self, url: str) -> dict | None:
+    async def _parse_riddle_data_from_url(self, url: str):
         '''Retrieve riddle, path and (possibly) credentials info from URL.'''
 
         # Parse URL into its significant parts
@@ -309,27 +306,38 @@ class _PathHandler:
             parsed_root = urlsplit(root_path.replace('://www.', '://'))
             if _url_matches_root(parsed_root):
                 break
-        else:            
-            return None
+        else:
+            self.riddle = None
+            return
 
         # Save riddle and parsed URL data
+        self.riddle = riddle | {'root_path': root_path}
         self.riddle_alias = riddle['alias']
         self.unlisted = bool(riddle['unlisted'])
-        self.query_params = dict(parse_qsl(parsed_url.query))
+        self.parsed_query = dict(parse_qsl(parsed_url.query))
         self.credentials = (
-            parsed_url.username or self.query_params.get('username') or '',
-            parsed_url.password or self.query_params.get('password') or '',
+            parsed_url.username or self.parsed_query.get('username') or '',
+            parsed_url.password or self.parsed_query.get('password') or '',
         )
         self.raw_query = f"?{parsed_url.query}" if '?' in url else ''
         self.raw_path = _get_relative_path(parsed_root) + self.raw_query
 
-        return riddle
-
-    async def _format_and_sanitize_path(self, riddle: dict, url: str):
+    async def _format_and_sanitize_path(self):
         '''Format and sanitize a valid path to its canonical form.'''
 
-        async def _format(sub_path: str):
+        async def _format(base_path: str):
             '''Format path if suitable (i.e indeed not unique).'''
+
+            async def _request_page(path: str) -> requests.Response:
+                '''Build suitable request, send it, and return its response.'''
+                url = f"{self.riddle['root_path']}{path}"
+                credentials = await get_path_credentials(self.riddle_alias, path)
+                if credentials['username'] and credentials['password']:
+                    auth = f"{credentials['username']}:{credentials['password']}"
+                    url = url.replace('://', f"://{auth}@")
+                url = re.sub(r'^([^?]+)[?]$', r'\1?_=', url)  # handle empty query
+                cookies = {'s': 'eGNIqq1R'}
+                return requests.get(url, cookies=cookies, timeout=5)
 
             query = '''
                 SELECT 1 FROM level_pages
@@ -341,41 +349,84 @@ class _PathHandler:
                 return
 
             # Retrieve given page's hash directly from the website
-            res = requests.get(url, cookies={'s': 'eGNIqq1R'}, timeout=5)
+            res = await _request_page(self.path)
             if not res.ok:
                 return
             content_hash = hashlib.md5(res.content).hexdigest()
 
             query = '''
-                SELECT content_hash FROM _page_hashes
-                WHERE riddle = :riddle AND path = :path
+                SELECT content_hash
+                FROM _page_hashes ph
+                WHERE riddle = :riddle
+                    AND path = COALESCE((
+                        SELECT alias_for FROM level_pages lp
+                        WHERE ph.riddle = lp.riddle AND path = :path
+                    ), :path)
                 ORDER BY retrieval_time DESC
                 LIMIT 1
             '''
-            values = {'riddle': self.riddle_alias, 'path': sub_path}
+            values = {'riddle': self.riddle_alias, 'path': base_path}
             current_hash = await database.fetch_val(query, values)
             if not current_hash:
-                # Canonical path hasn't been recorded, retrieve it if available
-                sub_url = re.sub(f"{self.path}$", sub_path, url)
-                res = requests.get(sub_url, cookies={'s': 'eGNIqq1R'}, timeout=5)
+                # Base path hasn't been recorded, retrieve it if available
+                res = await _request_page(base_path)
                 if res.ok:
                     current_hash = hashlib.md5(res.content).hexdigest()
 
             # Replace path iff both pages are available and the content matches
             if content_hash == current_hash:
-                self.path = sub_path
+                self.path = base_path
 
-        if riddle['html_extension']:
+        async def _get_base_query_page(main_path: str) -> dict | None:
+            '''Find most specific recorded query path from given one, if any.'''
+
+            def _matches(param: str, value: str) -> bool:
+                '''Check whether param is present AND matches value (or `*`).'''
+                return (
+                    param in self.parsed_query and
+                    value in [self.parsed_query[param], '*']
+                )
+
+            query = """
+                SELECT * FROM level_pages
+                WHERE riddle = :riddle AND path LIKE :path                
+            """
+            values = {'riddle': self.riddle_alias, 'path': f"{main_path}?%"}
+            query_pages = await database.fetch_all(query, values)
+            for query_page in reversed(query_pages):
+                query_string = query_page['path'].partition('?')[-1]
+                parsed_query = parse_qsl(query_string)                
+                if all(_matches(*item) for item in parsed_query):
+                    return query_page
+
+            return None
+
+        self.path = self.path.partition('?')[0]
+        if self.riddle['html_extension']:
             if self.path.endswith('/'):
                 # If a folder itself, add trailing "index.htm[l]" etc
-                self.path += f"index.{riddle['html_extension']}"
+                self.path += f"index.{self.riddle['html_extension']}"
             else:
                 # If missing the extension, append explicit ".htm[l]" etc
                 if not '.' in self.path:
-                    self.path += f".{riddle['html_extension']}"
+                    self.path += f".{self.riddle['html_extension']}"
         else:
             # Omit superflous slash from extension-less hosts
             self.path = self.path.removesuffix('/') or '/'
+
+        if self.raw_query:
+            # '?' in received path; search for fitting base queries
+            main_path = self.path
+            self.path += self.raw_query
+            if base_page := await _get_base_query_page(main_path):
+                base_path = base_page['path']
+                if base_page['special']:
+                    self.path = base_path
+                else:
+                    await _format(base_path)
+            else:
+                await _format(f"{main_path}?")
+                await _format(main_path)
 
         # Riddle-specific path formatting
         if self.riddle_alias == 'decifra':
