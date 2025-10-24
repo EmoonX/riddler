@@ -86,6 +86,15 @@ export async function refreshRiddleData(alias, data) {
   buildRiddle(data.riddleData, data.pagesData);
 }
 
+/** Update currently visited riddle and level.  */
+export async function updateCurrentRiddleAndLevel(riddle, path) {
+  currentRiddle = riddle.alias;
+  const page = riddle.pagesByPath.get(path);
+  if (page?.['level_name']) {
+    riddle.lastVisitedLevel = riddle.shownLevel = page['level_name'];
+  }
+}
+
 function updatePathsIndex(riddle, pageNode) {
   riddle.pagesByPath.set(pageNode.path, pageNode);
   if (pageNode.folder) {

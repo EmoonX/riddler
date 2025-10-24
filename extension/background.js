@@ -9,6 +9,7 @@ import {
   riddles,
   sendMessageToPopup,
   SERVER_HOST,
+  updateCurrentRiddleAndLevel,
 } from './riddle.js';
 
 /** Wildcard URLs to be matched. */
@@ -173,6 +174,8 @@ function responseHandler(details) {
     // Completely ignore pages outside riddle domains
     return;
   }
+  updateCurrentRiddleAndLevel(riddle, path);
+
   details.path = path;
   details.credentialsPath = findContainingPath(path, riddle.missingAuthPaths);
   if (details.credentialsPath) {
