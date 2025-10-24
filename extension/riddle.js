@@ -104,8 +104,8 @@ export function parseRiddleAndPath(url) {
   }
 
   const parsedRoot = new URL(rootPath);
-  const urlTokens = parsedUrl.pathname.split('/');
-  const rootTokens = parsedRoot.pathname.split('/');
+  const urlTokens = parsedUrl.pathname.split('/').filter(Boolean);
+  const rootTokens = parsedRoot.pathname.split('/').filter(Boolean);
   let path = '';
   for (let i = 0; i < rootTokens.length; i++) {
     if (urlTokens[i] !== rootTokens[i]) {
