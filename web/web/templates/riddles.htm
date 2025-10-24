@@ -2,7 +2,7 @@
 {% block title %}All riddles ⬩ Riddler{% endblock %}
 {% block content %}
     <main>
-      {% set riddles = get_riddles(unlisted=True) %}
+      {% set riddles = get_riddles(unlisted=True, include_counters=True) %}
       {% set statuses = {
         '🎖️': 'Full',
         '🚧': 'Update in Progress',

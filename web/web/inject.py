@@ -35,10 +35,13 @@ async def get_riddle(alias: str) -> dict:
     return riddle
 
 
-async def get_riddles(unlisted: bool = False) -> list[dict]:
+async def get_riddles(
+    unlisted: bool = False, include_counters: bool = False
+) -> list[dict]:
     '''
     Return a list of all riddles.
-    :param unlisted: Whether to also return unlisted riddles.
+        :param unlisted: Whether to also return unlisted riddles.
+        :param include_counters: Whether to include counter data.
     '''
 
     query = f"""
@@ -46,6 +49,8 @@ async def get_riddles(unlisted: bool = False) -> list[dict]:
         {'WHERE unlisted IS NOT TRUE' if not unlisted else ''}
     """
     riddles = [dict(row) for row in await database.fetch_all(query)]
+    if not include_counters:
+        return riddles
 
     # Add counter data
     for riddle in riddles:
@@ -72,7 +77,6 @@ async def get_riddles(unlisted: bool = False) -> list[dict]:
         '''
         result = await database.fetch_one(query, values)
         riddle['raw_page_count'], riddle['page_count'] = result.values()
-
     return riddles
 
 
