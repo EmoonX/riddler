@@ -16,7 +16,9 @@ from credentials import (
     has_unlocked_path_credentials,
     process_credentials,
 )
+from get import get_user_riddle_data
 from inject import get_riddle, get_riddles
+from levels import get_pages
 from players.account import is_user_incognito
 from riddles import level_ranks, cheevo_ranks
 from util.db import database
@@ -164,6 +166,8 @@ async def process_url(
         'setName': ph.path_level_set,
         'levelName': ph.path_level,
         'path': ph.path,
+        'riddleData': await get_user_riddle_data(ph.riddle_alias, as_json=False),
+        'pagesData': await get_pages(ph.riddle_alias, as_json=False),
     }
     if await has_unlocked_path_credentials(
         ph.riddle_alias, user, path_credentials['path']

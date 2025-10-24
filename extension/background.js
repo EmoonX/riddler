@@ -5,10 +5,10 @@ import {
   findContainingPath,
   isPathSensitive,
   parseRiddleAndPath,
+  refreshRiddleData,
   riddles,
   sendMessageToPopup,
   SERVER_HOST,
-  updateRiddleData,
 } from './riddle.js';
 
 /** Wildcard URLs to be matched. */
@@ -98,7 +98,7 @@ async function sendToProcess(details) {
   if (response.ok && data.path) {
     console.log(`[${alias}] Received page "${data.path}" (${data.levelName})`);
   }
-  await updateRiddleData(alias, data.setName, data.levelName);
+  await refreshRiddleData(alias, data);
 }
 
 /** Handle riddle auth attempts, triggering custom auth box when suitable. */

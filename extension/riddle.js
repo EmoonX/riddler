@@ -76,40 +76,14 @@ export async function buildRiddle(riddle, pages) {
   riddles[riddle.alias] = riddle;
 }
 
-/** Updates current object with possibly new riddle, level and/or page. */
-export async function updateRiddleData(alias, setName, levelName) {
+/** Refresh riddle/pages data. */
+export async function refreshRiddleData(alias, data) {
   currentRiddle = alias;
-  if (!setName || !levelName) {
+  if (!data.setName || !data.levelName) {
     // Not a valid level page; nothing more to be done
     return;
-  }
-  const riddle = riddles[alias];
-  const levelSet = riddle.levels[setName];
-  if (!levelSet || !levelSet[levelName]) {
-    // Add new riddle and/or level
-    await fetch(`${SERVER_HOST}/get-user-riddle-data/${alias}`)
-      .then(response => response.json())
-      .then(async riddleData => {
-        await fetch(`${SERVER_HOST}/${alias}/levels/get-pages`)
-          .then(response => response.json())
-          .then(pagesData => {
-            buildRiddle(riddleData, pagesData);
-          });
-      });
-  } else {
-    // Add (possibly) new page
-    await fetch(`${SERVER_HOST}/${alias}/levels/get-pages/${levelName}`)
-      .then(response => response.json())
-      .then(pagesData => {
-        riddle.lastVisitedSet = riddle.shownSet = setName;
-        riddle.lastVisitedLevel = riddle.shownLevel = levelName;
-        for (const [levelName, pages] of Object.entries(pagesData)) {
-          const level = riddle.levels[levelName];
-          level.pages = pages;
-          updatePathsIndex(riddle, level.pages['/']);
-        }
-      });
-  }
+  }  
+  buildRiddle(data.riddleData, data.pagesData);
 }
 
 function updatePathsIndex(riddle, pageNode) {
