@@ -75,39 +75,21 @@ export function changeDir(explorer, folderPath, admin) {
     credentials.toggle(false);
   }
 
-  // Get sorted (by extension and then name) pages object
-  const pagesInFolder =
-    Object.keys(folder.children)
-    .sort((a, b) => {
-      const i = a.lastIndexOf('.');
-      const j = b.lastIndexOf('.');
-      if (i == -1 || j == -1) {
-        return (
-          (i == j) ?
-            a.localeCompare(b) : ((i == -1) ? +1 : -1)
-        );
-      } else {
-        const aExt = a.substring(i+1);
-        const bExt = b.substring(j+1);
-        return (
-          (aExt != bExt) ?
-            aExt.localeCompare(bExt) : a.localeCompare(b)
-        );
-      }
-    }).reduce(
-      (obj, key) => {
-        obj[key] = folder.children[key];
-        return obj;
-      },
-      {}
-    )
-  ;
   // And now add the current dir files
-  $.each(pagesInFolder, (filename, node) => {
+  for (const [filename, node] of Object.entries(folder.children)
+    .sort(([, a], [, b]) => {
+      // Fix for wrongly-ordered folders
+      if (a.folder && b.folder) {
+        return a.path.localeCompare(b.path);
+      }
+      return Number(a.folder || false) - Number(b.folder || false);
+    })
+  ) {
+    console.log(node);
     let type;
     if (node.folder) {
       type = 'folder';
-    } else if (filename.indexOf('.') === -1) {
+    } else if (! filename.includes('.')) {
       type = 'html';
     } else if (node.unknownExtension) {
       type = 'unknown';
@@ -167,7 +149,7 @@ export function changeDir(explorer, folderPath, admin) {
         files.append(figure);
       }
     }
-  });
+  };
   // Pop icons sequentially
   popIcons(explorer);
 
