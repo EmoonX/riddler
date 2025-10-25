@@ -51,6 +51,7 @@ export async function initExplorer(callback) {
 
 /** Recursively inserts files on parent with correct margin. */
 export function insertFiles(parent, object, offset, prefix) {
+
   const basename = object.path.split('/').at(-1);
   if (object.folder) {
     const hasOnlyOneChild = Object.keys(object.children).length === 1;
@@ -63,26 +64,38 @@ export function insertFiles(parent, object, offset, prefix) {
       }
     }
   }
-
   const riddle = riddles[currentRiddle];
   const level = riddle.levels[riddle.shownLevel];
   const token = `${prefix}${basename}` || '/';
   const figure = getFileFigure(object, token, offset);
-  if (object.path === level.frontPath) {
+  if (object.path === level.frontPath && !object.folder) {
     // Highlight front page at first
     figure.addClass('active');
   }
-  parent.append(figure);
 
+  parent.append(figure);
   if (object.folder) {
     const div = $('<div class="folder-files"></div>');
     div.appendTo(parent);
-    if (level.frontPath && level.frontPath.indexOf(object.path) !== 0) {
+    if (level.frontPath && !level.frontPath.startsWith(object.path)) {
       // Leave only level's front page folder(s) initially open
       div.toggle();
     }
     for (const child of Object.values(object.children)) {
       insertFiles(div, child, offset + 1, '');
+      if (child.children && !child.folder) {
+        // Handle hybrid page/folder navigation
+        for (const grandchild of Object.values(child.children)) {
+          if (grandchild.special === 1) {
+            const basename = child.path.split('/').at(-1);
+            insertFiles(div, grandchild, offset + 1, `${basename}/`);
+          } else {
+            const folder = { ...child, folder: true };
+            insertFiles(div, folder, offset + 1, '');
+            break;
+          }
+        }
+      }
     }
   }
 }
@@ -92,7 +105,7 @@ function getFileFigure(node, token, offset) {
   let type;
   if (node.folder) {
     type = 'folder';
-  } else if (token.indexOf('.') === -1) {
+  } else if (! token.includes('.')) {
     type = 'html';
   } else if (node.unknownExtension) {
     type = 'unknown';
