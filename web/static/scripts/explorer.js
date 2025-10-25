@@ -85,68 +85,18 @@ export function changeDir(explorer, folderPath, admin) {
       return Number(a.folder || false) - Number(b.folder || false);
     })
   ) {
-    console.log(node);
-    let type;
-    if (node.folder) {
-      type = 'folder';
-    } else if (! filename.includes('.')) {
-      type = 'html';
-    } else if (node.unknownExtension) {
-      type = 'unknown';
-    } else {
-      type = filename.split('.').at(-1).toLowerCase();
-    }
-
-    let classes = 'file';
-    let title = '';
-    if (node['path'] === pages[levelName].frontPage) {
-      classes += ' active';
-      title += '(Front page)&#10;';
-    }
-    title += node['path'];
-    if (type === 'folder') {
-      classes += ' folder';
-    } else {
-      title += `&#10;🖊️ recorded on ${node['access_time']}`;
-    }
-    if (admin) {
-      if (type === 'folder') {
-        if (node['levels'][levelName]) {
-          classes += ' current';
+    insertFile(levelName, files, filename, node, admin);
+    if (node.children && !node.folder) {
+      // Handle hybrid page/folder navigation
+      for (const child of Object.values(node.children)) {
+        if (child.special) {
+          const childFilename = child.path.split('/').slice(-2).join('/');
+          insertFile(levelName, files, childFilename, child, admin);
+        } else {
+          node.folder = true;
+          insertFile(levelName, files, filename, node, admin);
+          break;
         }
-      } else {
-        if (node['level_name'] == levelName) {
-          classes = ' current';
-        }
-      }
-    }
-
-    const figure = `
-      <figure
-        class="${classes}"
-        title="${title}"
-        data-username=${node['username']}
-        data-password=${node['password']}
-      >
-        <img src="/static/icons/extensions/${type}.png">
-        <figcaption>${filename}</figcaption>
-      </figure>
-    `;
-
-    // Append current level files in correct order
-    // (current folders -> other folders -> current files -> other files)
-    if (type === 'folder') {
-      const folderNode = files.children('.folder');
-      if (admin && node['levels'][levelName]) {
-        folderNode.children('.first').append(figure);
-      } else {
-        folderNode.append(figure);
-      }
-    } else {
-      if (admin && node['level_name'] == levelName) {
-        files.children('.first').append(figure);
-      } else {
-        files.append(figure);
       }
     }
   };
@@ -161,15 +111,67 @@ export function changeDir(explorer, folderPath, admin) {
   toggleCheck(explorer);
 }
 
-function toggleCheck(explorer) {
-  // Display check mark if all files found
-  const check = explorer.find('.check')
-  const found = explorer.find('.completion .found').text()
-  const total = explorer.find('.completion .total').text()
-  if (found != "--" && found == total) {
-    check.show();
+function insertFile(levelName, files, filename, node, admin) {
+  let type;
+  if (node.folder) {
+    type = 'folder';
+  } else if (! filename.includes('.')) {
+    type = 'html';
+  } else if (node.unknownExtension) {
+    type = 'unknown';
   } else {
-    check.hide();
+    type = filename.split('.').at(-1).toLowerCase();
+  }
+  let classes = ['file'];
+  let title = '';
+  if (node['path'] === pages[levelName].frontPage) {
+    classes.push('active');
+    title += '(Front page)&#10;';
+  }
+  title += node['path'];
+  if (type === 'folder') {
+    classes.push('folder');
+  } else {
+    title += `&#10;🖊️ recorded on ${node['access_time']}`;
+  }
+  if (admin) {
+    if (type === 'folder') {
+      if (node['levels'][levelName]) {
+        classes.push('current');
+      }
+    } else {
+      if (node['level_name'] == levelName) {
+        classes = ['current'];
+      }
+    }
+  }
+  const figure = `
+    <figure
+      class="${classes.join(' ')}"
+      title="${title}"
+      data-username=${node['username']}
+      data-password=${node['password']}
+    >
+      <img src="/static/icons/extensions/${type}.png">
+      <figcaption>${filename}</figcaption>
+    </figure>
+  `;
+
+  // Append current level files in correct order
+  // (current folders -> other folders -> current files -> other files)
+  if (type === 'folder') {
+    const folderNode = files.children('.folder');
+    if (admin && node['levels'][levelName]) {
+      folderNode.children('.first').append(figure);
+    } else {
+      folderNode.append(figure);
+    }
+  } else {
+    if (admin && node['level_name'] == levelName) {
+      files.children('.first').append(figure);
+    } else {
+      files.append(figure);
+    }
   }
 }
 
@@ -181,6 +183,18 @@ function popIcons(explorer) {
       $(this).addClass('show');
     }, t);
   });
+}
+
+function toggleCheck(explorer) {
+  // Display check mark if all files found
+  const check = explorer.find('.check')
+  const found = explorer.find('.completion .found').text()
+  const total = explorer.find('.completion .total').text()
+  if (found != "--" && found == total) {
+    check.show();
+  } else {
+    check.hide();
+  }
 }
 
 export function folderUp() {
