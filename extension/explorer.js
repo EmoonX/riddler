@@ -81,7 +81,15 @@ export function insertFiles(parent, object, offset, prefix) {
       // Leave only level's front page folder(s) initially open
       div.toggle();
     }
-    for (const child of Object.values(object.children)) {
+    for (const child of Object.values(object.children)
+      .sort((a, b) => {
+        // Sort folders first; ensure lexicographical ordering
+        if (a.folder && b.folder) {
+          return a.path.localeCompare(b.path);
+        }
+        return Number(b.folder || false) - Number(a.folder || false);
+      })
+    ) {
       insertFiles(div, child, offset + 1, '');
       if (child.children && !child.folder) {
         // Handle hybrid page/folder navigation
