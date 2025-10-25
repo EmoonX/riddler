@@ -408,7 +408,7 @@ async def get_pages(
                 if not data['hidden']:
                     parent['filesTotal'] += 1
                     parent['pagesTotal'] += 1
-            if seg not in parent['children']:
+            if not parent.get('children') or seg not in parent['children']:
                 # Avoid registering locked folders/pages
                 break
             if not index_by_levels:
