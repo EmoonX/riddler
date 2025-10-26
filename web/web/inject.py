@@ -2,6 +2,8 @@ import json
 import os
 from typing import overload
 
+from babel import Locale
+from babel.core import get_global
 import country_converter as coco
 from flag import flag
 from pycountry import pycountry
@@ -302,6 +304,9 @@ async def context_processor():
         name = f"United Kingdom ({country[1]})"
         country_names[code] = name
 
+    # Country -> language mapping for `/riddles`
+    territories = get_global('territory_languages')
+
     # Dict for extra variables
     extra = {
         'get_riddle': get_riddle,
@@ -315,7 +320,9 @@ async def context_processor():
         'country_names': country_names,
         'is_admin_of': is_admin_of,
         'get_emoji_flag': flag,
+        'Locale': Locale,
         'pycountries': pycountry.countries,
+        'territories': territories,
     }
     # Return concatenated dict with pairs (var -> var_value)
     return locals() | extra

@@ -53,6 +53,11 @@
                 <div style="display: inline-block; width: 35px; height: 35px;"></div>
               {% endif %}
                 {{ riddle['full_name'] }}
+              {% if riddle['country'] %}
+                {% set lang_code = territories.get(riddle['country'])|list|first %}
+                {% set lang_name = Locale(lang_code).get_display_name(Locale('en')) %}
+                <sup><img class="flag" src="/static/flags/{{ riddle['country'] }}.png" height="16" title="Available in {{ lang_name }} only"></sup>
+              {% endif %}
               </a>
             </td>
             <td>
