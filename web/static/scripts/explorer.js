@@ -178,7 +178,7 @@ function insertFile(levelName, files, filename, node, admin) {
 function popIcons(explorer) {
   // "Icons popping in sequence" effect
   explorer.find('figure').each(function (index) {
-    const t = 50 * (index + 1);
+    const t = 20 * (index + 1);
     setTimeout(_ => {
       $(this).addClass('show');
     }, t);
