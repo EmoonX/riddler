@@ -1560,9 +1560,19 @@ section.list.levels > .row {
     );
   }
   > .info {
-    width: 200px;
+    display: flex;
+    gap: 1.25em;
+    margin: auto 0;
+    height: min-content;
+    padding: 1em;
+    border-radius: 2em;
+    box-shadow: 0 0 2em black, 0 0 5em black;
+    text-shadow: 0 0 .5em black, 0 0 1em black;
+    backdrop-filter: blur(.125em) brightness(.55);
 
     > .rank {
+      width: 180px;
+
       > div {
         font-family: "Segoe UI Emoji";
         font-size: 1.6em;
@@ -1595,6 +1605,7 @@ section.list.levels > .row {
       }
     }
     > .completion {
+      width: 220px;
       font-size: 0.7em;
     }
     var {
