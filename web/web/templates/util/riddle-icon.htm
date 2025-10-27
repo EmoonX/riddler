@@ -1,6 +1,8 @@
 <div class="riddle-icon">
   <img src="{{ riddle['icon_url'] }}">
-{% if riddle['demo'] %}
+{% if riddle['unlisted'] %}
+  <div class="riddle-status unlisted">unlisted</div>  
+{% elif riddle['demo'] %}
   <div class="riddle-status demo">demo</div>
 {% endif %}
 </div>
