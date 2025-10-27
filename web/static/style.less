@@ -495,16 +495,28 @@ hr {
     width: 60px;
     border-radius: 25%;
   }
-  .demo {
+  .riddle-status.demo {
     position: absolute;
     top: 0;
     right: 0;
-    padding: .2em .3em;
-    border-radius: .5em;
-    background-color: crimson;
-    color: #ffd; 
-    font-size: .7em;
     line-height: initial;
+  }
+}
+
+.riddle-status {
+  padding: .4em;
+  border-radius: .5em;
+  color: #ffd; 
+  font-size: .7em;
+
+  &.released {
+    background-color: #022;
+  }
+  &.wip {
+    background-color: #330;
+  }
+  &.demo {
+    background-color: #300;
   }
 }
 
@@ -803,6 +815,10 @@ tfoot td {
 
 tbody > tr:hover, tbody > tr.active {
   background-color: rgba(127, 127, 127, .2);
+
+  > td {
+    opacity: 1 !important;
+  }
 }
 
 /* tbody > tr > :nth-child(2) > a {
@@ -849,8 +865,8 @@ th, td {
 
 td {
   a:not(:hover) {
-  text-decoration: none;
-}
+    text-decoration: none;
+  }
   var {
     position: relative;
     display: flex;
@@ -892,7 +908,7 @@ td {
         0 0 .3em crimson,
         0 0 .6em crimson,
         0 0 .9em crimson;
-}
+    }
     &.level-count {
       text-shadow:
         0 0 .3em MediumVioletRed,

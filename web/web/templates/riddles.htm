@@ -4,9 +4,9 @@
     <main>
       {% set riddles = get_riddles(unlisted=True, include_counters=True) %}
       {% set statuses = {
-        '🎖️': 'Full',
-        '🚧': 'Update in Progress',
-        '🧪': 'Demo',
+        'released': {'label': 'released', 'title': 'Released'},
+        'wip': {'label': 'w.i.p', 'title': 'Released (Work in Progress)'},
+        'demo': {'label': 'demo', 'title': 'Demo'},
       } %}
       {% set total = namespace(
         riddles_released=0,
@@ -30,35 +30,48 @@
         </thead>
         <tbody>
         {% for riddle in riddles|sort(attribute="full_name") %}
+          {% set status = riddle['status'] %}
           <tr>
             <td>
-            {%- if riddle['status'] -%}
-              <span title="{{ statuses[riddle['status']] }}" style="border-bottom: 1px dotted #ffd8;">{{ riddle['status'] }}</span>
-              {%- if riddle['status'] in ['🎖️', '🚧'] -%}
+            {%- if status -%}
+              <span class="{{ ' '.join(['riddle-status', status]) }}" title ="{{ statuses[status]['title'] }}">
+                {{- statuses[status]['label'] -}}
+              </span>
+              {%- if status in ['released', 'wip'] -%}
                 {%- set total.riddles_released = total.riddles_released + 1 -%}
-              {%- elif riddle['status'] == '🧪' -%}
+              {%- elif status == 'demo' -%}
                 {%- set total.riddles_demo = total.riddles_demo + 1 -%}
               {%- endif -%}
             {%- endif -%}
             </td>
-            <td style="text-align: left;">
+            <td style="text-align: left;{% if not status %} opacity: .5;{% endif %}">
+            {% if riddle['level_count'] %}
               <a
-                href="{{ riddle['alias'] if riddle['level_count'] else '#' }}"
+                href="{{ riddle['alias'] }}"
                 style="display: inline-flex; align-items: center; gap: .8em; vertical-align: middle;"
               >
+            {% else %}
+              <div style="display: inline-flex; align-items: center; gap: .8em; vertical-align: middle; font-weight: bold; color: white;">
+            {% endif %}
                 {% set src = '/static/riddles/' ~ riddle['alias'] ~ '.png' %}
               {% if file_exists(src) %}
                 <img class="riddle-icon" src="{{ src }}" width="35">
               {% else %}
                 <div style="display: inline-block; width: 35px; height: 35px;"></div>
               {% endif %}
-                {{ riddle['full_name'] }}
-              {% if riddle['country'] %}
-                {% set lang_code = territories.get(riddle['country'])|list|first %}
-                {% set lang_name = Locale(lang_code).get_display_name(Locale('en')) %}
-                <sup><img class="flag" src="/static/flags/{{ riddle['country'] }}.png" height="16" title="Available in {{ lang_name }} only"></sup>
-              {% endif %}
+                <div style="display: inline-flex; gap: .6em;">
+                  {{ riddle['full_name'] }}
+                {% if riddle['country'] %}
+                  {% set lang_code = territories.get(riddle['country'])|list|first %}
+                  {% set lang_name = Locale(lang_code).get_display_name(Locale('en')) %}
+                  <sup><img class="flag" src="/static/flags/{{ riddle['country'] }}.png" height="16" title="Available in {{ lang_name }} only"></sup>
+                {% endif %}
+                </div>
+            {% if riddle['level_count'] %}
               </a>
+            {% else %}
+              </div>
+            {% endif %}
             </td>
             <td>
               <var class="player-count">
@@ -113,11 +126,10 @@
         </tbody>
         <tfoot>
           <tr>
-            <td style="font-weight: bold;">Total</td>
-            <td>
+            <td colspan="2">
               <figure>
                 <var class="riddle-count">{{ riddles|length }}</var>
-                <figcaption>riddles<br>(<code>{{ total.riddles_released }}</code> released, <code>{{ total.riddles_demo }}</code> demo)</figcaption>
+                <figcaption>riddles<br>(<code>{{ total.riddles_released }}</code> released/w.i.p, <code>{{ total.riddles_demo }}</code> demo)</figcaption>
               </figure>
             </td>
             <td>
