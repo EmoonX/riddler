@@ -1134,11 +1134,15 @@ section.list.players {
 section.list.players > .row {
   position: relative;
   z-index: -1000;
-  height: 6em;
+  height: 5.5em;
 
   > .rank {
     width: 60px;
     font-size: 1.3em;
+
+    var::first-letter {
+      font-size: .9em;
+    }
   }
   > .player {
     flex-direction: row;
@@ -1163,6 +1167,7 @@ section.list.players > .row {
       margin-left: 12px;
       vertical-align: super;
       opacity: 0.8;
+      cursor: revert;
 
       > .flag {
         max-width: 1.6em;
@@ -1237,6 +1242,9 @@ section.list.players > .row {
         font-size: .8em;
       }
     }
+  }
+  > figure.player-count {
+    padding: 15px 0;
   }
   > figure.score {
     position: relative;
@@ -1478,7 +1486,7 @@ section.list.countries > .row {
         max-width: 70px;
         max-height: 50px;
         border-radius: 10%;
-        box-shadow: 0 0 0.4em rgba(255, 255, 221, 0.5);
+        box-shadow: 0 0 2em black;
       }
     }
     > .name {
@@ -1486,9 +1494,14 @@ section.list.countries > .row {
       text-align: center;
       font-size: 1.2em;
       font-weight: bold;
-      text-shadow: 0 0 0.4em mediumvioletred,
-          0 0 0.8em mediumvioletred;
+      text-decoration: none;
+      text-shadow:
+        0 0 .4em mediumvioletred,
+        0 0 .8em mediumvioletred;
       
+      &:hover {
+        text-decoration: underline;
+      }
       &::first-letter {
         font-size: 1.4em;
       }
@@ -1496,7 +1509,7 @@ section.list.countries > .row {
   }
   > .player-count {
     > var.count {
-      font-size: 2em;
+      font-size: 1.7em;
     }
   }
   > .score.average {

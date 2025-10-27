@@ -1,9 +1,9 @@
 {% extends 'layout.htm' %}
 {% set riddle = get_riddle(alias) %}
-{% block title %}Countries ⬩ {{ riddle['full_name'] }}{% endblock %}
+{% block title %}Countries Leaderboard ⬩ {{ riddle['full_name'] }} ⬩ Riddler{% endblock %}
 {% block content %}
     <main>
-      <h1>Countries</h1>
+      <h1>Countries Leaderboard</h1>
       <section class="list players countries">
         {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
       {% for country in countries %}
@@ -20,9 +20,9 @@
           </div>
           <div class="country">
             {% set name = country_names[country['country']] %}
-            <a class="flag" href="/{{ alias }}/players/{{ country['country'] }}">
+            <div class="flag">
               <img src="/static/flags/{{ country['country'] }}.png">
-            </a>
+            </div>
             <div class="name">{{ name }}</div>
           </div>
           <figure class="player-count">

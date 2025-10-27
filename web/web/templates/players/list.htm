@@ -2,12 +2,12 @@
 {% if country %}
   {% set flag = get_emoji_flag(country) %}
   {% set flag_title = flag + ' ⬩ ' %}
-  {% set flag_html = (' ⬩ <span class="flag">' + flag + '</span>')|safe %}
+  {% set flag_html = ('<span class="flag">' + flag + '</span> ⬩ ')|safe %}
 {% endif %}
 {% block title %}{{ flag_title }}Global Leaderboard ⬩ Riddler{% endblock %}
 {% block content %}
     <main>
-      <h1>Global Leaderboard</h1>
+      <h1 style="zoom: 90%;">{{ flag_html }}Global Leaderboard</h1>
       <section class="list players">
         {% set user = get_session_user() %}
         {% set avatar_urls = get_all_avatar_urls() %}

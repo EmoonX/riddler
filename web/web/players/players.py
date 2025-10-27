@@ -42,8 +42,11 @@ async def global_list(country: Optional[str] = None):
     # Init dict of (handle -> player info)
     accounts = {}
     query = f"""
-        SELECT * FROM accounts
-        {'WHERE country = :country' if country else ''}
+        SELECT * FROM accounts 
+        {
+            'WHERE LEFT(country, CHAR_LENGTH(:country)) = :country'
+            if country else ''
+        }
     """
     values = {}
     if country:
@@ -60,8 +63,13 @@ async def global_list(country: Optional[str] = None):
     # Incognito data
     user = await discord.get_user() if discord.user_id else None
     query = f"""
-        SELECT * FROM _incognito_accounts
-        {'WHERE country = :country' if country else ''}
+        SELECT iacc.*
+        FROM _incognito_accounts iacc INNER JOIN accounts acc
+            ON iacc.username = acc.username
+        {
+            'WHERE LEFT(country, CHAR_LENGTH(:country)) = :country'
+            if country else ''
+        }
     """
     incognito_accounts = await database.fetch_all(query, values)
     for iacc in incognito_accounts:
@@ -143,7 +151,7 @@ async def global_list(country: Optional[str] = None):
 
 
 @players.get('/<alias>/players')
-@players.get('/<alias>/players/<country>')
+# @players.get('/<alias>/players/<country>')
 async def riddle_list(alias: str, country: str | None = None):
     '''Riddle (and country-wise) player lists.'''
 
@@ -179,7 +187,10 @@ async def riddle_list(alias: str, country: str | None = None):
         FROM accounts AS acc INNER JOIN riddle_accounts racc
             ON acc.username = racc.username
         WHERE riddle = :riddle
-            {'AND country = :country' if country else ''}
+            {
+                'AND LEFT(country, CHAR_LENGTH(:country)) = :country'
+                if country else ''
+            }
         ORDER BY racc.score DESC, last_page_time ASC
     """
     if country:
@@ -199,7 +210,10 @@ async def riddle_list(alias: str, country: str | None = None):
         FROM accounts AS acc INNER JOIN _incognito_riddle_accounts racc
             ON acc.username = racc.username
         WHERE riddle = :riddle
-            {'AND country = :country' if country else ''}
+            {
+                'AND LEFT(country, CHAR_LENGTH(:country)) = :country'
+                if country else ''
+            }
     """
     incognito_accounts = await database.fetch_all(query, values)
     for iacc in incognito_accounts:

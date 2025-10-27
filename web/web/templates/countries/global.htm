@@ -1,8 +1,8 @@
 {% extends 'layout.htm' %}
-{% block title %}Countries{% endblock %}
+{% block title %}Countries Leaderboard ⬩ Riddler{% endblock %}
 {% block content %}
     <main>
-      <h1>Countries</h1>
+      <h1 style="zoom: 90%;">Countries Leaderboard</h1>
       <section class="list players countries">
         {% set colors = ['goldenrod', 'silver', 'firebrick'] %}
       {% for country in countries %}
@@ -22,16 +22,16 @@
             <a class="flag" href="/players/{{ country['country'] }}">
               <img src="/static/flags/{{ country['country'] }}.png">
             </a>
-            <div class="name">{{ name }}</div>
+            <a class="name" href="/players/{{ country['country'] }}">{{ name }}</a>
           </div>
           <figure class="honors" style="width: 200px">
             {% set count = country['honors'] %}
-            <var class='count'>{{ count }}</var>
+            <var class="count">{{ count }}</var>
             <figcaption>🏅 honor(s) received</figcaption>
           </figure>
           <figure class="player-count">
             {% set count = country['player_count'] %}
-            <var class='count'>{{ count }}</var>
+            <var class="count">{{ count }}</var>
             <figcaption>certified player(s)</figcaption>
           </figure>
           <figure class="score">
