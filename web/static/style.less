@@ -136,7 +136,7 @@ header > nav {
 
       .riddles {
         display: grid;
-        grid-template-columns: repeat(7, 1fr);
+        grid-template-columns: repeat(6, 1fr);
         gap: 1em .5em;
         width: 500px;
 
@@ -149,13 +149,6 @@ header > nav {
           &:hover {
             filter: drop-shadow(0 0 .5em crimson);
             transition: filter 0.2s;
-          }
-        }
-        &.demo {
-          grid-template-columns: repeat(8, 1fr);
-
-          > a.riddle {
-            zoom: 65%;
           }
         }
       }
@@ -184,8 +177,12 @@ header > nav {
         flex-direction: column;
         align-items: center;
         gap: 1.5em;
-        padding: 1.5em;
+        padding: 2em 1em;
         zoom: 95%;
+
+        figcaption {
+          font-size: .75em;
+        }
       }
       &.riddles {
         display: grid;
