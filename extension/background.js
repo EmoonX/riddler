@@ -138,9 +138,9 @@ function promptCustomAuth(details, asyncCallback) {
       // Request auth box with given (explicit) realm message
       const message = {
         realm: details.realm,
-        boxHTML: await fetch(chrome.runtime.getURL('credentials.html'))
+        boxHTML: await fetch(chrome.runtime.getURL('content/credentials.html'))
           .then(response => response.text()),
-        boxCSS: await fetch(chrome.runtime.getURL('credentials.css'))
+        boxCSS: await fetch(chrome.runtime.getURL('content/credentials.css'))
           .then(response => response.text()),
       };
       const containingPath = findContainingPath(path, riddle.pagesByPath);
