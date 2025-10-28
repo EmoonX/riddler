@@ -51,6 +51,9 @@ $(() => {
       // Show current level name/navigation
       const levelName = riddle.lastVisitedLevel;
       const level = riddle.levels[levelName];
+      if (! level) {
+        return;
+      }
       $('#level > var#current-level').text(levelName);
       if (level.previous) {
         $('#level #previous-set').removeClass('disabled');
