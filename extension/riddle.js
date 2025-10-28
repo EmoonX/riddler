@@ -114,24 +114,32 @@ export function parseRiddleAndPath(url) {
 
   const parsedRoot = new URL(rootPath);
   const urlTokens = parsedUrl.pathname.split('/').filter(Boolean);
-  const rootTokens = parsedRoot.pathname.split('/').filter(Boolean);
-  let path = '';
+  const rootTokens = parsedRoot.pathname.split('/').filter(Boolean);  
+  const pathTokens = [];
   for (let i = 0; i < rootTokens.length; i++) {
     if (urlTokens[i] !== rootTokens[i]) {
-      path += '/..';
+      pathTokens.push('..');
     }
   }
   for (let i = 0; i < urlTokens.length; i++) {
     if (urlTokens[i] !== rootTokens[i]) {
-      path += `/${urlTokens[i]}`;
+      pathTokens.push(urlTokens[i]);
     }
-  }      
-  if (path.at(-1) === '/' && path !== '/') {
-    // Remove trailing slash from folder paths
-    path = path.slice(0, -1);
   }
-  return [riddles[alias], path];
+  const riddle = riddles[alias];
+  const path = `/${pathTokens.join('/')}`;
+
+  return [riddle, path];
 }
+chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
+  if (msg.name === 'parseRiddleAndPath') {
+    const [riddle, path] = parseRiddleAndPath(msg.url);
+    sendResponse({
+      riddle: riddle,
+      path: path,
+    });
+  }
+});
 
 function parseRiddle(parsedUrl) {
   const hostname = parsedUrl.hostname.replace(/^www\d*\./, '');
@@ -161,7 +169,7 @@ function parseRiddle(parsedUrl) {
       );
       const url = `${hostname}${parsedUrl.pathname}`;
       if (rootRegex.test(url)) {
-        [alias, rootPath] = [_alias, _rootPath];
+        [alias, rootPath] = [_alias, _rootPath.replace(/[/][*]$/, '')];
         break;
       }
     } else {
