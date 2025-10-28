@@ -84,11 +84,21 @@ async def get_user_riddle_data(alias: str | None = None) -> str:
     values = {'riddle': alias or '%'}
     result = await database.fetch_all(query, values)
     riddles = {
-        row['alias']: dict(row) | {'orderedLevels': []}
+        row['alias']: dict(row) | {'blacklistedPages': [], 'orderedLevels': []}
         for row in result
     }
 
-    # Build list of levels found/unlocked/solved by user (in order)
+    # Get blacklisted pages
+    query = '''
+        SELECT riddle, path, next_path AS nextPath FROM _blacklisted_pages
+        WHERE riddle LIKE :riddle
+    '''
+    result = await database.fetch_all(query, values)
+    for row in result:
+        riddle = riddles[row['riddle']]
+        riddle['blacklistedPages'].append(dict(row))
+
+    # Build list of levels unlocked/solved by user (in order)
     query = '''
         SELECT
             up.riddle, ls.name AS set_name, up.level_name,

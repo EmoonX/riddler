@@ -1,5 +1,3 @@
-const port = chrome.runtime.connect({ name: 'credentials.js' });
-
 /** One-shot listener for prompting credentials. */
 const credentialsListener = (data => {
   console.log('Received data from background.js...');
