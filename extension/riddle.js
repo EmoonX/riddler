@@ -106,7 +106,7 @@ function updatePathsIndex(riddle, pageNode) {
 
 /** Parses riddle and path from URL, based on root host match. */
 export function parseRiddleAndPath(url) {
-  const parsedUrl = new URL(url);
+  const parsedUrl = new URL(url.replace(/^view-source:/, ''));
   const [alias, rootPath] = parseRiddle(parsedUrl);
   if (! alias) {
     return [null, null];
