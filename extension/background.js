@@ -12,6 +12,9 @@ import {
   updateCurrentRiddleAndLevel,
 } from './riddle.js';
 
+// Extend service worker with additional module(s)
+import './tabs.js';
+
 /** Wildcard URLs to be matched. */
 const filter = { urls: ['<all_urls>'] };
 
