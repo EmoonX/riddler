@@ -407,12 +407,13 @@ class _PathHandler:
 
         self.path = self.path.partition('?')[0]
         if self.riddle['html_extension']:
-            if self.path.endswith('/'):
+            if self.path.endswith(('/', '/..')):
                 # If a folder itself, add trailing "index.htm[l]" etc
-                self.path += f"index.{self.riddle['html_extension']}"
+                index = f"index.{self.riddle['html_extension']}"
+                self.path += index if self.path.endswith('/') else f"/{index}"
             else:
                 # If missing the extension, append explicit ".htm[l]" etc
-                if not '.' in self.path:
+                if not Path(self.path).suffix:
                     self.path += f".{self.riddle['html_extension']}"
         else:
             # Omit superflous slash from extension-less hosts
