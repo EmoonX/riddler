@@ -190,7 +190,7 @@ function updatePopupNavigation(riddle, level) {
   riddle.shownSet = levelSet.name;
   riddle.shownLevel = level.name;
 
-  $('#level var#current-level').text(level.name);
+  $('#level var#level-name').text(level.name);
   $('#level #previous-set').toggleClass('disabled', !level.previous);
   $('#level #previous-level').toggleClass('disabled', !level.previous);
   $('#level #next-level').toggleClass('disabled', !level.next);

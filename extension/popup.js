@@ -48,13 +48,17 @@ $(() => {
       $('#riddle > .full-name').text(riddle.fullName);
       $('#riddle a').attr('href', explorerURL);
       
-      // Show current level name/navigation
       const levelName = riddle.lastVisitedLevel;
       const level = riddle.levels[levelName];
       if (! level) {
         return;
       }
-      $('#level > var#current-level').text(levelName);
+
+      // Show current level name/navigation
+      $('#level > img#level-image').attr(
+        'src', `${SERVER_HOST}/static/thumbs/cipher/enter.jpg`
+      );
+      $('#level > var#level-name').text(levelName);
       if (level.previous) {
         $('#level #previous-set').removeClass('disabled');
         $('#level #previous-level').removeClass('disabled');
