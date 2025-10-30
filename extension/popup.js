@@ -1,8 +1,11 @@
+import { retrieveWithCache } from './cache.js';
+
 import {  
   changeLevel,
   changeLevelSet,
   clickFile,
   doubleClickFile,
+  getLevelImageBlob,
   insertFiles,
 } from './explorer.js';
 
@@ -55,10 +58,10 @@ $(() => {
       }
 
       // Show current level name/navigation
-      $('#level > img#level-image').attr(
-        'src', `${SERVER_HOST}/static/thumbs/cipher/enter.jpg`
-      );
       $('#level > var#level-name').text(levelName);
+      getLevelImageBlob(riddle.alias, level).then(imageBlob => {
+        $('#level img#level-image').attr('src', imageBlob);
+      });
       if (level.previous) {
         $('#level #previous-set').removeClass('disabled');
         $('#level #previous-level').removeClass('disabled');

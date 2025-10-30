@@ -1,3 +1,5 @@
+import { retrieveWithCache } from './cache.js';
+
 import {
   buildRiddle,
   currentRiddle,
@@ -148,6 +150,16 @@ function getFileFigure(node, token, offset) {
   `);
 }
 
+/** Get (possibly cached) blob for given level's image (if any). */
+export async function getLevelImageBlob(alias, level) {
+  if (! level.image) {
+    return '#';
+  }
+  const imageName = level.image.split('/').pop();
+  const imageUrl =`${SERVER_HOST}/static/thumbs/${alias}/${imageName}`;
+  return retrieveWithCache('level-images', imageUrl);
+}
+
 /** 
  * Changes displayed level set to previous or next one,
  * upon double arrow click.
@@ -185,12 +197,15 @@ export function changeLevel() {
 }
 
 /** Updates level/set being shown and navigation buttons. */
-function updatePopupNavigation(riddle, level) {
+async function updatePopupNavigation(riddle, level) {
   const levelSet = riddle.levelSets[level.setName];
   riddle.shownSet = levelSet.name;
   riddle.shownLevel = level.name;
 
   $('#level var#level-name').text(level.name);
+  getLevelImageBlob(riddle.alias, level).then(imageBlob => {
+    $('#level img#level-image').attr('src', imageBlob);
+  });
   $('#level #previous-set').toggleClass('disabled', !level.previous);
   $('#level #previous-level').toggleClass('disabled', !level.previous);
   $('#level #next-level').toggleClass('disabled', !level.next);
