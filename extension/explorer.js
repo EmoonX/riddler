@@ -226,7 +226,7 @@ export async function doubleClickFile() {
       } catch {
         return riddle.rootPath;
       }
-    })();
+    })().replace(/[/][*]$/, '');;
     const parsedUrl = new URL(`${rootPath}${path}`);
     parsedUrl.username = $(this).attr('data-username') || '';
     parsedUrl.password = $(this).attr('data-password') || '';
