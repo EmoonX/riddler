@@ -24,7 +24,10 @@ chrome.tabs.onUpdated.addListener((_, changeInfo, tab) => {
     );
     if (blacklistEntry) {
       const rootPath = riddle.rootPath.replace(/[/][*]$/, '');
-      const nextUrl = `${rootPath}${blacklistEntry.nextPath}`;
+      let nextUrl = `${rootPath}${blacklistEntry.nextPath}`;
+      if (tab.url.startsWith('view-source:')) {
+        nextUrl = `view-source:${nextUrl}`;
+      }
       chrome.tabs.remove(tab.id, () => {
         createTab(nextUrl, { active: tab.active });
       });
