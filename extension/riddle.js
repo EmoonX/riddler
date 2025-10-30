@@ -1,3 +1,5 @@
+import { retrieveWithCache } from './cache.js';
+
 /** Server host base URL. */
 export const SERVER_HOST = 'https://riddler.app';
 
@@ -10,27 +12,9 @@ export let currentRiddle;
 /** Builds riddle object from riddle and levels JSON data. */
 export async function buildRiddle(riddle, pages) {
 
-  // Retrieve riddle icon; fetch-cache it to avoid subsequent request bloat
-  riddle.iconUrl = await (async () => {
-    const iconUrlExternal = `${SERVER_HOST}/static/riddles/${riddle.alias}.png`;
-    const cache = await caches.open('riddles');
-    let response = await cache.match(iconUrlExternal);
-    if (! response) {
-      try {
-        await cache.add(iconUrlExternal);
-      } catch {
-        // Couldn't fetch external image (usually 404)
-        return null;
-      }
-      response = await cache.match(iconUrlExternal);
-    }
-    const blob = await response.blob();
-    return await new Promise(resolve => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result);
-      reader.readAsDataURL(blob);
-    });
-  })();
+  // Retrieve (possibly cached) riddle icon
+  const iconUrlExternal = `${SERVER_HOST}/static/riddles/${riddle.alias}.png`;
+  riddle.iconUrl = await retrieveWithCache('riddles', iconUrlExternal);
 
   riddle.levels = {};
   riddle.levelSets = {};
