@@ -4,7 +4,9 @@ import {
   riddles,
   SERVER_HOST,
   updateState,
-} from "./riddle.js";
+} from './riddle.js';
+
+import { createTab } from './tabs.js';
 
 /** Lock for `initExplorer` (should run once and non-concurrently). */
 export let initNeeded = true;
@@ -228,12 +230,6 @@ export async function doubleClickFile() {
     const parsedUrl = new URL(`${rootPath}${path}`);
     parsedUrl.username = $(this).attr('data-username') || '';
     parsedUrl.password = $(this).attr('data-password') || '';
-    chrome.windows.getCurrent({ populate: false }, currentWindow => {
-      // Window-aware tab creation (account for e.g. incognito browsing)
-      chrome.tabs.create({
-        url: parsedUrl.toString(),
-        windowId: currentWindow.id,
-      });
-    });
+    createTab(parsedUrl.toString(), { active: true });
   }
 }
