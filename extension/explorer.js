@@ -3,6 +3,7 @@ import { retrieveWithCache } from './cache.js';
 import {
   buildRiddle,
   currentRiddle,
+  getSimpleRootPath,
   riddles,
   SERVER_HOST,
   updateState,
@@ -112,7 +113,7 @@ export function insertFiles(parent, object, offset, prefix) {
   }
 }
 
-/** Generates `<figure>`jQuery element from given page tree node. */
+/** Generates `<figure>` jQuery element from given page tree node. */
 function getFileFigure(node, token, offset) {
   let type;
   if (node.folder) {
@@ -235,14 +236,7 @@ export async function doubleClickFile() {
     // Open desired page in new tab
     const riddle = riddles[currentRiddle];
     const path = $(this).attr('title');
-    const rootPath = (() => {
-      try {
-        const hosts = JSON.parse(riddle.rootPath);
-        return hosts[0];
-      } catch {
-        return riddle.rootPath;
-      }
-    })().replace(/[/][*]$/, '');;
+    const rootPath = getSimpleRootPath(riddle);
     const parsedUrl = new URL(`${rootPath}${path}`);
     parsedUrl.username = $(this).attr('data-username') || '';
     parsedUrl.password = $(this).attr('data-password') || '';

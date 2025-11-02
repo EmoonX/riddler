@@ -166,6 +166,21 @@ function parseRiddle(parsedUrl) {
   return [alias, rootPath];
 }
 
+/** Get simple root path URL, accounting for multiple and glob ones. */
+export function getSimpleRootPath(riddle) {
+  let rootPath = (() => {
+    try {
+      const rootPaths = JSON.parse(riddle.rootPath);
+      return rootPaths[0];
+    } catch {
+      return riddle.rootPath;
+    }
+  })();
+  rootPath = rootPath.replace(/[/][*]$/, '');
+
+  return rootPath;
+}
+
 /** Find innermost path in set/map which contains the base one (if any). */
 export function findContainingPath(basePath, paths) {
   const tokens = basePath.replace('/{2,}', '/').split('/');
