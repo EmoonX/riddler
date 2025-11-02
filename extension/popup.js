@@ -10,6 +10,7 @@ import {
 } from './explorer.js';
 
 import {
+  getSimpleRootPath,
   SERVER_HOST,
   updateState,
 } from './riddle.js';
@@ -51,15 +52,16 @@ $(() => {
       $('#riddle > .full-name').text(riddle.fullName);
       $('#riddle a').attr('href', explorerURL);
       
-      const levelName = riddle.lastVisitedLevel;
-      const level = riddle.levels[levelName];
+      const level = riddle.levels[riddle.lastVisitedLevel];
       if (! level) {
         return;
       }
 
       // Show current level name/navigation
+      const rootPath = getSimpleRootPath(riddle);
       $('#level #set-name').text(level.setName);
-      $('#level #level-name').text(levelName);
+      $('#level #level-name a').text(level.name);
+      $('#level #level-name a').attr('href', `${rootPath}${level.frontPath}`);
       getLevelImageBlob(riddle.alias, level).then(imageBlob => {
         $('#level img#level-image').attr('src', imageBlob);
       });
