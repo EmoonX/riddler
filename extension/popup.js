@@ -58,7 +58,8 @@ $(() => {
       }
 
       // Show current level name/navigation
-      $('#level > var#level-name').text(levelName);
+      $('#level #set-name').text(level.setName);
+      $('#level #level-name').text(levelName);
       getLevelImageBlob(riddle.alias, level).then(imageBlob => {
         $('#level img#level-image').attr('src', imageBlob);
       });

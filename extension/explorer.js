@@ -202,7 +202,8 @@ async function updatePopupNavigation(riddle, level) {
   riddle.shownSet = levelSet.name;
   riddle.shownLevel = level.name;
 
-  $('#level var#level-name').text(level.name);
+  $('#level #set-name').text(level.setName);
+  $('#level #level-name').text(level.name);
   getLevelImageBlob(riddle.alias, level).then(imageBlob => {
     $('#level img#level-image').attr('src', imageBlob);
   });
