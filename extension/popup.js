@@ -42,14 +42,16 @@ $(() => {
       updateState(riddles, alias);
 
       // Display logged in riddle data
-      $('#currently-playing').toggle(true);
+      $('header').toggle(true);
+      $('#level').toggle(true);
+      $('.page-explorer').toggle(true);
       $('#buttons').remove();
 
       // Show current riddle info in extension's popup
       const riddle = riddles[alias];
       const explorerURL = `${SERVER_HOST}/${alias}/levels`;
-      $('#riddle > .icons img.current').attr('src', riddle.iconUrl);
-      $('#riddle > .full-name').text(riddle.fullName);
+      $('#riddle img.current').attr('src', riddle.iconUrl);
+      $('#riddle .full-name').text(riddle.fullName);
       $('#riddle a').attr('href', explorerURL);
       
       const level = riddle.levels[riddle.lastVisitedLevel];

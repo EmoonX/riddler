@@ -7,27 +7,25 @@
     <script src="thirdParty/jquery.min.js"></script>
   </head>
   <body>
-    <header>
-      <img src="images/letter-r-40.png" alt="R" width="40" height="40">
-      <div id="riddler-title">Riddler</div>
-    </header>
-    <main>
-      <div id="currently-playing" style="display: none;">
+    <header style="display: none;">
+      <!-- <img src="images/letter-r-40.png" alt="R" width="32" height="32"> -->
+      <!-- <div id="riddler-title">Riddler</div> -->
+      <div id="currently-playing">
         <div class="label">Currently playing</div>
         <figure id="riddle">
-          <div class="icons">
-            <a target="_blank" title="Go to website's level explorer">
-              <img class="current" src="#" alt="...">
-            </a>
-          </div>
+          <a target="_blank" title="Go to website's level explorer">
+            <img class="current" src="#" alt="...">
+          </a>
           <figcaption class="full-name">...</figcaption>
         </figure>
       </div>
     </header>
     <main>
-      <div id="level">
+      <div id="level" style="display: none;">
         <div id="set-name"></div>
-        <div id="level-name"><a href="#" target="_blank" rel="noreferrer"></a></div>
+        <div id="level-name">
+          <a href="#" target="_blank" rel="noreferrer" title="Go to level's front page"></a>
+        </div>
         <img id="level-image" src="#">
         <nav>
           <div id="previous">
@@ -40,7 +38,7 @@
           </div>
         </nav>
       </div>
-      <div class="page-explorer">
+      <div class="page-explorer" style="display: none;">
         <!-- JS will append files here -->
       </div>
       <div id="buttons">
