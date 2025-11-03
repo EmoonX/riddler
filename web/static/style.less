@@ -810,15 +810,16 @@ thead th {
   border-bottom: 1px solid;
 }
 tfoot td {
-  padding-bottom: .4em;
+  padding-bottom: .5em;
   border-top: 1px solid;
 }
 
 tbody > tr:hover, tbody > tr.active {
-  background-color: rgba(127, 127, 127, .2);
+  background-color: rgba(127, 127, 127, .1);
 
   > td {
     opacity: 1 !important;
+    filter: grayscale(0) !important;
   }
 }
 
@@ -911,12 +912,18 @@ td {
         0 0 .9em crimson;
     }
     &.level-count {
+      display: inline-flex;
+      margin: 0;
+      width: 50%;
       text-shadow:
         0 0 .3em MediumVioletRed,
         0 0 .6em MediumVioletRed,
         0 0 .9em MediumVioletRed;
     }
     &.page-count, &.raw-page-count {
+      display: inline-flex;
+      margin: 0;
+      width: 40%;
       font-size: .9em;
       text-shadow:
         0 0 .3em darkcyan,
@@ -932,6 +939,14 @@ td {
       }
     }
   }
+  .level-page-count {
+    display: flex;
+    align-items: baseline;
+    padding: .2em 0;
+    border-radius: .8em;
+    background-color: #2225;
+
+  }
   .external-links {
     display: flex;
     justify-content: center;
@@ -941,6 +956,12 @@ td {
       height: 30px;
       cursor: pointer;
     }
+  }
+}
+tfoot {
+  var.page-count, var.raw-page-count {
+    display: flex;
+    width: auto;
   }
 }
 

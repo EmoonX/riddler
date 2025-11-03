@@ -23,8 +23,11 @@
             <th>Status</th>
             <th>Riddle</th>
             <th>Players</th>
-            <th>Levels</th>
-            <th>Pages</th>
+            <th colspan="2">
+              <div style="display: inline-block; width: 45%;">Levels</div>
+              <div style="display: inline-block; width: 10%;">|</div>
+              <div style="display: inline-block; width: 35%;">Pages</div>
+            </th>
             <th>Links</th>
           </tr>
         </thead>
@@ -44,7 +47,7 @@
               {%- endif -%}
             {%- endif -%}
             </td>
-            <td style="text-align: left;{% if not status %} opacity: .5;{% endif %}">
+            <td style="text-align: left;{% if not status %} opacity: .5; filter: grayscale(.5);{% endif %}">
             {% if riddle['level_count'] %}
               <a
                 href="{{ riddle['alias'] }}"
@@ -74,7 +77,7 @@
             {% endif %}
             </td>
             <td>
-              <var class="player-count">
+              <var class="player-count" title="Players">
               {% if riddle['player_count'] %}
                 {{ riddle['player_count'] }}<span class="bg-emoji">👤</span>
               {% else %}
@@ -82,33 +85,34 @@
               {% endif %}
               </var>
             </td>
-            <td>
-              <var class="level-count">
-              {% if riddle['level_count'] %}
-                {{ riddle['level_count'] }}<span class="bg-emoji">🧩</span>
-                {% set total.levels = total.levels + riddle['level_count'] %}
-              {% else %}
-                <span style="opacity: .3;">--</span>
-              {% endif %}
-              </var>
-            </td>
-            <td>
-              {% if riddle['page_count'] %}
-                {% set page_count = riddle['page_count'] %}
-                {% set class = 'page-count' %}
-              {% else %}
-                {% set page_count = '(' ~ riddle['raw_page_count'] ~ ')' %}
-                {% set class = 'raw-page-count' %}
-              {% endif %}
-              <var class="{{ class }}">
-              {% if riddle['raw_page_count'] %}
-                {{ page_count }}<span class="bg-emoji">📄</span>
-                {% set total.pages = total.pages + riddle['page_count'] %}
-                {% set total.raw_pages = total.raw_pages + riddle['raw_page_count'] %}
-              {% else %}
-                <span style="opacity: .3;">--</span>
-              {% endif %}
-              </var>
+            <td colspan="2">
+              <div class="level-page-count">
+                <var class="level-count" title="Levels">
+                {% if riddle['level_count'] %}
+                  {{ riddle['level_count'] }}<span class="bg-emoji">🧩</span>
+                  {% set total.levels = total.levels + riddle['level_count'] %}
+                {% else %}
+                  <span style="opacity: .3;">--</span>
+                {% endif %}
+                </var>
+                <span style="display: inline-block; width: 10%; opacity: .3;">|</span>
+                {% if riddle['page_count'] %}
+                  {% set page_count = riddle['page_count'] %}
+                  {% set class = 'page-count' %}
+                {% else %}
+                  {% set page_count = '(' ~ riddle['raw_page_count'] ~ ')' %}
+                  {% set class = 'raw-page-count' %}
+                {% endif %}
+                <var class="{{ class }}" title="{{ 'Pages' if riddle['page_count'] else '(unlisted pages)' }}">
+                {% if riddle['raw_page_count'] %}
+                  {{ page_count }}<span class="bg-emoji" >📄</span>
+                  {% set total.pages = total.pages + riddle['page_count'] %}
+                  {% set total.raw_pages = total.raw_pages + riddle['raw_page_count'] %}
+                {% else %}
+                  <span style="opacity: .6;">--</span>
+                {% endif %}
+                </var>
+              </div>
             </td>
             <td>
               <div class="external-links">
@@ -147,7 +151,7 @@
             <td>
               <figure>
                 <var class="page-count">{{ total.pages }}</var>
-                <var class="raw-page-count">({{ total.raw_pages }})</var>
+                <var class="raw-page-count" title="(including unlisted)">({{ total.raw_pages }})</var>
                 <figcaption>pages</figcaption>
               </figure>
             </td>
