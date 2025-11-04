@@ -62,8 +62,8 @@ $(() => {
       // Show current level name/navigation
       const rootPath = getSimpleRootPath(riddle);
       $('#level #set-name').text(level.setName);
-      $('#level #level-name a').text(level.name);
-      $('#level #level-name a').attr('href', `${rootPath}${level.frontPath}`);
+      $('#level a#level-name').text(level.name);
+      $('#level a#level-name').attr('href', `${rootPath}${level.frontPath}`);
       getLevelImageBlob(riddle.alias, level).then(imageBlob => {
         $('#level img#level-image').attr('src', imageBlob);
       });

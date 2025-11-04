@@ -7,16 +7,20 @@
   src: url("fonts/standard.ttf");
 }
 @font-face {
+  font-family: calculator;
+  src: url("fonts/calculator.ttf");
+}
+@font-face {
   font-family: digital-mono;
-  src: url("/fonts/digital-7-mono.ttf");
-  unicode-range: U+00-B0, U+100-FFFF;
+  src: url("fonts/digital-7-mono.ttf");
+  unicode-range: U+30-39;
 }
 
 body {
   display: flex;
   flex-direction: column;
   justify-content: space-around;
-  margin: 20px;
+  margin: 15px;
   width: 280px;
   background-color: #111;
   font-family: standard;
@@ -94,13 +98,13 @@ main {
     justify-content: center;
     align-items: center;
     margin: auto;
-    width: 90%;
-    height: 180px;
+    width: 80%;
+    height: 160px;
 
     #set-name {
       position: absolute;
       top: .5em;
-      left: .5em;
+      left: 0;
       color: #ffe;
       font-size: .85em;
       text-shadow:
@@ -110,17 +114,17 @@ main {
         0 0 .4em black,
         0 0 .5em black;      
     }
-    #level-name {
-      font-family: digital-mono;
-      font-size: 1.5em;
+    a#level-name {
+      font-family: digital-mono, calculator;
+      font-size: 1.55em;
       font-weight: bold;
       font-style: normal;
-      letter-spacing: .15em;
+      letter-spacing: .1em;
       line-height: 1em;
       text-shadow:
-        0 0 .4em mediumvioletred,
-        0 0 .8em mediumvioletred;
-      translate: 0 -50%;
+        0 0 .4em deeppink,
+        0 0 .8em deeppink;
+      translate: 0 -30%;
     }
     img#level-image {
       position: absolute;
@@ -131,7 +135,7 @@ main {
       mask: url('images/vignette.png');
       mask-size: cover;
       opacity: .4;
-      zoom: .9;
+      zoom: .85;
     }
     nav {
       position: absolute;
