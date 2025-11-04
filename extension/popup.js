@@ -1,5 +1,3 @@
-import { retrieveWithCache } from './cache.js';
-
 import {  
   changeLevel,
   changeLevelSet,
@@ -15,6 +13,11 @@ import {
   updateState,
 } from './riddle.js';
 
+import { createTab } from './tabs.js';
+
+// Get message data from background.js
+const port = chrome.runtime.connect({ name: 'popup' });
+
 $(() => {
   // Set explorer events
   $('#level').on('click', '#previous-set:not(.disabled)', changeLevelSet);
@@ -26,14 +29,10 @@ $(() => {
 
   // Set button click events
   $('[name=login]').on('click', () => {
-    window.open(`${SERVER_HOST}/login`, '_blank');
+    createTab(`${SERVER_HOST}/login`);
   });
-
-  // Get message data from background.js
-  let port = chrome.runtime.connect(
-    { name: 'popup.js' }
-  );
-  port.onMessage.addListener(data => {
+  
+  port.onMessage.addListener(async data => {
     console.log('Received data from background.js...');
     const alias = data.currentRiddle;
     if (alias) {
@@ -59,11 +58,16 @@ $(() => {
         return;
       }
 
-      // Show current level name/navigation
+      // Level display and navigation
       const rootPath = getSimpleRootPath(riddle);
       $('#level #set-name').text(level.setName);
       $('#level a#level-name').text(level.name);
       $('#level a#level-name').attr('href', `${rootPath}${level.frontPath}`);
+      $('#level a#level-name').on('click', e => {
+        // Preserve <a> link, but swap behavior for click procedure
+        e.preventDefault();
+        createTab(`${rootPath}${level.frontPath}`);
+      });
       getLevelImageBlob(riddle.alias, level).then(imageBlob => {
         $('#level img#level-image').attr('src', imageBlob);
       });

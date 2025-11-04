@@ -197,7 +197,7 @@ export function changeLevel() {
   updatePopupNavigation(riddle, level);
 }
 
-/** Updates level/set being shown and navigation buttons. */
+/** Update level/set/pages display and navigation. */
 async function updatePopupNavigation(riddle, level) {
   const levelSet = riddle.levelSets[level.setName];
   riddle.shownSet = levelSet.name;
@@ -205,8 +205,13 @@ async function updatePopupNavigation(riddle, level) {
 
   const rootPath = getSimpleRootPath(riddle);
   $('#level #set-name').text(level.setName);
-  $('#level #level-name a').text(level.name);
-  $('#level #level-name a').attr('href', `${rootPath}${level.frontPath}`);
+  $('#level a#level-name').text(level.name);
+  $('#level a#level-name').attr('href', `${rootPath}${level.frontPath}`);
+  $('#level a#level-name').off('click').on('click', e => {
+    // Preserve <a> link, but swap behavior for click procedure
+    e.preventDefault()
+    createTab(`${rootPath}${level.frontPath}`);
+  });
   getLevelImageBlob(riddle.alias, level).then(imageBlob => {
     $('#level img#level-image').attr('src', imageBlob);
   });
