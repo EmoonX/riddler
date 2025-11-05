@@ -181,6 +181,14 @@ export function getSimpleRootPath(riddle) {
   return rootPath;
 }
 
+/** Get level's first (or sole) recorded front path. */
+export function getFirstFrontPath(level) {  
+  if (Array.isArray(level.frontPath)) {
+    return level.frontPath[0];
+  }
+  return level.frontPath;
+}
+
 /** Find innermost path in set/map which contains the base one (if any). */
 export function findContainingPath(basePath, paths) {
   const tokens = basePath.replace('/{2,}', '/').split('/');

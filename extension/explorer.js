@@ -3,6 +3,7 @@ import { retrieveWithCache } from './cache.js';
 import {
   buildRiddle,
   currentRiddle,
+  getFirstFrontPath,
   getSimpleRootPath,
   riddles,
   SERVER_HOST,
@@ -71,9 +72,10 @@ export function insertFiles(parent, object, offset, prefix) {
   }
   const riddle = riddles[currentRiddle];
   const level = riddle.levels[riddle.shownLevel];
+  const frontPath = getFirstFrontPath(level);
   const token = `${prefix}${basename}` || '/';
   const figure = getFileFigure(object, token, offset);
-  if (object.path === level.frontPath && !object.folder) {
+  if (object.path === frontPath && !object.folder) {
     // Highlight front page at first
     figure.addClass('active');
   }
@@ -81,10 +83,11 @@ export function insertFiles(parent, object, offset, prefix) {
   parent.append(figure);
   if (object.folder) {
     const div = $('<div class="folder-files"></div>');
+    const frontPath = getFirstFrontPath(level);
     div.appendTo(parent);
-    if (level.frontPath && !level.frontPath.startsWith(object.path)) {
+    if (! (frontPath && frontPath.startsWith(object.path))) {
       // Leave only level's front page folder(s) initially open
-      div.toggle();
+      div.toggle(false);
     }
     for (const child of Object.values(object.children)
       .sort((a, b) => {
@@ -198,20 +201,29 @@ export function changeLevel() {
 }
 
 /** Update level/set/pages display and navigation. */
-async function updatePopupNavigation(riddle, level) {
+export async function updatePopupNavigation(riddle, level) {
   const levelSet = riddle.levelSets[level.setName];
   riddle.shownSet = levelSet.name;
   riddle.shownLevel = level.name;
 
   const rootPath = getSimpleRootPath(riddle);
+  const frontPath = getFirstFrontPath(level);
   $('#level #set-name').text(level.setName);
-  $('#level a#level-name').text(level.name);
-  $('#level a#level-name').attr('href', `${rootPath}${level.frontPath}`);
-  $('#level a#level-name').off('click').on('click', e => {
-    // Preserve <a> link, but swap behavior for click procedure
-    e.preventDefault()
-    createTab(`${rootPath}${level.frontPath}`);
-  });
+  if (level.frontPath) {
+    $('#level #level-name').html(
+      `<a href="#" title="Go to level's front page"></a>`
+    );
+    $('#level #level-name > a').text(level.name);
+    $('#level #level-name > a').attr('href', `${rootPath}${frontPath}`);
+    $('#level #level-name > a').off('click').on('click', e => {
+      // Preserve <a> link, but swap behavior for click procedure
+      e.preventDefault();
+      createTab(`${rootPath}${frontPath}`);
+    });
+  } else {
+    // Overwrite <a> element, removing link
+    $('#level #level-name').text(level.name);
+  }
   getLevelImageBlob(riddle.alias, level).then(imageBlob => {
     $('#level img#level-image').attr('src', imageBlob);
   });

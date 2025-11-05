@@ -98,37 +98,65 @@ async def get_user_riddle_data(alias: str | None = None) -> str:
         riddle = riddles[row['riddle']]
         riddle['blacklistedPages'].append(dict(row))
 
+    # Get full list of (non removed) recorded pages (paths) by user
+    query = '''
+        SELECT *
+        FROM level_pages lp INNER JOIN user_pages up
+            ON lp.riddle = up.riddle AND lp.path = up.path
+        WHERE lp.riddle LIKE :riddle
+            AND lp.removed IS NOT TRUE
+            AND up.username = :username
+    '''
+    values |= {'username': user.name}
+    result = await database.fetch_all(query, values)
+    recorded_paths = {}
+    for row in result:
+        recorded_paths.setdefault(row['riddle'], set()).add(row['path'])
+
     # Build list of levels unlocked/solved by user (in order)
     query = '''
         SELECT
             up.riddle, ls.name AS set_name, up.level_name,
-            lv.path, lv.image, lv.answer,
-            find_time, completion_time
-        FROM user_pages up
-            LEFT JOIN user_levels ul
-                ON up.riddle = ul.riddle AND up.level_name = ul.level_name
-                    AND up.username = ul.username
-            INNER JOIN levels lv
-                ON up.riddle = lv.riddle AND up.level_name = lv.name
-            INNER JOIN level_sets ls
-                ON up.riddle = ls.riddle AND lv.level_set = ls.name
-        WHERE up.riddle LIKE :riddle AND up.username = :username
-        GROUP BY up.riddle, up.level_name
-        ORDER BY ls.`index`, lv.`index`
+                lv.path, lv.image, lv.answer,
+                find_time, completion_time
+            FROM user_pages up
+                LEFT JOIN user_levels ul
+                    ON up.riddle = ul.riddle AND up.level_name = ul.level_name
+                        AND up.username = ul.username
+                INNER JOIN levels lv
+                    ON up.riddle = lv.riddle AND up.level_name = lv.name
+                INNER JOIN level_sets ls
+                    ON up.riddle = ls.riddle AND lv.level_set = ls.name
+            WHERE up.riddle LIKE :riddle AND up.username = :username
+            GROUP BY up.riddle, up.level_name
+            ORDER BY ls.`index`, lv.`index`
     '''
-    values |= {'username': user.name}
     result = await database.fetch_all(query, values)
     for row in result:
         level = {
-            'setName': row['set_name'],
-            'name': row['level_name'],
-            'unlocked': row['find_time'] is not None,
+            'setName': row['level_set'],
+            'name': row['name'],
             'solved': row['completion_time'] is not None,
         }
-        if level['unlocked']:
-            level |= {'frontPath': row['path'], 'image': row['image']}
-            if level['solved']:
-                level |= {'answer': row['answer']}
+
+        # Handle either multiple or single front paths
+        try:
+            front_paths = [path for path in json.loads(row['path'])]
+        except json.decoder.JSONDecodeError:
+            front_paths = [row['path']]
+        front_paths = list(filter(
+            lambda path: path in recorded_paths.get(row['riddle'], set()),
+            front_paths
+        ))
+        if front_paths:
+            level |= {'frontPath':
+                front_paths if len(front_paths) > 1 else
+                front_paths[0]
+            }
+
+        level |= {'image': row['image']}
+        if level['solved']:
+            level |= {'answer': row['answer']}
 
         riddles[row['riddle']]['orderedLevels'].append(level)
 

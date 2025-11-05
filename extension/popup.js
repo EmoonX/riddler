@@ -3,12 +3,10 @@ import {
   changeLevelSet,
   clickFile,
   doubleClickFile,
-  getLevelImageBlob,
-  insertFiles,
+  updatePopupNavigation,
 } from './explorer.js';
 
 import {
-  getSimpleRootPath,
   SERVER_HOST,
   updateState,
 } from './riddle.js';
@@ -54,34 +52,9 @@ $(() => {
       $('#riddle a').attr('href', explorerURL);
       
       const level = riddle.levels[riddle.lastVisitedLevel];
-      if (! level) {
-        return;
+      if (level) {
+        updatePopupNavigation(riddle, level);
       }
-
-      // Level display and navigation
-      const rootPath = getSimpleRootPath(riddle);
-      $('#level #set-name').text(level.setName);
-      $('#level a#level-name').text(level.name);
-      $('#level a#level-name').attr('href', `${rootPath}${level.frontPath}`);
-      $('#level a#level-name').on('click', e => {
-        // Preserve <a> link, but swap behavior for click procedure
-        e.preventDefault();
-        createTab(`${rootPath}${level.frontPath}`);
-      });
-      getLevelImageBlob(riddle.alias, level).then(imageBlob => {
-        $('#level img#level-image').attr('src', imageBlob);
-      });
-      if (level.previous) {
-        $('#level #previous-set').removeClass('disabled');
-        $('#level #previous-level').removeClass('disabled');
-      }
-      if (level.next) {
-        $('#level #next-level').removeClass('disabled');
-        $('#level #next-set').removeClass('disabled');
-      }      
-
-      // Build HTML for list of files of currently visited level
-      insertFiles($('.page-explorer'), level.pages['/'], 0, '');
     }
   });
 });
