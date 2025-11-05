@@ -60,11 +60,14 @@ async def process_url(
         user = lambda: None
         setattr(user, 'name', username)
     location = request.headers.get('Location')
+    request_type = request.headers.get('Type')
     if not status_code:
         status_code = int(request.headers.get('Statuscode', 200))
 
     # Create path handler object and build player data
-    ph = await _PathHandler.build(user, url, status_code, location)
+    ph = await _PathHandler.build(
+        user, url, status_code, request_type, location
+    )
     if admin:
         return (ph.riddle_alias, ph.path) if ph else (None, None)
     if not ph:
@@ -216,6 +219,7 @@ class _PathHandler:
         user: User,
         url: str,
         status_code: int,
+        request_type: str | None = None,
         location: str | None = None,
     ) -> Self | None:
         '''Build handler from DB's user info and URL info.'''
@@ -244,9 +248,8 @@ class _PathHandler:
             # Valid non-trivial path; format it in accordance to the guidelines
             await self._format_and_sanitize_path()
 
-        # Mark whether page is html-like
-        file_extension = Path(self.path).suffix
-        self.normal_page = file_extension in ['', '.htm', '.html', '.php']
+        # Mark whether page came from actual top-level navigation
+        self.navigated = request_type == 'main_frame'
 
         # If applicable, retrieve path alias info
         query = '''
@@ -567,8 +570,8 @@ class _PathHandler:
             # Level not unlocked and can't access yet pages from it
             return 403
 
-        # If a de facto page (i.e html-like), update all hit counters
-        if self.normal_page:
+        if self.navigated:
+            # Update all hit counters on actual navigation
             await self._update_hit_counters()
 
         # Register new page access in database (if applicable)
