@@ -28,9 +28,10 @@ async function sendToProcess(details) {
 
   // Build request params; look out for specific useful headers
   const params = {
-    method: "post",
+    method: 'post',
     headers: {
       'Statuscode': details.statusCode,
+      'Type': details.type,
     },
     contentType: 'text/uri-list',
     body: details.url,
