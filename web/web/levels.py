@@ -253,7 +253,7 @@ async def get_pages(
                 }
                 {'AND hidden  IS NOT TRUE' if not include_hidden  else ''}
                 {'AND removed IS NOT TRUE' if not include_removed else ''}
-            ORDER BY SUBSTRING_INDEX(up.path, ".", -1)
+            ORDER BY SUBSTRING_INDEX(up.path, ".", -1), up.path
         """
         values |= {'username': user.name}
     result = await database.fetch_all(query, values)
