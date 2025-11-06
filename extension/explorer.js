@@ -136,6 +136,7 @@ function getFileFigure(node, token, offset) {
   const img = `<img src="${url}">`;
   const fc = `<figcaption>${token}</figcaption>`;
   let fileCount = '';
+  let title = node.path;
   if (node.folder) {
     const riddle = riddles[currentRiddle];
     const level = riddle.levels[riddle.shownLevel];
@@ -143,14 +144,13 @@ function getFileFigure(node, token, offset) {
     const filesTotal = level.solved ? node.filesTotal : '??';
     fileCount =
       `<div class="file-count">(${filesFound} / ${filesTotal})</div>`;
+  } else {
+    title += ` &#10;🖊️ ${node.accessTime}`;
   }
   // data-username="${object.username}"
   // data-password="${object.password}"
   return $(`
-    <figure class="file${state}"
-      title="${node.path}"
-      style="margin-left: ${margin}"
-    >
+    <figure class="file${state}" title="${title}" style="margin-left: ${margin}">
       ${img}${fc}${fileCount}
     </figure>
   `);
@@ -256,7 +256,7 @@ export async function doubleClickFile() {
   } else {
     // Open desired page in new tab
     const riddle = riddles[currentRiddle];
-    const path = $(this).attr('title');
+    const path = $(this).attr('title').split(' ')[0];
     const rootPath = getSimpleRootPath(riddle);
     const parsedUrl = new URL(`${rootPath}${path}`);
     parsedUrl.username = $(this).attr('data-username') || '';
