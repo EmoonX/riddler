@@ -110,6 +110,7 @@ async def process_url(
         formatted_path += f"\033[0m (alias for \033[3m{ph.path_alias_for})"
         if response_code not in [403, 410]:
             ph.path = ph.path_alias_for
+            ph.path_alias_for = None
             if await ph.process() == 201:
                 # Signal 201 if either of the paths is new for the user
                 response_code = 201
@@ -547,9 +548,9 @@ class _PathHandler:
                 # Path points to the level's front page(s), possibly unlock it
                 await self._check_and_unlock(level)
 
-        # Check if level has been unlocked (right now or before)
+        # Check if level has been unlocked (right now or beforehand)
         query = '''
-            SELECT * FROM user_levels
+            SELECT 1 FROM user_levels
             WHERE riddle = :riddle
                 AND level_name = :level_name
                 AND username = :username
@@ -559,18 +560,22 @@ class _PathHandler:
             'level_name': self.path_level,
             'username': self.user.name,
         }
-        if is_unlocked := await database.fetch_one(query, values):
-            # Mark level currently being visited in `last_visited_level` field
-            query = '''
-                UPDATE riddle_accounts SET last_visited_level = :level_name
-                WHERE riddle = :riddle AND username = :username
-            '''
-            await database.execute(query, values)
+        if await database.fetch_val(query, values):
+            if self.navigated:
+                # Mark level/page currently being visited
+                query = '''
+                    UPDATE riddle_accounts
+                    SET last_visited_level = :level_name,
+                        last_visited_page = :path
+                    WHERE riddle = :riddle AND username = :username
+                '''
+                values |= {'path': self.path}
+                await database.execute(query, values)
         elif not await self._are_level_requirements_satisfied(self.path_level):
             # Level not unlocked and can't access yet pages from it
             return 403
 
-        if self.navigated:
+        if self.navigated and not self.path_alias_for:
             # Update all hit counters on actual navigation
             await self._update_hit_counters()
 
