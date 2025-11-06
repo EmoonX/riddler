@@ -234,8 +234,17 @@ export async function updatePopupNavigation(riddle, level) {
   $('#level #next-level').toggleClass('disabled', !level.next);
   $('#level #next-set').toggleClass('disabled', !level.next);
 
+  // Populate page explorer
   $('.page-explorer').empty();
   insertFiles($('.page-explorer'), level.pages['/'], 0, '');
+
+  // Smoothly scroll to highlighted page (if any)
+  const highlightedPage = $('.page-explorer .active')[0];
+  if (highlightedPage) {
+    highlightedPage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  } else {
+    $('.page-explorer').scrollTop(0);
+  }
 }
 
 /** Selects file and unselect the other ones, as in a file explorer. */
