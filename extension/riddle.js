@@ -22,6 +22,7 @@ export async function buildRiddle(riddle, pages) {
   riddle.missingAuthPaths = new Map();
   riddle.shownSet = riddle.lastVisitedSet;
   riddle.shownLevel = riddle.lastVisitedLevel;
+  riddle.shownPage = riddle.lastVisitedPage;
 
   // Build level/set navigation structure
   let currentSet;
@@ -76,6 +77,7 @@ export async function updateCurrentRiddleAndLevel(riddle, path) {
   const page = riddle.pagesByPath.get(path);
   if (page?.['level_name']) {
     riddle.lastVisitedLevel = riddle.shownLevel = page['level_name'];
+    riddle.lastVisitedPage = riddle.shownPage = page['path'];
   }
 }
 

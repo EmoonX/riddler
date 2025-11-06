@@ -162,17 +162,19 @@ async def get_user_riddle_data(alias: str | None = None) -> str:
 
     # Get last visited level/set for riddle(s)
     query = '''
-        SELECT ra.riddle, last_visited_level, lv.level_set
+        SELECT ra.riddle, level_set, last_visited_level, last_visited_page
         FROM riddle_accounts ra INNER JOIN levels lv
             ON ra.riddle = lv.riddle AND last_visited_level = lv.name
         WHERE ra.riddle LIKE :riddle AND username = :username
     '''
     result = await database.fetch_all(query, values)
-    for row in result:
-        _alias, level = row['riddle'], row['last_visited_level']
-        if level:
-            riddles[_alias]['lastVisitedSet'] = row['level_set']
-            riddles[_alias]['lastVisitedLevel'] = level
+    for row in result: 
+        if row['last_visited_level']:            
+            riddles[row['riddle']] |= {
+                'lastVisitedSet': row['level_set'],
+                'lastVisitedLevel': row['last_visited_level'],
+                'lastVisitedPage': row['last_visited_page'],
+            }
 
     # Create and return JSON dict with data
     if not alias:

@@ -178,8 +178,10 @@ function responseHandler(details) {
     // Completely ignore pages outside riddle domains
     return;
   }
-  updateCurrentRiddleAndLevel(riddle, path);
-
+  
+  if (details.type === 'main_frame') {
+    updateCurrentRiddleAndLevel(riddle, path);
+  }
   details.path = path;
   details.credentialsPath = findContainingPath(path, riddle.missingAuthPaths);
   if (details.credentialsPath) {

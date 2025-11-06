@@ -72,21 +72,23 @@ export function insertFiles(parent, object, offset, prefix) {
   }
   const riddle = riddles[currentRiddle];
   const level = riddle.levels[riddle.shownLevel];
-  const frontPath = getFirstFrontPath(level);
   const token = `${prefix}${basename}` || '/';
   const figure = getFileFigure(object, token, offset);
-  if (object.path === frontPath && !object.folder) {
-    // Highlight front page at first
+  if (object.path === riddle.lastVisitedPage) {
+    // Highlight last visited page of last visited level
     figure.addClass('active');
   }
 
   parent.append(figure);
   if (object.folder) {
     const div = $('<div class="folder-files"></div>');
-    const frontPath = getFirstFrontPath(level);
+    const highlightedPage = 
+      riddle.lastVisitedPage && riddle.shownLevel === riddle.lastVisitedLevel ?
+      riddle.lastVisitedPage :
+      getFirstFrontPath(level);
     div.appendTo(parent);
-    if (! (frontPath && frontPath.startsWith(object.path))) {
-      // Leave only level's front page folder(s) initially open
+    if (! highlightedPage?.startsWith(object.path)) {
+      // Leave only highlighted page's folder(s) initially open
       div.toggle(false);
     }
     for (const child of Object.values(object.children)
