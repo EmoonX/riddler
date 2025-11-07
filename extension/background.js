@@ -173,7 +173,18 @@ chrome.webRequest.onAuthRequired.addListener(
 
 /** Parse and (possibly) send intercepted HTTP responses to processing. */
 function responseHandler(details) {
-  const [riddle, path] = parseRiddleAndPath(details.url);
+  const parsedUrl = new URL(details.url);
+  if (parsedUrl.origin === SERVER_HOST && details.type === 'main_frame') {
+    if (! Object.keys(riddles).length) {
+      // Immediately retrieve riddle data on post-login
+      initExplorer();
+    } else if (parsedUrl.pathname === '/logout') {
+      // Immediately clear riddle data on logout
+      clearRiddleData();
+    }
+    return;
+  }
+  const [riddle, path] = parseRiddleAndPath(details.url);  
   if (! riddle) {
     // Completely ignore pages outside riddle domains
     return;
@@ -202,10 +213,10 @@ function responseHandler(details) {
     parsedUrl.username = parsedUrl.password = '';
     details.url = parsedUrl.toString();
   }
-  if (Object.keys(riddles).length === 0) {
-    // Fallback for when user logs in *after* the extension is loaded
+  if (! Object.keys(riddles).length) {
+    // Safeguard for missing/cleared riddle data
     initExplorer(() => {
-      sendToProcess(details)
+      sendToProcess(details);
     });
     return;
   }
@@ -230,17 +241,17 @@ chrome.runtime.onConnect.addListener(port => {
   });
 });
 
-(async () => {
+(() => {
   initExplorer();
 
   /** Communication with popup.js. */
   chrome.runtime.onConnect.addListener(port => {
-    if (port.name != 'popup.js') {
+    if (port.name !== 'popup') {
       return;
     }
     console.log('Connected to popup.js...');
-    if (Object.keys(riddles).length === 0) {
-      // Fallback for when user logs in *after* extension is loaded
+    if (! Object.keys(riddles).length) {
+      // Safeguard for missing/cleared riddle data
       initExplorer(() => {
         sendMessageToPopup(port);
       });
