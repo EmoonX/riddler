@@ -18,42 +18,45 @@ export let initNeeded = true;
 
 /** Inits explorer by fetching user riddle data and pages. */
 export async function initExplorer(callback) {
-  initNeeded = false;
-  await fetch(`${SERVER_HOST}/get-user-riddle-data`)
-  .then(response => {
-    if (response.status === 401) {
-      throw `Unable to retrieve riddle data from server (not logged in).`;
-    }
-    return response.json();
-  })
-  .then(async riddlesData => {
-    updateState(riddles, riddlesData.currentRiddle);
-    await fetch(`${SERVER_HOST}/${currentRiddle}/levels/get-pages`)
-      .then(response => response.json())
-      .then(pagesData => {
-        // Fetch current riddle before rest to ease popup wait time
-        const riddle = riddlesData.riddles[currentRiddle];
-        console.log(`[${currentRiddle}] Building riddle data…`);
-        buildRiddle(riddle, pagesData);
-        if (callback) {
-          callback();
-        }
-      });
-    await fetch(`${SERVER_HOST}/get-user-pages`)
-      .then(response => response.json())
-      .then(allPagesData => {
-        for (const [alias, riddle] of Object.entries(riddlesData.riddles)) {
-          if (alias != currentRiddle) {
-            console.log(`[${alias}] Building riddle data…`);
-            buildRiddle(riddle, allPagesData[alias]);
+  fetch(`${SERVER_HOST}/get-user-riddle-data`)
+    .then(response => {
+      if (response.status === 401) {
+        throw `Unable to retrieve riddle data from server (not logged in).`;
+      }
+      return response.json();
+    })
+    .then(async riddlesData => {
+      updateState(riddles, riddlesData.currentRiddle);
+      if (riddlesData.currentRiddle) {
+        fetch(`${SERVER_HOST}/${currentRiddle}/levels/get-pages`)
+          .then(response => response.json())
+          .then(pagesData => {
+            // Fetch current riddle before rest to ease popup wait time
+            const riddle = riddlesData.riddles[currentRiddle];
+            console.log(`[${currentRiddle}] Building riddle data…`);
+            buildRiddle(riddle, pagesData);
+            if (callback) {
+              callback();
+            }
+          });
+      }
+      await fetch(`${SERVER_HOST}/get-user-pages`)
+        .then(response => response.json())
+        .then(allPagesData => {
+          for (const [alias, riddle] of Object.entries(riddlesData.riddles)) {
+            if (alias != currentRiddle) {
+              console.log(`[${alias}] Building riddle data…`);
+              buildRiddle(riddle, allPagesData[alias]);
+            }
           }
-        }
-      });
-  })
-  .catch(exception => {
-    initNeeded = true;
-    console.log(exception);
-  });
+        });
+    })
+    .catch(exception => {
+      console.log(exception);
+      if (callback) {
+        callback();
+      }
+    });
 }
 
 /** Recursively inserts files on parent with correct margin. */

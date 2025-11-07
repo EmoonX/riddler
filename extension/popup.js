@@ -16,6 +16,40 @@ import { createTab } from './tabs.js';
 // Get message data from background.js
 const port = chrome.runtime.connect({ name: 'popup' });
 
+port.onMessage.addListener(async data => {
+  console.log('Received data from background.js...');  
+  $('#loading').toggle(false);
+
+  const alias = data.currentRiddle;
+  if (! alias) {
+    // Display buttons menu when not logged in
+    $('#buttons').toggle(true);
+    return;
+  }
+
+  // Update explorer.js members
+  const riddles = data.riddles;
+  updateState(riddles, alias);
+
+  // Display logged in riddle data
+  $('header').toggle(true);
+  $('#level').toggle(true);
+  $('.page-explorer').toggle(true);
+  $('#buttons').remove();
+
+  // Show current riddle info in extension's popup
+  const riddle = riddles[alias];
+  const explorerURL = `${SERVER_HOST}/${alias}/levels`;
+  $('#riddle img.current').attr('src', riddle.iconUrl);
+  $('#riddle .full-name').text(riddle.fullName);
+  $('#riddle a').attr('href', explorerURL);
+  
+  const level = riddle.levels[riddle.lastVisitedLevel];
+  if (level) {
+    updatePopupNavigation(riddle, level);
+  }
+});
+
 $(() => {
   // Set explorer events
   $('#level').on('click', '#previous-set:not(.disabled)', changeLevelSet);
@@ -28,33 +62,5 @@ $(() => {
   // Set button click link events
   $('button').on('click', function () {
     createTab(`${SERVER_HOST}/${this.name}`);
-  });
-  
-  port.onMessage.addListener(async data => {
-    console.log('Received data from background.js...');
-    const alias = data.currentRiddle;
-    if (alias) {
-      // Update explorer.js members
-      const riddles = data.riddles;
-      updateState(riddles, alias);
-
-      // Display logged in riddle data
-      $('header').toggle(true);
-      $('#level').toggle(true);
-      $('.page-explorer').toggle(true);
-      $('#buttons').remove();
-
-      // Show current riddle info in extension's popup
-      const riddle = riddles[alias];
-      const explorerURL = `${SERVER_HOST}/${alias}/levels`;
-      $('#riddle img.current').attr('src', riddle.iconUrl);
-      $('#riddle .full-name').text(riddle.fullName);
-      $('#riddle a').attr('href', explorerURL);
-      
-      const level = riddle.levels[riddle.lastVisitedLevel];
-      if (level) {
-        updatePopupNavigation(riddle, level);
-      }
-    }
   });
 });
