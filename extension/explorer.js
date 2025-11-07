@@ -1,5 +1,7 @@
 import { retrieveWithCache } from './cache.js';
 
+import { getFirstFrontPath } from './level.js';
+
 import {
   buildRiddle,
   currentRiddle,
