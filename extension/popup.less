@@ -193,6 +193,7 @@ main {
     color: black;
 
     figure.file {
+      position: relative;
       margin: .2em auto;
       width: fit-content;
       padding: .1em .4em .1em .3em;
@@ -215,6 +216,14 @@ main {
         color: #999;
         letter-spacing: -.02em;
         white-space: nowrap;
+      }
+      &.front-page::after {
+        content: "📌";
+        position: absolute;
+        font-size: .6em;
+        top: 0;
+        right: -.8em;
+        opacity: .75;
       }
       &.active {
         background-color: rgba(128, 64, 0, .15);

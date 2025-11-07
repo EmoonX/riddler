@@ -1,11 +1,10 @@
 import { retrieveWithCache } from './cache.js';
 
-import { getFirstFrontPath } from './level.js';
+import { getAllFrontPaths, getFirstFrontPath } from './level.js';
 
 import {
   buildRiddle,
   currentRiddle,
-  getFirstFrontPath,
   getSimpleRootPath,
   riddles,
   SERVER_HOST,
@@ -84,24 +83,30 @@ export function insertFiles(parent, object, offset, prefix) {
   parent.append(figure);
   if (object.folder) {
     const div = $('<div class="folder-files"></div>');
-    const highlightedPage = 
+    const targetPage = 
       riddle.lastVisitedPage && riddle.shownLevel === riddle.lastVisitedLevel ?
       riddle.lastVisitedPage :
       getFirstFrontPath(level);
     div.appendTo(parent);
-    if (! highlightedPage?.startsWith(object.path)) {
-      // Leave only highlighted page's folder(s) initially open
+    if (object.path !== '/' && !targetPage?.startsWith(`${object.path}/`)) {
+      // Leave only highlighted/front page's folder(s) initially open
       div.toggle(false);
     }
-    for (const child of Object.values(object.children)
-      .sort((a, b) => {
-        // Sort folders first; ensure lexicographical ordering
-        if (a.folder && b.folder) {
-          return a.path.localeCompare(b.path);
+    const frontPaths = getAllFrontPaths(level);
+    const sortedChildren = Object.values(object.children).sort((a, b) => {
+      // Sort folders first; ensure lexicographical ordering
+      if (a.folder && b.folder) {
+        return a.path.localeCompare(b.path);
+      }
+      if (!a.folder && !b.folder) {
+        if (frontPaths.includes(a.path)) {
+          // Always display 📌 pages at the top
+          return -1;
         }
-        return Number(b.folder || false) - Number(a.folder || false);
-      })
-    ) {
+      }
+      return Number(b.folder || false) - Number(a.folder || false);
+    });
+    for (const child of sortedChildren) {
       insertFiles(div, child, offset + 1, '');
       if (child.children && !child.folder) {
         // Handle hybrid page/folder navigation
@@ -133,15 +138,20 @@ function getFileFigure(node, token, offset) {
     type = token.split('.').at(-1).toLowerCase();
   }
   const url = `images/icons/extensions/${type}.png`;
-  const state = node.folder ? ' folder open' : '';
+  const riddle = riddles[currentRiddle];
+  const level = riddle.levels[riddle.shownLevel];
+  const frontPaths = getAllFrontPaths(level);
+  let state = node.folder ? ' folder open' : '';
+  let title = `${node.folder ? '📁' : '📄'} ${node.path}`;
+  if (frontPaths.includes(node.path)) {
+    state += ' front-page';
+    title += ' &#10;📌 Front page';
+  }
   const margin = `${0.4 * offset}em`;
   const img = `<img src="${url}">`;
   const fc = `<figcaption>${token}</figcaption>`;
   let fileCount = '';
-  let title = node.path;
   if (node.folder) {
-    const riddle = riddles[currentRiddle];
-    const level = riddle.levels[riddle.shownLevel];
     const filesFound = node.filesFound;
     const filesTotal = level.solved ? node.filesTotal : '??';
     fileCount =
@@ -267,7 +277,7 @@ export async function doubleClickFile() {
   } else {
     // Open desired page in new tab
     const riddle = riddles[currentRiddle];
-    const path = $(this).attr('title').split(' ')[0];
+    const path = $(this).attr('title').split(' ')[1];
     const rootPath = getSimpleRootPath(riddle);
     const parsedUrl = new URL(`${rootPath}${path}`);
     parsedUrl.username = $(this).attr('data-username') || '';
