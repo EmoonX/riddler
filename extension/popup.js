@@ -25,9 +25,9 @@ $(() => {
   $('.page-explorer').on('click', 'figure.file', clickFile);
   $('.page-explorer').on('dblclick', 'figure.file', doubleClickFile);
 
-  // Set button click events
-  $('[name=login]').on('click', () => {
-    createTab(`${SERVER_HOST}/login`);
+  // Set button click link events
+  $('button').on('click', function () {
+    createTab(`${SERVER_HOST}/${this.name}`);
   });
   
   port.onMessage.addListener(async data => {

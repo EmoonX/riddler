@@ -242,29 +242,30 @@ figure {
   font-weight: bold;
 }
 
-button, form {
-  height: 50px;
-}
-button {
+#buttons {
   display: flex;
-  align-items: center;
-  border: none;
-  border-radius: 10px;
-  background-color: #111;
-  text-align: left;
-  font-family: standard;
-  font-style: italic;
-  font-size: 1.2em;
-  color: #eee;
-  cursor: pointer;
-  transition: background-color .2s, color .2s;
+  gap: .25em;
 
-  > img {
-    margin: 0 .8em 0 .4em;
-    height: 30px;
-  }
-  &:hover {
-    background-color: #eee;
-    color: #111;
+  button {
+    display: flex;
+    align-items: center;
+    height: 50px;
+    border: none;
+    border-radius: 10px;
+    background-color: #4681;
+    color: #ffd;
+    font-family: standard;
+    font-size: 1.1em;
+    cursor: pointer;
+    transition: background-color .2s, color .2s;
+
+    > img {
+      margin: 0 .8em 0 .6em;
+      height: 30px;
+    }
+    &:hover {
+      background-color: #eee;
+      color: #111;
+    }
   }
 }
