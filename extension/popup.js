@@ -20,16 +20,23 @@ port.onMessage.addListener(async data => {
   console.log('Received data from background.js...');  
   $('#loading').toggle(false);
 
-  const alias = data.currentRiddle;
-  if (! alias) {
-    // Display buttons menu when not logged in
+  const riddles = data.riddles;
+  const currentRiddle = data.currentRiddle;
+  if (! currentRiddle) {
     $('#buttons').toggle(true);
+    if (currentRiddle === null) {
+      // Logged in, but no current riddle (e.g new account)
+      $('button[name="login"]').html(
+        '<img src="images/icons/login.png" alt="..."><i>Logged in</i>'
+      );
+      $('button[name="login"]').addClass('disabled');
+      $('button[name="login"]').off('click');
+    }
     return;
   }
 
   // Update explorer.js members
-  const riddles = data.riddles;
-  updateState(riddles, alias);
+  updateState(riddles, currentRiddle);
 
   // Display logged in riddle data
   $('header').toggle(true);
@@ -38,8 +45,8 @@ port.onMessage.addListener(async data => {
   $('#buttons').remove();
 
   // Show current riddle info in extension's popup
-  const riddle = riddles[alias];
-  const explorerURL = `${SERVER_HOST}/${alias}/levels`;
+  const riddle = riddles[currentRiddle];
+  const explorerURL = `${SERVER_HOST}/${currentRiddle}/levels`;
   $('#riddle img.current').attr('src', riddle.iconUrl);
   $('#riddle .full-name').text(riddle.fullName);
   $('#riddle a').attr('href', explorerURL);

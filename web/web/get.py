@@ -178,7 +178,7 @@ async def get_user_riddle_data(alias: str | None = None) -> str:
 
     # Create and return JSON dict with data
     if not alias:
-        data = {'riddles': riddles, 'currentRiddle': current_riddle or 'arfac'}
+        data = {'riddles': riddles, 'currentRiddle': current_riddle}
     else:
         data = riddles.get(alias, {})
 

@@ -263,7 +263,11 @@ figure {
       margin: 0 .8em 0 .6em;
       height: 30px;
     }
-    &:hover {
+    &.disabled {
+      opacity: .6;
+      cursor: default;
+    }
+    &:hover:not(.disabled) {
       background-color: #eee;
       color: #111;
     }

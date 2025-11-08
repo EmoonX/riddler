@@ -221,5 +221,5 @@ export function clearRiddleData() {
   for (const prop of Object.getOwnPropertyNames(riddles)) {
     delete riddles[prop];
   }
-  currentRiddle = null;
+  currentRiddle = undefined;
 }
