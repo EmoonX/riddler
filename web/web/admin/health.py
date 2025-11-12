@@ -203,8 +203,16 @@ async def health_diagnostics(alias: str, background: bool = False):
 
             # <script> window.location.href = '...'; </script>
             if script_tag := soup.script:
+                location_regex = \
+                    r'''(window[.])?location([.]href)?\s*=\s*['"](.+)['"][;]?'''
                 if match := re.fullmatch(
-                    r'''(window[.])?location([.]href)?\s*=\s*['"](.+)['"];?''',
+                    location_regex,
+                    script_tag.text.strip()
+                ):
+                    return match[3]
+                if match := re.fullmatch(
+                    # Manage timed JS redirects (e.g. kermit)
+                    rf'''setTimeout[(]['"]{location_regex}['"],\s*\d+[)][;]?''',
                     script_tag.text.strip()
                 ):
                     return match[3]
