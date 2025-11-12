@@ -5,7 +5,7 @@
       {% set riddles = get_riddles(unlisted=True, include_counters=True) %}
       {% set statuses = {
         'released': {'label': 'released', 'title': 'Released'},
-        'wip': {'label': 'w.i.p', 'title': 'Released (Work in Progress)'},
+        'wip': {'label': 'w.i.p.', 'title': 'Released (Work in Progress)'},
         'demo': {'label': 'demo', 'title': 'Demo'},
       } %}
       {% set total = namespace(

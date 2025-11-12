@@ -869,6 +869,26 @@ td {
   a:not(:hover) {
     text-decoration: none;
   }
+  .riddle-status {
+    padding: .6em;
+    border-width: 1px;
+    border-style: dashed;
+    background-color: transparent !important;
+    font-size: .6em;
+
+    &.released {
+      color: goldenrod;
+      border-color: goldenrod;
+    }
+    &.wip {
+      color: lightsteelblue;
+      border-color: lightsteelblue;
+    }
+    &.demo {
+      color: crimson;
+      border-color: crimson;
+    }
+  }
   var {
     position: relative;
     display: flex;
