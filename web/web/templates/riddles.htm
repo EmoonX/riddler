@@ -77,9 +77,11 @@
             {% endif %}
             </td>
             <td>
-              <var class="player-count" title="Players">
+              <var class="player-count">
               {% if riddle['player_count'] %}
-                {{ riddle['player_count'] }}<span class="bg-emoji">👤</span>
+                <a href="/{{ riddle['alias'] }}/players" title="Go to leaderboard">
+                  {{ riddle['player_count'] }}<span class="bg-emoji">👤</span>
+                </a>
               {% else %}
                 <span style="opacity: .3;">--</span>
               {% endif %}
@@ -87,36 +89,50 @@
             </td>
             <td colspan="2">
               <div class="level-page-count">
-                <var class="level-count" title="Levels">
+                <var class="level-count">
                 {% if riddle['level_count'] %}
-                  {{ riddle['level_count'] }}<span class="bg-emoji">🧩</span>
-                  {% set total.levels = total.levels + riddle['level_count'] %}
+                  <a href="/{{ riddle['alias'] }}/levels" title="Go to level explorer">
+                    {{ riddle['level_count'] }}<span class="bg-emoji">🧩</span>
+                    {% set total.levels = total.levels + riddle['level_count'] %}
+                  </a>
                 {% else %}
                   <span style="opacity: .3;">--</span>
                 {% endif %}
                 </var>
                 <span style="display: inline-block; width: 10%; opacity: .3;">|</span>
                 {% if riddle['page_count'] %}
-                  {% set page_count = riddle['page_count'] %}
-                  {% set class = 'page-count' %}
-                {% else %}
-                  {% set page_count = '(' ~ riddle['raw_page_count'] ~ ')' %}
-                  {% set class = 'raw-page-count' %}
-                {% endif %}
-                <var class="{{ class }}" title="{{ 'Pages' if riddle['page_count'] else '(unlisted pages)' }}">
-                {% if riddle['raw_page_count'] %}
-                  {{ page_count }}<span class="bg-emoji" >📄</span>
-                  {% set total.pages = total.pages + riddle['page_count'] %}
-                  {% set total.raw_pages = total.raw_pages + riddle['raw_page_count'] %}
+                  <var class="page-count">
+                  {% if is_admin_of(riddle['alias']) %}
+                    <a href="/admin/{{ riddle['alias'] }}/health-diagnostics" title="Go to health diagnostics">
+                  {% else %}
+                    <a href="/{{ riddle['alias'] }}/page-catalog" title="Go to page catalog">
+                  {% endif %}
+                      {{ riddle['page_count'] }}
+                    </a>
+                    <span class="bg-emoji" >📄</span>
+                  </var>
+                {% elif riddle['raw_page_count'] %}
+                  <var class="raw-page-count" title="(unlisted pages)">
+                  {% if is_admin_of(riddle['alias']) %}
+                    <a href="/admin/{{ riddle['alias'] }}/health-diagnostics" title="Go to health diagnostics">
+                      ({{ riddle['raw_page_count'] }})
+                    </a>
+                  {% else %}
+                    ({{ riddle['raw_page_count'] }})
+                  {% endif %}
+                    <span class="bg-emoji" >📄</span>
+                  </var>
                 {% else %}
                   <span style="opacity: .6;">--</span>
                 {% endif %}
+                {% set total.pages = total.pages + riddle['page_count'] %}
+                {% set total.raw_pages = total.raw_pages + riddle['raw_page_count'] %}
                 </var>
-              </div>
+              </a>
             </td>
             <td>
               <div class="external-links">
-                <a href="{{ riddle['front_page'] }}" title="Visit riddle's website" target="_blank" rel="noreferrer"><img src="/static/icons/external-link.png" width="30"></a>
+                <a href="{{ riddle['front_page'] }}" title="Go to riddle's website" target="_blank" rel="noreferrer"><img src="/static/icons/external-link.png" width="30"></a>
               {% if riddle['invite_code'] %}
                 <a href="https://discord.gg/{{ riddle['invite_code'] }}" title="Discord invite" target="_blank"><img src="/static/icons/discord.png" width="30"></a>
               {% endif %}

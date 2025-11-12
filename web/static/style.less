@@ -893,9 +893,13 @@ td {
     position: relative;
     display: flex;
     justify-content: center;
+    align-items: center;
     font-size: 1.1em;
-    
-    > .bg-emoji {
+
+    > a {
+      cursor: pointer !important;
+    }
+    .bg-emoji {
       position: absolute;
       top: 50%;
       left: 50%;
@@ -926,13 +930,14 @@ td {
       }
     }
     &.player-count {
+      display: inline-block;
       text-shadow:
         0 0 .3em crimson,
         0 0 .6em crimson,
         0 0 .9em crimson;
     }
     &.level-count {
-      display: inline-flex;
+      display: inline;
       margin: 0;
       width: 50%;
       text-shadow:
@@ -941,7 +946,7 @@ td {
         0 0 .9em MediumVioletRed;
     }
     &.page-count, &.raw-page-count {
-      display: inline-flex;
+      display: inline;
       margin: 0;
       width: 40%;
       font-size: .9em;
@@ -964,8 +969,7 @@ td {
     align-items: baseline;
     padding: .2em 0;
     border-radius: .8em;
-    background-color: #2225;
-
+    background-color: #2224;
   }
   .external-links {
     display: flex;
