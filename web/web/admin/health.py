@@ -202,20 +202,28 @@ async def health_diagnostics(alias: str, background: bool = False):
             soup = BeautifulSoup(res.text, features='html.parser')
 
             # <script> window.location.href = '...'; </script>
-            if script_tag := soup.script:
+            if soup.script:
                 location_regex = \
                     r'''(window[.])?location([.]href)?\s*=\s*['"](.+)['"][;]?'''
                 if match := re.fullmatch(
                     location_regex,
-                    script_tag.text.strip()
+                    soup.script.text.strip()
                 ):
                     return match[3]
                 if match := re.fullmatch(
                     # Manage timed JS redirects (e.g. kermit)
                     rf'''setTimeout[(]['"]{location_regex}['"],\s*\d+[)][;]?''',
-                    script_tag.text.strip()
+                    soup.script.text.strip()
                 ):
                     return match[3]
+
+            # Ad hoc for dracula redirects
+            if soup.body and 'onload' in soup.body.attrs:
+                if match := re.search(
+                    r'''^MM_goToURL[(]'parent','(.+)'[)]''',
+                    soup.body.attrs['onload']
+                ):
+                    return match[1]
 
             # <meta http-equiv="refresh" content="X; URL='...'">
             meta_refresh_tag = soup.find(
