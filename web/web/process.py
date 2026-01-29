@@ -509,7 +509,7 @@ class _PathHandler:
         self.removed = bool(page.get('removed'))
         self.special = bool(page.get('special'))
 
-        if answer_level := await self._find_level_being_solved():
+        while answer_level := await self._find_level_being_solved():
             # Path is a (non removed) answer for an unsolved level
             lh = _LevelHandler(answer_level, self)
             await lh.register_completion()
