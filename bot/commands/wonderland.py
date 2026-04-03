@@ -19,7 +19,7 @@ class Wonderland(commands.Cog):
     async def on_member_join(self, member: Member):
         '''Do some member procedures upon joining Wonderland.'''
         guild = member.guild
-        if guild.name == "Riddler's Wonderland II":
+        if guild.id == 859797827554770955:
             await update_country_nick(member)
             await update_score_role(member)
 
@@ -29,12 +29,13 @@ async def update_country_nick(member: Member):
 
     # Get player's country from DB
     query = '''
-        SELECT * FROM accounts
+        SELECT country FROM accounts
         WHERE username = :username
     '''
     values = {'username': member.name}
-    result = await database.fetch_one(query, values)
-    country = result['country']
+    country = await database.fetch_val(query, values)
+    if not country:
+        return
 
     # Update member's nickname
     emoji_flag = flag(country)
