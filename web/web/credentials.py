@@ -87,6 +87,8 @@ async def _check_and_insert_empty_credentials(
         path = os.path.dirname(path)
 
         url = f"{riddle['root_path']}{path}"
+        if path != '/':
+            url += '/'
         status_code, _realm = _send_raw_request(url)
         if status_code != 401:
             break
@@ -138,6 +140,8 @@ async def _check_and_record_credentials(
         path = os.path.dirname(path)
 
         url = f"{riddle['root_path']}{path}"
+        if path != '/':
+            url += '/'
         if _send_authenticated_request(url, username, password) == 401:
             break
         status_code, _realm = _send_raw_request(url)
