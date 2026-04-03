@@ -305,12 +305,13 @@ async def update_nickname(member: discord.Member, s: str):
     '''Update user's nickname to reflect current level.
     In case it exceeds 32 characters, shorten the member's name to fit.'''
 
-    name = member.global_name
+    name = member.global_name or member.name  # ignore current nick
     total = len(name) + 1 + len(s)
     if total > 32:
         excess = total - 32
         name = name[:-(excess + 5)] + '(...)'
-    nick = name + ' ' + s
+    nick = f"{name} {s}"
+
     try:
         await member.edit(nick=nick)
     except Forbidden:

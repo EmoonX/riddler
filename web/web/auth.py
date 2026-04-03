@@ -42,10 +42,13 @@ def discord_session_init(app: Quart):
         '''Return Discord OAuth2 user object.
         If token/cookie error is thrown, make user log in again.'''
         try:
-            return await discord.fetch_user()
+            user = await discord.fetch_user()
         except InvalidGrantError:
             discord.revoke()
-            return await discord.fetch_user()
+            user = await discord.fetch_user()
+        if user.display_name is None:
+            user.display_name = user.name
+        return user
     setattr(discord, 'get_user', _get_user)
 
     # Create session cookie

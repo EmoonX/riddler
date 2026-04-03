@@ -75,7 +75,7 @@ async def fetch_account_info(request):
         user = await bot.fetch_user(user_id)
     info = {
         'username': user.name,
-        'display_name': user.global_name,
+        'display_name': user.display_name,
         'avatar_url': user.display_avatar.url,
     }
     return web.Response(text=json.dumps(info))
