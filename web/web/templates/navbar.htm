@@ -24,7 +24,7 @@
           {% set riddles = get_riddles(unlisted) %}
           <div class="menu">
             <div class="riddles">
-            {% for riddle in riddles if not riddle['demo'] %}
+            {% for riddle in riddles|sort(attribute='short_name') if not riddle['demo'] %}
               {{ riddle_card(riddle['alias']) }}
             {% endfor %}
             </div>
@@ -70,7 +70,7 @@
             </a>
             <a href="{{ url_for('admin_cheevos.manage_cheevos', alias=alias) }}" class="nav-button">
               <img class="icon" src="/static/icons/padlock.png">
-              Manage cheevos
+              Manage achievements
             </a>
             <a href="{{ url_for('admin_health.health_diagnostics', alias=alias) }}" class="nav-button">
               <span class="icon">⛑️</span> Health diagnostics
@@ -105,7 +105,6 @@
       {% if not user %}
         <a class="nav-button" href="{{ url_for('players_auth.login', redirect_url=(request.url)) }}">Log in</a>
       {% else %}
-        {% set user = get_session_user() %}
         <nav class="dropdown">
           {% set avatar = '' %}
           <button class="nav-button profile">
