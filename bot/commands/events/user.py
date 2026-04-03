@@ -115,12 +115,12 @@ class User(commands.Cog):
     @commands.Cog.listener()
     async def on_user_update(self, before: DiscordUser, after: DiscordUser):
         '''
-        If username and/or global name change,
-        update user\'s guild nicknames and user-related DB tables.
+        If username and/or display name changes,
+        update user's guild nicknames and user-related DB tables.
         '''
 
         async def _update_database(field: str):
-            '''Update database for either username or global name changes.'''
+            '''Update database for either username or display name changes.'''
             query = f""" 
                 UPDATE accounts
                 SET {field} = :name_new
@@ -128,8 +128,8 @@ class User(commands.Cog):
             """
             values = {
                 'name_new': (
-                    after.name if field == 'username'
-                    else after.global_name
+                    after.name if field == 'username' else
+                    after.display_name
                 ),
                 'discord_id': after.id
             }
@@ -137,13 +137,21 @@ class User(commands.Cog):
 
         if before.name != after.name:
             # Username has changed
+            await _update_database('username')
+            logging.info(
+                'Username update: '
+                f"{before.name} -> {after.name}"
+            )
+            
+        if before.display_name != after.display_name:
+            # Display name has changed
             # Update nicks for every guild user is in
             for guild in self.bot.guilds:
                 member = guild.get_member(before.id)
                 if not member or not member.nick:
                     continue
                 old_nick = member.nick
-                idx = len(before.name) + 1
+                idx = len(before.display_name) + 1
                 s = old_nick[idx:]
                 try:
                     await update_nickname(member, s)
@@ -156,15 +164,10 @@ class User(commands.Cog):
                         '[%s] (403) Can\'t change nick of "%s"',
                         guild.name, member.name
                     )
-            
-            await _update_database('username')
-            logging.info(f"Username update: {before.name} -> {after.name}")
-            
-        if before.global_name != after.global_name:
-            # Global name has changed
+
             await _update_database('display_name')
             logging.info(
-                "Display name update: "
+                'Display name update: '
                 f"{before.global_name} -> {after.global_name}"
             )
 
