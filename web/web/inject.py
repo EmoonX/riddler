@@ -221,10 +221,21 @@ async def context_processor():
             return None
         return await discord.get_user()
 
-    async def get_avatar_url(username: str = None, discord_id: int = None):
-        '''Returns user's avatar url from a request sent to bot.'''
-        url = await bot_request('get-avatar-url', discord_id=discord_id)
-        return url
+    async def get_avatar_url(
+        username: str | None = None, discord_id: int | None = None
+    ) -> str:
+        '''Retrieve user's avatar url through bot request.'''
+
+        if not (username is None) ^ (discord_id is None):
+            raise NotImplementedError
+        if username:
+            query = '''
+                SELECT discord_id FROM accounts
+                WHERE username = :username
+            '''
+            discord_id = await database.fetch_val(query, {'username': username})
+
+        return await bot_request('get-avatar-url', discord_id=discord_id)
 
     async def get_all_avatar_urls(guild_id: int = None):
 
