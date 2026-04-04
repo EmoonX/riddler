@@ -357,10 +357,10 @@ class _PathHandler:
                 return
 
             # Retrieve given page's hash directly from the website
+            content_hash = None
             res = await _request_page(self.path)
-            if not res.ok:
-                return
-            content_hash = hashlib.md5(res.content).hexdigest()
+            if res.ok:
+                content_hash = hashlib.md5(res.content).hexdigest()
 
             query = '''
                 SELECT content_hash
@@ -368,7 +368,9 @@ class _PathHandler:
                 WHERE riddle = :riddle
                     AND path = COALESCE((
                         SELECT alias_for FROM level_pages lp
-                        WHERE ph.riddle = lp.riddle AND path = :path
+                        WHERE ph.riddle = lp.riddle
+                            AND path = :path
+                            AND (status_code BETWEEN 200 AND 399)
                     ), :path)
                 ORDER BY retrieval_time DESC
                 LIMIT 1
