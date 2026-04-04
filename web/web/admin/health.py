@@ -112,8 +112,8 @@ async def health_diagnostics(alias: str, background: bool = False):
                 allow_redirects=False,  # don't follow 30x redirects
                 timeout=10,
             )
-            if res.ok:
-                # Lookout for redirects (30x and <meta> ones)
+            if res.ok and Path(_path).suffix in ['', '.htm', '.html', '.php']:
+                # Look out for redirects (30x and <meta> ones)
                 redirect_path = \
                     await _find_and_parse_redirect(_path, res, raw=True)
                 if redirect_path and is_trivial_redirect(_path, redirect_path):
