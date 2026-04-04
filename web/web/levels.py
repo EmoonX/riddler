@@ -412,7 +412,7 @@ async def get_pages(
                 # Avoid registering locked folders/pages
                 break
             if not index_by_levels:
-                parent['levels'][level_name] = True
+                parent.setdefault('levels', {})[level_name] = True
             greatparent = parent
             parent = parent['children'][seg]
             path = path + '/' + seg
