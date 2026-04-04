@@ -43,7 +43,7 @@ That's intentional. Folder-specific credentials contain no sensitive info; so th
 
 #### The bot isn't sending me DMs on level solve / achievement unlock.
 
-Due to the way Discord works, you need to share a common server with a bot for it to be able to send messages to you. If you aren't receiving any, that means you're probably not in Wonderland yet. Just [join the server](https://discord.gg/ktaPPtnPSn) and you should start receiving DMs.
+Due to the way Discord works, you need to share a _common server_ with a bot for it to be able to send messages to you. If you aren't receiving any, that means you're probably not in Wonderland yet. Just [join the server](https://discord.gg/ktaPPtnPSn) and you should start receiving DMs.
 
 #### I get an _Unknown Integration_ error when trying to run a command.
 
@@ -104,17 +104,17 @@ Some of the similarities are pretty straightforward:
 
 #### When will version 1.0 finally arrive?
 
-Whenever the project is stable and mature enough for it to be considered a _finished product_. As loosely stated at some point, this isn't an endeavor supposed to go on forever, and `1.0` is a good place for it to be labeled as _**done**_. Once that happens, the updates won't just cease &mdash; but rather, we will be able to take our time and focus primarily on content, quality-of-life enhancements and new tools.
+Whenever the project is stable and mature enough for it to be considered a _finished product_. As loosely stated at some point, this isn't an endeavor supposed to go on forever, and **1.0** is a good place for it to be labeled as _**done**_. Once that happens, the updates won't just cease &mdash; but rather, we will be able to take our time and focus primarily on content, quality-of-life enhancements and new tools.
 
-Until then, there are still several bugs in need of fixing and several important features waiting to see the light of the day. As of the time of the writing:
+Until then, there are still several bugs in need of fixing and important features waiting to see the light of the day. As of the time of the writing:
 - profile pages;
 - mobile-responsive website;
 - a settings/tools tab for the extension;
-- a riddles tab for moving across them directly from the extension (talk about way due);
-- handy link lists containing all the unlocked pages in a single place (and a multi-export for all riddles as a `.zip`);
+- a riddles tab for moving across them directly from the extension (talk about _way due_);
+- ~~handy link lists containing all the unlocked pages in a single place~~ (and a multi-export for all riddles as a `.zip`);
 - [REDACTED]
 
-[The current codebase](https://github.com/EmoonX/riddler), with `>13k` lines of code and `>1k` commits, is now robust enough in a way that we're **_much, much closer_** to the end of the journey than wherever we were at the beginning. And, while giving dates is always a messy subject... it should happen around _early 2026_ or so.
+[The current codebase](https://github.com/EmoonX/riddler), with `>15k` lines of code and `>1.2k` commits, is now robust enough in a way that we're **_much, much closer_** to the end of the journey than wherever we were at the beginning. And, while giving dates is always a messy subject... it should happen around _early ~~2026~~ 2027_ or so.
 
 And then the boat should float by itself as a bastion for the years to come.
 
