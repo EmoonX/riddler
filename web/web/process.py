@@ -500,8 +500,10 @@ class _PathHandler:
 
         # Fetch page data (if existing)
         query = '''
-            SELECT * FROM level_pages
-            WHERE riddle = :riddle AND path = :path
+            SELECT lp.*, up.username
+            FROM level_pages lp LEFT JOIN user_pages up
+                ON lp.riddle = up.riddle AND lp.path = up.path
+            WHERE lp.riddle = :riddle AND lp.path = :path
         '''
         values = {'riddle': self.riddle_alias, 'path': self.path}
         page = dict(await database.fetch_one(query, values) or {})
@@ -514,11 +516,14 @@ class _PathHandler:
             lh = _LevelHandler(answer_level, self)
             await lh.register_completion()
 
-        if not page:
+        if not page or (not page['username'] and not self.removed):
             if self.status_code in [300, 403, 404]:
                 # 404-like (and not e.g unlisted page);
                 # should still increment all hit counters
                 await self._update_hit_counters()
+
+                # Unformat path for logging purposes
+                self.path = self.raw_path
 
                 return 404
 
@@ -910,16 +915,33 @@ class _PathHandler:
     async def _register_new_unlisted_page(self):
         '''Register new valid unlisted page.'''
 
-        # Record page as a new one (w/ respective level being NULL)
+        # Record page as a new (unlisted) one
         query = '''
             INSERT IGNORE INTO level_pages (riddle, path, level_name)
             VALUES (:riddle, :path, NULL)
         '''
         values = {'riddle': self.riddle_alias, 'path': self.path}
-        await database.execute(query, values)
+        if await database.execute(query, values):
+            # Record found page and the user who did it
+            query = '''
+                INSERT IGNORE INTO _found_pages 
+                    (riddle, path, username, access_time)
+                VALUES (:riddle, :path, :username, :access_time)
+            '''
+            values |= {
+                'username': self.user.name,
+                'access_time': datetime.utcnow(),
+            }
+            if await database.execute(query, values):
+                print(
+                    f"> \033[1m[{self.riddle_alias}]\033[0m "
+                    f"Found new page \033[1m{self.path}\033[0m "
+                    f"by \033[1m{self.user.name}\033[0m "
+                    f"({values['access_time']})"
+                )
 
-        # Grant individual page record to user
-        # (as a personal "reward" if eventually a listed level page)
+        # Grant individual page record to player
+        # (for time ordering matters and as a possible eventual "reward")
         query = '''
             INSERT IGNORE INTO user_pages 
                 (riddle, username, level_name, path, access_time, incognito)
@@ -931,21 +953,6 @@ class _PathHandler:
             'incognito': await is_user_incognito(),
         }
         await database.execute(query, values)
-
-        # Record found page and the user who did it
-        query = '''
-            INSERT IGNORE INTO _found_pages 
-                (riddle, path, username, access_time)
-            VALUES (:riddle, :path, :username, :access_time)
-        '''
-        del values['incognito']
-        if await database.execute(query, values):
-            print(
-                f"> \033[1m[{self.riddle_alias}]\033[0m "
-                f"Found new page \033[1m{self.path}\033[0m "
-                f"by \033[1m{self.user.name}\033[0m "
-                f"({values['access_time']})"
-            )
 
 
 class _LevelHandler:
