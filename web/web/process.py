@@ -1160,8 +1160,14 @@ def is_trivial_redirect(path_from: str, path_to: str) -> bool:
     if _matches_either_way(lambda path: path.removesuffix('/')):
         # Folder trailing slashes
         return True
-    if _matches_either_way(lambda path: re.sub(r'(index)?([.]\w+)?$', '', path)):
-        # Implicit [index].htm[l] (usually Neocities)
+    if (
+        _matches_either_way(
+            lambda path: re.sub(r'[.](htm[l]?|php)$', '', path)
+        ) or _matches_either_way(
+            lambda path: re.sub(r'/index([.](htm[l]?|php))?$', '/', path)
+        )
+    ):
+        # Implicit [index].(htm[l]|php) (usually Neocities/Nekoweb)
         return True
     if path_from.lower() == path_to:
         # Case insensitive webserver w/ auto-lowercase (e.g wingheart)
