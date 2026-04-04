@@ -23,6 +23,7 @@ admin_health = Blueprint('admin_health', __name__)
 
 status_symbols = {
     200: '✔️',
+    301: '🧭',
     302: '🧭',
     401: '⛔',
     403: '🔴',
@@ -46,7 +47,7 @@ async def health_diagnostics(alias: str, background: bool = False):
         current_app.add_background_task(
             health_diagnostics, alias, background=True
         )
-        return f"[{alias}] Running Health Diagnostics in the background.", 202
+        return f"[{alias}] Running Health Diagnostics in the background...", 202
     
     riddle = await get_riddle(alias)
     all_pages_by_level = await get_pages(

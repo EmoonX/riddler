@@ -61,8 +61,8 @@
         {% elif status_code == 200 %}
           {% set status = 'OK' %}
         {% elif status_code %}
-          {% set symbol = page_data['status_symbol'] %}
-          {% set status = '[{} {}]'.format(status_code, symbol) %}
+          {% set symbol = page_data['status_symbol'] or '' %}
+          {% set status = symbol ~ ' ' ~ status_code %}
           {% set status = '<strong>{}</strong>'.format(status) %}
         {% else %}
           {% set status = '<em style="color: #bbb">skipped</em>' %}
