@@ -61,8 +61,8 @@ async def process_url(
         setattr(user, 'name', username)
     location = request.headers.get('Location')
     request_type = request.headers.get('Type')
-    if not status_code:
-        status_code = int(request.headers.get('Statuscode', 200))
+    if 'Statuscode' in request.headers:
+        status_code = int(request.headers.get('Statuscode'))
 
     # Create path handler object and build player data
     ph = await _PathHandler.build(
@@ -219,7 +219,7 @@ class _PathHandler:
         cls,
         user: User,
         url: str,
-        status_code: int,
+        status_code: int | None,
         request_type: str | None = None,
         location: str | None = None,
     ) -> Self | None:
@@ -241,11 +241,11 @@ class _PathHandler:
         if status_code in [301, 302, 303, 307, 308]:
             # Handle sufficiently trivial redirects (regardless of 30x semantics)
             full_location = urljoin(url, location)
-            ph_to = await cls.build(self.user, full_location, 418)
+            ph_to = await cls.build(self.user, full_location, None)
             if ph_to and ph_to.riddle_alias == self.riddle_alias:
                 self.short_run = is_trivial_redirect(self.path, ph_to.path)
 
-        if 200 <= status_code < 400 and not self.short_run:
+        if not self.short_run and status_code is not None:
             # Valid non-trivial path; format it in accordance to the guidelines
             await self._format_and_sanitize_path()
 

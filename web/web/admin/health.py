@@ -249,7 +249,7 @@ async def health_diagnostics(alias: str, background: bool = False):
         # (either an actual riddle page or full external link)
         redirect_url = urljoin(f"{riddle['root_path']}{path}", href)
         redirect_alias, redirect_path = await process_url(
-            None, redirect_url, admin=True, status_code=(418 if raw else 200)
+            None, redirect_url, admin=True, status_code=(None if raw else 200)
         )
 
         if redirect_alias != alias:
