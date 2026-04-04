@@ -8,6 +8,15 @@
 {% block title %}{{ flag_title }}Leaderboard ⬩ {{ riddle['full_name'] }}{% endblock %}
 {% block content %}
       <main>
+      {% set levels = get_levels(alias) %}
+      {% if levels %}
+        {% set first_level = levels.values()|first %}
+        {% if first_level['image'] %}
+          {% set image_name = first_level['image'].split('/')[-1] %}
+          {% set image_url = '/static/thumbs/' ~ alias ~ '/' ~ image_name %}
+          <div class="hero" style="background-image: url('{{ image_url }}')"></div>
+        {% endif %}
+      {% endif %}  
         <h1>Leaderboard{{ flag_html }}</h1>
         <section class="list players">
           {% set user = get_session_user() %}
@@ -138,7 +147,7 @@
               <div>
                 <var class="count">{{ player['page_count'] }}</var>
               {% if player['page_count'] == page_count %}
-                <div class="all-pages" title="Found every single page">💮</div>
+                <div class="all-pages" title="All pages found">💮</div>
               {% endif %}
               </div>
               <figcaption>pages found</figcaption>

@@ -1160,6 +1160,20 @@ span.flag {
   text-shadow: none;
 }
 
+div.hero {
+	position: absolute;
+	z-index: -1;
+	mask:
+    linear-gradient(to  right, transparent, #fff, transparent),
+    linear-gradient(to bottom, transparent, #fff8, transparent);
+	width: 1200px;
+	height: 300px;
+	top: 100px;
+	background-size: 110%;
+	background-position: 50% 50%;
+	mask-composite: intersect;
+}
+
 section.list.players {
   position: relative;
   z-index: 0;
