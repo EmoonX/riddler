@@ -128,7 +128,11 @@ async def process_url(
             )
             return jsonify({
                 'message': 'Locked level page',
-                'riddle': ph.riddle_alias
+                'riddle': ph.riddle_alias,
+                'riddleData': await get_user_riddle_data(
+                    ph.riddle_alias, as_json=False
+                ),
+                'pagesData': await get_pages(ph.riddle_alias, as_json=False),
             }), 403
         case 404:
             # Plain folder without index (403), or page not found (300/404)
