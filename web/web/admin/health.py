@@ -231,8 +231,13 @@ async def health_diagnostics(alias: str, background: bool = False):
                 'meta', {'http-equiv': re.compile('refresh', re.I)}
             )
             if meta_refresh_tag:
-                content = meta_refresh_tag.attrs['content']
-                return re.sub(r';|=|\'|"', ' ', content).split()[-1]
+                content = meta_refresh_tag.attrs['content'].strip()
+                pattern = re.compile(
+                    r"""(\d*[.]?\d*)\s*[;]?\s*(URL\s*=\s*)?['"]?(.+?)['"]?""",
+                    re.I
+                )
+                if match := pattern.fullmatch(content):
+                    return match[3]
 
             return None
 
