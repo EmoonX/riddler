@@ -88,7 +88,7 @@ async def health_diagnostics(alias: str, background: bool = False):
 
         if not include_level:
             return page_data
-        if not redo_existing:
+        if not redo_existing and page_data['status_code'] is None:
             if await PageSnapshot.get_latest(alias, path):
                 # Path has already been recorded, so skip it as instructed
                 page_data |= {
