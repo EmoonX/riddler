@@ -17,25 +17,17 @@ get = Blueprint('get', __name__)
 
 @get.get('/get-riddle-hosts')
 async def get_riddle_hosts():
-    '''Get list of riddle hosts from database.'''
-
-    # def _get_wildcard_pattern(root_path: str):
-    #     '''Return URL in '*://*.{root_path}/*' wildcard pattern.'''
-    #     parsed = urlsplit(root_path)
-    #     root_folder = f"{parsed.path}/"
-    #     return f"*://*.{parsed.hostname}{root_folder}*"
+    '''Get list of riddle hosts.'''
 
     def _param_is_true(param: str):
-        return request.args.get(param).lower() in ['', '1', 'on', 'true', 'yes']
+        if not param in request.args:
+            return False
+        return request.args[param].lower() in ['', '1', 'on', 'true', 'yes']
 
     unlisted_only = _param_is_true('unlistedOnly')
 
-    is_root = False
-    if discord.user_id:
-        is_root = await is_admin_of('*')
-
     # Build dict of {root_path -> alias} hosts
-    riddles = await get_riddles(unlisted=is_root)
+    riddles = await get_riddles(unlisted=True)
     hosts = {}
     for riddle in riddles:
         if unlisted_only and not riddle['unlisted']:
