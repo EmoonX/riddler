@@ -44,7 +44,9 @@ async def get_riddle_hosts():
 
 @get.get('/get-user-riddle-data')
 @get.get('/get-user-riddle-data/<alias>')
-async def get_user_riddle_data(alias: str | None = None) -> str:
+async def get_user_riddle_data(
+    alias: str | None = None, as_json: bool = True
+) -> dict | str:
     '''
     Get riddle data for authenticated user.
     If `alias` is passed, restrict results to just given riddle.
@@ -161,7 +163,7 @@ async def get_user_riddle_data(alias: str | None = None) -> str:
     '''
     result = await database.fetch_all(query, values)
     for row in result: 
-        if row['last_visited_level']:            
+        if row['last_visited_level']:
             riddles[row['riddle']] |= {
                 'lastVisitedSet': row['level_set'],
                 'lastVisitedLevel': row['last_visited_level'],
@@ -174,7 +176,7 @@ async def get_user_riddle_data(alias: str | None = None) -> str:
     else:
         data = riddles.get(alias, {})
 
-    return jsonify(data)
+    return jsonify(data) if as_json else data
 
 
 @get.get('/get-current-riddle-data')
