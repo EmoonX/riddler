@@ -11,11 +11,9 @@ from util.db import database
 async def root_auth():
     '''Assert you are really important.'''
     user = await discord.get_user()
-    if user.id == 315940379553955844:
-        return
     ok = await bot_request(
         'is-member-and-has-permissions',
-        guild_id=859797827554770955,  # Wonderland
+        guild_id=987832530826833920,  # Riddler's HQ
         username=user.name,
     )
     if ok != 'True':
