@@ -63,14 +63,19 @@ header {
       color: #ffe;
     }
     figure#riddle {
-      gap: .5em;
+      justify-content: center;
+      gap: .6em;
+      margin: 1em;
 
-      img  {
+      a {
         height: 40px;
-        border-radius: 25%;
+        > img  {
+          height: 40px;
+          border-radius: 25%;
+        }
       }
       figcaption.full-name {
-        line-height: 1.4em;
+        line-height: 1.5em;
         font-size: .85em;
       }
     }
@@ -163,7 +168,7 @@ main {
           border: thin solid rgba(255, 255, 255, .5);
           border-radius: 25%;
           font-size: 1.2em;
-          backdrop-filter: blur(.5em);
+          backdrop-filter: blur(.25em) brightness(.75);
 
           &:not(.disabled) {
             cursor: pointer;
