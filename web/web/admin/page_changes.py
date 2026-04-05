@@ -155,6 +155,8 @@ async def _apply_change(page_change: dict, expanded: bool = False):
                 f"'{level_name}' (level_pages) and "
                 f"'{page_change['level_name']}' (_page_changes)"
             )
+    else:
+        level_name = page_change['level_name']
 
     async def _update_page_data(
         path: str, level_name: str | None, removed: bool
