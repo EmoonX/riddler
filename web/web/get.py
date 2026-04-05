@@ -110,20 +110,13 @@ async def get_user_riddle_data(
     # Build list of levels unlocked/solved by user (in order)
     query = '''
         SELECT
-            up.riddle, ls.name AS set_name, up.level_name,
-                lv.path, lv.image, lv.answer,
-                find_time, completion_time
-            FROM user_pages up
-                LEFT JOIN user_levels ul
-                    ON up.riddle = ul.riddle AND up.level_name = ul.level_name
-                        AND up.username = ul.username
-                INNER JOIN levels lv
-                    ON up.riddle = lv.riddle AND up.level_name = lv.name
-                INNER JOIN level_sets ls
-                    ON up.riddle = ls.riddle AND lv.level_set = ls.name
-            WHERE up.riddle LIKE :riddle AND up.username = :username
-            GROUP BY up.riddle, up.level_name
-            ORDER BY ls.`index`, lv.`index`
+            lv.riddle, lv.level_set, lv.name, lv.path, lv.image, lv.answer,
+            ul.find_time, ul.completion_time
+        FROM levels lv INNER JOIN user_levels ul
+            ON lv.riddle = ul.riddle AND lv.name = ul.level_name
+        WHERE lv.riddle LIKE :riddle AND ul.username = :username
+        GROUP BY lv.riddle, lv.name
+        ORDER BY lv.set_index, lv.`index`
     '''
     result = await database.fetch_all(query, values)
     for row in result:
