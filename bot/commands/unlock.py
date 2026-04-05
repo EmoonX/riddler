@@ -139,7 +139,6 @@ class UnlockHandler:
         '''Procedures to be done when level is beaten.'''
 
         # Log solving procedure and send message to member
-        n = 'FDCBAS'.find(level['rank'])
         level_name = level['name']
         if level['latin_name']:
             level_name += f" ({level['latin_name']})"
@@ -147,11 +146,14 @@ class UnlockHandler:
         text = (
             f"**[{self.full_name}]** "
             f"You have solved {level_type} **{level_name}** "
-            + (
-                f"[{'★' * n}] and won **`{points}`** points." if n > 0
-                else '_(unranked)_.'
-            )
         )
+        if (n := 'FDCBAS'.find(level['rank'][0])) > 0:
+            stars = '★' * n
+            if level['rank'][-1] == '+':
+                stars += '+'
+            text += f"[{stars}] and won **`{points}`** points."
+        else:
+            text += '_(unranked)_.'
         await self._send(text)
 
         if not self.in_riddle_guild:
