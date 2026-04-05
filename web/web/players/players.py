@@ -259,16 +259,13 @@ async def riddle_list(alias: str, country: str | None = None):
                     AND username = :username
                     AND (
                         completion_time IS NULL
-                        OR (
-                            completion_time IS NOT NULL
-                            AND level_name NOT IN (
-                                SELECT lr.level_name
-                                FROM level_requirements lr
-                                INNER JOIN user_levels u2
-                                    ON lr.riddle = u2.riddle
-                                    AND lr.level_name = u2.level_name
-                                WHERE requires = ul.level_name
-                            )
+                        OR level_name NOT IN (
+                            SELECT lr.level_name
+                            FROM level_requirements lr
+                            INNER JOIN user_levels u2
+                                ON lr.riddle = u2.riddle
+                                AND lr.level_name = u2.level_name
+                            WHERE requires = ul.level_name
                         ) OR level_name IN (
                             SELECT final_level FROM level_sets
                             WHERE riddle = :riddle
@@ -305,11 +302,7 @@ async def riddle_list(alias: str, country: str | None = None):
         account['cheevos'] = await get_achievements(alias, account)
 
         # Hide username and country for non logged-in `hidden` players
-        # (ignored if current player is respective riddle's admin)
-        if account['hidden'] and (
-            not riddle_admin
-            and not (user and username == user.username)
-        ):
+        if account['hidden'] and not (user and username == user.username):
             account['username'] = 'Anonymous'
             account['country'] = 'ZZ'
 
