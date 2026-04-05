@@ -134,9 +134,11 @@ dmypy.json
 
 # Static riddle content
 /web/archive/
-/web/static/thumbs/
 /web/static/cheevos/
+/web/static/lab/
 /web/static/riddles/
+/web/static/riddles-large/
+/web/static/thumbs/
 
 # Concealed webpages from days gone by
 /web/static/old/
