@@ -536,7 +536,7 @@ hr {
   gap: .3em;
 
   &.dotted {
-    border-bottom: 1px dotted currentColor;
+    border-bottom: .03em dotted currentColor;
   }
 }
 
@@ -549,12 +549,12 @@ hr {
 }
 
 .avatar-small {
-  margin: 20px;
+  margin: 10px;
 
   + img.incognito {
     position: absolute;
-    top: 25px;
-    right: 15px;
+    top: 15px;
+    right: 5px;
     height: 22px;
     filter:
       drop-shadow(0 0 .05em rebeccapurple)
@@ -1109,13 +1109,13 @@ section.list > .row {
     height: 100%;
     width: 100%;
     background-image: linear-gradient(
-    to right,
-    transparent,
-    rgba(127, 127, 127, 0.06) 15% 85%,
-    transparent
-  );
+      to right,
+      transparent,
+      rgba(127, 127, 127, 0.06) 15% 85%,
+      transparent
+    );
     opacity: 0;
-    transition: opacity 0.5s;
+    transition: opacity .2s;
   }
   &:hover, &.active {
     .icon {
@@ -1125,17 +1125,6 @@ section.list > .row {
       opacity: 1;
     }
   }
-  // &:hover {
-  //   .thumb img, .level-name, .latin-name {
-  //     @keyframes breath {
-  //       0% { transform: scale(1); }
-  //       50% { transform: scale(1.15); }
-  //       100% { transform: scale(1); }
-  //     }
-  //     animation: breath 1s infinite;
-  //     animation-timing-function: ease;
-  //   }
-  // }
 }
 
 section.new {
@@ -1197,11 +1186,7 @@ section.list.players > .row {
 
   > .rank {
     width: 60px;
-    font-size: 1.3em;
-
-    var::first-letter {
-      font-size: .9em;
-    }
+    font-size: 1.15em;
   }
   > .player {
     flex-direction: row;
@@ -1369,11 +1354,12 @@ section.list.players > .row {
 
       .badge {
         position: absolute;
-        top: 20%;
-        left: 5%;
+        top: 25%;
+        left: -5%;
         z-index: 1000;
-        font-size: 0.8em;
-        transition: font-size 0.5s;
+        font-size: .8em;
+        transition: font-size .5s;
+        filter: drop-shadow(0 0 .05em magenta);
       }
       &.created > .badge {
         text-shadow: 0 0 0.4em goldenrod, 0 0 0.8em goldenrod;
@@ -1397,7 +1383,7 @@ section.list.players > .row {
         transition: width .5s, height .5s;
       }
       figcaption {
-        top: -1em;
+        top: -.5em;
       }
       &.other figure > .riddle-icon {
         opacity: 0.3;
@@ -1454,7 +1440,7 @@ section.list.players > .row {
     > .thumbs {
       display: flex;
       position: absolute;
-      top: 115px;
+      top: 5.5em;
       z-index: 1000;
       flex-direction: column;
       justify-content: center;
@@ -2024,11 +2010,12 @@ section.list.levels.admin + button {
         background-color: rgba(255, 255, 255, 0.15);
         text-decoration: underline;
       }
-      }
     }
-    &.just-playing {
-    opacity: .7;
-      font-style: italic;
+  }
+  &.just-playing:not(:hover) > * {
+    font-style: italic;
+    opacity: .65;
+    filter: grayscale(.35);
 
     .player {
       font-style: normal;
