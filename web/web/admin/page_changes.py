@@ -216,8 +216,8 @@ async def _apply_change(page_change: dict, expanded: bool = False):
         # Duplicate user records from old path to new one
         query = '''
             INSERT IGNORE INTO user_pages
-                (riddle, username, level_name, path, access_time)
-            SELECT :riddle, username, :level_name, :new_path, access_time
+                (riddle, username, level_name, path, access_time, incognito)
+            SELECT :riddle, username, :level_name, :new_path, access_time, incognito
             FROM user_pages up
             WHERE riddle = :riddle AND path = :path
         '''
