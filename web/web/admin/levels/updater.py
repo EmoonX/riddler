@@ -248,9 +248,12 @@ class LevelUpdater:
         username = credentials['username']
         password = credentials['password']
         if username or password:
-            image_url = image_url.replace(
-                '://', f"://{username or ''}:{password or ''}@"
-            )
+            if self.alias == 'string':
+                image_url += f"?username={username}&password={password}"
+            else:
+                image_url = image_url.replace(
+                    '://', f"://{username or ''}:{password or ''}@"
+                )
         headers = {
             # Impersonate real browser so certain hosts don't throw 412
             'User-Agent': (

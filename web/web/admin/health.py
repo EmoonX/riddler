@@ -109,7 +109,7 @@ async def health_diagnostics(alias: str, background: bool = False):
             res = requests.get(
                 _build_request_url(url),
                 headers=headers,
-                allow_redirects=False,  # don't follow 30x redirects
+                allow_redirects=(alias == 'string'),  # don't follow 30x redirects
                 timeout=10,
             )
             if res.ok and Path(_path).suffix in ['', '.htm', '.html', '.php']:
@@ -160,10 +160,16 @@ async def health_diagnostics(alias: str, background: bool = False):
         url = f"{riddle['root_path']}{path}"
 
         credentials = await get_path_credentials(alias, path)
-        username = credentials['username']
-        password = credentials['password']
+        username = credentials['username'] or ''
+        password = credentials['password'] or ''
         if username and password:
-            url = url.replace('://', f"://{username or ''}:{password or ''}@")
+            if alias == 'string':
+                if '?' in url:
+                    url += f"&username={username}&password={password}"
+                else:
+                    url += f"?username={username}&password={password}"
+            else:
+                url = url.replace('://', f"://{username}:{password}@")
 
         return url
  

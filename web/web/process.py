@@ -345,8 +345,14 @@ class _PathHandler:
                 url = f"{self.riddle['root_path']}{path}"
                 credentials = await get_path_credentials(self.riddle_alias, path)
                 if credentials['username'] and credentials['password']:
-                    auth = f"{credentials['username']}:{credentials['password']}"
-                    url = url.replace('://', f"://{auth}@")
+                    if self.riddle_alias == 'string':
+                        if '?' not in url:
+                            url = f"{url}?_="
+                        url += f"&username={credentials['username']}"
+                        url += f"&password={credentials['password']}"
+                    else:
+                        auth = f"{credentials['username']}:{credentials['password']}"
+                        url = url.replace('://', f"://{auth}@")
                 url = re.sub(r'^([^?]+)[?]$', r'\1?_=', url)  # handle empty query
                 cookies = {'s': 'eGNIqq1R'}
                 return requests.get(url, cookies=cookies, timeout=5)

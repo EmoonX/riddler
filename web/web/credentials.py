@@ -4,6 +4,7 @@ import re
 
 import requests
 from requests.auth import HTTPBasicAuth
+from urllib.parse import urlsplit
 
 from auth import discord, User
 from players.account import is_user_incognito
@@ -224,8 +225,15 @@ def _send_raw_request(url: str) -> tuple[int, str | None]:
 
 
 def _send_authenticated_request(url: str, username: str, password: str) -> int:
-
-    res = requests.get(url, auth=HTTPBasicAuth(username, password), timeout=10)
+    parsed_url = urlsplit(url)
+    auth = HTTPBasicAuth(username, password)
+    # TODO use riddle alias instead of URL, post-refactoring
+    if re.fullmatch(r'[www.]?thestringharmony.com', parsed_url.hostname):
+        if '?' not in url:
+            url += '?_='
+        url += f"&username={username}&password={password}"
+        auth = None
+    res = requests.get(url, auth=auth, timeout=10)
     return res.status_code
 
 
