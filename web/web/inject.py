@@ -9,7 +9,7 @@ from flag import flag
 from pycountry import pycountry
 
 from admin.admin_auth import is_admin_of
-from auth import discord
+from auth import discord, User
 from countries import country_names
 from levels import get_root_path
 from players.account import is_user_incognito
@@ -323,6 +323,7 @@ async def context_processor():
         'get_riddle': get_riddle,
         'get_riddles': get_riddles,
         'get_achievements': get_achievements,
+        'get_levels': get_levels,
         'get_accounts': get_accounts,
         'get_display_name': get_display_name,
         'is_user_incognito': is_user_incognito,

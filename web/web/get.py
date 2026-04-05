@@ -1,7 +1,6 @@
 import json
-from urllib.parse import urljoin, urlsplit
 
-from quart import abort, Blueprint, jsonify
+from quart import abort, Blueprint, jsonify, request
 from quartcord import requires_authorization
 
 from admin.admin_auth import is_admin_of
@@ -9,7 +8,6 @@ from auth import discord
 from inject import get_riddles
 from levels import get_pages
 from util.db import database
-from webclient import bot_request
 
 # Create app blueprint
 get = Blueprint('get', __name__)

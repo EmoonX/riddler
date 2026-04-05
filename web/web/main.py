@@ -1,10 +1,6 @@
-import asyncio
-from asyncio.events import AbstractEventLoop
 from datetime import datetime, timedelta
-import logging
 import os
 import sys
-from ssl import SSLError
 
 # Allow util folder to be visible
 sys.path.append('..')
