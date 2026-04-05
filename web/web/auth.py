@@ -2,6 +2,7 @@ import os
 os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' # TODO?
 
 import discord
+from jwt.exceptions import DecodeError
 from oauthlib.oauth2.rfc6749.errors import (
     InvalidGrantError, MismatchingStateError
 )
@@ -134,7 +135,27 @@ async def callback():
         data = await discord.callback()
     except exceptions.AccessDenied:
         return redirect('/')
-    except MismatchingStateError:
+    except (DecodeError, InvalidGrantError, MismatchingStateError):
+        import traceback
+        traceback.print_exc()
+        print("\n--- REQUEST DEBUG INFO ---")
+        print("Method:", request.method)
+        print("URL:", request.url)
+        print("Path:", request.path)
+        print("Full Path:", request.full_path)
+        print("Base URL:", request.base_url)
+        print("Host URL:", request.host_url)
+        print("Headers:", dict(request.headers))
+        print("Query Params:", request.args)
+        print("Form Data:", request.form)
+        print("JSON Body:", request.get_json(silent=True))
+        print("Raw Data:", request.data)
+        print("Files:", request.files)
+        print("Cookies:", request.cookies)
+        print("Referrer:", request.referrer)
+        print("Remote Addr:", request.remote_addr)
+        print("User Agent:", request.user_agent)
+        print("---------------------------\n")
         discord.revoke()
         return redirect('/login')
 
