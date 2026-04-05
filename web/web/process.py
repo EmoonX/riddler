@@ -429,6 +429,26 @@ class _PathHandler:
             # Omit superflous slash from extension-less hosts
             self.path = self.path.removesuffix('/') or '/'
 
+        # Riddle-specific path formatting
+        if self.riddle_alias == 'decifra':
+            if not re.search(r'^/[.][.]/', self.path):
+                # Sanitize dynamic paths within the `/enigma` directory proper
+                await _format(re.sub(r' |(%20)|-|_', '', self.path).lower())
+            if match := re.search(r'^/[.][.]/(.*?[.]php)/', self.path):
+                await _format(f"/../{match[1]}")
+        elif self.riddle_alias in ['hakari', 'sadist', 'super-easy']:
+            # Treat non-static pages as case insensitive, omit trailing '/'
+            base_path = self.path.lower().removesuffix('/')
+            if self.riddle_alias == 'hakari':
+                await _format(base_path)
+            elif Path(self.path).parent == Path('/'):
+                # Only correct paths inside root itself
+                self.path = base_path
+        elif self.riddle_alias == 'wyfio':
+            if 'width' in self.parsed_query:
+                # Ignore width/height query images
+                return
+
         if self.raw_query:
             # '?' in received path; search for fitting base queries
             main_path = self.path
@@ -442,20 +462,6 @@ class _PathHandler:
             else:
                 await _format(f"{main_path}?")
                 await _format(main_path)
-
-        # Riddle-specific path formatting
-        if self.riddle_alias == 'decifra':
-            if not re.search(r'^/[.][.]/', self.path):
-                # Sanitize dynamic paths within the `/enigma` directory proper
-                await _format(re.sub(r' |(%20)|-|_', '', self.path).lower())
-            if match := re.search(r'^/[.][.]/(.*?[.]php)/', self.path):
-                await _format(f"/../{match[1]}")
-        elif self.riddle_alias == 'hakari':
-            # Treat non-static pages as case insensitive, omit trailing '/'
-            sub_path = self.path.lower()
-            if self.path.endswith('/'):
-                sub_path = sub_path[:-1]
-            await _format(sub_path)
 
     async def build_player_riddle_data(self):
         '''Build player riddle data from DB, creating it if nonexistent.'''
