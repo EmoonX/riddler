@@ -88,7 +88,9 @@ async def get_avatar_url(request):
     user = bot.get_user(user_id)
     if not user:
         user = await bot.fetch_user(user_id)
-    url = user.display_avatar.url
+    
+    url = user.display_avatar.url.rpartition('?')[0]
+
     return web.Response(text=url)
 
 
