@@ -1,7 +1,7 @@
 #!/bin/bash
 
 killall python3
-source ~/riddler/venv/bin/activate
+source ~/riddler/.venv/bin/activate
 
 pushd ~/riddler/bot
 
