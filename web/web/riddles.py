@@ -1,14 +1,14 @@
-'''Riddle-related stuff (like level/cheevo scoring and info).'''
-
 # Dict of pairs rank -> (points, color)
 f = lambda p, c : {'points': p, 'color': c}
 level_ranks = {
-    'F': f(   0, 'gray'),
-    'D': f(  50, 'cornflowerblue'),
-    'C': f( 100, 'lawngreen'),
-    'B': f( 200, 'gold'),
-    'A': f( 400, 'crimson'),
-    'S': f(1000, 'lightcyan')
+    'F' : f(   0, 'gray'),
+    'D' : f(  50, 'cornflowerblue'),
+    'C' : f( 100, 'lawngreen'),
+    'B' : f( 200, 'gold'),
+    'A' : f( 400, 'crimson'),
+    'A+': f( 800, 'fuchsia'),
+    'S' : f(1600, 'lightcyan'),
+    'S+': f(3200, 'white'),
 }
 
 # Colors for achievements outline based on ranks
@@ -21,9 +21,9 @@ cheevo_ranks = {
         '"Dumb" and/or easy-to-reach cheevos.'
     ),
     'B': g(
-        '🥈', 100, 50, 'lightcyan',
+        '🥈', 100, 48, 'lightcyan',
         'Substantial ones that require creativity '
-            'and/or out-of-the-box thinking.'
+        'and/or out-of-the-box thinking.'
     ),
     'A': g(
         '🥇', 200, 60, 'gold',
@@ -32,7 +32,7 @@ cheevo_ranks = {
     'S': g(
         '💎', 800, 80, 'darkturquoise',
         'Should be reserved for the best among the best '
-         '(like reaching a vital game\'s landmark).'
+        '(like reaching a vital game\'s landmark).'
     )
 }
 
