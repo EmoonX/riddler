@@ -82,7 +82,7 @@ async def register():
     form = await request.form
     country = country_names.get(form['country'])
     if not country:
-        return await r('No bogus countries allowed...')
+        return await r('Something went wrong. Please try again.')
 
     # Insert user data into accounts table
     query = '''

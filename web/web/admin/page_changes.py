@@ -97,9 +97,9 @@ async def apply_page_changes(alias: str):
             f"> \033[1m[{alias}]\033[0m "
             f"Expanding {glob_type} "
             + (
-                f"paths {formatted_path} ➜ {formatted_new_path}"
+                f"paths {formatted_path} ➜ {formatted_new_path}:"
                     if path and new_path else
-                f"path {formatted_path if path else formatted_new_path}"
+                f"path {formatted_path if path else formatted_new_path}:"
             ),
             flush=True
         )
@@ -231,7 +231,7 @@ async def _apply_change(page_change: dict, expanded: bool = False):
         nonlocal success
         print(
             f"> \033[1m[{alias}]\033[0m"
-            f"{' ·· ' if expanded else ' '}{msg}… "
+            f"{' ·· ' if expanded else ' '}{msg}... "
             f"\033{'[1mOK' if success else '[3mskipped'}\033[0m",
             flush=True
         )
@@ -241,7 +241,7 @@ async def _apply_change(page_change: dict, expanded: bool = False):
         # Mark old page as removed
         success |= await _update_page_data(path, level_name, removed=True)
         if not new_path:
-            _log(f"Marking page \033[3m{path}\033[0m as removed")
+            _log(f"Removing page \033[3m{path}\033[0m")
             return
     if new_path:
         # Write level to the new page

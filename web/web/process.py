@@ -54,7 +54,6 @@ async def process_url(
         user = await discord.get_user()
         url = (await request.data).decode('utf-8')
         if content_location := request.headers.get('Content-Location'):
-            print(content_location)
             url = urljoin(url, content_location)
     else:
         user = lambda: None
