@@ -1,4 +1,5 @@
 import os
+os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1' # TODO?
 
 import discord
 from oauthlib.oauth2.rfc6749.errors import (
