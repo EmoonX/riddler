@@ -103,12 +103,14 @@ async def health_diagnostics(alias: str, background: bool = False):
                 'Gecko/20100101 Firefox/128.0'
             )
         }
+        cookies = {}
         _path = path
         res = redirect_path = None
         while res is None:
             res = requests.get(
                 _build_request_url(url),
                 headers=headers,
+                cookies=cookies,
                 allow_redirects=(alias == 'string'),  # don't follow 30x redirects
                 timeout=10,
             )
@@ -162,6 +164,9 @@ async def health_diagnostics(alias: str, background: bool = False):
         credentials = await get_path_credentials(alias, path)
         username = credentials['username'] or ''
         password = credentials['password'] or ''
+        if riddle['alias'] == 'notpron' and path.startswith('/jerk2'):
+            username = '???'
+            password = '???'
         if username and password:
             if alias == 'string':
                 if '?' in url:
