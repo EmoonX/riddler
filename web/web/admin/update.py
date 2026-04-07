@@ -418,7 +418,7 @@ async def update_discord_account_info():
             values = {
                 'username': data['username'],
                 'display_name': data['display_name'],
-                'avatar_url': data['avatar_url'],
+                'avatar_url': data['avatar_url'] or None,
                 'discord_id': account['discord_id'],
             }
             print(values, flush=True)
@@ -438,7 +438,7 @@ async def update_discord_account_info():
                     WHERE discord_id = :discord_id
                 '''
                 values = {
-                    'avatar_url': avatar_url,
+                    'avatar_url': avatar_url or None,
                     'discord_id': account['discord_id'],
                 }
                 print(values, flush=True)
