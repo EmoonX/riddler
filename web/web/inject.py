@@ -224,7 +224,7 @@ async def context_processor():
     async def get_avatar_url(
         username: str | None = None, discord_id: int | None = None
     ) -> str:
-        '''Retrieve user's avatar url through bot request.'''
+        '''Retrieve player's avatar URL through bot request.'''
 
         if not (username is None) ^ (discord_id is None):
             raise NotImplementedError
@@ -237,15 +237,9 @@ async def context_processor():
 
         return await bot_request('get-avatar-url', discord_id=discord_id)
 
-    async def get_all_avatar_urls(guild_id: int = None):
+    async def get_all_avatar_urls(guild_id: int | None = None):
+        '''Retrieve all players' avatar URLs through database OR bot request.'''
 
-        # data = None
-        # if guild_id:
-        # if False:
-        #     data = await bot_request('fetch-avatar-urls', guild_id=guild_id)
-        # else:
-        # data = await bot_request('fetch-avatar-urls')
-        
         query = '''
             SELECT username, discord_id, avatar_url FROM accounts
             WHERE discord_id IS NOT NULL

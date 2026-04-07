@@ -89,15 +89,17 @@ async def get_avatar_url(request):
     if not user:
         user = await bot.fetch_user(user_id)
     
-    url = user.display_avatar.url.rpartition('?')[0]
+    url = user.display_avatar.url.partition('?')[0]
 
     return web.Response(text=url)
 
 
 async def get_all_avatar_urls(request):
-    '''Get all reachable avatar URLs and return a dict of them.
+    '''
+    Get all reachable avatar URLs and return a dict of them.
     If `guild_id` is given in request, fetch all user avatars
-    from a given guild; otherwise, just fetch avatars from all guilds.'''
+    from a given guild; otherwise, just fetch avatars from all guilds.
+    '''
 
     guild_id = request.rel_url.query.get('guild_id')
     if guild_id:
@@ -118,7 +120,7 @@ async def get_all_avatar_urls(request):
     # Build dict of (username -> URL)
     urls = {}
     for user in users:
-        urls[user.name] = user.display_avatar.url
+        urls[user.name] = user.display_avatar.url.partition('?')[0]
 
     # Convert dict to JSON format and return response with it
     data = json.dumps(urls)
