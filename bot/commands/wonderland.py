@@ -17,32 +17,10 @@ class Wonderland(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_join(self, member: Member):
-        '''Do some member procedures upon joining Wonderland.'''
+        '''Update member upon joining Wonderland.'''
         guild = member.guild
         if guild.id == 859797827554770955:
-            await update_country_nick(member)
             await update_score_role(member)
-
-
-async def update_country_nick(member: Member):
-    '''Add emoji flag (for player's country) to member's nickname.'''
-
-    # Get player's country from DB
-    query = '''
-        SELECT country FROM accounts
-        WHERE username = :username
-    '''
-    values = {'username': member.name}
-    country = await database.fetch_val(query, values)
-    if not country:
-        return
-
-    # Update member's nickname
-    emoji_flag = flag(country)
-    try:
-        await update_nickname(member, emoji_flag)
-    except Forbidden:
-        pass
 
 
 async def update_score_role(member: Member):
