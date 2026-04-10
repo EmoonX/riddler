@@ -12,6 +12,8 @@ import {
   updateCurrentRiddleAndLevel,
 } from './riddle.js';
 
+import { storage } from './storage.js';
+
 // Extend service worker with additional module(s)
 import './tabs.js';
 
@@ -177,13 +179,11 @@ function responseHandler(details) {
 
   if (! Object.keys(riddles).length) {
     // Not logged in
-    chrome.storage.session.get('loginTriggered', ({ loginTriggered }) => {
-      if (details.type === 'main_frame' && !loginTriggered) {
-        // Open Discord auth page on new tab
-        chrome.tabs.create({url: `${SERVER_HOST}/login`});
-        chrome.storage.session.set({ loginTriggered: true });
-      }
-    });
+    if (details.type === 'main_frame' && !storage.session.loginTriggered) {
+      // Open Discord auth page on new tab
+      chrome.tabs.create({url: `${SERVER_HOST}/login`});
+      storage.session.store({ loginTriggered: true });
+    }
     return;
   }
 
