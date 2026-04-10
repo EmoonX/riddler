@@ -5,9 +5,10 @@ import { getAllFrontPaths, getFirstFrontPath } from './level.js';
 import {
   buildRiddle,
   currentRiddle,
-  getSimpleRootPath,
+  getSimpleRootPath,  
   riddles,
   SERVER_HOST,
+  updateRiddleHostsIndex,
   updateState,
 } from './riddle.js';
 
@@ -16,8 +17,13 @@ import { createTab } from './tabs.js';
 /** Lock for `initExplorer` (should run once and non-concurrently). */
 export let initNeeded = true;
 
-/** Inits explorer by fetching user riddle data and pages. */
+/** Inits explorer by fetching riddle hosts, user riddle data and pages. */
 export async function initExplorer(callback) {
+  fetch(`${SERVER_HOST}/get-riddle-hosts`)
+    .then(response => response.json())
+    .then(riddleHostsData => {
+      updateRiddleHostsIndex(riddleHostsData);
+    });
   fetch(`${SERVER_HOST}/get-user-riddle-data`)
     .then(response => {
       if (response.status === 401) {

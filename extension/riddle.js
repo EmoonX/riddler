@@ -3,11 +3,19 @@ import { retrieveWithCache } from './cache.js';
 /** Server host base URL. */
 export const SERVER_HOST = 'https://riddler.app';
 
+/** Standalone index of riddle hosts. */
+export let riddleHosts = new Map();
+
 /** Player's riddle data. */
 export let riddles = {};
 
 /** Current riddle alias. */
 export let currentRiddle;
+
+/** Updates index of riddle hosts. */
+export function updateRiddleHostsIndex(riddleHostsData) {
+  riddleHosts = new Map(Object.entries(riddleHostsData));
+}
 
 /** Builds riddle object from riddle and levels JSON data. */
 export async function buildRiddle(riddle, pages) {
@@ -127,24 +135,12 @@ chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
   }
 });
 
+/** Extract riddle and root path from parsed URL. */
 function parseRiddle(parsedUrl) {
   const hostname = parsedUrl.hostname.replace(/^www\d*\./, '');
 
-  // Build flat list of hosts
-  const riddleHosts = {};
-  for (const [alias, riddle] of Object.entries(riddles)) {
-    try {
-      const rootPaths = JSON.parse(riddle.rootPath);
-      for (const rootPath of rootPaths) {
-        riddleHosts[rootPath] = alias;
-      }
-    } catch {
-      riddleHosts[riddle.rootPath] = alias;
-    }
-  }
-
   let [alias, rootPath] = [null, null];
-  for (const [_rootPath, _alias] of Object.entries(riddleHosts)) {
+  for (const [_rootPath, _alias] of riddleHosts) {
     const parsedRoot = new URL(_rootPath);
     const rootHostname = parsedRoot.hostname.replace(/^www\d*\./, '');
     if (_rootPath.indexOf('*') !== -1) {
@@ -165,6 +161,7 @@ function parseRiddle(parsedUrl) {
       }
     }
   }
+
   return [alias, rootPath];
 }
 
