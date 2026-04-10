@@ -165,6 +165,7 @@ function responseHandler(details) {
     } else if (parsedUrl.pathname === '/logout') {
       // Immediately clear riddle data on logout
       clearRiddleData();
+      chrome.storage.session.set({ loginTriggered: true });
     }
     return;
   }
@@ -176,10 +177,13 @@ function responseHandler(details) {
 
   if (! Object.keys(riddles).length) {
     // Not logged in
-    if (details.type === 'main_frame') {
-      // Open Discord auth page on new tab
-      chrome.tabs.create({url: `${SERVER_HOST}/login`});
-    }
+    chrome.storage.session.get('loginTriggered', ({ loginTriggered }) => {
+      if (details.type === 'main_frame' && !loginTriggered) {
+        // Open Discord auth page on new tab
+        chrome.tabs.create({url: `${SERVER_HOST}/login`});
+        chrome.storage.session.set({ loginTriggered: true });
+      }
+    });
     return;
   }
 
