@@ -3,7 +3,7 @@ async function replaceLinks() {
   for (const a of $('a')) {
     const url = new URL(a.href, window.location.href).href;
     const [riddle, path] = await parseRiddleAndPath(url);
-    const blacklistEntry = riddle?.blacklistedPages.find(
+    const blacklistEntry = riddle?.blacklistedPages?.find(
       entry => stripHtmlExtension(entry.path) === stripHtmlExtension(path)
     );
     if (blacklistEntry) {

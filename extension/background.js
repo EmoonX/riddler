@@ -18,9 +18,6 @@ import './tabs.js';
 /** Wildcard URLs to be matched. */
 const filter = { urls: ['<all_urls>'] };
 
-/** Time of last login request. */
-// let t0;
-
 const staleNativeAuthTabs = new Set();
 
 /** Sends user-visited URL and request data to the `/process` endpoint. */
@@ -49,19 +46,6 @@ async function sendToProcess(details) {
   // Send request to processing endpoint; retrieve response data
   const response = await fetch(`${SERVER_HOST}/process`, params);
   if (response.status === 401) {
-    // // If current login request is less than 5 seconds
-    // // after marked one, don't open a new login tab.
-    // const tNow = new Date();
-    // const dt = tNow - t0;
-    // if (t0 && dt < 5000) {
-    //   return;
-    // }
-    // t0 = tNow;
-    // if (response.text() == 'Not logged in') {
-    //   // Not logged in, so open Discord auth page on new tab
-    //   chrome.tabs.create({url: `${SERVER_HOST}/login`});
-    // }
-
     // Logged out, so possibly clear riddle data
     clearRiddleData();
     return;
@@ -184,16 +168,25 @@ function responseHandler(details) {
     }
     return;
   }
-  const [riddle, path] = parseRiddleAndPath(details.url);  
+  const [riddle, path] = parseRiddleAndPath(details.url);
   if (! riddle) {
     // Completely ignore pages outside riddle domains
     return;
   }
-  
+
+  if (! Object.keys(riddles).length) {
+    // Not logged in
+    if (details.type === 'main_frame') {
+      // Open Discord auth page on new tab
+      chrome.tabs.create({url: `${SERVER_HOST}/login`});
+    }
+    return;
+  }
+
+  details.path = path;
   if (details.type === 'main_frame') {
     updateCurrentRiddleAndLevel(riddle, path);
   }
-  details.path = path;
   details.credentialsPath = findContainingPath(path, riddle.missingAuthPaths);
   if (details.credentialsPath) {
     // Missing unlocked credentials for path; prompt auth box straight away
@@ -213,6 +206,7 @@ function responseHandler(details) {
     parsedUrl.username = parsedUrl.password = '';
     details.url = parsedUrl.toString();
   }
+
   if (! Object.keys(riddles).length) {
     // Safeguard for missing/cleared riddle data
     initExplorer(() => {

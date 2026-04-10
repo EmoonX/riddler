@@ -19,7 +19,7 @@ chrome.tabs.onUpdated.addListener((_, changeInfo, tab) => {
 
   if (changeInfo.status === 'loading') {
     const [riddle, path] = parseRiddleAndPath(tab.url);
-    const blacklistEntry = riddle?.blacklistedPages.find(
+    const blacklistEntry = riddle?.blacklistedPages?.find(
       entry => stripHtmlExtension(entry.path) === stripHtmlExtension(path)
     );
     if (blacklistEntry) {

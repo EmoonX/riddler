@@ -120,7 +120,7 @@ export function parseRiddleAndPath(url) {
       pathTokens.push(urlTokens[i]);
     }
   }
-  const riddle = riddles[alias];
+  const riddle = riddles[alias] ?? {riddle: alias};
   const path = `/${pathTokens.join('/')}`;
 
   return [riddle, path];
