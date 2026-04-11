@@ -167,7 +167,7 @@ function responseHandler(details) {
     } else if (parsedUrl.pathname === '/logout') {
       // Immediately clear riddle data on logout
       clearRiddleData();
-      chrome.storage.session.set({ loginTriggered: true });
+      storage.session.store({ loginTriggered: true });
     }
     return;
   }
