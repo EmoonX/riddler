@@ -79,6 +79,29 @@ export async function refreshRiddleData(alias, data) {
   buildRiddle(data.riddleData, data.pagesData);
 }
 
+/** Update extension's action icon based on given URL. */
+export function updateActionIcon(url) {
+  const [riddle, _] = parseRiddleAndPath(url);
+  if (riddle) {
+    // Browsing riddle host, signal whether OK (logged in) or not
+    const prefix = Object.keys(riddles).length ? 'green' : 'red';
+    chrome.action.setIcon({
+      path: {
+        16: `images/icons/meta/${prefix}16.png`,
+        32: `images/icons/meta/${prefix}32.png`,
+      }
+    });
+  } else {
+    // Show default icon instead
+    chrome.action.setIcon({
+      path: {
+        16: 'images/icons/meta/default16.png',
+        32: 'images/icons/meta/default32.png',
+      }
+    });
+  }
+}
+
 /** Update currently visited riddle and level.  */
 export async function updateCurrentRiddleAndLevel(riddle, path) {
   currentRiddle = riddle.alias;

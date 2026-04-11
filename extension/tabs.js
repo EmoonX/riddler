@@ -1,4 +1,7 @@
-import { parseRiddleAndPath } from './riddle.js';
+import {
+  parseRiddleAndPath,
+  updateActionIcon,
+} from './riddle.js';
 
 /** Create window-aware tab (account for e.g. private windows).*/
 export async function createTab(url, params) {
@@ -10,6 +13,13 @@ export async function createTab(url, params) {
   });
   return tab;
 }
+
+chrome.tabs.onActivated.addListener(async activeInfo => {
+  const tab = await chrome.tabs.get(activeInfo.tabId);
+  if (tab.url) {
+    updateActionIcon(tab.url);
+  }
+});
 
 /** Replace blacklisted pages on tab load start. */
 chrome.tabs.onUpdated.addListener((_, changeInfo, tab) => {
