@@ -232,8 +232,9 @@ chrome.webRequest.onCompleted.addListener(
 /** Send regular pings to avoid service worker becoming inactive. */
 chrome.runtime.onConnect.addListener(port => {
   const pingInterval = setInterval(() => {
-    port.postMessage({ status: "ping" });
-  }, 10000);
+    port.postMessage({ status: 'ping' });
+    storage.session.store({ ping: true });
+  }, 1000);
   port.onDisconnect.addListener(_ => {
     clearInterval(pingInterval);
   });
