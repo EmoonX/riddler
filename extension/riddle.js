@@ -82,15 +82,15 @@ export async function refreshRiddleData(alias, data) {
 
 /** Update extension's action icon based on active tab. */
 export async function updateActionIcon() {
-  const [tab] = await chrome.tabs.query({
+  const [activeTab] = await chrome.tabs.query({
     active: true,
     currentWindow: true,
   });
-  if (! tab?.url) {
+  if (! activeTab?.url) {
     return;
   }
 
-  const [riddle, _] = parseRiddleAndPath(tab.url);
+  const [riddle, _] = parseRiddleAndPath(activeTab.url);
   if (riddle) {
     // Browsing riddle host, signal whether OK (logged in) or not
     const prefix =
