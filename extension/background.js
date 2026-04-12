@@ -188,6 +188,10 @@ function responseHandler(details) {
     }
     return;
   }
+  if (! (riddle.alias in riddles)) {
+    // Given riddle data hasn't loaded yet
+    return;
+  }
 
   details.path = path;
   if (details.type === 'main_frame') {
