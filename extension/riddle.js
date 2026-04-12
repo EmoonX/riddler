@@ -98,16 +98,16 @@ export async function updateActionIcon() {
       (initNeeded ? 'yellow' : 'red');
     chrome.action.setIcon({
       path: {
-        16: `images/icons/meta/${prefix}16.png`,
-        32: `images/icons/meta/${prefix}32.png`,
+        16: `images/icons/action/${prefix}16.png`,
+        32: `images/icons/action/${prefix}32.png`,
       }
     });
   } else {
     // Show default icon instead
     chrome.action.setIcon({
       path: {
-        16: 'images/icons/meta/default16.png',
-        32: 'images/icons/meta/default32.png',
+        16: 'images/icons/action/default16.png',
+        32: 'images/icons/action/default32.png',
       }
     });
   }
