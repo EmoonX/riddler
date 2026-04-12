@@ -1,4 +1,5 @@
 import { retrieveWithCache } from './cache.js';
+import { initNeeded } from './explorer.js';
 
 /** Server host base URL. */
 export const SERVER_HOST = 'https://riddler.app';
@@ -92,7 +93,9 @@ export async function updateActionIcon() {
   const [riddle, _] = parseRiddleAndPath(tab.url);
   if (riddle) {
     // Browsing riddle host, signal whether OK (logged in) or not
-    const prefix = (riddle.alias in riddles) ? 'green' : 'red';
+    const prefix =
+      (riddle.alias in riddles) ? 'green' :
+      (initNeeded ? 'yellow' : 'red');
     chrome.action.setIcon({
       path: {
         16: `images/icons/meta/${prefix}16.png`,

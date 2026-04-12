@@ -20,6 +20,7 @@ export let initNeeded = true;
 
 /** Inits explorer by fetching riddle hosts, user riddle data and pages. */
 export async function initExplorer(callback) {
+  initNeeded = true;
   fetch(`${SERVER_HOST}/get-riddle-hosts`)
     .then(response => response.json())
     .then(riddleHostsData => {
@@ -58,10 +59,12 @@ export async function initExplorer(callback) {
             }
           }
           updateActionIcon();
+          initNeeded = false;
         });
     })
     .catch(exception => {
       console.log(exception);
+      initNeeded = false;
       if (callback) {
         callback();
       }
