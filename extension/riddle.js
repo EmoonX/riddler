@@ -81,6 +81,10 @@ export async function refreshRiddleData(alias, data) {
 
 /** Update extension's action icon based on given URL. */
 export function updateActionIcon(url) {
+  if (!url) {
+    return;
+  }
+
   const [riddle, _] = parseRiddleAndPath(url);
   if (riddle) {
     // Browsing riddle host, signal whether OK (logged in) or not

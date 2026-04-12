@@ -14,25 +14,23 @@ export async function createTab(url, params) {
   return tab;
 }
 
+/** Handle tab switching. */
 chrome.tabs.onActivated.addListener(async activeInfo => {
   const tab = await chrome.tabs.get(activeInfo.tabId);
-  if (tab.url) {
-    updateActionIcon(tab.url);
-  }
+  updateActionIcon(tab.url);
 });
 
-/** Replace blacklisted pages on tab load start. */
+/** Handle tab creation and navigation. */
 chrome.tabs.onUpdated.addListener((_, changeInfo, tab) => {
-  function stripHtmlExtension(path) {
-    return path.replace(/[.]htm[l]?$/, '');
-  }
-
   if (changeInfo.status === 'loading') {
+    updateActionIcon(tab.url);
+
     const [riddle, path] = parseRiddleAndPath(tab.url);
     const blacklistEntry = riddle?.blacklistedPages?.find(
       entry => stripHtmlExtension(entry.path) === stripHtmlExtension(path)
     );
     if (blacklistEntry) {
+      // Replace blacklisted pages
       const rootPath = riddle.rootPath.replace(/[/][*]$/, '');
       let nextUrl = `${rootPath}${blacklistEntry.nextPath}`;
       if (tab.url.startsWith('view-source:')) {
@@ -44,3 +42,7 @@ chrome.tabs.onUpdated.addListener((_, changeInfo, tab) => {
     }
   }
 });
+
+function stripHtmlExtension(path) {
+  return path.replace(/[.]htm[l]?$/, '');
+}
