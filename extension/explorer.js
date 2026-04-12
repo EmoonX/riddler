@@ -8,6 +8,7 @@ import {
   getSimpleRootPath,  
   riddles,
   SERVER_HOST,
+  updateActionIcon,
   updateRiddleHostsIndex,
   updateState,
 } from './riddle.js';
@@ -36,25 +37,27 @@ export async function initExplorer(callback) {
       if (riddlesData.currentRiddle) {
         fetch(`${SERVER_HOST}/${currentRiddle}/levels/get-pages`)
           .then(response => response.json())
-          .then(pagesData => {
+          .then(async pagesData => {
             // Fetch current riddle before rest to ease popup wait time
             const riddle = riddlesData.riddles[currentRiddle];
             console.log(`[${currentRiddle}] Building riddle data…`);
-            buildRiddle(riddle, pagesData);
+            await buildRiddle(riddle, pagesData);
+            updateActionIcon();
             if (callback) {
               callback();
             }
           });
       }
-      await fetch(`${SERVER_HOST}/get-user-pages`)
+      fetch(`${SERVER_HOST}/get-user-pages`)
         .then(response => response.json())
-        .then(allPagesData => {
+        .then(async allPagesData => {
           for (const [alias, riddle] of Object.entries(riddlesData.riddles)) {
             if (alias != currentRiddle) {
               console.log(`[${alias}] Building riddle data…`);
-              buildRiddle(riddle, allPagesData[alias]);
+              await buildRiddle(riddle, allPagesData[alias]);
             }
           }
+          updateActionIcon();
         });
     })
     .catch(exception => {

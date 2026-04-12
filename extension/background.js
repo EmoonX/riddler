@@ -9,6 +9,7 @@ import {
   riddles,
   sendMessageToPopup,
   SERVER_HOST,
+  updateActionIcon,
   updateCurrentRiddleAndLevel,
 } from './riddle.js';
 
@@ -167,6 +168,7 @@ function responseHandler(details) {
     } else if (parsedUrl.pathname === '/logout') {
       // Immediately clear riddle data on logout
       clearRiddleData();
+      updateActionIcon();
       storage.session.store({ loginTriggered: true });
     }
     return;

@@ -79,16 +79,20 @@ export async function refreshRiddleData(alias, data) {
   buildRiddle(data.riddleData, data.pagesData);
 }
 
-/** Update extension's action icon based on given URL. */
-export function updateActionIcon(url) {
-  if (!url) {
+/** Update extension's action icon based on active tab. */
+export async function updateActionIcon() {
+  const [tab] = await chrome.tabs.query({
+    active: true,
+    currentWindow: true,
+  });
+  if (! tab?.url) {
     return;
   }
 
-  const [riddle, _] = parseRiddleAndPath(url);
+  const [riddle, _] = parseRiddleAndPath(tab.url);
   if (riddle) {
     // Browsing riddle host, signal whether OK (logged in) or not
-    const prefix = Object.keys(riddles).length ? 'green' : 'red';
+    const prefix = (riddle.alias in riddles) ? 'green' : 'red';
     chrome.action.setIcon({
       path: {
         16: `images/icons/meta/${prefix}16.png`,
@@ -147,7 +151,7 @@ export function parseRiddleAndPath(url) {
       pathTokens.push(urlTokens[i]);
     }
   }
-  const riddle = riddles[alias] ?? {riddle: alias};
+  const riddle = riddles[alias] ?? {alias: alias};
   const path = `/${pathTokens.join('/')}`;
 
   return [riddle, path];

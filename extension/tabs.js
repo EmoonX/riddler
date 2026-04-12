@@ -15,15 +15,14 @@ export async function createTab(url, params) {
 }
 
 /** Handle tab switching. */
-chrome.tabs.onActivated.addListener(async activeInfo => {
-  const tab = await chrome.tabs.get(activeInfo.tabId);
-  updateActionIcon(tab.url);
+chrome.tabs.onActivated.addListener(() => {
+  updateActionIcon();
 });
 
 /** Handle tab creation and navigation. */
 chrome.tabs.onUpdated.addListener((_, changeInfo, tab) => {
   if (changeInfo.status === 'loading') {
-    updateActionIcon(tab.url);
+    updateActionIcon();
 
     const [riddle, path] = parseRiddleAndPath(tab.url);
     const blacklistEntry = riddle?.blacklistedPages?.find(
