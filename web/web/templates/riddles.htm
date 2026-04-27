@@ -114,7 +114,7 @@
                     </a>
                     <span class="bg-emoji" >📄</span>
                   </var>
-                {% elif riddle['raw_page_count'] %}
+                {% else %}
                   <var class="raw-page-count" title="(unlisted pages)">
                   {% if is_admin_of(riddle['alias']) %}
                     <a href="/admin/{{ riddle['alias'] }}/health-diagnostics" title="Go to health diagnostics">
@@ -125,8 +125,6 @@
                   {% endif %}
                     <span class="bg-emoji" >📄</span>
                   </var>
-                {% else %}
-                  <span style="opacity: .6;">--</span>
                 {% endif %}
                 {% set total.pages = total.pages + riddle['page_count'] %}
                 {% set total.raw_pages = total.raw_pages + riddle['raw_page_count'] %}

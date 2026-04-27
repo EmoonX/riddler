@@ -73,7 +73,9 @@ async def get_riddles(
         '''
         riddle['achievement_count'] = await database.fetch_val(query, values)
         query = '''
-            SELECT COUNT(*), SUM(level_name IS NOT NULL AND hidden IS NOT TRUE)
+            SELECT
+                COUNT(*),
+                COALESCE(SUM(level_name IS NOT NULL AND hidden IS NOT TRUE), 0)
             FROM level_pages
             WHERE riddle = :riddle
         '''
