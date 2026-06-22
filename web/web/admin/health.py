@@ -7,9 +7,9 @@ from urllib.parse import urljoin, urlsplit
 import warnings
 
 from bs4 import BeautifulSoup, MarkupResemblesLocatorWarning
+import httpx2
 from quart import Blueprint, current_app, render_template, request
 from quartcord import requires_authorization
-import requests
 
 from admin.admin_auth import admin_auth
 from admin.archive import PageSnapshot
@@ -107,21 +107,22 @@ async def health_diagnostics(alias: str, background: bool = False):
         _path = path
         res = redirect_path = None
         while res is None:
-            res = requests.get(
+            res = httpx2.get(
                 _build_request_url(url),
                 headers=headers,
                 cookies=cookies,
-                allow_redirects=(alias == 'string'),  # don't follow 30x redirects
+                follow_redirects=False,  # don't follow 30x redirects
                 timeout=10,
             )
-            if res.ok and Path(_path).suffix in ['', '.htm', '.html', '.php']:
+            html_exts = ['', '.htm', '.html', '.php']
+            if res.status_code < 400 and Path(_path).suffix in html_exts:
                 # Look out for redirects (30x and <meta> ones)
                 redirect_path = \
                     await _find_and_parse_redirect(_path, res, raw=True)
                 if redirect_path and is_trivial_redirect(_path, redirect_path):
                     # Disregard trivial redirects; retrieve next URL in chain
                     if redirect_path == _path:
-                        raise requests.exceptions.TooManyRedirects(url)
+                        raise httpx2.TooManyRedirects(url)
                     url = await _build_url(redirect_path)
                     _path = redirect_path
                     res = redirect_path = None
@@ -131,7 +132,7 @@ async def health_diagnostics(alias: str, background: bool = False):
             'status_symbol': status_symbols.get(res.status_code),
         }
         await _update_status_code(path, res.status_code)
-        if res.ok:
+        if res.status_code < 400:
             if redirect_path:
                 # Get (possibly) non raw redirect path
                 redirect_path = await _find_and_parse_redirect(path, res)
@@ -188,13 +189,13 @@ async def health_diagnostics(alias: str, background: bool = False):
                 url += '?'
 
         if url.endswith('?'):
-            # Append dummy key/value so `requests` doesn't ignore the '?'
+            # Append dummy key/value so `httpx2` doesn't ignore the '?'
             url += '_='
         
         return url
 
     async def _find_and_parse_redirect(
-        path: str, response: requests.models.Response, raw: bool = False,
+        path: str, response: httpx2.Response, raw: bool = False,
     ) -> str | None:
         '''
         Search for and parse redirect path when page either:
@@ -203,7 +204,7 @@ async def health_diagnostics(alias: str, background: bool = False):
             - contains `<meta http-equiv="refresh" content="...">`.
         '''
 
-        def _extract_redirect_href(res: requests.models.Response) -> str | None:
+        def _extract_redirect_href(res: httpx2.Response) -> str | None:
             '''Extract redirect href from response (header/content), if any.'''
 
             if location := res.headers.get('Location'):
