@@ -4,7 +4,10 @@ import json
 from pathlib import Path
 import re
 from typing import Callable, Self
-from urllib.parse import SplitResult, parse_qsl, urljoin, urlsplit, urlunsplit
+from urllib.parse import (
+    SplitResult, parse_qsl,
+    urljoin, unquote, urlsplit, urlunsplit
+)
 
 from quart import Blueprint, request, jsonify
 from quartcord.models import User
@@ -427,8 +430,12 @@ class _PathHandler:
                 index = f"index.{self.riddle['html_extension']}"
                 self.path += index if self.path.endswith('/') else f"/{index}"
             else:
-                # If missing the extension, append explicit ".htm[l]" etc
+                parsed_host = urlsplit(self.riddle['root_path'])
+                if parsed_host.hostname.endswith('.neocities.org'):
+                    # Normalize path suffix (`%2E` et al `.htm[l]` trick)
+                    self.path = quote(unquote(self.path))
                 if not Path(self.path).suffix:
+                    # Missing extension; append explicit ".htm[l]" etc
                     self.path += f".{self.riddle['html_extension']}"
         else:
             # Omit superflous slash from extension-less hosts
