@@ -184,9 +184,10 @@ async def health_diagnostics(alias: str, background: bool = False):
 
         parsed_url = urlsplit(url)
         if parsed_url.netloc.endswith('.neocities.org'):
-            if parsed_url.path.endswith(('.htm', '.html')) and '?' not in url:
-                # Add empty query to trick neocities.org's `.htm[l]` stripping
-                url += '?'
+            # Mask `.` as hex code to trick neocities's `.htm[l]` stripping
+            url_no_ext, _, ext = url.rpartition('.')
+            if ext in ['htm', 'html']:
+                url = url_no_ext + '%2E' + ext
 
         if url.endswith('?'):
             # Append dummy key/value so `httpx2` doesn't ignore the '?'
