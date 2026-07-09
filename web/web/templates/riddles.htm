@@ -2,6 +2,7 @@
 {% block title %}All riddles ⬩ Riddler{% endblock %}
 {% block extra %}
 <script src="/static/scripts/vendor/tablesort.min.js"></script>
+<script src="/static/scripts/vendor/tablesort.dotsep.min.js"></script>
 <script src="/static/scripts/vendor/tablesort.number.min.js"></script>
 {% endblock %}
 {% block content %}
@@ -28,7 +29,7 @@
             <th data-sort-default>Riddle</th>
             <th data-sort-method="number" data-sort-reverse>Players</th>
             <th data-sort-method="number" data-sort-reverse>Levels</th>
-            <th data-sort-method="number" data-sort-reverse>Pages</th>
+            <th data-sort-method="dotsep" data-sort-reverse>Pages</th>
             <th data-sort-method="none">Links</th>
           </tr>
         </thead>
@@ -92,46 +93,44 @@
               {% endif %}
               </var>
             </td>
-            <td data-sort="{{ riddle['level_count'] }}" colspan="2">
-              <div class="level-page-count">
-                <var class="level-count">
-                {% if riddle['level_count'] %}
-                  <a href="/{{ riddle['alias'] }}/levels" title="Go to level explorer">
-                    {{ riddle['level_count'] }}<span class="bg-emoji">🧩</span>
-                    {% set total.levels = total.levels + riddle['level_count'] %}
-                  </a>
-                {% else %}
-                  <span style="opacity: .3;">--</span>
-                {% endif %}
-                </var>
-                <span style="display: inline-block; width: 10%; opacity: .3;">|</span>
-                {% if riddle['page_count'] %}
-                  <var class="page-count">
-                  {% if is_admin_of(riddle['alias']) %}
-                    <a href="/admin/{{ riddle['alias'] }}/health-diagnostics" title="Go to health diagnostics">
-                  {% else %}
-                    <a href="/{{ riddle['alias'] }}/page-catalog" title="Go to page catalog">
-                  {% endif %}
-                      {{ riddle['page_count'] }}
-                    </a>
-                    <span class="bg-emoji" >📄</span>
-                  </var>
-                {% else %}
-                  <var class="raw-page-count" title="(unlisted pages)">
-                  {% if is_admin_of(riddle['alias']) %}
-                    <a href="/admin/{{ riddle['alias'] }}/health-diagnostics" title="Go to health diagnostics">
-                      ({{ riddle['raw_page_count'] }})
-                    </a>
-                  {% else %}
-                    ({{ riddle['raw_page_count'] }})
-                  {% endif %}
-                    <span class="bg-emoji" >📄</span>
-                  </var>
-                {% endif %}
-                {% set total.pages = total.pages + riddle['page_count'] %}
-                {% set total.raw_pages = total.raw_pages + riddle['raw_page_count'] %}
-                </var>
-              </a>
+            <td>
+              <var class="level-count">
+              {% if riddle['level_count'] %}
+                <a href="/{{ riddle['alias'] }}/levels" title="Go to level explorer">
+                  {{ riddle['level_count'] }}<span class="bg-emoji">🧩</span>
+                  {% set total.levels = total.levels + riddle['level_count'] %}
+                </a>
+              {% else %}
+                <span style="opacity: .3;">--</span>
+              {% endif %}
+              </var>
+            </td>
+            <td data-sort="{{ riddle['page_count'] }}.{{ riddle['raw_page_count'] }}">
+            {% if riddle['page_count'] %}
+              <var class="page-count">
+              {% if is_admin_of(riddle['alias']) %}
+                <a href="/admin/{{ riddle['alias'] }}/health-diagnostics" title="Go to health diagnostics">
+              {% else %}
+                <a href="/{{ riddle['alias'] }}/page-catalog" title="Go to page catalog">
+              {% endif %}
+                  {{ riddle['page_count'] }}
+                </a>
+                <span class="bg-emoji" >📄</span>
+              </var>
+            {% else %}
+              <var class="raw-page-count" title="(unlisted pages)">
+              {% if is_admin_of(riddle['alias']) %}
+                <a href="/admin/{{ riddle['alias'] }}/health-diagnostics" title="Go to health diagnostics">
+                  ({{ riddle['raw_page_count'] }})
+                </a>
+              {% else %}
+                ({{ riddle['raw_page_count'] }})
+              {% endif %}
+                <span class="bg-emoji" >📄</span>
+              </var>
+            {% endif %}
+            {% set total.pages = total.pages + riddle['page_count'] %}
+            {% set total.raw_pages = total.raw_pages + riddle['raw_page_count'] %}
             </td>
             <td>
               <div class="external-links">
