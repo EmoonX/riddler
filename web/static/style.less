@@ -806,12 +806,32 @@ thead th, tfoot td {
     border-color: rgba(255, 255, 221, .5);
   }
 }
+
 thead th {
   border-bottom: 1px solid;
-}
-tfoot td {
-  padding-bottom: .5em;
-  border-top: 1px solid;
+
+  &[tabindex] {
+    cursor: pointer;
+    user-select: none;
+
+    &::after {
+      display: inline-block;
+      margin: .4em;
+      width: 0;
+      line-height: 0;
+    }
+    &:not([aria-sort])::after {
+      content: "↕";
+      font-size: .8em;
+      opacity: .3;
+    }
+  }
+  &[aria-sort="ascending"]::after {
+    content: "▲";
+  }
+  &[aria-sort="descending"]::after {
+    content: "▼";
+  }
 }
 
 tbody > tr:hover, tbody > tr.active {
@@ -821,6 +841,11 @@ tbody > tr:hover, tbody > tr.active {
     opacity: 1 !important;
     filter: grayscale(0) !important;
   }
+}
+
+tfoot td {
+  padding-bottom: .5em;
+  border-top: 1px solid;
 }
 
 /* tbody > tr > :nth-child(2) > a {

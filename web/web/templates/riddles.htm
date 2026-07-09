@@ -1,5 +1,9 @@
 {% extends 'layout.htm' %}
 {% block title %}All riddles ⬩ Riddler{% endblock %}
+{% block extra %}
+<script src="/static/scripts/vendor/tablesort.min.js"></script>
+<script src="/static/scripts/vendor/tablesort.number.min.js"></script>
+{% endblock %}
 {% block content %}
     <main>
       {% set riddles = get_riddles(unlisted=True, include_counters=True) %}
@@ -20,22 +24,20 @@
       <table>
         <thead>
           <tr>
-            <th>Status</th>
-            <th>Riddle</th>
-            <th>Players</th>
-            <th colspan="2">
-              <div style="display: inline-block; width: 45%;">Levels</div>
-              <div style="display: inline-block; width: 10%;">|</div>
-              <div style="display: inline-block; width: 35%;">Pages</div>
-            </th>
-            <th>Links</th>
+            <th data-sort-reverse>Status</th>
+            <th data-sort-default>Riddle</th>
+            <th data-sort-method="number" data-sort-reverse>Players</th>
+            <th data-sort-method="number" data-sort-reverse>Levels</th>
+            <th data-sort-method="number" data-sort-reverse>Pages</th>
+            <th data-sort-method="none">Links</th>
           </tr>
         </thead>
         <tbody>
         {% for riddle in riddles|sort(attribute="full_name") %}
           {% set status = riddle['status'] %}
           <tr>
-            <td>
+            {% set status_order = {'released': 3, 'wip': 2, 'demo': 1} %}
+            <td data-sort="{{ status_order.get(status, 0) }}">
             {%- if status -%}
               <span class="{{ ' '.join(['riddle-status', status]) }}" title ="{{ statuses[status]['title'] }}">
                 {{- statuses[status]['label'] -}}
@@ -90,7 +92,7 @@
               {% endif %}
               </var>
             </td>
-            <td colspan="2">
+            <td data-sort="{{ riddle['level_count'] }}" colspan="2">
               <div class="level-page-count">
                 <var class="level-count">
                 {% if riddle['level_count'] %}
@@ -177,4 +179,8 @@
         </tfoot>
       </table>
     </main>
+    <script>
+      const table = document.querySelector('table');
+      new Tablesort(table);
+    </script>
 {% endblock %}
