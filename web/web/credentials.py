@@ -218,10 +218,10 @@ def _send_raw_request(url: str) -> tuple[int, str | None]:
 
     # Get realm message from unauthenticated (401) response header
     auth_header = res.headers.get('WWW-Authenticate', '')
-    try:
-        return 401, re.search(r'realm="([^"]*)"', auth_header)[1]
-    except IndexError:
-        return 401, None
+    match = re.search(r'realm="([^"]*)"', auth_header)
+    realm = match[1] if match else None
+
+    return 401, realm
 
 
 def _send_authenticated_request(url: str, username: str, password: str) -> int:
