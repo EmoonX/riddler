@@ -456,6 +456,9 @@ class _PathHandler:
             elif Path(self.path).parent == Path('/'):
                 # Only correct paths inside root itself
                 self.path = base_path
+        elif self.riddle_alias == 'synchronicity':
+            # Ignore redundant `/index.htm`
+            self.path = self.path.removesuffix('/index.htm')
         elif self.riddle_alias == 'wyfio':
             if 'width' in self.parsed_query:
                 # Ignore width/height query images
