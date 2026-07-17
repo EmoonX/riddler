@@ -157,7 +157,7 @@ function getFileFigure(node, token, offset) {
   const level = riddle.levels[riddle.shownLevel];
   const frontPaths = getAllFrontPaths(level);
   let state = node.folder ? ' folder open' : '';
-  let title = `${node.folder ? '📁' : '📄'} ${node.path}`;
+  let title = `${node.folder ? '📁' : '📄'} ${node.path}&#10`;
   if (frontPaths.includes(node.path) && !node.folder) {
     state += ' front-page';
     title += ' &#10;📌 Front page';
