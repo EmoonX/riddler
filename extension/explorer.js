@@ -90,7 +90,7 @@ export function insertFiles(parent, object, offset, prefix) {
   const level = riddle.levels[riddle.shownLevel];
   const token = `${prefix}${basename}` || '/';
   const figure = getFileFigure(object, token, offset);
-  if (object.path === riddle.lastVisitedPage) {
+  if (object.path === riddle.lastVisitedPage && !object.folder) {
     // Highlight last visited page of last visited level
     figure.addClass('active');
   }
@@ -158,7 +158,7 @@ function getFileFigure(node, token, offset) {
   const frontPaths = getAllFrontPaths(level);
   let state = node.folder ? ' folder open' : '';
   let title = `${node.folder ? '📁' : '📄'} ${node.path}`;
-  if (frontPaths.includes(node.path)) {
+  if (frontPaths.includes(node.path) && !node.folder) {
     state += ' front-page';
     title += ' &#10;📌 Front page';
   }
