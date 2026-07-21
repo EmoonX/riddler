@@ -284,6 +284,7 @@ class Decipher(commands.Cog):
             '.-..-.': '"', '...-..-': '$', '.--.-.': '@',
         }
         
+        code = code.replace('_', '-')
         segments = code.split('/')
         decoded_text = []
         for segment in segments:
