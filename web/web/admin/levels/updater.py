@@ -287,7 +287,7 @@ class LevelUpdater:
         # When present, parse tokens and mark core pages
         tokens = path.split()
         path = tokens[0]
-        hidden = False
+        hidden = removed = special = False
         for token in tokens:
             match token:
                 case '*f':
@@ -298,18 +298,24 @@ class LevelUpdater:
                     self.answer_path = path
                 case '*h':
                     hidden = True
+                case '*r':
+                    removed = True
+                case '*s':
+                    special = True
 
         # Insert page entry if indeed new
         query = '''
             INSERT IGNORE INTO level_pages
-                (`riddle`, `path`, `level_name`, `hidden`)
-            VALUES (:riddle, :path, :level_name, :hidden)
+                (`riddle`, `path`, `level_name`, `hidden`, `removed`, `special`)
+            VALUES (:riddle, :path, :level_name, :hidden, :removed, :special)
         '''
         values = {
             'riddle': self.alias,
             'path': path,
             'level_name': self.level['name'] if self.level else None,
             'hidden': hidden or None,
+            'removed': removed or None,
+            'special': special or None,
         }
         if await database.execute(query, values):
             self.log(
@@ -322,7 +328,8 @@ class LevelUpdater:
         # Page entry already present, update level if suitable
         query = '''
             UPDATE level_pages
-            SET level_name = :level_name, hidden = :hidden
+            SET level_name = :level_name,
+                hidden = :hidden, removed = :removed, special = :special
             WHERE riddle = :riddle AND path = :path
         '''
         if await database.execute(query, values):
