@@ -103,6 +103,15 @@
           </div>
         </div>
       {% endfor %}
+      {% if incognito_count > 0 %}
+        {# TODO TODO TODO #}
+        <div class="row incognito-count">
+          <div class="rank"></div>
+          <div class="status">
+            (<var class="purple">+{{ incognito_count }}</var> {{ 'player' if incognito_count == 1 else 'players' }} in incognito <img class="incognito" src="/static/icons/incognito.png" alt="Incognito" width="24" height="24"> mode)
+          </div>
+        </div>
+      {% endif %}
       </section>
     </main>
 {% endblock %}

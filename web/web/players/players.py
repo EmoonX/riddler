@@ -71,11 +71,12 @@ async def global_list(country: Optional[str] = None):
             if country else ''
         }
     """
-    incognito_accounts = await database.fetch_all(query, values)
-    for iacc in incognito_accounts:
-        if user and iacc['username'] == user.name:
+    result = await database.fetch_all(query, values)
+    incognito_accounts = {row['username']: row for row in result}
+    for username, iacc in incognito_accounts.items():
+        if user and username == user.name:
             for key in ['global_score', 'recent_score']:
-                accounts[iacc['username']][key] += iacc[key]
+                accounts[username][key] += iacc[key]
 
     # Order accounts by score, filtering out 0-score ones
     accounts = {
@@ -84,6 +85,7 @@ async def global_list(country: Optional[str] = None):
             accounts.values(), key=lambda acc: acc['global_score'], reverse=True
         ) if acc['global_score'] > 0
     }
+    incognito_count = len(set(incognito_accounts) - set(accounts))
 
     # Get current levels for each riddle and player (ignore unplayed ones)
     query = 'SELECT * FROM riddle_accounts'
@@ -125,7 +127,7 @@ async def global_list(country: Optional[str] = None):
                 player['created_riddles'].append(riddle)
                 continue
 
-            # Check ir player played such riddle
+            # Check if player played such riddle
             current_level = player['current_level'].get(alias)
             if not current_level:
                 continue
@@ -147,6 +149,7 @@ async def global_list(country: Optional[str] = None):
         accounts=accounts,
         country=country,
         riddles=riddles,
+        incognito_count=incognito_count,
     )
 
 
