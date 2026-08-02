@@ -316,7 +316,11 @@ class _PathHandler:
                 root_paths |= {riddle['root_path']: riddle}
 
         # Search for riddle with matching root path (if any)
-        for root_path, riddle in reversed(root_paths.items()):
+        for root_path in sorted(
+            root_paths,
+            key=lambda path: (path.endswith('/*'), path),
+            reverse=True
+        ):
             parsed_root = urlsplit(root_path.replace('://www.', '://'))
             if _url_matches_root(parsed_root):
                 break
@@ -325,9 +329,10 @@ class _PathHandler:
             return
 
         # Save riddle and parsed URL data
-        self.riddle = riddle | {'root_path': root_path}
-        self.riddle_alias = riddle['alias']
-        self.unlisted = bool(riddle['unlisted'])
+        self.riddle = root_paths[root_path]
+        self.riddle['root_path'] = root_path
+        self.riddle_alias = self.riddle['alias']
+        self.unlisted = bool(self.riddle['unlisted'])
         self.parsed_query = dict(parse_qsl(parsed_url.query))
         self.credentials = (
             parsed_url.username or self.parsed_query.get('username') or '',
