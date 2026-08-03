@@ -20,7 +20,7 @@ chrome.tabs.onActivated.addListener(() => {
 });
 
 /** Handle tab creation and navigation. */
-chrome.tabs.onUpdated.addListener((_, changeInfo, tab) => {
+chrome.tabs.onUpdated.addListener(async (_, changeInfo, tab) => {
   if (changeInfo.status === 'loading') {
     updateActionIcon();
 
@@ -35,9 +35,8 @@ chrome.tabs.onUpdated.addListener((_, changeInfo, tab) => {
       if (tab.url.startsWith('view-source:')) {
         nextUrl = `view-source:${nextUrl}`;
       }
-      chrome.tabs.remove(tab.id, () => {
-        createTab(nextUrl, { active: tab.active });
-      });
+      await createTab(nextUrl, { active: tab.active });
+      chrome.tabs.remove(tab.id);
     }
   }
 });
