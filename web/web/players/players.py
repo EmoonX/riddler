@@ -103,7 +103,7 @@ async def global_list(country: Optional[str] = None):
             values = {'riddle': racc['riddle'], 'username': racc['username']}
             if iracc := await database.fetch_one(query, values):
                 score += iracc['score']
-                current_level = iracc['current_level']
+                current_level = iracc['current_level'] or racc['current_level']
                 account['has_incognito_progress'] |= bool(iracc['score'])
         if score:
             account['current_level'][racc['riddle']] = current_level
