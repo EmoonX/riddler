@@ -42,7 +42,7 @@ export async function initExplorer(callback) {
             // Fetch current riddle before rest to ease popup wait time
             const riddle = riddlesData.riddles[currentRiddle];
             console.log(`[${currentRiddle}] Building riddle data…`);
-            await buildRiddle(riddle, pagesData);
+            buildRiddle(riddle, pagesData);
             updateActionIcon();
             if (callback) {
               callback();
@@ -55,7 +55,7 @@ export async function initExplorer(callback) {
           for (const [alias, riddle] of Object.entries(riddlesData.riddles)) {
             if (alias != currentRiddle) {
               console.log(`[${alias}] Building riddle data…`);
-              await buildRiddle(riddle, allPagesData[alias]);
+              buildRiddle(riddle, allPagesData[alias]);
             }
           }
           updateActionIcon();
