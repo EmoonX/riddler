@@ -1,5 +1,5 @@
 import { retrieveWithCache } from './cache.js';
-import { initNeeded } from './explorer.js';
+import { getLevelImageBlob, initNeeded } from './explorer.js';
 
 /** Server host base URL. */
 export const SERVER_HOST = 'https://riddler.app';
@@ -73,6 +73,7 @@ export async function buildRiddle(riddle, pages) {
 /** Refresh riddle/pages data. */
 export async function refreshRiddleData(alias, data) {
   currentRiddle = alias;
+  preloadLevelImages(riddles[alias]);
   if (!data.setName || !data.levelName) {
     // Not a valid level page; nothing more to be done
     return;
@@ -120,6 +121,7 @@ export async function updateCurrentRiddleAndLevel(riddle, path) {
   if (page?.['level_name']) {
     riddle.lastVisitedLevel = riddle.shownLevel = page['level_name'];
     riddle.lastVisitedPage = riddle.shownPage = page['path'];
+    preloadLevelImages(riddle);
   }
 }
 
@@ -129,6 +131,14 @@ function updatePathsIndex(riddle, pageNode) {
     for (const child of Object.values(pageNode.children)) {
       updatePathsIndex(riddle, child);
     }
+  }
+}
+
+/** Preload all unlocked level images for a riddle. */
+function preloadLevelImages(riddle) {
+  for (const level of Object.values(riddle.levels)) {
+    // Store as property to avoid further redundant requests
+    level.imageBlob ||= getLevelImageBlob(riddle.alias, level);
   }
 }
 
