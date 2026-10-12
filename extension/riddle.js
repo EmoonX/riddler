@@ -177,7 +177,7 @@ function parseRiddle(parsedUrl) {
   for (const [_rootPath, _alias] of riddleHosts) {
     const parsedRoot = new URL(_rootPath);
     const rootHostname = parsedRoot.hostname.replace(/^www\d*\./, '');
-    if (_rootPath.indexOf('*') !== -1) {
+    if (_rootPath.endsWith('/*')) {
       // Wildcard root path; ignore host pages outside given pattern
       const rootRegex = new RegExp(
         `${rootHostname}${parsedRoot.pathname}`
