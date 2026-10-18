@@ -2,7 +2,7 @@
   "manifest_version": 2,
   "name": "Riddler",
   "description": "Browser extension for Riddler, the online riddle enhancer.",
-  "version": "0.7.7.4",
+  "version": "0.7.7.5",
 
   "background": {
     "scripts": ["background.js"],
@@ -40,7 +40,10 @@
   "browser_specific_settings": {
     "gecko": {
       "id": "{f91c9d12-dc58-40cf-bb34-8bf56bb9d6a2}",
-      "strict_min_version": "153.0"
+      "strict_min_version": "153.0",
+      "data_collection_permissions": {
+        "required": ["browsingActivity", "websiteContent"]
+      }
     }
   }
 }
