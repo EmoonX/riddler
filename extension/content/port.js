@@ -1,2 +1,2 @@
 // Single port for all content scripts
-const port = chrome.runtime.connect({ name: 'content' });
+const port = browser.runtime.connect({ name: 'content' });

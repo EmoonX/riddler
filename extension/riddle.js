@@ -83,7 +83,7 @@ export async function refreshRiddleData(alias, data) {
 
 /** Update extension's action icon based on active tab. */
 export async function updateActionIcon() {
-  const [activeTab] = await chrome.tabs.query({
+  const [activeTab] = await browser.tabs.query({
     active: true,
     currentWindow: true,
   });
@@ -97,7 +97,7 @@ export async function updateActionIcon() {
     const prefix =
       (riddle.alias in riddles) ? 'green' :
       (initNeeded ? 'yellow' : 'red');
-    chrome.action.setIcon({
+    browser.action.setIcon({
       path: {
         16: `images/icons/action/${prefix}16.png`,
         32: `images/icons/action/${prefix}32.png`,
@@ -105,7 +105,7 @@ export async function updateActionIcon() {
     });
   } else {
     // Show default icon instead
-    chrome.action.setIcon({
+    browser.action.setIcon({
       path: {
         16: 'images/icons/action/default16.png',
         32: 'images/icons/action/default32.png',
@@ -169,7 +169,7 @@ export function parseRiddleAndPath(url) {
 
   return [riddle, path];
 }
-chrome.runtime.onMessage.addListener((msg, _, sendResponse) => {
+browser.runtime.onMessage.addListener((msg, _, sendResponse) => {
   if (msg.name === 'parseRiddleAndPath') {
     const [riddle, path] = parseRiddleAndPath(msg.url);
     sendResponse({

@@ -14,7 +14,7 @@ async function replaceLinks() {
 }
 
 async function parseRiddleAndPath(url) {
-  const resp = await chrome.runtime.sendMessage({
+  const resp = await browser.runtime.sendMessage({
     name: 'parseRiddleAndPath',
     url: url,
   });

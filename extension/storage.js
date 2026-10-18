@@ -16,7 +16,7 @@ class Storage {
   }
 }
 
-/** Unified interface for the `chrome.storage` API. */
+/** Unified interface for the `browser.storage` API. */
 export const storage = {
-  session: new Storage(chrome.storage.session),
+  session: new Storage(browser.storage.session),
 };

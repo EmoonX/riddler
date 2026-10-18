@@ -5,8 +5,8 @@ import {
 
 /** Create window-aware tab (account for e.g. private windows).*/
 export async function createTab(url, params) {
-  const currentWindow = await chrome.windows.getCurrent({ populate: false });
-  const tab = await chrome.tabs.create({
+  const currentWindow = await browser.windows.getCurrent({ populate: false });
+  const tab = await browser.tabs.create({
     url: url,
     windowId: currentWindow.id,
     ...params,
@@ -15,12 +15,12 @@ export async function createTab(url, params) {
 }
 
 /** Handle tab switching. */
-chrome.tabs.onActivated.addListener(() => {
+browser.tabs.onActivated.addListener(() => {
   updateActionIcon();
 });
 
 /** Handle tab creation and navigation. */
-chrome.tabs.onUpdated.addListener(async (_, changeInfo, tab) => {
+browser.tabs.onUpdated.addListener(async (_, changeInfo, tab) => {
   if (changeInfo.status === 'loading') {
     updateActionIcon();
 
@@ -36,7 +36,7 @@ chrome.tabs.onUpdated.addListener(async (_, changeInfo, tab) => {
         nextUrl = `view-source:${nextUrl}`;
       }
       await createTab(nextUrl, { active: tab.active });
-      chrome.tabs.remove(tab.id);
+      browser.tabs.remove(tab.id);
     }
   }
 });

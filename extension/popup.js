@@ -14,7 +14,7 @@ import {
 import { createTab } from './tabs.js';
 
 // Get message data from background.js
-const port = chrome.runtime.connect({ name: 'popup' });
+const port = browser.runtime.connect({ name: 'popup' });
 
 port.onMessage.addListener(async data => {
   console.log('Received data from background.js...');  

@@ -64,12 +64,12 @@ async function sendToProcess(details) {
       // credentials for it; force-trigger auth box as fallback
       if (! riddle.missingAuthPaths.has(data.credentialsPath)) {
         riddle.missingAuthPaths.set(data.credentialsPath, data.realm);
-        chrome.tabs.get(details.tabId, tab => {
-          if (chrome.runtime.lastError) {
+        browser.tabs.get(details.tabId, tab => {
+          if (browser.runtime.lastError) {
             return;
           }
           const url = tab.url.replace(/^view-source:/, '');
-          chrome.tabs.update(tab.id, { active: true, url: url });
+          browser.tabs.update(tab.id, { active: true, url: url });
         });
       }
     }
@@ -78,11 +78,11 @@ async function sendToProcess(details) {
       // Fallback auth was successful and player credentials unlocked;
       // Clear persistent box for the given protected path
       riddle.missingAuthPaths.delete(details.credentialsPath);
-      chrome.tabs.get(details.tabId, tab => {
-        if (chrome.runtime.lastError) {
+      browser.tabs.get(details.tabId, tab => {
+        if (browser.runtime.lastError) {
           return;
         }
-        chrome.tabs.update(tab.id, { active: true, url: tab.url });
+        browser.tabs.update(tab.id, { active: true, url: tab.url });
       });
     }
   }
@@ -106,18 +106,18 @@ function promptCustomAuth(details) {
   if (staleNativeAuthTabs.has(details.tabId)) {
     // Native auth has been triggered before in this tab (i.e network context);
     // employ tab replacement trick to circumvent persistent native dialog
-    chrome.tabs.duplicate(details.tabId, dupTab => {
-      chrome.tabs.update(dupTab.id,{ active: false, url: details.url });
-      chrome.tabs.remove(details.tabId);
+    browser.tabs.duplicate(details.tabId, dupTab => {
+      browser.tabs.update(dupTab.id,{ active: false, url: details.url });
+      browser.tabs.remove(details.tabId);
     });
     staleNativeAuthTabs.delete(details.tabId);
     return;
   }
-  chrome.tabs.get(details.tabId, tab => {
+  browser.tabs.get(details.tabId, tab => {
     if (tab.pendingUrl?.startsWith('view-source:')) {
       // Source code browsing doesn't count as actual content pages;
       // update tab with real URL to allow prompting custom box
-      chrome.tabs.update(tab.id, { active: true, url: details.url });
+      browser.tabs.update(tab.id, { active: true, url: details.url });
     }
   });
   const parsedUrl = new URL(details.url);
@@ -137,9 +137,9 @@ function promptCustomAuth(details) {
       // Request auth box with given (explicit) realm message
       const message = {
         realm: details.realm,
-        boxHTML: await fetch(chrome.runtime.getURL('content/credentials.html'))
+        boxHTML: await fetch(browser.runtime.getURL('content/credentials.html'))
           .then(response => response.text()),
-        boxCSS: await fetch(chrome.runtime.getURL('content/credentials.css'))
+        boxCSS: await fetch(browser.runtime.getURL('content/credentials.css'))
           .then(response => response.text()),
       };
       const containingPath = findContainingPath(path, riddle.pagesByPath);
@@ -153,16 +153,16 @@ function promptCustomAuth(details) {
       }
       port.postMessage(message);
     })();
-    chrome.runtime.onConnect.removeListener(credentialsHandler);
+    browser.runtime.onConnect.removeListener(credentialsHandler);
   });
-  chrome.runtime.onConnect.addListener(credentialsHandler);
+  browser.runtime.onConnect.addListener(credentialsHandler);
 }
-chrome.webRequest.onAuthRequired.addListener(
+browser.webRequest.onAuthRequired.addListener(
   promptCustomAuth, filter, ['blocking']
 );
 
 const authRequests = new Set();
-chrome.webRequest.onHeadersReceived.addListener(async details => {
+browser.webRequest.onHeadersReceived.addListener(async details => {
   const [riddle, path] = parseRiddleAndPath(details.url);
   if (!riddle || isPathSensitive(riddle, path)) {
     // Completely ignore pages outside riddle domains
@@ -228,7 +228,7 @@ function responseHandler(details) {
     // Not logged in
     if (details.type === 'main_frame' && !storage.session.loginTriggered) {
       // Open Discord auth page on new tab
-      chrome.tabs.create({url: `${SERVER_HOST}/login`});
+      browser.tabs.create({url: `${SERVER_HOST}/login`});
       storage.session.store({ loginTriggered: true });
     }
     return;
@@ -246,10 +246,10 @@ function responseHandler(details) {
   if (details.credentialsPath) {
     // Missing unlocked credentials for path; prompt auth box straight away
     details.realm = riddle.missingAuthPaths.get(details.credentialsPath);
-    chrome.tabs.get(details.tabId, tab => {
+    browser.tabs.get(details.tabId, tab => {
       if (tab.url.startsWith('view-source')) {
         const url = tab.url.replace(/^view-source:/, '');
-        chrome.tabs.update(tab.id, { active: true, url: url });
+        browser.tabs.update(tab.id, { active: true, url: url });
       }
     });
     promptCustomAuth(details);
@@ -271,17 +271,17 @@ function responseHandler(details) {
   }
   sendToProcess(details);
 };
-chrome.webRequest.onBeforeRedirect.addListener(
+browser.webRequest.onBeforeRedirect.addListener(
   // Explicitly handle 30x (redirect) responses
   responseHandler, filter, ['responseHeaders']
 );
-chrome.webRequest.onCompleted.addListener(
+browser.webRequest.onCompleted.addListener(
   // Handle all completed responses; filter out premature 401s
   responseHandler, filter, ['responseHeaders']
 );
 
 /** Send regular pings to avoid service worker becoming inactive. */
-chrome.runtime.onConnect.addListener(port => {
+browser.runtime.onConnect.addListener(port => {
   const pingInterval = setInterval(() => {
     port.postMessage({ status: 'ping' });
     storage.session.store({ ping: true });
@@ -295,7 +295,7 @@ chrome.runtime.onConnect.addListener(port => {
   initExplorer();
 
   /** Communication with popup.js. */
-  chrome.runtime.onConnect.addListener(port => {
+  browser.runtime.onConnect.addListener(port => {
     if (port.name !== 'popup') {
       return;
     }
