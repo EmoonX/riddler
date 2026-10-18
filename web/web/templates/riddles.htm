@@ -67,14 +67,19 @@
               {% endif %}
                 <div style="display: inline-flex; gap: .6em;">
                   {{ riddle['full_name'] }}
+                  <sup class="tags">
                 {% if riddle['country'] %}
                   {% set lang_code = territories.get(riddle['country'])|list|first %}
                   {% set lang_name = Locale(lang_code).get_display_name(Locale('en')) %}
-                  <sup><img class="flag" src="/static/flags/{{ riddle['country'] }}.png" height="16" title="Available in {{ lang_name }} only"></sup>
+                    <img class="tag" src="/static/flags/{{ riddle['country'] }}.png" title="Available in {{ lang_name }} only">
+                  {% endif %}
+                  {% if riddle['nsfw'] %}
+                    <img class="tag" src="/static/icons/nsfw.png" title="Contains adult (NSFW) content">
                 {% endif %}
                 {% if '.archive.riddler.app' in riddle['front_page'] %}
-                  <sup><img class="flag archive-icon" src="/static/icons/archive.png" height="16" title="Archived and restored through archive.riddler.app"></sup>
+                    <img class="tag" src="/static/icons/archive.png" title="Archived and restored through archive.riddler.app">
                 {% endif %}
+                  </sup>
                 </div>
             {% if riddle['level_count'] %}
               </a>
