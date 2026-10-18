@@ -97,7 +97,7 @@ export async function updateActionIcon() {
     const prefix =
       (riddle.alias in riddles) ? 'green' :
       (initNeeded ? 'yellow' : 'red');
-    browser.action.setIcon({
+    browser.browserAction.setIcon({
       path: {
         16: `images/icons/action/${prefix}16.png`,
         32: `images/icons/action/${prefix}32.png`,
@@ -105,7 +105,7 @@ export async function updateActionIcon() {
     });
   } else {
     // Show default icon instead
-    browser.action.setIcon({
+    browser.browserAction.setIcon({
       path: {
         16: 'images/icons/action/default16.png',
         32: 'images/icons/action/default32.png',
