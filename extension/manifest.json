@@ -15,9 +15,6 @@
     "webRequestBlocking",
     "<all_urls>"
   ],
-  "host_permissions": [
-    "*://*/*"
-  ],
   "icons": {
     "16": "images/icons/action/default16.png",
     "32": "images/icons/action/default32.png",
