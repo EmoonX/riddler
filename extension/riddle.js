@@ -137,8 +137,10 @@ function updatePathsIndex(riddle, pageNode) {
 /** Preload all unlocked level images for a riddle. */
 function preloadLevelImages(riddle) {
   for (const level of Object.values(riddle.levels)) {
-    // Store as property to avoid further redundant requests
-    level.imageBlob ||= getLevelImageBlob(riddle.alias, level);
+    if (! level.imagePreloaded) {
+      getLevelImageBlob(riddle.alias, level);
+      level.imagePreloaded = true;
+    }
   }
 }
 
