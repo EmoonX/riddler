@@ -73,6 +73,9 @@
                     {% set lang_name = Locale(lang_code).get_display_name(Locale('en')) %}
                     <img class="tag" src="/static/flags/{{ riddle['country'] }}.png" title="Available in {{ lang_name }} only">
                   {% endif %}
+                  {% if riddle['flash'] %}
+                    <img class="tag" src="/static/icons/flash.png" title="Contains embedded Adobe Flash (.swf) content">
+                  {% endif %}
                   {% if riddle['nsfw'] %}
                     <img class="tag" src="/static/icons/nsfw.png" title="Contains adult content (NSFW)">
                   {% endif %}
