@@ -907,19 +907,21 @@ td {
   }
   .riddle-status {
     padding: .6em;
-    border-width: 1px;
-    border-style: dashed;
-    background-color: transparent !important;
+    font-family: "Courier New", Courier, monospace;
     font-size: .6em;
+    filter: grayscale(.1);
 
     &.released {
       color: chartreuse;
+      background-color: #9eff0010;
     }
     &.wip {
-      color: darkorange;
+      color: orange;
+      background-color: #ffa50010;
     }
     &.demo {
-      color: darkolivegreen;
+      color: olive;
+      background-color: #80800010;
     }
   }
   var {
