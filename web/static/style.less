@@ -127,27 +127,29 @@ header > nav {
       display: none;
       z-index: 1;
       width: 100%;
-      border: 1px solid rgba(255, 255, 255, .2);
+      border: 1px solid rgba(199, 21, 133, .2);
       border-radius: 15px;
-      background-color: rgba(64, 64, 64, .1);
+      background-color: #000d;
       font-size: 0.8em;
-      backdrop-filter: blur(1em) saturate(0%);
+      backdrop-filter: blur(1em);
 
       .riddles {
         display: grid;
-        grid-template-columns: repeat(6, 1fr);
-        gap: 1em .5em;
-        width: 500px;
+        grid-template-rows: repeat(23, auto);
+        grid-template-columns: repeat(2, auto);
+        grid-auto-flow: column;
+        column-gap: 1em;
 
         > a.riddle {
-          font-size: 1.25em;
+          display: flex;
+          align-items: center;
+          gap: .8em;
+          padding: 0 .5em;
+          border-radius: .5em;
           text-decoration: none;
-          zoom: 75%;
-          transition: filter 1s;
-
+          
           &:hover {
-            filter: drop-shadow(0 0 .5em crimson);
-            transition: filter 0.2s;
+            background-color: #ffd2;
           }
         }
       }
@@ -155,16 +157,19 @@ header > nav {
         margin: 0;
       }
       a[href="/riddles"] {
-        display: inline-block;        
+        position: absolute;
+        bottom: 1.5em;
+        right: 1.5em;
         padding: .5em 1em;
-        border: 1px solid #ffd1;
         border-radius: 1em;
-        background-color: #ffd1;
+        outline: 4px solid #ffd1;
         color: #ffd;
         font-size: 1.1em;
+        text-decoration: none;
 
-        &:not(:hover) {
-          text-decoration: none;
+        &:hover {
+          background-color: #ffd;
+          color: black;
         }
       }
     }
@@ -175,9 +180,7 @@ header > nav {
         display: flex;
         flex-direction: column;
         align-items: center;
-        gap: 1.5em;
-        padding: 2em 1em;
-        zoom: 95%;
+        padding: 1.5em;
 
         figcaption {
           font-size: .75em;

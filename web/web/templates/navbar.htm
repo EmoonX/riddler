@@ -7,11 +7,9 @@
       {% set url = current_url.replace(alias, _alias, 1) %}
     {% endif %}
   {% endif %}
-  <a href="{{ url }}" class="riddle">
-    <figure>
-      {% include 'util/riddle-icon.htm' %}
-      <figcaption>{{ riddle['short_name'] }}</figcaption>
-    </figure>
+  <a class="riddle" href="{{ url }}">
+    <img class="riddle-icon" src="/static/riddles/{{ riddle['alias'] }}.png" width="20">
+    {{ riddle['full_name'] }}
   </a>
 {% endmacro %}    
     <header>
@@ -24,12 +22,11 @@
           {% set riddles = get_riddles(unlisted) %}
           <div class="menu">
             <div class="riddles">
-            {% for riddle in riddles|sort(attribute='short_name') if not riddle['demo'] %}
+            {% for riddle in riddles|sort(attribute='full_name') if not riddle['demo'] %}
               {{ riddle_card(riddle['alias']) }}
             {% endfor %}
             </div>
-            <hr>
-            <a href="/riddles">Browse full riddle catalog ↗</a>
+            <a href="/riddles">Browse full riddle catalog</a>
           </div>
         </nav>
     {% if alias %}
