@@ -1619,6 +1619,7 @@ section.list.levels > .row {
   );
   border-image-slice: 1;
   font-size: 1.5rem;
+  filter: drop-shadow(0 0 1em black);
 
   > :first-child {
     width: 150px;
@@ -1778,6 +1779,14 @@ section.list.levels > .row {
       transform: rotate(360deg);
     }
   }
+  &::before {
+    background-image: linear-gradient(
+      to right,
+      transparent,
+      rgba(127, 127, 127, 0.05) 15% 85%,
+      transparent
+    );
+  }
   &.active {
     border-top: thin solid;
     border-image: linear-gradient(
@@ -1788,7 +1797,7 @@ section.list.levels > .row {
   }
   &:not(.unlocked) {
     height: 6.5em;
-    filter: brightness(.5) grayscale(1);
+    filter: brightness(.5) grayscale(.5);
     
     > .currently-on {
       grid-template-rows: 50% 50%;
@@ -1829,7 +1838,7 @@ section.list.levels > .page-explorer {
   background-image: linear-gradient(
     to right,
     transparent,
-    rgba(127, 127, 127, 0.38) 15% 85%,
+    rgba(127, 127, 127, 0.15) 15% 85%,
     transparent
   );
   color: black;
