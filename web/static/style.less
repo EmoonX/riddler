@@ -1786,6 +1786,17 @@ section.list.levels > .row {
     );
     border-image-slice: 1;
   }
+  &:not(.unlocked) {
+    height: 6.5em;
+    filter: brightness(.5) grayscale(1);
+    
+    > .currently-on {
+      grid-template-rows: 50% 50%;
+    }
+    &:hover {
+      filter: none;
+    }
+  }
 }
 section.list.levels:not(.admin) > .row > :first-child {
   margin-right: auto;
