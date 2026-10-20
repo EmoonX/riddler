@@ -128,7 +128,7 @@ class LevelUpdater:
             match set_name:
                 case 'Secret Levels':
                     return 99
-                case 'Weeklies':
+                case 'Metapuzzles' | 'Weeklies':
                     return 100
             return max(
                 (idx for idx in self.all_levels_by_set if idx < 99),
