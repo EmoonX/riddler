@@ -19,7 +19,7 @@
       <section class="list levels">
       {% for level in set %}
         {% set level_name = level['name'] %}
-        <div class="row">
+        <div class="row {%- if level['unlocked'] %} unlocked{% endif %}">
           <div>
           {% if level['unlocked'] and level['path'] %}
             {% set url = riddle['root_path'] + level['path'] %}
@@ -135,8 +135,12 @@
           {% endif %}
           </div>
           <div class="currently-on hoverable-figures">
-        {% for _user in level['users'][:9] %}
-          {% if loop.index < 9 or level['users']|length == 9 %}
+        {% set ns = namespace(
+          max_players = 9 if level['unlocked'] else 6,
+          rem_players='',
+        )%}
+        {% for _user in level['users'][:ns.max_players] %}
+          {% if loop.index < ns.max_players or level['users']|length == ns.max_players %}
             {% set player = accounts[_user['username']] %}
             <div class="player">
               <a href="#">
@@ -154,9 +158,8 @@
               </a>
             </div>
           {% else %}
-            {% set rem_count = level['users']|length - 8 %}
-            {% set ns = namespace(rem_players='') %}
-            {% for other in level['users'][8:] %}
+            {% set rem_count = level['users']|length - (ns.max_players - 1) %}
+            {% for other in level['users'][(ns.max_players - 1):] %}
               {% if not loop.first %}
                 {% if not loop.last %}
                   {% set ns.rem_players = ns.rem_players + ', ' %}
