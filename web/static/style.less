@@ -2152,10 +2152,21 @@ ol {
     > nav.extension-links, > figure {
       display: flex;
       justify-content: space-evenly;
-      margin: 2em 0 1em;
+      margin: 2.5em 0 .5em;
 
-      figure {
-        text-align: center;
+      figure.browsers {
+        display: flex;
+        flex-direction: column;
+        gap: .4em;
+
+        > .logos {
+          display: flex;
+          justify-content: center;
+          gap: .4em;
+        }
+        > figcaption {
+          font-style: normal;
+        }
       }
     }
   }
@@ -2167,8 +2178,3 @@ ol {
   }
 }
 
-figure.browsers > img {
-  display: block;
-  float: left;
-  margin: 0.3em;
-}
