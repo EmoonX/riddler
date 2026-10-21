@@ -41,12 +41,22 @@
           </button>
           <div class="menu">
             <a href="{{ riddle['front_page'] }}" class="nav-button" target="_blank" rel="noreferrer">
-              Front page
-              <img class="icon" src="/static/icons/external-link.png" height="32">
+              <span class="icon"></span>
+              Go to website <img class="icon" src="/static/icons/external-link.png">
             </a>
-            <a href="{{ url_for('players.riddle_list', alias=alias) }}" class="nav-button">Leaderboard</a>
-            <a href="{{ url_for('levels.level_list', alias=alias) }}" class="nav-button">📂 Level explorer</a>
-            <a href="{{ url_for('page_catalog.catalog', alias=alias) }}" class="nav-button">📖 Page catalog</a>
+            <hr>
+            <a href="{{ url_for('players.riddle_list', alias=alias) }}" class="nav-button">
+              <span class="icon"></span>
+              Leaderboard
+            </a>
+            <a href="{{ url_for('levels.level_list', alias=alias) }}" class="nav-button">
+              <span class="icon">📂</span>
+              Level explorer
+            </a>
+            <a href="{{ url_for('page_catalog.catalog', alias=alias) }}" class="nav-button">
+              <span class="icon">📖</span>
+              Page catalog
+            </a>
           {% if riddle['invite_code'] %}
             <a href="https://discord.gg/{{ riddle['invite_code'] }}" class="nav-button" target="_blank">
               <img class="icon" src="/static/icons/discord.png">
@@ -56,8 +66,7 @@
           {% if riddle['nordinho_link'] %}
             <a href="{{ riddle['nordinho_link'] }}" class="nav-button" target="_blank">
               <img class="icon" src="/static/icons/nordinho.png">
-              Nordinho thread
-              <img class="icon" src="/static/icons/external-link.png" height="32">
+              Nordinho thread <img class="icon" src="/static/icons/external-link.png">
             </a>
           {% endif %}
           {% if is_admin_of(alias) %}
@@ -70,7 +79,8 @@
               Manage achievements
             </a>
             <a href="{{ url_for('admin_health.health_diagnostics', alias=alias) }}" class="nav-button">
-              <span class="icon">⛑️</span> Health diagnostics
+              <span class="icon">⛑️</span>
+              Health diagnostics
             </a>
           {% endif %}
           </div>
@@ -82,20 +92,39 @@
         <nav class="dropdown">
           <button class="nav-button burger">≡</button>
           <div class="menu">
-            <a href="/players" class="nav-button">Global Leaderboard</a>
-            <a href="/countries" class="nav-button">Countries Leaderboard</a>            
+            <a href="/players" class="nav-button">
+              <span class="icon"></span>
+              Global Leaderboard
+            </a>
+            <a href="/countries" class="nav-button">
+              <span class="icon"></span>
+              Countries Leaderboard
+            </a> 
             <a href="https://discord.gg/ktaPPtnPSn" class="nav-button" target="_blank">
-              <img class="icon" src="/static/icons/discord.png">Wonderland II
+              <img class="icon" src="/static/icons/discord.png">
+              Wonderland II
             </a>
           <!--
             <a href="https://ko-fi.com/emoon" class="nav-button" target="_blank">
               <img class="icon" src="/static/icons/ko-fi.png">Donate
             </a>
           -->
-            <a href="/about" class="nav-button">About</a>
-            <a href="/faq" class="nav-button">F.A.Q.</a>
-            <a href="/privacy-policy" class="nav-button">Privacy Policy</a>
-            <a href="/terms-and-conditions" class="nav-button">Terms & Conditions</a>
+            <a href="/about" class="nav-button">
+              <span class="icon"></span>
+              About
+            </a>
+            <a href="/faq" class="nav-button">
+              <span class="icon"></span>
+              F.A.Q.
+            </a>
+            <a href="/privacy-policy" class="nav-button">
+              <span class="icon"></span>
+              Privacy Policy
+            </a>
+            <a href="/terms-and-conditions" class="nav-button">
+              <span class="icon"></span>
+              Terms & Conditions
+            </a>
           </div>
         </nav>
         {% set user = get_session_user() %}
