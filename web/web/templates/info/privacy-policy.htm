@@ -11,8 +11,10 @@
 
       <h2>Browser extension</h2>
       <p>Riddler collects webpage data (i.e URLs, status codes and, occasionally, folder-specific credentials) by intercepting HTTP requests while players browse the catalogued external riddle websites &mdash; and only in those. Starting on version <strong>0.6</strong>, such whitelisting works by filtering every request against <a href="/get-riddle-hosts">this list of valid hosts</a>. As such, no browsing history or sensitive data from any other websites are sent to <a href="https://riddler.app">https://riddler.app</a> at all.</p>
-      <p>The extension requires two manifest permissions to properly function:</p>
+      <p>The extension requires the following manifest permissions to properly function:</p>
       <ol>
+        <li><code>storage</code>: to handle browser-wide session data (e.g. login flags) through the <code>chrome.storage</code> API (<code>browser.storage</code> for Firefox).</li>
+        <li><code>tabs</code>: to enable the extension to open, close and replace tabs, both for navigation logistics and riddle-specific fallbacks.</li>
         <li><code>webRequest</code>: to intercept the aforementioned page/file HTTP requests.</li>
         <li><code>webRequestAuthProvider</code>: to implement the <code>onAuthRequired</code> listener, which allows the extension to cancel the browser's default auth box and present Riddler's custom proxy credentials box in its place.</li>
       </ol>
