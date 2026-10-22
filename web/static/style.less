@@ -117,6 +117,7 @@ header > nav {
         width: 150px;
 
         &.burger {
+          padding-bottom: .12em;  // temp fix
           font-size: 1.8em;
         }
       }
@@ -189,13 +190,12 @@ header > nav {
     }
     .menu {
       width: max-content;
-      padding: .5em .3em;
+      padding: .4em;
       font-size: .6em;
       z-index: 8000;
 
       > .nav-button {
-        display: flex;
-        align-items: center;
+        justify-content: start;
         gap: .5em;
         height: 40px;
         padding: 0 .4em;
@@ -215,7 +215,7 @@ header > nav {
           ) 1;
         }
         &:hover {
-          background-color: ##ffffff18;
+          background-color: #ffffff18;
 
           > .icon {
             filter: none;
@@ -252,7 +252,9 @@ header > nav {
     }
   }
   .nav-button {
-    display: block;
+    display: flex;
+    justify-content: center;
+    align-items: center;
     height: 100px;
     padding: 0;
     font-weight: bold;
@@ -270,10 +272,7 @@ header > nav {
       text-transform: none;
     }
     &.profile {
-      width: 100%;
-      padding-right: 30px;
-      text-align: right;
-      text-transform: none;
+      font-size: 1.1em;
 
       + .menu {
         width: 180px;
