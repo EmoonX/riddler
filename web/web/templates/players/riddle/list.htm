@@ -106,7 +106,7 @@
             {% if player['recent_score'] %}
               <span class="recent-score">⇪{{ player['recent_score'] }}</span>
             {% endif %}
-              <var class="points"><var class="zeroes">{{ zeroes }}</var>{{ score }}</var>
+              <var class="points"><var class="zeroes">{{ zeroes }}</var>{{ score or '' }}</var>
               <figcaption>points</figcaption>
             </figure>
             {% set cheevos = player['cheevos'] %}

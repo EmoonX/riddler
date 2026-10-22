@@ -57,8 +57,16 @@ async def get_riddles(
     # Add counter data
     for riddle in riddles:
         query = '''
-            SELECT COUNT(*) FROM riddle_accounts
-            WHERE riddle = :riddle AND score > 0
+            SELECT COUNT(*) FROM riddle_accounts ra
+            WHERE riddle = :riddle
+                AND (
+                    score > 0
+                    OR username IN (
+                        SELECT username FROM user_levels ul
+                        WHERE ra.riddle = ul.riddle
+                            AND completion_time IS NOT NULL
+                    )
+                )
         '''
         values = {'riddle': riddle['alias']}
         riddle['player_count'] = await database.fetch_val(query, values)

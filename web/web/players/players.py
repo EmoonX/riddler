@@ -320,13 +320,16 @@ async def riddle_list(alias: str, country: str | None = None):
             if current_levels != '💎':
                 current_levels.append(level)
 
-    # Pluck 0-score and creator accounts from main list
+    # Pluck no-solves and creator accounts from main list
     creator_account = None
     aux = []
     for username, account in accounts.items():
         if username == riddle['creator_username']:
             creator_account = account
-        elif account['score'] > 0:
+        elif (
+            account['score'] > 0 or
+            (account.get('mastered_on') or account['completed_milestones'])
+        ):
             aux.append(account)
     accounts = aux
 
