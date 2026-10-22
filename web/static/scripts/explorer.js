@@ -235,19 +235,19 @@ export function folderUp() {
   $('input[name="pages"]').on('change', function () {
     // Send POST request with chosen paths text file
     const reader = new FileReader();
-    reader.onload = (e => {;
+    reader.onload = (async e => {;
       const data = e.target.result;
-      $.post(`${location.href}/upload-pages`, data, 'text')
-        .fail(_ => {
-          // Error, something went wrong on server side
-          console.log('[Upload pages] Error updating page/level data...');
-        })
-        .done(_ => {
-          // Success, so reload the current page to see changes
+      const url = `${location.href}/upload-pages`;
+      await fetch(url, { method: 'POST', body: data })
+        .then(response => {
+          if (!response.ok) {
+            // Something went wrong
+            throw new Error(`[Upload pages] Couldn't update page/level data`);
+          }
+          // Success; reload the current page to see the changes
           console.log('[Upload pages] Page/level data successfully updated!');
           location.reload();
         });
-      ;
     });
     const file = $(this).get(0).files[0];
     reader.readAsText(file);
