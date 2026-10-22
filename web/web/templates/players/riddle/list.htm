@@ -27,7 +27,9 @@
           {% set rank = '👑' %}
           {% set color = 'crimson' %}
           {% set style = 'style="text-shadow: 0 0 8px %(c)s, 0 0 16px %(c)s, 0 0 24px %(c)s"'|safe % {'c': color} %}
+          {% if not loop.first %}
           <hr>
+        {% endif %}
         {% endif %}
           <div class="row">
             <div class="rank">
