@@ -257,7 +257,7 @@ async def context_processor():
         result = await database.fetch_all(query)
         discord_ids = set(row['discord_id'] for row in result)
         
-        data = await bot_request('get-all-avatar-urls', discord_ids=discord_ids)
+        data = await bot_request('get-all-avatar-urls')
         urls = json.loads(data)
         
         for row in result:
