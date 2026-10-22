@@ -85,8 +85,10 @@ async def process_url(
 
     # Process received credentials (possibly none)
     riddle = await get_riddle(ph.riddle_alias)
-    ok = await process_credentials(riddle, ph.path, ph.credentials, status_code)
-    path_credentials = await get_path_credentials(ph.riddle_alias, ph.path)
+    ok = await process_credentials(
+        riddle, ph.raw_path, ph.credentials, status_code
+    )
+    path_credentials = await get_path_credentials(ph.riddle_alias, ph.raw_path)
     if not ok:
         return jsonify({
             'message': 'Wrong or missing user credentials',
