@@ -2036,15 +2036,19 @@ section.list.levels.admin + button {
 /* ------------------------------------------------------------------------- */
 /* -- Recent player activity -- */
 
-.list.players.recent-progress > .row {
+.list.players.recent-progress > .row,
+.list.players > .row.incognito-count {
   justify-content: left;
   gap: 2em;
   height: 4em;
   border: none;
 
   > .time {
-    width: 150px;
-    font-size: .9em;
+    width: 100px;
+    font-family: Courier New, monospace;
+    font-size: .7em;
+    word-spacing: -.3em;
+    white-space: nowrap;
   }
   > .status {
     flex-direction: row;
@@ -2079,7 +2083,12 @@ section.list.levels.admin + button {
       }
     }
   }
-  &.just-playing:not(:hover) > * {
+  > .rank + .status {
+    // TODO
+    margin-left: 25px;
+  }
+  &.just-playing:not(:hover) > *,
+  &.incognito-count:not(:hover) > * {
     font-style: italic;
     opacity: .65;
     filter: grayscale(.35);
