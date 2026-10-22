@@ -218,8 +218,9 @@ async def riddle_list(alias: str, country: str | None = None):
                 if country else ''
             }
     """
-    incognito_accounts = await database.fetch_all(query, values)
-    for iacc in incognito_accounts:
+    result = await database.fetch_all(query, values)
+    incognito_accounts = {row['username']: row for row in result}
+    for iacc in incognito_accounts.values():
         if user and iacc['username'] == user.name:
             account = accounts[iacc['username']]
             account['has_incognito_progress'] = False
@@ -319,6 +320,12 @@ async def riddle_list(alias: str, country: str | None = None):
             current_levels = accounts[username]['current_level']
             if current_levels != '💎':
                 current_levels.append(level)
+                if len(current_levels) > 4:
+                    current_levels.pop(0)
+                if alias == 'ebony' and len(current_levels) > 1:
+                    current_levels.pop(0)
+                if alias == 'wyfio' and len(current_levels) > 1:
+                    current_levels.pop(0)
 
     # Pluck no-solves and creator accounts from main list
     creator_account = None
@@ -331,7 +338,12 @@ async def riddle_list(alias: str, country: str | None = None):
             (account.get('mastered_on') or account['completed_milestones'])
         ):
             aux.append(account)
+            incognito_accounts.pop(username, None)
+        if iacc := incognito_accounts.get(username):
+            if iacc['page_count'] == 0:
+                incognito_accounts.pop(username, None)
     accounts = aux
+    incognito_count = len(incognito_accounts)
 
     def _account_cmp(a: dict, b: dict) -> int:
         '''Compare accounts first by score and then page count.'''
@@ -355,5 +367,6 @@ async def riddle_list(alias: str, country: str | None = None):
         country=country,
         creator_account=creator_account,
         page_count=page_count,
+        incognito_count=incognito_count,
         sets_by_final_level=sets_by_final_level,
     )

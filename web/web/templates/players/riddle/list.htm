@@ -153,7 +153,25 @@
               <figcaption>pages found</figcaption>
             </figure>
           </div>
+        {% if loop.index == accounts|length and incognito_count > 0 and creator_account %}
+          {# TODO TODO TODO #}
+          <div class="row incognito-count">
+            <div class="rank"></div>
+            <div class="status">
+              (<var class="purple">{{ '' if loop.first else '+' }}{{ incognito_count }}</var> {{ 'player' if incognito_count == 1 else 'players' }} in incognito <img class="incognito" src="/static/icons/incognito.png" alt="Incognito" width="24" height="24"> mode)
+            </div>
+          </div>
+        {% endif %}
       {% endfor %}
+      {% if incognito_count > 0 and not creator_account %}
+          {# TODO TODO TODO #}
+          <div class="row incognito-count">
+            <div class="rank"></div>
+            <div class="status">
+              (<var class="purple">{{ '' if not accounts else '+' }}{{ incognito_count }}</var> {{ 'player' if incognito_count == 1 else 'players' }} in incognito <img class="incognito" src="/static/icons/incognito.png" alt="Incognito" width="24" height="24"> mode)
+            </div>
+          </div>
+        {% endif %}
         </section>
       </main>
 {% endblock %}
