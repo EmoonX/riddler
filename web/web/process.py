@@ -9,9 +9,9 @@ from urllib.parse import (
     urljoin, unquote, urlsplit, urlunsplit
 )
 
+import httpx2
 from quart import Blueprint, request, jsonify
 from quartcord.models import User
-import requests
 
 from auth import discord
 from credentials import (
@@ -361,8 +361,17 @@ class _PathHandler:
                         auth = f"{credentials['username']}:{credentials['password']}"
                         url = url.replace('://', f"://{auth}@")
                 url = re.sub(r'^([^?]+)[?]$', r'\1?_=', url)  # handle empty query
-                cookies = {'s': 'eGNIqq1R'}
-                return requests.get(url, cookies=cookies, timeout=5)
+                headers = {
+                    # Impersonate real browser so certain hosts don't throw 412
+                    'User-Agent': (
+                        'Mozilla/5.0 (Windows NT 11.0; Win64; x64; rv:128.0) '
+                        'Gecko/20100101 Firefox/128.0'
+                    )
+                }
+                cookies = (
+                    {}
+                )
+                return httpx2.get(url, headers=headers, cookies=cookies, timeout=5)
 
             query = '''
                 SELECT 1 FROM level_pages
@@ -376,7 +385,7 @@ class _PathHandler:
             # Retrieve given page's hash directly from the website
             content_hash = None
             res = await _request_page(self.path)
-            if res.ok:
+            if res.status_code < 400:
                 content_hash = hashlib.md5(res.content).hexdigest()
 
             query = '''
@@ -397,7 +406,7 @@ class _PathHandler:
             if not current_hash:
                 # Base path hasn't been recorded, retrieve it if available
                 res = await _request_page(base_path)
-                if res.ok:
+                if res.status_code < 400:
                     current_hash = hashlib.md5(res.content).hexdigest()
 
             # Replace path iff both pages are available and the content matches
