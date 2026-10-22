@@ -86,7 +86,8 @@
           {% endif %}
           {% if page_data['find_username'] or page_data['find_time'] %}
             {% set title = title ~ (title and '&#10;'|safe) ~ '✨ found' %}
-            {% if page_data['find_username'] %}
+            {% if page_data['find_username'] and is_admin_of('*') %}
+              {# Restrict username view #}
               {% set title = title ~ ' by ' ~ page_data['find_username'] %}
             {% endif %}
             {% if page_data['find_time'] %}
