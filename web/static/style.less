@@ -833,10 +833,10 @@ thead th, tfoot td {
 
 thead th {
   border-bottom: 1px solid;
+  user-select: none;
 
   &[tabindex] {
     cursor: pointer;
-    user-select: none;
 
     &::after {
       display: inline-block;
@@ -942,6 +942,7 @@ td {
     display: flex;
     justify-content: center;
     align-items: center;
+    margin: 0;
     font-size: 1.1em;
 
     > a {
@@ -953,9 +954,9 @@ td {
       left: 50%;
       transform: translate(-50%, -50%);
       z-index: -1;
-      font-size: 1.5em;
+      font-size: 1.6em;
       text-shadow: none;
-      opacity: .25;
+      opacity: .2;
       filter: saturate(0);
       user-select: none;
     }
@@ -969,8 +970,7 @@ td {
       font-size: 1.3em;
       text-shadow:
         0 0 .3em navy,
-        0 0 .6em navy,
-        0 0 .9em navy;
+        0 0 .6em navy;        
 
       + figcaption {
        display: inline;
@@ -978,23 +978,23 @@ td {
       }
     }
     &.player-count {
+      display: inline-block;
       text-shadow:
         0 0 .3em crimson,
-        0 0 .6em crimson,
-        0 0 .9em crimson;
+        0 0 .6em crimson;        
     }
     &.level-count {
+      display: inline-block;
       text-shadow:
         0 0 .3em MediumVioletRed,
-        0 0 .6em MediumVioletRed,
-        0 0 .9em MediumVioletRed;
+        0 0 .6em MediumVioletRed;
     }
     &.page-count, &.raw-page-count {
+      display: inline-block;
       font-size: .9em;
       text-shadow:
         0 0 .3em darkcyan,
-        0 0 .6em darkcyan,
-        0 0 .9em darkcyan;
+        0 0 .6em darkcyan;
 
       &.raw-page-count {
         filter: grayscale(1) brightness(.7) contrast(.7);
@@ -1273,7 +1273,6 @@ section.list.players > .row {
       display: flex;
       justify-content: center;
       align-items: end;
-      gap: .1em;
       font-size: 1.2em;
 
       > .wrapper {
