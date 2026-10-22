@@ -67,5 +67,5 @@ async def upload_pages(alias: str):
 
 def _is_image(path: str) -> bool:
     '''Check if path points to an image file.'''
-    _, ext = os.path.splitext(path)
-    return ext.lower() in ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp']
+    ext = Path(path).suffix.removeprefix('.').lower()
+    return ext in {'bmp', 'gif', 'jpg', 'jpeg', 'png', 'svg', 'webp'}
