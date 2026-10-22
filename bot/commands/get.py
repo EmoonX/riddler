@@ -5,6 +5,7 @@ from discord.ext import commands
 from discord.utils import get
 
 from bot import bot
+from util.players import get_all_players
 
 
 async def is_member_of_guild(request):
@@ -109,11 +110,10 @@ async def get_all_avatar_urls(request):
         user = guild.members
     else:
         # Get avatars from all available user IDs
-        data = request.rel_url.query.get('discord_ids')
-        user_ids = map(int, json.loads(data))
+        players = await get_all_players()
         users = []
-        for user_id in user_ids:
-            user = bot.get_user(user_id)
+        for player in players.values():
+            user = bot.get_user(player['discord_id'])
             if user:
                 users.append(user)
 
