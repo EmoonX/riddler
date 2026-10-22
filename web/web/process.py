@@ -349,7 +349,7 @@ class _PathHandler:
 
             async def _request_page(path: str) -> requests.Response:
                 '''Build suitable request, send it, and return its response.'''
-                url = f"{self.riddle['root_path']}{path}"
+                url = f"{self.riddle['root_path'].removesuffix('/*')}{path}"
                 credentials = await get_path_credentials(self.riddle_alias, path)
                 if credentials['username'] and credentials['password']:
                     if self.riddle_alias == 'string':
