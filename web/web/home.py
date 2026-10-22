@@ -1,3 +1,6 @@
+from datetime import datetime, timedelta
+
+import humanize
 from quart import Blueprint, render_template
 
 from util.db import database
@@ -56,7 +59,8 @@ async def homepage():
         SELECT * FROM recent_pages_by_user
         WHERE rn = 1
     '''
-    recent_progress = await database.fetch_all(query)
+    result = await database.fetch_all(query)
+    recent_progress = [dict(row) for row in result]
 
     # Get incognito-only player count
     query = '''
@@ -126,5 +130,13 @@ async def homepage():
 
     # Ensure final list is time-sorted
     recent_progress.sort(key=(lambda x: x['time']), reverse=True)
+
+    for rp in recent_progress:
+        delta = datetime.utcnow() - rp['time']
+        if delta < timedelta(days=14):
+            rp['time'] = humanize.naturaltime(rp['time'])
+        else:
+            weeks = delta.days // 7
+            rp['time'] = f"{weeks} weeks ago"
 
     return await render_template('home.htm', **locals())
