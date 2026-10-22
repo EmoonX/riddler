@@ -6,7 +6,7 @@ import re
 from typing import Callable, Self
 from urllib.parse import (
     SplitResult, parse_qsl,
-    urljoin, unquote, urlsplit, urlunsplit
+    quote, urljoin, unquote, urlsplit, urlunsplit
 )
 
 import httpx2
@@ -116,13 +116,13 @@ async def process_url(
             ph.path = ph.path_alias_for
             ph.path_alias_for = None
             if await ph.process() == 201:
-                # Signal 201 if either of the paths is new for the user
+                # Signal 201 if either of the paths is new for the player
                 response_code = 201
 
     tnow = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
     match response_code:
         case 403:
-            # Page exists, but user doesn't have the requirements for it yet
+            # Page exists but player doesn't have the requirements for it yet
             print(
                 f"\033[1m[{ph.riddle_alias}]\033[0m "
                 f"Received locked path \033[3m{formatted_path}\033[0m "
@@ -730,7 +730,7 @@ class _PathHandler:
 
         # Check if level has already been unlocked beforehand
         query = '''
-            SELECT * FROM user_levels
+            SELECT 1 FROM user_levels
             WHERE riddle = :riddle
                 AND level_name = :level_name
                 AND username = :username
@@ -740,13 +740,12 @@ class _PathHandler:
             'level_name': level['name'],
             'username': self.user.name,
         }
-        already_unlocked = await database.fetch_one(query, values)
-        if already_unlocked:
+        if await database.fetch_val(query, values):
             return
 
-        # A new level has been found!
+        # A new level has been unlocked
         lh = _LevelHandler(level, self)
-        await lh.register_finding()
+        await lh.register_unlock()
 
     async def _update_hit_counters(self):
         '''Update player, riddle and level hit counters.'''
@@ -1028,10 +1027,10 @@ class _LevelHandler:
         self.points = level_ranks[rank]['points']
         self.ph = ph
 
-    async def register_finding(self):
-        '''Increment player level upon reaching level's front page.'''
+    async def register_unlock(self):
+        '''Register player unlocking level (i.e reaching its front page).'''
 
-        # Record it on user table with current time
+        # Add record to user table with current time
         query = '''
             INSERT INTO user_levels
                 (riddle, username, level_name, find_time, incognito_unlock)
@@ -1055,7 +1054,7 @@ class _LevelHandler:
         )
 
         if self.level['is_secret']:
-            # Log secret level finding
+            # Log secret level being found
             print(
                 f"> \033[1m[{self.ph.riddle_alias}]\033[0m "
                 f"\033[1m{self.ph.user.name}\033[0m found "
@@ -1234,4 +1233,3 @@ def is_trivial_redirect(path_from: str, path_to: str) -> bool:
         return True
 
     return False
-
