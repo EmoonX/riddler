@@ -614,19 +614,9 @@ a > .avatar-small {
   text-shadow: 0 0 8px green, 0 0 16px green, 0 0 24px green;
 }
 
-figure.flag {
-  margin: 1em auto 0.5em;
-}
-
 figure.flag > img {
   max-width: 4em;
   max-height: 4em;
-}
-
-figure.flag > figcaption {
-  margin-top: 1em;
-  font-size: 1.5em;
-  font-weight: bold;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -656,7 +646,7 @@ fieldset {
     justify-content: space-evenly;
     align-items: center;
     width: 300px;
-    height: 400px;
+    height: 360px;
   }
 }
 
@@ -668,14 +658,17 @@ label {
   font-style: italic;
 }
 
-label.icon:before {
-  content: " ";
-  position: absolute;
-  left: -35px;
-  width: 30px;
-  height: 30px;
-  background-image: url("/static/icons/discord.png");
-  background-size: 30px 30px;
+label > .icon-wrapper {
+  display: flex;
+  align-items: start;
+  gap: .3em;
+  height: 28px;
+}
+
+input[readonly] {
+  font-style: italic;
+  color: darkslategray;
+  cursor: default;
 }
 
 input:not([type="checkbox"]):not([type="radio"]), select, textarea {
