@@ -4,7 +4,9 @@
     <main>
       <h1 class="riddler-title">Riddler</h1>
       <p class='riddler-synopsis'>
-        Serving <var class="dotted" title="{{ riddle_released_count }} released + {{ riddle_demo_count }} demo + {{ riddle_other_count }} other">{{ riddle_released_count -}}<span class="smaller">+{{ riddle_demo_count }}<span class="smaller">+{{ riddle_other_count }}</span></span></var> online riddles, <var>{{ level_count }}</var> levels,<br>
+        {% set riddle_total_count = riddle_released_count + riddle_demo_count + riddle_other_count %}
+        Serving <var class="dotted" title="{{ riddle_released_count }} released + {{ riddle_demo_count }} demo + {{ riddle_other_count }} other">{{ riddle_total_count -}}</var> online riddles, <var>{{ level_count }}</var> levels,<br>
+        {# TODO #}
         <var>{{ page_count }}</var> pages and <var>{{ player_count }}</var> players. <a href="/about">Learn more</a>.
       </p>
       <hr>
@@ -33,7 +35,7 @@
               is playing
             {% endif %}
               {% set url = url_for('players.riddle_list', alias=riddle['alias']) %}
-              <a class="riddle" href="{{ url }}">
+              <a class="riddle" href="{{ url if not riddle['unlisted'] else '#' }}">
                 <img class="riddle-icon" src="{{ riddle['icon_url'] }}">
                 {{ riddle['full_name'] }}
               </a>
@@ -42,10 +44,10 @@
         </div>
       {% endfor %}
       {% if incognito_count > 0 %}
-        <div class="row just-playing">
+        <div class="row incognito-count">
           <div class="time"></div>
           <div class="status">
-            (<var class="purple">+{{ incognito_count}}</var> players in incognito <img class="incognito" src="/static/icons/incognito.png" alt="Incognito" width="24" height="24"> mode)
+            (<var class="purple">+{{ incognito_count}}</var> {{ 'player' if incognito_count == 1 else 'players' }} in incognito <img class="incognito" src="/static/icons/incognito.png" alt="Incognito" width="24" height="24"> mode)
           </div>
         </div>
       {% endif %}
