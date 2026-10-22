@@ -47,9 +47,7 @@ async def homepage():
                     ORDER BY time DESC
                 ) AS rn
             FROM user_pages
-            WHERE
-                riddle NOT IN (SELECT alias FROM riddles WHERE unlisted IS TRUE)
-                AND incognito IS NOT TRUE AND incognito_last IS NOT TRUE
+            WHERE incognito IS NOT TRUE AND incognito_last IS NOT TRUE
             HAVING
                 TIMESTAMPDIFF(
                     DAY, COALESCE(last_access_time, access_time), NOW()
@@ -67,7 +65,6 @@ async def homepage():
             TIMESTAMPDIFF(
                 DAY, COALESCE(last_access_time, access_time), NOW()
             ) < 30
-            AND level_name IS NOT NULL
         GROUP BY username
     '''
     incognito_count = len(await database.fetch_all(query)) - len(recent_progress)
