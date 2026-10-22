@@ -50,7 +50,7 @@ class PageSnapshot:
 
     def _get_local_path(self) -> Path:
         '''Ǵet full sanitized path to the (currently or to-be) archived page.'''
-        base_path = Path(str(self.path).replace('..', '(parent)'))
+        base_path = Path(str(self.path).replace('/..', '/(parent)'))
         if not base_path.suffix:
             if base_path == Path('/'):
                 base_path = Path('/(root)')
