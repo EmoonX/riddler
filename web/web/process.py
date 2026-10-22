@@ -387,6 +387,14 @@ class _PathHandler:
             res = await _request_page(self.path)
             if res.status_code < 400:
                 content_hash = hashlib.md5(res.content).hexdigest()
+                if self.riddle_alias == '173':
+                    # Handle faulty error pages
+                    if content_hash in {
+                        '41289536e03cb4e76dbc2a2774277cdd',  # 403
+                        '6ee3c98fab7bbc61afdac2a395762801',  # 404
+                    }:
+                        self.status_code = 404
+                    return
 
             query = '''
                 SELECT content_hash
@@ -456,7 +464,9 @@ class _PathHandler:
             self.path = self.path.removesuffix('/') or '/'
 
         # Riddle-specific path formatting
-        if self.riddle_alias == 'decifra':
+        if self.riddle_alias == '173':
+            await _format(self.path)
+        elif self.riddle_alias == 'decifra':
             if not re.search(r'^/[.][.]/', self.path):
                 # Sanitize dynamic paths within the `/enigma` directory proper
                 await _format(re.sub(r' |(%20)|-|_', '', self.path).lower())
