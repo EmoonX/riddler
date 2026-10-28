@@ -162,6 +162,13 @@ async def health_diagnostics(alias: str, background: bool = False):
 
         url = f"{riddle['root_path']}{path}"
 
+        if riddle['root_path'].endswith('.wixsite.com'):
+            # wixsite.com's sibling static hosts
+            if path.startswith('/media'):
+                url = f"https://static.wixstatic.com{path}"
+            elif path.startswith('/mp3'):
+                url = f"https://music.wixstatic.com{path}"
+
         credentials = await get_path_credentials(alias, path)
         username = credentials['username'] or ''
         password = credentials['password'] or ''

@@ -31,6 +31,14 @@ async def catalog(alias: str):
         '''Build URL (possibly w/ credentials) and return page data with it.'''
 
         url = f"{riddle['root_path']}{path}"
+
+        if riddle['root_path'].endswith('.wixsite.com'):
+            # wixsite.com's sibling static hosts
+            if path.startswith('/media'):
+                url = f"https://static.wixstatic.com{path}"
+            elif path.startswith('/mp3'):
+                url = f"https://music.wixstatic.com{path}"
+
         credentials = await get_path_credentials(alias, path)
         if await has_unlocked_path_credentials(alias, user, credentials['path']):
             username = credentials['username']

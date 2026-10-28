@@ -278,6 +278,13 @@ class _PathHandler:
             url.replace('://www.', '://').replace('@www.', '@')
         )
 
+        if parsed_url.hostname == 'static.wixstatic.com':
+            # TODO ad-hoc fix for halloween
+            tokens = parsed_url.path.split('/')
+            if not tokens[2:] or not tokens[2].startswith(('63b5f2_', '9d3e5d_')):
+                self.riddle = None
+                return
+
         def _get_relative_path(parsed_root: SplitResult) -> str:
             '''Build relative path from root (with "../"s if needed).''' 
             root_segments = parsed_root.path.split('/')
@@ -482,6 +489,15 @@ class _PathHandler:
             elif Path(self.path).parent == Path('/'):
                 # Only correct paths inside root itself
                 self.path = base_path
+        elif self.riddle_alias == 'halloween':
+            tokens = self.path.split('/')
+            if tokens[1:2] == ['media']:
+                # Strip render parameters on static.wixstatic.com
+                self.path = '/'.join(tokens[:3])
+            elif tokens[2:3] == ['_api']:
+                # Ignore `_api` directory bloat on wixsite.com
+                self.status_code = 410
+                return
         elif self.riddle_alias == 'synchronicity':
             # Ignore redundant `/index.htm`
             self.path = self.path.removesuffix('/index.htm')
@@ -568,6 +584,10 @@ class _PathHandler:
             # Path is a (non removed) answer for an unsolved level
             lh = _LevelHandler(answer_level, self)
             await lh.register_completion()
+
+        if self.status_code == 410:
+            # Explicitly ignored path format or directory
+            return 410
 
         if not page or (not page['username'] and not self.removed):
             if self.status_code in [300, 403, 404]:
