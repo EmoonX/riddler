@@ -293,7 +293,15 @@ export async function doubleClickFile() {
     // Open desired page in new tab
     const riddle = riddles[currentRiddle];
     const path = $(this).attr('title').split(' ')[1];
-    const rootPath = getSimpleRootPath(riddle);
+    let rootPath = getSimpleRootPath(riddle);
+    if (rootPath.endsWith('.wixsite.com')) {
+      // wixsite.com's sibling static hosts
+      if (path.startsWith('/media/')) {
+        rootPath = 'https://static.wixstatic.com';
+      } else if (path.startsWith('/mp3/')) {
+        rootPath = 'https://music.wixstatic.com';
+      }
+    }
     const parsedUrl = new URL(`${rootPath}${path}`);
     parsedUrl.username = $(this).attr('data-username') || '';
     parsedUrl.password = $(this).attr('data-password') || '';
