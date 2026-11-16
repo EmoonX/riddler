@@ -1,3 +1,4 @@
+{% set level_name = level_name|escape %}
 {% set aux = level_name.split() %}
 {% set ns = namespace(level='', has_smaller=False) %}
 {% for word in aux %}
